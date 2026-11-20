@@ -11,3 +11,4 @@
 /* Anchor bare LPC feet to the courtyard's stone platform. */
 .scene{background-position:center bottom}.character-shadow{bottom:4px;height:14px;width:88px;filter:blur(2px)}
 @media(max-width:700px){.scene{background-position:center top;background-size:100% auto}.character-shadow{bottom:3px;height:12px;width:72px}}
+@media(min-width:701px){.preview-panel{display:flex;flex-direction:column}.scene{flex:1;min-height:466px}.preview-bottom{flex-shrink:0}.customize-panel{padding-top:28px;padding-bottom:20px}.character-description{margin-top:13px}.section-divider{margin:20px 0}.skin-options{margin-top:16px;margin-bottom:14px}.origin-note{padding:13px 15px;margin:18px 0 20px}}
