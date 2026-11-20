@@ -1,0 +1,54 @@
+{
+  "generator": "Universal LPC Spritesheet Character Generator",
+  "version": "86a3719ee4a7e2e9fb27c7c152e29a741d3e930a",
+  "frameWidth": 64,
+  "frameHeight": 64,
+  "width": 128,
+  "height": 256,
+  "frames": 2,
+  "directions": [
+    "north",
+    "west",
+    "south",
+    "east"
+  ],
+  "defaultDirection": 2,
+  "skins": [
+    {
+      "id": "light",
+      "label": "Светлый",
+      "swatch": "#F9D5BA",
+      "file": "light.png"
+    },
+    {
+      "id": "amber",
+      "label": "Тёплый",
+      "swatch": "#FDD082",
+      "file": "amber.png"
+    },
+    {
+      "id": "olive",
+      "label": "Оливковый",
+      "swatch": "#D38B59",
+      "file": "olive.png"
+    },
+    {
+      "id": "bronze",
+      "label": "Бронзовый",
+      "swatch": "#AE6B3F",
+      "file": "bronze.png"
+    },
+    {
+      "id": "brown",
+      "label": "Смуглый",
+      "swatch": "#9C663E",
+      "file": "brown.png"
+    },
+    {
+      "id": "black",
+      "label": "Тёмный",
+      "swatch": "#603429",
+      "file": "black.png"
+    }
+  ]
+}
