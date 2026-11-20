@@ -35,14 +35,32 @@
   function haptic(type = 'selectionChanged') {
     try { telegram?.HapticFeedback?.[type]?.(); } catch {}
   }
+  // Fit the actual browser/Telegram viewport, including sheet expansion and rotation.
+  function syncViewport() {
+    const browserHeight = window.visualViewport?.height || window.innerHeight;
+    const telegramHeight = telegram?.initData && Number(telegram.viewportHeight);
+    const height = telegramHeight > 0 ? Math.min(browserHeight, telegramHeight) : browserHeight;
+    document.documentElement.style.setProperty('--app-height', `${Math.floor(height)}px`);
+  }
+  window.addEventListener('resize', syncViewport);
+  window.visualViewport?.addEventListener('resize', syncViewport);
+  telegram?.onEvent?.('viewportChanged', syncViewport);
+  syncViewport();
   function alignCharacter() {
     const scene = document.querySelector('#scene');
     const stage = document.querySelector('.sprite-stage');
-    const mobile = window.matchMedia('(max-width: 700px)').matches;
-    const scale = mobile ? scene.clientWidth / 760 : Math.max(scene.clientWidth / 760, scene.clientHeight / 660);
-    const backgroundTop = mobile ? 0 : scene.clientHeight - 660 * scale;
-    const feet = backgroundTop + 500 * scale;
-    stage.style.top = `${feet - 62 * canvas.clientWidth / 64}px`;
+    const bottom = Number(getComputedStyle(scene).getPropertyValue('--scene-bottom')) || 122;
+    const feet = Math.max(30, scene.clientHeight - bottom);
+    // Keep the entire LPC silhouette above its nameplate even in a short webview.
+    const pixelScale = Math.max(1, Math.min(5, Math.floor((feet - 32) / 47)));
+    const size = pixelScale * 64;
+    stage.style.width = `${size}px`;
+    stage.style.height = `${size}px`;
+    stage.style.top = `${feet - 62 * pixelScale}px`;
+    // Position the background's actual pedestal under the feet at every aspect ratio.
+    const artScale = Math.max(scene.clientWidth / 760, feet / 500, (scene.clientHeight - feet) / 160);
+    scene.style.backgroundSize = `${760 * artScale}px ${660 * artScale}px`;
+    scene.style.backgroundPosition = `center ${feet - 500 * artScale}px`;
   }
   new ResizeObserver(alignCharacter).observe(document.querySelector('#scene'));
   alignCharacter();
