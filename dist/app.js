@@ -35,6 +35,17 @@
   function haptic(type = 'selectionChanged') {
     try { telegram?.HapticFeedback?.[type]?.(); } catch {}
   }
+  function alignCharacter() {
+    const scene = document.querySelector('#scene');
+    const stage = document.querySelector('.sprite-stage');
+    const mobile = window.matchMedia('(max-width: 700px)').matches;
+    const scale = mobile ? scene.clientWidth / 760 : Math.max(scene.clientWidth / 760, scene.clientHeight / 660);
+    const backgroundTop = mobile ? 0 : scene.clientHeight - 660 * scale;
+    const feet = backgroundTop + 500 * scale;
+    stage.style.top = `${feet - 62 * canvas.clientWidth / 64}px`;
+  }
+  new ResizeObserver(alignCharacter).observe(document.querySelector('#scene'));
+  alignCharacter();
   function draw() {
     const img = images.get(selected);
     if (!img) return;

@@ -7,3 +7,7 @@
 @media(min-width:1500px){main{padding-top:50px}}
 @media(min-width:701px) and (max-width:1000px){.skin-note{font-size:11px}.character-description{font-size:12px}.origin-note p{font-size:11px}.save-note{font-size:10px}.future-intro h3{font-size:12px}.future-intro p{font-size:11px}.path{font-size:11px}.paths{gap:5px}}
 @media(max-width:700px){.topbar{height:74px}main{padding-top:28px}.intro{margin-bottom:23px}.brand-tag{font-size:10px}.intro .eyebrow{font-size:10px}.intro-text{font-size:13px;max-width:340px}.location{font-size:9px}.preview-tag{font-size:8px}.nameplate span:not(.nameplate-line){font-size:11px}.preview-bottom{font-size:10px}.rotation>span{font-size:11px}.skin-note{font-size:11px}.character-description{font-size:12px}.skin-heading h3{font-size:14px}.origin-note p{font-size:12px}.origin-note{margin:22px 0}.save-note{font-size:10px}.future-intro h3{font-size:13px}.future-intro p{font-size:11px}.path{font-size:11px}footer>span{font-size:8px;letter-spacing:.6px}footer button{font-size:10px}}
+
+/* Anchor bare LPC feet to the courtyard's stone platform. */
+.scene{background-position:center bottom}.character-shadow{bottom:4px;height:14px;width:88px;filter:blur(2px)}
+@media(max-width:700px){.scene{background-position:center top;background-size:100% auto}.character-shadow{bottom:3px;height:12px;width:72px}}
