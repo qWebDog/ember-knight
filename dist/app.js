@@ -109,8 +109,49 @@
     haptic();
     draw();
   }
-  document.querySelector('#rotate-left').addEventListener('click', () => rotate(-1));
-  document.querySelector('#rotate-right').addEventListener('click', () => rotate(1));
+  const preview = document.querySelector('#scene');
+  let swipe = null;
+  function cancelSwipe() {
+    const previous = swipe;
+    swipe = null;
+    preview.classList.remove('is-dragging');
+    if (previous && preview.hasPointerCapture(previous.id)) {
+      preview.releasePointerCapture(previous.id);
+    }
+  }
+  preview.addEventListener('pointerdown', event => {
+    // A second finger cancels rotation so pinch gestures cannot rotate the hero.
+    if (!event.isPrimary) { cancelSwipe(); return; }
+    if (swipe || event.button !== 0) return;
+    swipe = {id:event.pointerId, x:event.clientX, y:event.clientY};
+    preview.setPointerCapture(event.pointerId);
+    preview.classList.add('is-dragging');
+  });
+  preview.addEventListener('pointermove', event => {
+    if (!swipe || event.pointerId !== swipe.id) return;
+    const dx = event.clientX - swipe.x;
+    const dy = event.clientY - swipe.y;
+    // Lock out a gesture that starts vertically rather than interpreting it as a turn.
+    if (Math.abs(dy) >= 12 && Math.abs(dy) > Math.abs(dx) * 1.3) cancelSwipe();
+  });
+  preview.addEventListener('pointerup', event => {
+    if (!swipe || event.pointerId !== swipe.id) return;
+    const dx = event.clientX - swipe.x;
+    const dy = event.clientY - swipe.y;
+    cancelSwipe();
+    if (Math.abs(dx) >= 32 && Math.abs(dx) > Math.abs(dy) * 1.3) {
+      rotate(dx > 0 ? 1 : -1);
+    }
+  });
+  preview.addEventListener('pointercancel', cancelSwipe);
+  preview.addEventListener('lostpointercapture', cancelSwipe);
+  window.addEventListener('blur', cancelSwipe);
+  window.addEventListener('resize', cancelSwipe);
+  preview.addEventListener('keydown', event => {
+    if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+    event.preventDefault();
+    rotate(event.key === 'ArrowRight' ? 1 : -1);
+  });
   function openDialog(id) {
     const dialog = document.querySelector(id);
     if (!dialog.open) dialog.showModal();
