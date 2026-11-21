@@ -3,10 +3,10 @@
   const $ = selector => document.querySelector(selector);
   const catalogue = window.EmberLoadouts;
   const skins = [
-    {id:'light',label:'Светлый',color:'#F9D5BA'},{id:'amber',label:'Тёплый',color:'#FDD082'},
-    {id:'olive',label:'Оливковый',color:'#D38B59'},{id:'bronze',label:'Бронзовый',color:'#AE6B3F'},
+    {id:'light',label:'Светлый',color:'#F9D5BA'},
     {id:'brown',label:'Смуглый',color:'#9C663E'},{id:'black',label:'Тёмный',color:'#603429'}
   ];
+  const legacySkins={amber:'light',olive:'brown',bronze:'brown'};
   const key = 'ember.character.v1', canvas = $('#hero'), createButton = $('#create-button'), status = $('#status');
   const controls = [...document.querySelectorAll('.skin-option')];
   const weaponButtons = [...document.querySelectorAll('[data-weapon]')];
@@ -21,8 +21,9 @@
   try {telegram?.ready();telegram?.expand();telegram?.setHeaderColor('#111613');telegram?.setBackgroundColor('#111613');}catch{}
   try {
     const candidate=JSON.parse(localStorage.getItem(key));
-    if(candidate?.version===1&&skins.some(s=>s.id===candidate.skin)){
-      saved=candidate;selected=candidate.skin;
+    const restoredSkin=legacySkins[candidate?.skin]||candidate?.skin;
+    if(candidate?.version===1&&skins.some(s=>s.id===restoredSkin)){
+      saved=candidate;selected=restoredSkin;
       const choice=catalogue.selection(candidate);
       if(choice){weapon=choice.weapon;rememberedColors[weapon]=choice.outfitColor;}
     }

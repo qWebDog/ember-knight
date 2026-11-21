@@ -16,7 +16,7 @@ function harness({saved=null,blocked=false}={}){
  }
  function node(k){if(!nodes.has(k))nodes.set(k,new E(k));return nodes.get(k)}
  const groups={
-  '.skin-option':['light','amber','olive','bronze','brown','black'].map(id=>{let n=node('skin:'+id);n.dataset.skin=id;return n}),
+  '.skin-option':[...html.matchAll(/data-skin="([^"]+)"/g)].map(([,id])=>{let n=node('skin:'+id);n.dataset.skin=id;return n}),
   '[data-weapon]':['sword','bow','wand'].map(id=>{let n=node('weapon:'+id);n.dataset.weapon=id;return n}),
   '[data-outfit-color]':['sand','forest','blue','red','purple','gray'].map(id=>{let n=node('color:'+id);n.dataset.outfitColor=id;return n}),
   '[data-go-step]':[0,1,2].map(i=>{let n=node('progress:'+i);n.dataset.goStep=String(i);return n}),
@@ -56,12 +56,14 @@ test('all eighteen weapon and clothing-color choices preview, rotate and retain 
 });
 test('legacy wardrobe migrates on save and back navigation preserves color, name, level and creation time',async()=>{
  const ui=harness({saved:{version:1,skin:'amber',weapon:'wand',outfit:'adept',name:'Рыцарь',level:7,createdAt:'old'}});await ui.load();
+ assert.equal(ui.node('skin:light').attrs['aria-checked'],'true');assert.ok(ui.node('#hero').draws.at(-1).src.endsWith('/light.png'));
+ assert.equal(JSON.parse(ui.storage.get('ember.character.v1')).skin,'amber','skin migration waits for explicit save');
  assert.equal(JSON.parse(ui.storage.get('ember.character.v1')).outfit,'adept','no eager write on load');
  ui.node('#create-button').click();await ui.load();assert.equal(ui.node('weapon:wand').attrs['aria-checked'],'true');ui.node('#create-button').click();await ui.load();
  assert.equal(ui.node('color:blue').attrs['aria-checked'],'true');assert.equal(ui.node('#fixed-outfit-name').textContent,'Послушник');
- ui.node('color:gray').click();await ui.load();ui.node('progress:0').click();await ui.load();ui.node('skin:olive').click();await ui.load();
+ ui.node('color:gray').click();await ui.load();ui.node('progress:0').click();await ui.load();
  ui.node('progress:2').click();await ui.load();assert.equal(ui.node('color:gray').attrs['aria-checked'],'true');ui.node('#create-button').click();
- const saved=JSON.parse(ui.storage.get('ember.character.v1'));assert.deepEqual([saved.name,saved.level,saved.createdAt,saved.skin,saved.outfit,saved.outfitColor],['Рыцарь',7,'old','olive','acolyte','gray']);assert.deepEqual(saved.equipment,['wand','acolyte']);
+ const saved=JSON.parse(ui.storage.get('ember.character.v1'));assert.deepEqual([saved.name,saved.level,saved.createdAt,saved.skin,saved.outfit,saved.outfitColor],['Рыцарь',7,'old','light','acolyte','gray']);assert.deepEqual(saved.equipment,['wand','acolyte']);
 });
 test('each weapon remembers its own clothing color during edits',async()=>{
  const ui=harness();await ui.load();ui.node('#create-button').click();await ui.load();ui.node('#create-button').click();await ui.load();
@@ -69,7 +71,35 @@ test('each weapon remembers its own clothing color during edits',async()=>{
  ui.node('color:gray').click();await ui.load();ui.node('#back-button').click();await ui.load();ui.node('weapon:sword').click();await ui.load();ui.node('#create-button').click();await ui.load();assert.equal(ui.node('color:red').attrs['aria-checked'],'true');
 });
 test('a stale asynchronous image cannot replace the newest selection; storage failure reports no success',async()=>{
- const ui=harness({blocked:true});ui.node('skin:amber').click();await ui.load();assert.ok(ui.node('#hero').draws.at(-1).src.endsWith('/amber.png'));
+ const ui=harness({blocked:true});ui.node('skin:brown').click();await ui.load();assert.ok(ui.node('#hero').draws.at(-1).src.endsWith('/brown.png'));
  ui.node('#create-button').click();await ui.load();ui.node('#create-button').click();await ui.load();ui.node('#create-button').click();
  assert.equal(ui.storage.has('ember.character.v1'),false);assert.equal(ui.node('#success-dialog').open,false);assert.equal(ui.node('#info-dialog').open,true);
+});
+test('only three canonical skin choices are selectable while all six clothing colors remain available',async()=>{
+ const ui=harness();await ui.load();
+ assert.deepEqual(ui.groups['.skin-option'].map(button=>button.dataset.skin),['light','brown','black']);
+ assert.equal(ui.groups['[data-outfit-color]'].length,6);
+ for(const [id,label] of [['light','Светлый'],['brown','Смуглый'],['black','Тёмный']])assert.match(html,new RegExp(`data-skin="${id}" aria-label="${label}"`));
+ for(const id of ['amber','olive','bronze'])assert.ok(!html.includes(`data-skin="${id}"`));
+ ui.node('skin:light').dispatch('keydown',{key:'End'});await ui.load();assert.equal(ui.node('skin:black').attrs['aria-checked'],'true');
+ ui.node('skin:black').dispatch('keydown',{key:'ArrowRight'});await ui.load();assert.equal(ui.node('skin:light').attrs['aria-checked'],'true');
+ ui.node('skin:light').dispatch('keydown',{key:'ArrowRight'});await ui.load();assert.equal(ui.node('skin:brown').attrs['aria-checked'],'true');
+});
+test('all six saved skin IDs restore their kit intact and migrate skin only when the player saves',async()=>{
+ const migration={light:'light',amber:'light',olive:'brown',bronze:'brown',brown:'brown',black:'black'};
+ const kits=[['sword','militia'],['bow','wanderer'],['wand','acolyte']];
+ let index=0;
+ for(const [skin,canonical] of Object.entries(migration)){
+  const [weapon,outfit]=kits[index++%kits.length];
+  const original={version:1,skin,weapon,outfit,outfitColor:'gray',name:'Ветеран',level:9,class:'knight',equipment:weapon==='sword'?['sword','shield',outfit]:[weapon,outfit],createdAt:'original-date'};
+  const ui=harness({saved:original});await ui.load();
+  assert.deepEqual(JSON.parse(ui.storage.get('ember.character.v1')),original,'opening the creator must not rewrite the saved record');
+  assert.equal(ui.node('skin:'+canonical).attrs['aria-checked'],'true');
+  ui.node('#create-button').click();await ui.load();assert.equal(ui.node('weapon:'+weapon).attrs['aria-checked'],'true');
+  ui.node('#create-button').click();await ui.load();assert.equal(ui.node('color:gray').attrs['aria-checked'],'true');
+  ui.node('#create-button').click();
+  const saved=JSON.parse(ui.storage.get('ember.character.v1'));
+  assert.deepEqual([saved.skin,saved.name,saved.level,saved.class,saved.weapon,saved.outfit,saved.outfitColor,saved.createdAt],[canonical,original.name,9,'knight',weapon,outfit,'gray','original-date']);
+  assert.deepEqual(saved.equipment,original.equipment,'skin migration must retain the chosen equipment');
+ }
 });

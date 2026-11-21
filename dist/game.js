@@ -36,7 +36,10 @@
     actors[id] = {element, canvas:element.querySelector('canvas'), bar:element.querySelector('.healthbar'), images:{}, animation:null, hitAt:-10, lastKey:null};
   }
   const effects = [];
-  let heroX = null, fieldWidth = null, moving = false, walkDistance = 0, walkDirection = 3, activeTime = 0;
+  const orcSpawnRatio = battlefield.clientWidth ? actors.orc.element.offsetLeft / battlefield.clientWidth : .6;
+  let heroX = null, orcX = null, fieldWidth = null, moving = false, heroMoving = false, orcMoving = false;
+  let walkDistance = 0, orcWalkDistance = 0, walkDirection = 3, orcWalkDirection = 1, activeTime = 0;
+  let pairContacted = false, previousSeparation = null;
   try { telegram?.ready(); telegram?.expand(); telegram?.setHeaderColor('#14231f'); telegram?.setBackgroundColor('#161e18'); } catch {}
   function syncViewport() {
     const visible = window.visualViewport?.height || window.innerHeight;
@@ -99,6 +102,7 @@
           actors[id].images.idle = actors[id].images.attack = {image,frames:1,row:0,still:0};
         }
       }));
+      actors.orc.images.walk = { ...actors.orc.images.idle,still:undefined };
       const orcAttack = await loadImage('assets/enemies/lpc/orc-attack.png').catch(() => null);
       actors.orc.images.attack = orcAttack ? {image:orcAttack,frames:6,row:1,tile:128,origin:32} : { ...actors.orc.images.idle,frames:1 };
       const face = $('#avatar').getContext('2d'); face.imageSmoothingEnabled = false;
@@ -173,13 +177,14 @@
     if (!actor.images.idle) return;
     const age = actor.animation ? activeTime - actor.animation.at : 100;
     const ended = ['victory','defeat'].includes(state.phase);
-    const walking = id === 'hero' && moving && walkDistance > 0 && unit.hp > 0 && !ended && !reducedMotion.matches;
+    const distance = id === 'orc' ? orcWalkDistance : walkDistance;
+    const walking = ((id === 'hero' && heroMoving) || (id === 'orc' && orcMoving)) && distance > 0 && unit.hp > 0 && !ended && !reducedMotion.matches && actor.images.walk?.frames > 1;
     const attacking = !walking && !ended && age >= 0 && age < (actor.animation?.duration || 0) && unit.hp > 0 && !reducedMotion.matches;
     const kind = walking ? 'walk' : attacking ? 'attack' : 'idle';
     const descriptor = actor.images[kind];
-    const row = walking ? walkDirection : descriptor.row;
+    const row = walking ? id === 'orc' ? orcWalkDirection : walkDirection : descriptor.row;
     const tile = descriptor.tile || 64, origin = descriptor.origin || 0;
-    const cell = walking ? 1 + Math.floor((walkDistance / .75 % 1) * 8) : attacking ? Math.min(descriptor.frames-1,Math.floor(age / actor.animation.duration * descriptor.frames)) : Number.isInteger(descriptor.still) ? descriptor.still : id === 'hero' && auto && unit.hp > 0 && !ended && !reducedMotion.matches ? Math.floor(activeTime / .65) % 2 : 0;
+    const cell = walking ? 1 + Math.floor((distance / .75 % 1) * 8) : attacking ? Math.min(descriptor.frames-1,Math.floor(age / actor.animation.duration * descriptor.frames)) : Number.isInteger(descriptor.still) ? descriptor.still : id === 'hero' && auto && unit.hp > 0 && !ended && !reducedMotion.matches ? Math.floor(activeTime / .65) % 2 : 0;
     const key = `${kind}-${cell}-${row}-${tile}`;
     if (actor.lastKey !== key) {
       actor.canvas.width = tile; actor.canvas.height = tile;
@@ -197,36 +202,63 @@
     actor.bar.setAttribute('aria-valuemax',unit.maxHp);
     actor.element.setAttribute('aria-label', `${unit.name}${id === 'hero' && loadout ? `, ${starterWeapon.name}, наряд ${starterOutfit.name}, ${loadouts.color(loadout.outfitColor).name}` : ''}: ${unit.hp} из ${unit.maxHp} здоровья`);
   }
-  // Walking pace and frame phase both follow travelled distance, never a fixed slide tween.
+  // Resolve the two melee fighters from the same positions so they meet without crossing.
+  // Walking phase uses actual distance; ranged fighters keep their starting positions.
   function updateMovement(dt,state) {
     const width = battlefield.clientWidth;
-    const size = actors.hero.element.offsetWidth;
+    const heroSize = actors.hero.element.offsetWidth, orcSize = actors.orc.element.offsetWidth;
     const home = width * (window.innerWidth > 700 ? .18 : .22);
     if (heroX === null) heroX = home;
-    if (fieldWidth && fieldWidth !== width) heroX *= width / fieldWidth;
+    if (orcX === null) orcX = width * orcSpawnRatio;
+    const resized = fieldWidth && fieldWidth !== width;
+    if (resized) { const ratio = width / fieldWidth; heroX *= ratio; orcX *= ratio; }
     fieldWidth = width;
-    moving = false;
+    moving = heroMoving = orcMoving = false;
     let usedTime = 0;
-    if (ranged) {
-      // Ranged starter weapons fight from their starting position, without a melee approach.
-      heroX = home; actors.hero.element.style.left = `${heroX}px`; return 0;
-    }
-    if (state.targetId && !['victory','defeat'].includes(state.phase)) {
-      const target = actors[state.targetId].element;
-      const separation = size * .23 + target.offsetWidth * .34;
-      const goal = Math.max(home,target.offsetLeft - separation);
-      const gap = goal - heroX;
-      if (Math.abs(gap) > .01) {
-        walkDirection = gap >= 0 ? 3 : 1;
-        const speed = size * .85; // 0.75 model widths per 8-frame cycle, about 110 ms/frame.
-        const distance = reducedMotion.matches ? Math.abs(gap) : Math.min(Math.abs(gap),speed * dt);
-        heroX += Math.sign(gap) * distance;
-        walkDistance += distance / size;
-        usedTime = reducedMotion.matches ? 0 : distance / speed;
-        moving = !reducedMotion.matches && Math.abs(goal - heroX) > .01;
+    const ended = ['victory','defeat'].includes(state.phase);
+    const orcAlive = state.enemies.find(enemy => enemy.id === 'orc').hp > 0;
+    if (!ended && orcAlive) {
+      if (ranged) heroX = home;
+      const separation = heroSize * .23 + orcSize * .34;
+      let gap = orcX - heroX - separation;
+      if (gap < 0 || (pairContacted && (resized || separation !== previousSeparation))) {
+        if (ranged) orcX = heroX + separation;
+        else { const middle = (heroX + orcX) / 2; heroX = middle - separation / 2; orcX = middle + separation / 2; }
+        gap = 0;
+      }
+      previousSeparation = separation;
+      if (gap > .01) {
+        const heroSpeed = ranged ? 0 : heroSize * .85, orcSpeed = orcSize * .85;
+        const closingSpeed = heroSpeed + orcSpeed;
+        usedTime = reducedMotion.matches ? 0 : Math.min(dt,gap / closingSpeed);
+        const fraction = reducedMotion.matches ? gap / closingSpeed : usedTime;
+        const heroStep = heroSpeed * fraction, orcStep = orcSpeed * fraction;
+        heroX += heroStep; orcX -= orcStep;
+        if (!reducedMotion.matches) { walkDistance += heroStep / heroSize; orcWalkDistance += orcStep / orcSize; }
+        walkDirection = 3; orcWalkDirection = 1;
+        moving = orcX - heroX - separation > .01;
+        heroMoving = moving && heroSpeed > 0; orcMoving = moving;
+      }
+      if (!moving) pairContacted = true;
+    } else if (!ended && state.targetId) {
+      if (ranged) heroX = home;
+      else {
+        const target = actors[state.targetId].element;
+        const separation = heroSize * .23 + target.offsetWidth * .34;
+        const goal = Math.max(home,target.offsetLeft - separation), gap = goal - heroX;
+        if (Math.abs(gap) > .01) {
+          walkDirection = gap >= 0 ? 3 : 1;
+          const speed = heroSize * .85;
+          const distance = reducedMotion.matches ? Math.abs(gap) : Math.min(Math.abs(gap),speed * dt);
+          heroX += Math.sign(gap) * distance;
+          if (!reducedMotion.matches) walkDistance += distance / heroSize;
+          usedTime = reducedMotion.matches ? 0 : distance / speed;
+          moving = heroMoving = !reducedMotion.matches && Math.abs(goal - heroX) > .01;
+        }
       }
     }
     actors.hero.element.style.left = `${heroX}px`;
+    actors.orc.element.style.left = `${orcX}px`;
     return usedTime;
   }
   function renderEffects(state) {
@@ -275,7 +307,7 @@
   }
   $('#replay-button').addEventListener('click', () => {
     if (assetError) { resultPanel.hidden = true; loadAssets(); return; }
-    battle.restart(); auto = true; rewardPaid = false; heroX = null; fieldWidth = null; walkDistance = 0; activeTime = 0; moving = false;
+    battle.restart(); auto = true; rewardPaid = false; heroX = null; orcX = null; fieldWidth = null; walkDistance = 0; orcWalkDistance = 0; activeTime = 0; moving = heroMoving = orcMoving = false; pairContacted = false; previousSeparation = null;
     for (const actor of Object.values(actors)) { actor.animation=null; actor.hitAt=-10; actor.lastKey=null; }
     effects.splice(0).forEach(effect => effect.element.remove()); resultPanel.hidden = true; lastFrameTime = null;
     try { localStorage.setItem('ember.combat.auto.v1','on'); } catch {}

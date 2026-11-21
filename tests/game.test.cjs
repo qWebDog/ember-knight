@@ -147,17 +147,19 @@ function createHarness({skin = 'bronze', preference, search = '', weapon, outfit
   }
   function state() { return JSON.parse(JSON.stringify(battle.getState())); }
   function heroX() { return Number.parseFloat(node('[data-fighter="hero"]').style.left); }
+  function orcX() { return Number.parseFloat(node('[data-fighter="orc"]').style.left); }
   function visualState() {
-    return {state:state(), x:heroX(), draws:node('#player-sprite').draws.length, lastDraw:node('#player-sprite').draws.at(-1)};
+    return {state:state(), x:heroX(), orcX:orcX(), draws:node('#player-sprite').draws.length, lastDraw:node('#player-sprite').draws.at(-1), orcDraws:node('#enemy-orc').draws.length,lastOrcDraw:node('#enemy-orc').draws.at(-1)};
   }
-  function resizeField(width) {
+  function resizeField(width,modelSize) {
     const ratio = width/node('.battlefield').clientWidth;
     node('.battlefield').clientWidth = width; node('.adventure').clientWidth = width;
     window.innerWidth = width;
     for (const id of ['orc','archer','mage']) node(`[data-fighter="${id}"]`).offsetLeft *= ratio;
+    if(modelSize)for(const id of ['hero','orc','archer','mage'])node(`[data-fighter="${id}"]`).offsetWidth=modelSize;
     resizeCallbacks.forEach(callback => callback());
   }
-  return {node, storage, loadedPaths, document, state, loadNextImage, loadAllImages, runFor, runUntil, frame, heroX, visualState, resizeField};
+  return {node, storage, loadedPaths, document, state, loadNextImage, loadAllImages, runFor, runUntil, frame, heroX, orcX, visualState, resizeField};
 }
 
 test('controller waits for assets, walks into range before damage, and uses selected skin and correct LPC rows', async () => {
@@ -176,7 +178,9 @@ test('controller waits for assets, walks into range before damage, and uses sele
   assert.deepEqual(ui.node('#player-sprite').draws.at(-1).crop, [0,192,64,64]);
   assert.equal(ui.node('[data-fighter="hero"]').dataset.motion, 'idle', 'the hero does not step before any distance is travelled');
   for (const id of ['orc','archer','mage']) assert.equal(ui.node(`#enemy-${id}`).draws.at(-1).crop[1], 64);
-  ui.runFor(1.3);
+  const initialOrcX=ui.orcX();
+  ui.runFor(.8);
+  assert.ok(ui.orcX()<initialOrcX,'the melee enemy also walks toward the hero');
   assert.equal(ui.state().elapsed, 0);
   assert.equal(ui.state().hero.hp, 200);
   assert.equal(ui.state().enemies[0].hp, 100, 'neither side attacks from a distance during approach');
@@ -186,7 +190,7 @@ test('controller waits for assets, walks into range before damage, and uses sele
   ui.runUntil(() => ui.node('[data-fighter="hero"]').dataset.motion === 'idle', 3);
   assert.equal(ui.state().enemies[0].hp, 100, 'the hero stands before the first timed attack');
   const orc = ui.node('[data-fighter="orc"]');
-  const expectedX = orc.offsetLeft - (64*.23 + orc.offsetWidth*.34);
+  const expectedX = ui.orcX() - (64*.23 + orc.offsetWidth*.34);
   assert.ok(Math.abs(ui.heroX()-expectedX) < .01, 'hero is actually in contact range');
   ui.runUntil(() => ui.state().enemies[0].hp < 100, 2);
   assert.ok(ui.node('#player-sprite').draws.some(draw => draw.src === 'assets/characters/combat/bronze-attack.png'));
@@ -194,19 +198,19 @@ test('controller waits for assets, walks into range before damage, and uses sele
 });
 
 test('auto, dialog and page visibility freeze location, animation, active combat time and damage', async () => {
-  const ui = createHarness(); await ui.loadAllImages(); ui.runFor(.7);
+  const ui = createHarness(); await ui.loadAllImages(); ui.runFor(.2);
   assert.equal(ui.node('[data-fighter="hero"]').dataset.motion, 'walk');
   ui.node('#auto-button').click();
   const paused = ui.visualState();
   assert.equal(paused.state.phase, 'paused');
   assert.equal(ui.storage.get('ember.combat.auto.v1'), 'off');
   ui.runFor(10); assert.deepEqual(ui.visualState(), paused);
-  ui.node('#auto-button').click(); ui.runFor(.5);
+  ui.node('#auto-button').click(); ui.runFor(.2);
   assert.ok(ui.heroX() > paused.x);
   ui.node('#profile-button').click();
   assert.equal(ui.node('#game-dialog').open, true);
   const inDialog = ui.visualState(); ui.runFor(5); assert.deepEqual(ui.visualState(), inDialog);
-  ui.node('#game-dialog').close(); ui.runFor(.3);
+  ui.node('#game-dialog').close(); ui.runFor(.2);
   assert.ok(ui.heroX() > inDialog.x);
   ui.document.hidden = true; ui.document.dispatch('visibilitychange');
   const hidden = ui.visualState(); ui.runFor(10); assert.deepEqual(ui.visualState(), hidden);
@@ -251,7 +255,7 @@ test('victory pays once, freezes finished combat, and replay restores all fighte
   ui.runFor(10); assert.equal(ui.storage.get('ember.test.gold.v1'), '50');
 });
 
-test('standing enemies never cycle walking frames and the orc swings the actual oversized axe animation', async () => {
+test('the approaching orc walks, ranged enemies stay still, and contact uses the actual axe animation', async () => {
   const ui = createHarness(); await ui.loadAllImages();
   ui.runUntil(() => ui.node('#enemy-orc').draws.some(draw => draw.src.endsWith('orc-attack.png')));
   const canvas = ui.node('#enemy-orc');
@@ -263,10 +267,13 @@ test('standing enemies never cycle walking frames and the orc swings the actual 
   for (const id of ['orc','archer','mage']) {
     const actor = ui.node(`[data-fighter="${id}"]`);
     assert.ok(actor.motionHistory.includes('attack'), `${id} plays an attack`);
-    assert.ok(!actor.motionHistory.includes('walk'), `${id} has no gait while standing`);
+    if(id==='orc')assert.ok(actor.motionHistory.includes('walk'),'the melee orc approaches with a gait');
+    else assert.ok(!actor.motionHistory.includes('walk'), `${id} stays at range`);
     assert.equal(actor.dataset.motion, 'idle');
   }
-  assert.ok(canvas.draws.filter(draw => draw.src.endsWith('orc-walk.png')).every(draw => draw.crop[0] === 0), 'orc walk sheet supplies only its stationary frame');
+  const walkFrames=canvas.draws.filter(draw=>draw.src.endsWith('orc-walk.png'));
+  assert.ok(walkFrames.some(draw=>draw.crop[0]>0),'orc uses travelling frames');
+  assert.ok(walkFrames.every(draw=>draw.crop[1]===64),'orc walks facing left');
   assert.equal(ui.node('[data-fighter="hero"]').dataset.motion, 'idle', 'the finished hero stands still');
 });
 
@@ -312,4 +319,34 @@ test('a previously saved alternative wardrobe uses the new fixed outfit without 
  assert.ok(ui.loadedPaths.includes('assets/characters/loadouts/sword/militia/blue/bronze-walk.png'));
  assert.equal(JSON.parse(ui.storage.get('ember.character.v1')).outfit,'watchman');
  ui.node('#profile-button').click();assert.ok(ui.node('#dialog-copy').textContent.includes('Ополченец'));
+});
+
+
+test('both melee fighters close the gap without crossing; dead orc stays put and replay restores its spawn',async()=>{
+ const ui=createHarness();await ui.loadAllImages();const startH=ui.heroX(),startO=ui.orcX();
+ ui.runFor(.5);assert.ok(ui.heroX()>startH);assert.ok(ui.orcX()<startO);
+ assert.ok(Math.abs((ui.heroX()-startH)-(startO-ui.orcX()))<1e-8,'equal-sized units meet half way');
+ ui.runUntil(()=>ui.state().phase==='running');
+ assert.ok(Math.abs(ui.orcX()-ui.heroX()-64*.57)<.01,'actors stop at melee range');
+ ui.runUntil(()=>ui.state().enemies[0].hp===0);const deadX=ui.orcX();
+ ui.runFor(3);assert.equal(ui.orcX(),deadX);
+ ui.runUntil(()=>ui.state().phase==='victory');assert.equal(ui.orcX(),deadX);
+ ui.node('#replay-button').click();assert.equal(ui.orcX(),startO);assert.equal(ui.heroX(),startH);assert.equal(ui.node('[data-fighter="orc"]').dataset.motion,'idle');
+});
+
+test('orc approaches a stationary bow or wand user, with no melee damage before contact',async()=>{
+ for(const [weapon,outfit]of [['bow','wanderer'],['wand','acolyte']]){
+  const ui=createHarness({weapon,outfit});await ui.loadAllImages();const h=ui.heroX(),o=ui.orcX();ui.runFor(.8);
+  assert.equal(ui.heroX(),h);assert.ok(ui.orcX()<o);assert.equal(ui.state().elapsed,0);assert.equal(ui.state().hero.hp,200);
+  assert.equal(ui.node('[data-fighter="orc"]').dataset.motion,'walk');assert.equal(ui.node('[data-fighter="hero"]').dataset.motion,'idle');
+  ui.runUntil(()=>ui.state().phase==='running');assert.ok(Math.abs(ui.orcX()-ui.heroX()-64*.57)<.01);
+  ui.runUntil(()=>ui.state().phase==='victory');assert.equal(ui.state().hero.hp,58);assert.equal(ui.storage.get('ember.test.gold.v1'),'25');
+ }
+});
+
+test('paused viewport changes rescale both melee fighters once and preserve contact with a new model size',async()=>{
+ const ui=createHarness();await ui.loadAllImages();ui.runUntil(()=>ui.state().phase==='running');ui.node('#auto-button').click();
+ const h=ui.heroX(),o=ui.orcX(),middle=(h+o)/2,elapsed=ui.state().elapsed;
+ ui.resizeField(1000,50);assert.ok(Math.abs((ui.heroX()+ui.orcX())/2-middle*1.25)<1e-8);assert.ok(Math.abs(ui.orcX()-ui.heroX()-50*.57)<.01);
+ const h2=ui.heroX(),o2=ui.orcX();ui.frame(0);assert.equal(ui.heroX(),h2);assert.equal(ui.orcX(),o2);assert.equal(ui.state().elapsed,elapsed);
 });
