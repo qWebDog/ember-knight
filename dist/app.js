@@ -165,6 +165,7 @@
       if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) dialog.close();
     });
   });
+  document.querySelector('#start-adventure').addEventListener('click', () => { window.location.href = './'; });
   async function loadSprites() {
     loadingError = false;
     imageReady = false;

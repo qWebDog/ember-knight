@@ -1,62 +1,49 @@
 <!doctype html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#111613">
-<meta name="description" content="Создай своего героя в EMBER — пиксельной idle RPG. Твоя легенда начинается здесь.">
-<title>EMBER — Создание героя</title>
-<link rel="stylesheet" href="styles.css"><script src="https://telegram.org/js/telegram-web-app.js"></script><script src="app.js" defer></script>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#14231f">
+<title>EMBER — Приключение</title><meta name="description" content="Твой путь начинается в Забытом лесу. EMBER — пиксельная idle RPG.">
+<link rel="stylesheet" href="game.css"><script src="https://telegram.org/js/telegram-web-app.js"></script><script src="game.js" defer></script>
 </head>
 <body>
 <svg class="svg-defs" xmlns="http://www.w3.org/2000/svg"><defs>
-<symbol id="flame" viewBox="0 0 32 36"><path d="M17 1v8h5v5h5v14h-5v5H9v-5H4V17h5v-6h5V1zm-2 17v5h-4v5h10v-9h-3v-5h-3z" fill="currentColor"/></symbol>
-<symbol id="shield" viewBox="0 0 24 24"><path d="M12 3 4 6v6c0 5 8 9 8 9s8-4 8-9V6l-8-3Z"/><path d="M12 7v10M8 12h8"/></symbol>
-<symbol id="bow" viewBox="0 0 24 24"><path d="M5 4c14 1 14 15 14 15L5 4Zm0 0v15h14M4 20 20 4M15 4h5v5"/></symbol>
-<symbol id="magic" viewBox="0 0 24 24"><path d="m5 21 12-12M16 3l1 3 3 1-3 1-1 3-1-3-3-1 3-1 1-3ZM5 3v5M2.5 5.5h5M20 15v5m-2.5-2.5h5"/></symbol>
-<symbol id="lock" viewBox="0 0 24 24"><rect x="6" y="10" width="12" height="10" rx="2"/><path d="M9 10V7a3 3 0 0 1 6 0v3m-3 4v2"/></symbol>
-<symbol id="check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
-<symbol id="sound" viewBox="0 0 24 24"><path d="M11 5 6 9H3v6h3l5 4V5Zm4 3c2 2 2 6 0 8m3-11c4 4 4 10 0 14"/></symbol>
-<symbol id="info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10v1"/></symbol>
+<symbol id="coin" viewBox="0 0 32 32"><path fill="#6b4829" d="M10 2h12v3h5v5h3v12h-3v5h-5v3H10v-3H5v-5H2V10h3V5h5z"/><path fill="#f3c86d" d="M11 4h10v3h5v5h2v9h-3v5h-5v2h-9v-3H7v-5H4v-9h3V7h4z"/><path fill="#ad772f" d="M13 9h8v4h-8v2h6v3h-6v2h8v4h-8v-3h-4v-9h4z"/><path fill="#ffe3a1" d="M9 8h3v4H8v7H6v-8h3z"/></symbol>
+<symbol id="gem" viewBox="0 0 32 32"><path fill="#192e35" d="M13 1h7l11 13v6L20 31h-7L1 18v-6z"/><path fill="#60c7b4" d="m15 3 13 12v3L18 29h-3L4 17v-3z"/><path fill="#b2f2d5" d="m15 6 4 5-9 8-4-4z"/><path fill="#32817e" d="m20 12 6 5-9 10-5-6z"/></symbol>
+<symbol id="swords" viewBox="0 0 24 24"><path d="m4 3 13 13m-3 1 4-4m-2 5 4 3m0-18L7 16m-3-3 6 5m-4 0-3 3"/><path d="M4 3v4m0-4h4m12 0v4m0-4h-4"/></symbol>
+<symbol id="chest" viewBox="0 0 48 48"><path fill="#1b2118" d="M9 9h28v4h4v29H5V13h4z"/><path fill="#936d3d" d="M10 13h26v7h3v18H9V20h1z"/><path fill="#d7b16d" d="M9 25h30v5H9zm3-12h4v25h-4zm20 0h4v25h-4z"/><path fill="#553d27" d="M9 31h30v7H9z"/><path fill="#f4d890" d="M20 23h9v11h-9z"/><path fill="#72532d" d="M23 26h3v5h-3z"/><path fill="#e0bc75" d="M16 7h4v4h-4zm8-5h4v7h-4zm10 5h4v4h-4z"/></symbol>
+<symbol id="map" viewBox="0 0 48 48"><path fill="#13241f" d="m7 13 12-5 12 5 11-5v30l-12 5-11-5-12 5z"/><path fill="#bdc6a3" d="m9 15 9-4 12 5 10-4v24l-10 4-12-5-9 4z"/><path fill="#7f9979" d="m18 11 3 2v24l-3-2zm12 5 3-1v24l-3 1z"/><path fill="#e5cf8c" d="M13 25h5v3h-5zm7-5h6v3h-6zm8 6h6v3h-6z"/><path fill="#b16c46" d="M30 20h4v4h-4z"/></symbol>
+<symbol id="camp" viewBox="0 0 32 32"><path d="m3 27 13-22 13 22H3Zm13-11v11m-4 0 4-11 4 11M6 6v6M3 9h6"/></symbol>
+<symbol id="fist" viewBox="0 0 32 32"><path d="M9 16V9h4v6-9h4v9-7h4v8-5h4v10l-5 6H11l-5-9v-4h4l3 6"/></symbol>
+<symbol id="bolt" viewBox="0 0 32 32"><path d="m18 3-12 16h9l-1 10 12-17h-9z"/></symbol>
+<symbol id="flame" viewBox="0 0 32 36"><path fill="currentColor" stroke="none" d="M17 1v8h5v5h5v14h-5v5H9v-5H4V17h5v-6h5V1zm-2 17v5h-4v5h10v-9h-3v-5h-3z"/></symbol>
+<symbol id="lock" viewBox="0 0 20 20"><rect x="5" y="8" width="10" height="9" rx="1"/><path d="M7 8V5a3 3 0 0 1 6 0v3m-3 4v2"/></symbol>
+<symbol id="anvil" viewBox="0 0 64 64"><path d="M9 20h31l14-5-5 12-12 5v9l9 10H14l9-10v-9H9V20Zm5 31h32v6H14z"/><path d="M9 32h28M23 41h14"/></symbol>
+<symbol id="close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
 </defs></svg>
-<header class="topbar">
-<a class="brand" href="./" aria-label="EMBER — начало"><svg><use href="#flame"/></svg><span>EMBER</span><span class="brand-divider"></span><span class="brand-tag">IDLE RPG</span></a>
-<div class="header-right"><span class="world-label">МАЛЕНЬКИЙ ГЕРОЙ. БОЛЬШАЯ ИСТОРИЯ.</span><button class="icon-button" id="help-button" aria-label="Об игре"><svg><use href="#info"/></svg></button></div>
+<main class="game-screen">
+<section class="adventure" aria-label="Основной экран приключения">
+<div class="battle-landscape" aria-hidden="true"></div><div class="landscape-shade" aria-hidden="true"></div>
+<header class="hud">
+<button class="profile" id="profile-button" aria-label="Профиль героя"><span class="avatar"><canvas id="avatar" width="32" height="32" aria-hidden="true"></canvas><span id="level-badge">1</span></span><span class="profile-info"><strong id="player-name">Странник</strong><span class="power"><svg><use href="#swords"/></svg><b>12</b><span>СИЛА</span></span></span></button>
+<div class="wallet"><button class="currency gold" data-info="gold" aria-label="Золото: 0"><svg><use href="#coin"/></svg><strong>0</strong><span class="currency-plus">+</span></button><button class="currency crystals" data-info="crystals" aria-label="Кристаллы: 0"><svg><use href="#gem"/></svg><strong>0</strong><span class="currency-plus">+</span></button></div>
 </header>
-<main>
-<div class="intro"><div><p class="eyebrow"><span></span> НОВАЯ ИСТОРИЯ</p><h1>Создай своего героя<span>.</span></h1><p class="intro-text">Каждая легенда начинается с первого шага. Сделай свой.</p></div><div class="chapter"><span>ГЛАВА</span><span class="chapter-number">I</span><span>НАЧАЛО ПУТИ</span></div></div>
-<section class="creator" aria-label="Создание персонажа">
-<div class="preview-panel">
-<div class="scene" id="scene" tabindex="0" role="group" aria-label="Предпросмотр персонажа. Поворот свайпом или клавишами влево и вправо" aria-describedby="swipe-hint view-label" aria-keyshortcuts="ArrowLeft ArrowRight"><div class="scene-top"><span class="location"><span class="tiny-diamond"></span> ЗАБЫТЫЙ ДВОР</span><span class="preview-tag">УРОВЕНЬ 1</span></div>
-<div class="ambient-light"></div><div class="firefly f1"></div><div class="firefly f2"></div><div class="firefly f3"></div><div class="firefly f4"></div>
-<div class="sprite-stage"><div class="character-shadow"></div><canvas id="hero" width="64" height="64" aria-label="Персонаж без экипировки, вид спереди" role="img"></canvas></div>
-<div class="nameplate"><span class="nameplate-line"></span><div><strong>Странник</strong><span>Без брони. Без оружия. Всё впереди.</span></div><span class="nameplate-line"></span></div>
-<div class="rotation"><span id="view-label" role="status" aria-live="polite">Вид спереди</span><span id="swipe-hint">Проведи влево или вправо</span></div>
+<div class="stage-heading"><p>ЗАБЫТЫЙ ЛЕС</p><h1>Битва <span>1–1</span></h1><div class="stage-progress" aria-label="Первая из трёх волн"><span class="progress-line"></span><span class="wave current"></span><span class="wave"></span><span class="wave boss"><svg><use href="#swords"/></svg></span></div></div>
+<button class="side-action rewards" data-info="rewards" aria-label="Награды за битвы"><span class="action-art"><svg><use href="#chest"/></svg></span><span>Награды</span></button>
+<button class="side-action map" data-info="map" aria-label="Карта приключения"><span class="action-art"><svg><use href="#map"/></svg></span><span>Карта</span></button>
+<div class="battlefield" role="img" aria-label="Странник без экипировки в Забытом лесу. Впереди два лесных слизня и огонёк.">
+<div class="ground-line"></div>
+<div class="fighter player"><span class="healthbar"><i></i></span><span class="fighter-shadow"></span><canvas id="player-sprite" width="64" height="64" aria-hidden="true"></canvas><span class="fighter-name">Странник</span></div>
+<div class="encounter-marker" aria-hidden="true"><span></span><svg><use href="#swords"/></svg><span></span></div>
+<div class="fighter enemy enemy-one"><span class="healthbar enemy-health"><i></i></span><span class="fighter-shadow"></span><img src="assets/enemies/slime.svg" alt="" draggable="false"></div>
+<div class="fighter enemy enemy-two"><span class="fighter-shadow"></span><img src="assets/enemies/slime.svg" alt="" draggable="false"></div>
+<div class="fighter enemy enemy-three"><img src="assets/enemies/wisp.svg" alt="" draggable="false"></div>
+<div class="mote m1"></div><div class="mote m2"></div><div class="mote m3"></div>
 </div>
-<div class="preview-bottom"><span class="live-dot"></span><span>Без брони. Без оружия. Всё впереди.</span><span class="pixel-badge">LPC</span></div>
-</div>
-<div class="customize-panel">
-<div class="character-heading"><div class="title-icon"><svg><use href="#shield"/></svg></div><div><p class="eyebrow">ТВОЙ ПЕРСОНАЖ</p><h2>Странник</h2></div><span class="level-badge">УР. <b>1</b></span></div>
-<p class="character-description">Пока просто путник. Однажды — легенда.</p>
-<div class="section-divider"></div>
-<div class="skin-heading"><h3>Цвет кожи</h3><span id="skin-name" aria-live="polite">Тёплый</span></div>
-<div class="skin-options" role="radiogroup" aria-label="Цвет кожи">
-<button class="skin-option" role="radio" aria-checked="false" data-skin="light" aria-label="Светлый" style="--skin:#f3d4b5"><span><svg><use href="#check"/></svg></span></button>
-<button class="skin-option selected" role="radio" aria-checked="true" data-skin="amber" aria-label="Тёплый" style="--skin:#e2af83" tabindex="0"><span><svg><use href="#check"/></svg></span></button>
-<button class="skin-option" role="radio" aria-checked="false" data-skin="olive" aria-label="Оливковый" style="--skin:#b9976e"><span><svg><use href="#check"/></svg></span></button>
-<button class="skin-option" role="radio" aria-checked="false" data-skin="bronze" aria-label="Бронзовый" style="--skin:#bb8057"><span><svg><use href="#check"/></svg></span></button>
-<button class="skin-option" role="radio" aria-checked="false" data-skin="brown" aria-label="Смуглый" style="--skin:#8d5b42"><span><svg><use href="#check"/></svg></span></button>
-<button class="skin-option" role="radio" aria-checked="false" data-skin="black" aria-label="Тёмный" style="--skin:#543c32"><span><svg><use href="#check"/></svg></span></button>
-</div>
-<p class="skin-note">Внешность не влияет на характеристики героя.</p>
-<div class="origin-note"><span class="origin-star">✧</span><div><strong>Чистый лист</strong><p>Никакой экипировки и выбранного класса.<br>Кем стать — решишь в приключении.</p></div></div>
-<button class="create-button" id="create-button"><svg><use href="#flame"/></svg><span>Создать персонажа</span></button>
-<p class="save-note"><svg><use href="#lock"/></svg> Твой герой сохранится на этом устройстве</p>
-</div>
+<div class="battle-controls"><div class="battle-state"><span class="state-dot"></span><span id="battle-state">В пути</span></div><div class="abilities"><button class="auto-button active" id="auto-button" aria-pressed="true" aria-label="Автобой включён"><span>АВТО</span><b id="auto-label">ВКЛ</b></button><button class="ability fist" data-info="fist" aria-label="Умение Натиск, откроется на третьем уровне"><svg><use href="#fist"/></svg><span class="ability-lock"><svg><use href="#lock"/></svg></span></button><button class="ability dash" data-info="dash" aria-label="Умение Рывок, откроется на пятом уровне"><svg><use href="#bolt"/></svg><span class="ability-lock"><svg><use href="#lock"/></svg></span></button><button class="ability fire" data-info="fire" aria-label="Умение Внутренний огонь, откроется на десятом уровне"><svg><use href="#flame"/></svg><span class="ability-lock"><svg><use href="#lock"/></svg></span></button></div></div>
+<div class="arena-border" aria-hidden="true"><span></span></div>
 </section>
-<section class="future-path" aria-label="Будущие пути развития"><div class="future-intro"><span class="branch-symbol">⌘</span><div><h3>Один герой. Множество путей.</h3><p>Выбери своё призвание, когда придёт время.</p></div></div><div class="paths"><div class="path"><svg class="path-icon"><use href="#shield"/></svg><span>Танк</span><svg class="path-lock"><use href="#lock"/></svg></div><div class="path"><svg class="path-icon"><use href="#bow"/></svg><span>Стрелок</span><svg class="path-lock"><use href="#lock"/></svg></div><div class="path"><svg class="path-icon"><use href="#magic"/></svg><span>Маг</span><svg class="path-lock"><use href="#lock"/></svg></div><span class="and-more">и другие</span></div></section>
+<section class="lower-placeholder" aria-label="Нижняя панель — заглушка"><div class="placeholder-inner"><div class="placeholder-rune"><svg><use href="#anvil"/></svg></div><span class="soon-label">СЛЕДУЮЩАЯ ГЛАВА</span><h2>Продолжение следует</h2><p>Нижняя панель появится здесь</p><span class="placeholder-dots"><i></i><i></i><i></i></span></div><div class="ember-sign"><svg><use href="#flame"/></svg><span>EMBER</span></div></section>
 </main>
-<footer><span>НЕ СПЕШИ. ТВОЯ ЛЕГЕНДА ДОЖДЁТСЯ.</span><button id="credits-button">Пиксельный мир с душой <span>✦</span></button></footer>
-<dialog id="info-dialog"><button class="dialog-close" aria-label="Закрыть">×</button><p class="eyebrow">ДОБРО ПОЖАЛОВАТЬ В EMBER</p><h2>У каждой легенды<br>есть начало.</h2><p>Это первое окно idle RPG для Telegram. Выбери оттенок кожи, поверни героя свайпом влево или вправо и сохрани его облик.</p><p>Внешность не влияет на характеристики. Герой начинает без экипировки и выбранного класса. Танк, стрелок, маг и другие пути откроются в следующих главах.</p><button class="dialog-action">Продолжить</button></dialog>
-<dialog id="success-dialog"><button class="dialog-close" aria-label="Закрыть">×</button><div class="success-sigil"><svg><use href="#flame"/></svg></div><p class="eyebrow">ПЕРВЫЙ ШАГ СДЕЛАН</p><h2>Герой создан.</h2><p>Странник готов к своей истории.<br>Облик сохранён на этом устройстве.</p><div class="saved-character"><span>Странник · Уровень 1</span><strong id="saved-skin"></strong></div><p class="coming-soon">Приключение начнётся в следующей главе.</p><button class="dialog-action">Вернуться к герою</button></dialog>
-<dialog id="credits-dialog"><button class="dialog-close" aria-label="Закрыть">×</button><p class="eyebrow">ПИКСЕЛИ С ИСТОРИЕЙ</p><h2>Universal LPC</h2><p>Персонаж создан из оригинальных спрайтов Universal LPC Character Generator.</p><div id="credits-content"></div><p><a href="assets/characters/CREDITS.txt" target="_blank" rel="noopener">Авторы и лицензии спрайтов</a></p><p><a href="https://liberatedpixelcup.github.io/Universal-LPC-Spritesheet-Character-Generator/" target="_blank" rel="noopener">Открыть генератор LPC</a></p><button class="dialog-action">Понятно</button></dialog>
-<div id="status" class="sr-only" role="status"></div>
+<dialog id="game-dialog"><button class="dialog-close" aria-label="Закрыть"><svg><use href="#close"/></svg></button><p class="dialog-eyebrow" id="dialog-eyebrow">EMBER</p><h2 id="dialog-title"></h2><p id="dialog-copy"></p><a class="dialog-link" id="profile-link" href="create.html" hidden>Изменить облик</a><button class="dialog-action">Понятно</button></dialog>
+<div class="sr-only" role="status" id="status"></div>
 </body></html>

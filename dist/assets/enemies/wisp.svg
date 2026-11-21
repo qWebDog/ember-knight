@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" shape-rendering="crispEdges">
+  <title>Лесной огонёк</title>
+  <!-- Original pixel artwork. Stepped blue glow, warm heart, transparent background. -->
+  <path fill="#66aaa2" opacity=".08" d="M26 8h12v4h8v8h6v22h-6v8h-8v8H26v-8h-8v-8h-6V24h6V14h8z"/>
+  <path fill="#6eb2ad" opacity=".13" d="M28 12h8v6h8v6h4v16h-4v6h-8v8h-8v-8h-8v-6h-4V26h4v-8h8z"/>
+  <path fill="#82ccc0" opacity=".18" d="M28 18h8v4h6v6h2v12h-6v8H26v-6h-6V28h4v-6h4z"/>
+  <path fill="#254a48" d="M30 14h4v8h4v6h4v12h-4v6h-4v8h-4v-6h-6v-6h-4V30h4v-6h4v-6h2z"/>
+  <path fill="#5b9e96" d="M30 20h4v4h2v6h4v10h-4v6h-4v4h-2v-4h-4v-6h-4v-8h4v-6h4z"/>
+  <path fill="#8bc4b0" d="M30 24h4v6h4v10h-4v4h-6v-4h-4v-8h4v-4h2z"/>
+  <path fill="#dbc788" d="M30 28h4v6h2v6h-4v4h-4v-4h-2v-6h4z"/>
+  <path fill="#f0dfa4" d="M30 32h4v6h-4zM28 36h2v4h-2z"/>
+  <path fill="#294743" d="M26 32h2v4h-2zM36 32h2v4h-2z"/>
+  <path fill="#9ed2bd" d="M26 26h2v4h-2zM36 38h2v2h-2z"/>
+  <path fill="#c7bd7d" opacity=".75" d="M18 18h2v2h-2zM44 12h2v2h-2zM46 46h2v2h-2zM18 48h2v2h-2z"/>
+</svg>
