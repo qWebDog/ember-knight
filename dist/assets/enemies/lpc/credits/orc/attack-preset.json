@@ -1,0 +1,267 @@
+{
+  "sheet": "orc-attack.png",
+  "animation": "slash",
+  "width": 768,
+  "height": 512,
+  "frames": 6,
+  "tile": 128,
+  "frameWidth": 128,
+  "frameHeight": 128,
+  "origin": 32,
+  "bodyTileOffset": [
+    32,
+    32
+  ],
+  "bodyTileSize": [
+    64,
+    64
+  ],
+  "directions": [
+    "north",
+    "west",
+    "south",
+    "east"
+  ],
+  "leftFacingRow": 1,
+  "leftFacingY": 128,
+  "frameDurationMs": 110,
+  "recommendedImpactFrame": 4,
+  "alphaBBoxPerDirectionAndFrame": {
+    "north": [
+      [
+        42,
+        51,
+        91,
+        94
+      ],
+      [
+        41,
+        52,
+        86,
+        95
+      ],
+      [
+        35,
+        52,
+        81,
+        95
+      ],
+      [
+        42,
+        51,
+        87,
+        95
+      ],
+      [
+        40,
+        39,
+        94,
+        95
+      ],
+      [
+        45,
+        41,
+        112,
+        95
+      ]
+    ],
+    "west": [
+      [
+        42,
+        52,
+        87,
+        95
+      ],
+      [
+        45,
+        54,
+        82,
+        96
+      ],
+      [
+        45,
+        52,
+        84,
+        96
+      ],
+      [
+        24,
+        52,
+        83,
+        96
+      ],
+      [
+        20,
+        52,
+        84,
+        96
+      ],
+      [
+        20,
+        49,
+        85,
+        96
+      ]
+    ],
+    "south": [
+      [
+        44,
+        49,
+        95,
+        96
+      ],
+      [
+        41,
+        49,
+        86,
+        96
+      ],
+      [
+        34,
+        51,
+        80,
+        96
+      ],
+      [
+        35,
+        50,
+        89,
+        95
+      ],
+      [
+        43,
+        49,
+        109,
+        103
+      ],
+      [
+        47,
+        49,
+        113,
+        99
+      ]
+    ],
+    "east": [
+      [
+        41,
+        52,
+        86,
+        95
+      ],
+      [
+        46,
+        54,
+        83,
+        96
+      ],
+      [
+        44,
+        52,
+        83,
+        96
+      ],
+      [
+        45,
+        52,
+        104,
+        96
+      ],
+      [
+        44,
+        52,
+        108,
+        96
+      ],
+      [
+        43,
+        49,
+        108,
+        96
+      ]
+    ]
+  },
+  "sourceNativeTile": 192,
+  "sourceBodyOffset": [
+    64,
+    64
+  ],
+  "losslessCropPerSourceFrame": [
+    32,
+    32,
+    160,
+    160
+  ],
+  "revision": "86a3719ee4a7e2e9fb27c7c152e29a741d3e930a",
+  "license": "CC-BY-SA 3.0",
+  "sha256": "59e8e7a7c6ebba2aecc47e726ae3749b5a4f25cfecf24a296c5ddf2877059cdd",
+  "sourcePreset": "credits/orc/attack-preset.json",
+  "credits": "credits/orc/CREDITS.txt",
+  "layers": [
+    {
+      "zPos": 8,
+      "source": "spritesheets/weapon/blunt/waraxe/attack_slash/behind/waraxe.png",
+      "tile": 192,
+      "sha256": "c96ef55d5bd7c6aa5361e6b0e74db2ad4507c94f5e68f5f87148342a81f5d71e",
+      "recolor": null
+    },
+    {
+      "zPos": 10,
+      "source": "spritesheets/body/bodies/male/slash.png",
+      "tile": 64,
+      "sha256": "662e208502b0f060041cd3e8c65b6445117f174e9435b68e619b874e36b0069d",
+      "recolor": {
+        "from": "body.ulpc.light",
+        "to": "body.ulpc.green"
+      }
+    },
+    {
+      "zPos": 15,
+      "source": "spritesheets/feet/armour/plate/male/slash.png",
+      "tile": 64,
+      "sha256": "d4f417bcf317db59f3f1de1e9851313af4edb5916c947a63e175619070d1fb2d",
+      "recolor": null
+    },
+    {
+      "zPos": 20,
+      "source": "spritesheets/legs/armour/plate/male/slash.png",
+      "tile": 64,
+      "sha256": "afac8cf1db05af8869cbd4d0d50b581d6a6b0bd951fd7478d680105e0eb2909a",
+      "recolor": null
+    },
+    {
+      "zPos": 60,
+      "source": "spritesheets/torso/armour/plate/male/slash.png",
+      "tile": 64,
+      "sha256": "545015e4127f4100d3023b6fa447c724ae70c9aa9b949a37e8ae84bfc94b94ef",
+      "recolor": null
+    },
+    {
+      "zPos": 100,
+      "source": "spritesheets/head/heads/orc/male/slash.png",
+      "tile": 64,
+      "sha256": "df673a91461b26e73bf0310d96e293e65e9b3a7de2552d60cc72a0ad457a13bf",
+      "recolor": null
+    },
+    {
+      "zPos": 110,
+      "source": "spritesheets/shield/round/slash/brown.png",
+      "tile": 64,
+      "sha256": "a489dbc8632ea4a55a7c12445e1e449c7bc499cd257ec5fb43f2be313fe737fe",
+      "recolor": null
+    },
+    {
+      "zPos": 150,
+      "source": "spritesheets/weapon/blunt/waraxe/attack_slash/waraxe.png",
+      "tile": 192,
+      "sha256": "de38d6ded81bb7336fc52ee324531632a719d801bbf0214a8497dd4c9d35cfc5",
+      "recolor": null
+    }
+  ],
+  "changes": [
+    "Composed the exact original ULPC slash layers in defined z-order. The original oversized waraxe layers were not replaced or redrawn.",
+    "Recolored male body from the official ULPC light skin palette to the official ULPC green palette.",
+    "Centered original 64x64 body layers at offset64,64 inside each native192x192 weapon frame.",
+    "Applied identical central128x128 crops at32,32 to all24frames. Asserted that the crops preserve every source alpha pixel.",
+    "No resizing, interpolation, added equipment or custom drawn pixels."
+  ]
+}

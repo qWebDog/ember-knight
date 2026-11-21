@@ -31,7 +31,7 @@
     actors[id] = {element, canvas:element.querySelector('canvas'), bar:element.querySelector('.healthbar'), images:{}, animation:null, hitAt:-10, lastKey:null};
   }
   const effects = [];
-  let heroX = null, moveFrom = 0, moveAt = 0, currentTarget = null;
+  let heroX = null, fieldWidth = null, moving = false, walkDistance = 0, walkDirection = 3, activeTime = 0;
   try { telegram?.ready(); telegram?.expand(); telegram?.setHeaderColor('#14231f'); telegram?.setBackgroundColor('#161e18'); } catch {}
   function syncViewport() {
     const visible = window.visualViewport?.height || window.innerHeight;
@@ -49,6 +49,7 @@
     const art = $('.battle-landscape');
     art.style.backgroundSize = `${900 * scale}px ${480 * scale}px`;
     art.style.backgroundPosition = `center ${feet - 330 * scale}px`;
+    updateMovement(0,battle.getState());
   }
   new ResizeObserver(alignTerrain).observe(arena);
   alignTerrain();
@@ -65,6 +66,8 @@
     try {
       const idle = await loadImage(`assets/characters/${skin}.png`).catch(() => loadImage('assets/characters/light.png'));
       actors.hero.images.idle = {image:idle, frames:2, row:3};
+      const walk = await loadImage(`assets/characters/combat/${skin}-walk.png`).catch(() => loadImage('assets/characters/combat/light-walk.png'));
+      actors.hero.images.walk = {image:walk,frames:9,row:3};
       const attack = await loadImage(`assets/characters/combat/${skin}-attack.png`).catch(() => null);
       actors.hero.images.attack = attack ? {image:attack,frames:6,row:3} : actors.hero.images.idle;
       await Promise.all([
@@ -81,12 +84,14 @@
           actors[id].images.idle = actors[id].images.attack = {image,frames:1,row:0,still:0};
         }
       }));
+      const orcAttack = await loadImage('assets/enemies/lpc/orc-attack.png').catch(() => null);
+      actors.orc.images.attack = orcAttack ? {image:orcAttack,frames:6,row:1,tile:128,origin:32} : { ...actors.orc.images.idle,frames:1 };
       const face = $('#avatar').getContext('2d'); face.imageSmoothingEnabled = false;
       face.drawImage(idle,19,140,26,26,0,0,32,32);
       ready = true;
-      if (auto) battle.resume();
+      updateMovement(0,battle.getState());
       $('#status').textContent = 'Тестовый бой готов: орк-щитоносец, скелет-лучник и могильный колдун.';
-      render(battle.getState()); updateControls();
+      render(battle.getState()); syncPause();
     } catch {
       assetError = true;
       $('#result-title').textContent = 'Не удалось загрузить бой';
@@ -103,10 +108,10 @@
     autoButton.setAttribute('aria-pressed', String(auto && !ended));
     autoButton.setAttribute('aria-label', ended ? 'Бой завершён' : `Автобой ${auto ? 'включён' : 'приостановлен'}`);
     $('#auto-label').textContent = ended ? '✓' : auto ? 'ВКЛ' : 'ВЫКЛ';
-    $('#battle-state').textContent = !ready ? assetError ? 'Ошибка загрузки' : 'Загрузка боя' : state.phase === 'victory' ? 'Победа · 3/3' : state.phase === 'defeat' ? 'Поражение' : auto ? 'Тестовый бой' : 'Пауза';
+    $('#battle-state').textContent = !ready ? assetError ? 'Ошибка загрузки' : 'Загрузка боя' : state.phase === 'victory' ? 'Победа · 3/3' : state.phase === 'defeat' ? 'Поражение' : auto ? moving ? 'Подход к цели' : 'Тестовый бой' : 'Пауза';
   }
   function syncPause() {
-    if (ready && auto && !document.hidden && !dialog.open) battle.resume(); else battle.pause();
+    if (ready && auto && !moving && !document.hidden && !dialog.open) battle.resume(); else battle.pause();
     lastFrameTime = null; updateControls();
   }
   autoButton.addEventListener('click', () => {
@@ -121,13 +126,13 @@
     const element = document.createElement('span');
     element.className = type === 'damage' ? `damage-number ${targetId === 'hero' ? 'enemy-damage' : ''}` : `projectile ${type}`;
     element.setAttribute('aria-hidden','true'); if (text) element.textContent = text;
-    battlefield.appendChild(element); effects.push({element,type,sourceId,targetId,at,duration:type === 'damage' ? .85 : .38});
+    battlefield.appendChild(element); effects.push({element,type,sourceId,targetId,at:activeTime,duration:type === 'damage' ? .85 : .38});
   }
   function handleEvents(events) {
     for (const event of events) {
       if (event.type === 'attack') {
-        actors[event.sourceId].animation = {at:event.at,duration:event.sourceId === 'archer' ? .9 : .66};
-        actors[event.targetId].hitAt = event.at;
+        actors[event.sourceId].animation = {at:activeTime,duration:event.sourceId === 'archer' ? .9 : .66};
+        actors[event.targetId].hitAt = activeTime;
         addEffect('damage',event.sourceId,event.targetId,`−${event.damage}`,event.at);
         if (event.projectile !== 'melee') addEffect(event.projectile,event.sourceId,event.targetId,null,event.at);
       } else if (event.type === 'death') {
@@ -138,7 +143,7 @@
           try { localStorage.setItem('ember.test.gold.v1',String(wallet)); } catch {}
         }
         $('#result-title').textContent = event.result === 'victory' ? 'Победа!' : 'Попробуем ещё?';
-        $('#result-copy').textContent = event.result === 'victory' ? `Все три врага повержены. +${event.reward} золота · ${event.at.toFixed(1).replace('.',',')} сек.` : 'Герой пал. Восстанови силы и начни бой заново.';
+        $('#result-copy').textContent = event.result === 'victory' ? `Все три врага повержены. +${event.reward} золота · ${activeTime.toFixed(1).replace('.',',')} сек.` : 'Герой пал. Восстанови силы и начни бой заново.';
         $('#replay-button').textContent = 'Снова в бой'; resultPanel.hidden = false;
         $('#status').textContent = event.result === 'victory' ? `Победа. Получено ${event.reward} золота.` : 'Поражение. Можно повторить бой.';
         try { telegram?.HapticFeedback?.notificationOccurred(event.result === 'victory' ? 'success' : 'warning'); } catch {}
@@ -150,44 +155,64 @@
   function drawActor(id, state) {
     const actor = actors[id], unit = id === 'hero' ? state.hero : state.enemies.find(enemy=>enemy.id===id);
     if (!actor.images.idle) return;
-    const age = actor.animation ? state.elapsed - actor.animation.at : 100;
+    const age = actor.animation ? activeTime - actor.animation.at : 100;
     const ended = ['victory','defeat'].includes(state.phase);
-    const attacking = !ended && age >= 0 && age < (actor.animation?.duration || 0) && unit.hp > 0;
-    const descriptor = attacking && !reducedMotion.matches ? actor.images.attack : actor.images.idle;
-    const cell = attacking && !reducedMotion.matches ? Math.min(descriptor.frames-1,Math.floor(age / actor.animation.duration * descriptor.frames)) : id === 'hero' && auto && unit.hp > 0 && !reducedMotion.matches ? Math.floor(state.elapsed / .65) % 2 : descriptor.still || 0;
-    const key = `${attacking}-${cell}-${descriptor.row}`;
+    const walking = id === 'hero' && moving && walkDistance > 0 && unit.hp > 0 && !ended && !reducedMotion.matches;
+    const attacking = !walking && !ended && age >= 0 && age < (actor.animation?.duration || 0) && unit.hp > 0 && !reducedMotion.matches;
+    const kind = walking ? 'walk' : attacking ? 'attack' : 'idle';
+    const descriptor = actor.images[kind];
+    const row = walking ? walkDirection : descriptor.row;
+    const tile = descriptor.tile || 64, origin = descriptor.origin || 0;
+    const cell = walking ? 1 + Math.floor((walkDistance / .75 % 1) * 8) : attacking ? Math.min(descriptor.frames-1,Math.floor(age / actor.animation.duration * descriptor.frames)) : id === 'hero' && auto && unit.hp > 0 && !ended && !reducedMotion.matches ? Math.floor(activeTime / .65) % 2 : descriptor.still || 0;
+    const key = `${kind}-${cell}-${row}-${tile}`;
     if (actor.lastKey !== key) {
-      const ctx = actor.canvas.getContext('2d'); ctx.clearRect(0,0,64,64); ctx.imageSmoothingEnabled = false;
-      ctx.drawImage(descriptor.image,cell*64,descriptor.row*64,64,64,0,0,64,64); actor.lastKey = key;
+      actor.canvas.width = tile; actor.canvas.height = tile;
+      const ctx = actor.canvas.getContext('2d'); ctx.clearRect(0,0,tile,tile); ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(descriptor.image,cell*tile,row*tile,tile,tile,0,0,tile,tile); actor.lastKey = key;
+      actor.canvas.style.width = `${tile / 64 * 100}%`; actor.canvas.style.height = `${tile / 64 * 100}%`;
+      actor.canvas.style.left = `${-origin / 64 * 100}%`; actor.canvas.style.top = `${-origin / 64 * 100}%`;
     }
+    actor.element.dataset.motion = kind;
     actor.element.classList.toggle('is-defeated',unit.hp <= 0);
     actor.element.classList.toggle('is-target',id === state.targetId);
-    actor.element.classList.toggle('is-hit',!ended && !reducedMotion.matches && state.elapsed - actor.hitAt < .16);
-    const lunge = !reducedMotion.matches && attacking ? Math.sin(age / actor.animation.duration * Math.PI) * (id === 'hero' ? 12 : id === 'orc' ? -9 : 0) : 0;
-    actor.canvas.style.transform = `translateX(${lunge}px)`;
+    actor.element.classList.toggle('is-hit',!ended && !reducedMotion.matches && activeTime - actor.hitAt < .16);
     actor.bar.querySelector('i').style.width = `${unit.hp / unit.maxHp * 100}%`;
     actor.bar.setAttribute('aria-valuenow',unit.hp);
     actor.bar.setAttribute('aria-valuemax',unit.maxHp);
     actor.element.setAttribute('aria-label', `${unit.name}: ${unit.hp} из ${unit.maxHp} здоровья`);
   }
-  function moveHero(state) {
+  // Walking pace and frame phase both follow travelled distance, never a fixed slide tween.
+  function updateMovement(dt,state) {
     const width = battlefield.clientWidth;
+    const size = actors.hero.element.offsetWidth;
     const home = width * (window.innerWidth > 700 ? .18 : .22);
-    if (heroX === null) { heroX = home; moveFrom = home; }
-    if (currentTarget !== state.targetId) { moveFrom = heroX; moveAt = state.elapsed; currentTarget = state.targetId; }
-    if (state.targetId) {
+    if (heroX === null) heroX = home;
+    if (fieldWidth && fieldWidth !== width) heroX *= width / fieldWidth;
+    fieldWidth = width;
+    moving = false;
+    let usedTime = 0;
+    if (state.targetId && !['victory','defeat'].includes(state.phase)) {
       const target = actors[state.targetId].element;
-      const separation = actors.hero.element.offsetWidth * .23 + target.offsetWidth * .34;
+      const separation = size * .23 + target.offsetWidth * .34;
       const goal = Math.max(home,target.offsetLeft - separation);
-      const progress = reducedMotion.matches ? 1 : Math.min(1,(state.elapsed - moveAt)/.8);
-      heroX = moveFrom + (goal - moveFrom) * progress;
+      const gap = goal - heroX;
+      if (Math.abs(gap) > .01) {
+        walkDirection = gap >= 0 ? 3 : 1;
+        const speed = size * .85; // 0.75 model widths per 8-frame cycle, about 110 ms/frame.
+        const distance = reducedMotion.matches ? Math.abs(gap) : Math.min(Math.abs(gap),speed * dt);
+        heroX += Math.sign(gap) * distance;
+        walkDistance += distance / size;
+        usedTime = reducedMotion.matches ? 0 : distance / speed;
+        moving = !reducedMotion.matches && Math.abs(goal - heroX) > .01;
+      }
     }
     actors.hero.element.style.left = `${heroX}px`;
+    return usedTime;
   }
   function renderEffects(state) {
     const field = battlefield.getBoundingClientRect();
     for (let i=effects.length-1;i>=0;i--) {
-      const effect = effects[i], age = state.elapsed - effect.at;
+      const effect = effects[i], age = activeTime - effect.at;
       if (age >= effect.duration || reducedMotion.matches) { effect.element.remove(); effects.splice(i,1); continue; }
       const target = actors[effect.targetId].element.getBoundingClientRect(), source = actors[effect.sourceId].element.getBoundingClientRect();
       const p = Math.max(0,age/effect.duration), tx=target.left+target.width/2-field.left, ty=target.top+target.height*.4-field.top;
@@ -200,7 +225,6 @@
     }
   }
   function render(state) {
-    moveHero(state);
     for (const id of Object.keys(actors)) drawActor(id,state);
     $('#hero-vital').textContent = `${state.hero.hp} / ${state.hero.maxHp} HP`;
     const waves = document.querySelectorAll('.wave');
@@ -211,17 +235,30 @@
   function tick(timestamp) {
     if (lastFrameTime === null) lastFrameTime = timestamp;
     const dt = Math.min(.1,Math.max(0,(timestamp-lastFrameTime)/1000)); lastFrameTime = timestamp;
-    if (ready && auto && !document.hidden && !dialog.open) handleEvents(battle.advance(dt));
+    if (ready && auto && !document.hidden && !dialog.open) {
+      const before = battle.getState();
+      if (!['victory','defeat'].includes(before.phase)) {
+        activeTime += dt;
+        const wasMoving = moving;
+        const walkTime = updateMovement(dt,before);
+        if (moving) battle.pause();
+        else { battle.resume(); handleEvents(battle.advance(Math.max(0,dt-walkTime))); }
+        updateMovement(0,battle.getState());
+        if (moving) battle.pause();
+        if (moving !== wasMoving) updateControls();
+      }
+    }
+
     if (ready) render(battle.getState());
     window.requestAnimationFrame(tick);
   }
   $('#replay-button').addEventListener('click', () => {
     if (assetError) { resultPanel.hidden = true; loadAssets(); return; }
-    battle.restart(); auto = true; rewardPaid = false; heroX = null; currentTarget = null;
+    battle.restart(); auto = true; rewardPaid = false; heroX = null; fieldWidth = null; walkDistance = 0; activeTime = 0; moving = false;
     for (const actor of Object.values(actors)) { actor.animation=null; actor.hitAt=-10; actor.lastKey=null; }
     effects.splice(0).forEach(effect => effect.element.remove()); resultPanel.hidden = true; lastFrameTime = null;
     try { localStorage.setItem('ember.combat.auto.v1','on'); } catch {}
-    render(battle.getState()); syncPause(); $('#status').textContent = 'Новый тестовый бой начался';
+    updateMovement(0,battle.getState()); render(battle.getState()); syncPause(); $('#status').textContent = 'Новый тестовый бой начался';
   });
   const information = {
     gold: () => ['КОШЕЛЁК','Золото',`В кошельке ${wallet} золота. Победа в тестовом бою приносит 25 золота. Сохранение — на этом устройстве.`],

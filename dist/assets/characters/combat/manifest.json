@@ -170,5 +170,439 @@
       ],
       "definition": "sheet_definitions/head/heads/human/heads_human_male.json"
     }
-  ]
+  ],
+  "walk": {
+    "animation": "walk",
+    "frameWidth": 64,
+    "frameHeight": 64,
+    "width": 576,
+    "height": 256,
+    "frames": 9,
+    "standingFrame": 0,
+    "cycleFrames": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ],
+    "directions": [
+      "north",
+      "west",
+      "south",
+      "east"
+    ],
+    "rightFacingRow": 3,
+    "rightFacingY": 192,
+    "leftFacingRow": 1,
+    "leftFacingY": 64,
+    "recommendedFrameDurationMs": 110,
+    "layers": [
+      {
+        "zPos": 10,
+        "source": "spritesheets/body/bodies/male/walk.png",
+        "basePalette": "ulpc.light",
+        "sha256": "1e0e8f0c11ba5f4f7b3d4439fc416802b4227da2fe146c13de3de254d9f87f77"
+      },
+      {
+        "zPos": 100,
+        "source": "spritesheets/head/heads/human/male/walk.png",
+        "basePalette": "ulpc.light",
+        "sha256": "7e863954dc8c3c748d0727415c39888106bdd3779beb2e3b18011a3a9ef3e53c"
+      }
+    ],
+    "paletteSource": "palette_definitions/body/body_ulpc.json",
+    "skins": [
+      {
+        "id": "light",
+        "file": "light-walk.png",
+        "palette": [
+          "#271920",
+          "#99423c",
+          "#cc8665",
+          "#E4A47C",
+          "#F9D5BA",
+          "#FAECE7"
+        ],
+        "sha256": "1a036231594a75fc0dec9af04d89af333a80b1dcd8f28055702abb6dbec8f6ac"
+      },
+      {
+        "id": "amber",
+        "file": "amber-walk.png",
+        "palette": [
+          "#281716",
+          "#9E3E37",
+          "#D28144",
+          "#EA9F54",
+          "#FDD082",
+          "#FBE7A4"
+        ],
+        "sha256": "06ad287a0661ac6bea7f9499f73488b7793c62c09d0e006f35263b626b966377"
+      },
+      {
+        "id": "olive",
+        "file": "olive-walk.png",
+        "palette": [
+          "#271920",
+          "#442725",
+          "#7F4C31",
+          "#AE6B3F",
+          "#D38B59",
+          "#E4A47C"
+        ],
+        "sha256": "cefd2fb7011558c690e334bc8e52c2147b86fa63775f4ce3b665e9fb30f4515a"
+      },
+      {
+        "id": "bronze",
+        "file": "bronze-walk.png",
+        "palette": [
+          "#1A1213",
+          "#442725",
+          "#644133",
+          "#7F4C31",
+          "#AE6B3F",
+          "#D38B59"
+        ],
+        "sha256": "28757fd3d0f1cd5c688ab2d3376d254f29f24cc22a34c88499fa7c516c32aae2"
+      },
+      {
+        "id": "brown",
+        "file": "brown-walk.png",
+        "palette": [
+          "#120E10",
+          "#412B29",
+          "#5F4539",
+          "#76513A",
+          "#9C663E",
+          "#B8773F"
+        ],
+        "sha256": "edda7d8f30966a8ad084a6c8795b589de7d2540f27a235a02ee067855a25d891"
+      },
+      {
+        "id": "black",
+        "file": "black-walk.png",
+        "palette": [
+          "#000000",
+          "#1A1213",
+          "#2E1F1C",
+          "#442725",
+          "#603429",
+          "#7F4C31"
+        ],
+        "sha256": "006b7f435323147f414d0a7e20cd010f95c50313ef6320c5195d1db261ee12c6"
+      }
+    ],
+    "groundContact": {
+      "north": {
+        "row": 0,
+        "y": 0,
+        "alphaBBoxPerFrame": [
+          [
+            17,
+            15,
+            47,
+            61
+          ],
+          [
+            17,
+            15,
+            47,
+            61
+          ],
+          [
+            17,
+            15,
+            47,
+            62
+          ],
+          [
+            17,
+            16,
+            46,
+            63
+          ],
+          [
+            17,
+            15,
+            47,
+            62
+          ],
+          [
+            17,
+            15,
+            47,
+            61
+          ],
+          [
+            17,
+            15,
+            47,
+            62
+          ],
+          [
+            18,
+            16,
+            47,
+            63
+          ],
+          [
+            17,
+            15,
+            47,
+            62
+          ]
+        ],
+        "lowestPixelYPerFrame": [
+          60,
+          60,
+          61,
+          62,
+          61,
+          60,
+          61,
+          62,
+          61
+        ],
+        "visibleTopMin": 15,
+        "visibleTopMax": 16,
+        "visibleBottomExclusiveMin": 61,
+        "visibleBottomExclusiveMax": 63
+      },
+      "west": {
+        "row": 1,
+        "y": 64,
+        "alphaBBoxPerFrame": [
+          [
+            23,
+            15,
+            43,
+            62
+          ],
+          [
+            19,
+            16,
+            44,
+            62
+          ],
+          [
+            21,
+            15,
+            43,
+            61
+          ],
+          [
+            23,
+            15,
+            45,
+            61
+          ],
+          [
+            22,
+            15,
+            46,
+            62
+          ],
+          [
+            20,
+            16,
+            48,
+            62
+          ],
+          [
+            23,
+            15,
+            46,
+            62
+          ],
+          [
+            23,
+            15,
+            45,
+            62
+          ],
+          [
+            23,
+            15,
+            44,
+            62
+          ]
+        ],
+        "lowestPixelYPerFrame": [
+          61,
+          61,
+          60,
+          60,
+          61,
+          61,
+          61,
+          61,
+          61
+        ],
+        "visibleTopMin": 15,
+        "visibleTopMax": 16,
+        "visibleBottomExclusiveMin": 61,
+        "visibleBottomExclusiveMax": 62
+      },
+      "south": {
+        "row": 2,
+        "y": 128,
+        "alphaBBoxPerFrame": [
+          [
+            17,
+            15,
+            47,
+            62
+          ],
+          [
+            17,
+            15,
+            47,
+            62
+          ],
+          [
+            17,
+            15,
+            47,
+            63
+          ],
+          [
+            18,
+            16,
+            47,
+            63
+          ],
+          [
+            17,
+            15,
+            47,
+            63
+          ],
+          [
+            17,
+            15,
+            47,
+            62
+          ],
+          [
+            17,
+            15,
+            47,
+            63
+          ],
+          [
+            17,
+            16,
+            46,
+            63
+          ],
+          [
+            17,
+            15,
+            47,
+            63
+          ]
+        ],
+        "lowestPixelYPerFrame": [
+          61,
+          61,
+          62,
+          62,
+          62,
+          61,
+          62,
+          62,
+          62
+        ],
+        "visibleTopMin": 15,
+        "visibleTopMax": 16,
+        "visibleBottomExclusiveMin": 62,
+        "visibleBottomExclusiveMax": 63
+      },
+      "east": {
+        "row": 3,
+        "y": 192,
+        "alphaBBoxPerFrame": [
+          [
+            21,
+            15,
+            41,
+            62
+          ],
+          [
+            20,
+            16,
+            45,
+            62
+          ],
+          [
+            21,
+            15,
+            43,
+            61
+          ],
+          [
+            19,
+            15,
+            41,
+            61
+          ],
+          [
+            18,
+            15,
+            42,
+            62
+          ],
+          [
+            16,
+            16,
+            44,
+            62
+          ],
+          [
+            18,
+            15,
+            41,
+            62
+          ],
+          [
+            19,
+            15,
+            41,
+            62
+          ],
+          [
+            20,
+            15,
+            41,
+            62
+          ]
+        ],
+        "lowestPixelYPerFrame": [
+          61,
+          61,
+          60,
+          60,
+          61,
+          61,
+          61,
+          61,
+          61
+        ],
+        "visibleTopMin": 15,
+        "visibleTopMax": 16,
+        "visibleBottomExclusiveMin": 61,
+        "visibleBottomExclusiveMax": 62
+      }
+    },
+    "changes": [
+      "Composed original official male body and human male head walk layers in z-order.",
+      "Exact substitutions from official ULPC light skin palette to each selected official skin palette.",
+      "No new pixels, resampling, clothing, weapons or equipment."
+    ],
+    "license": "CC-BY-SA 3.0",
+    "credits": "CREDITS.txt"
+  }
 }

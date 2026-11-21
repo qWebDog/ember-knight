@@ -338,5 +338,204 @@
       ],
       "definition": "sheet_definitions/weapons/blunt/weapon_blunt_waraxe.json"
     }
-  ]
+  ],
+  "attack": {
+    "sheet": "orc-attack.png",
+    "animation": "slash",
+    "width": 768,
+    "height": 512,
+    "frames": 6,
+    "tile": 128,
+    "frameWidth": 128,
+    "frameHeight": 128,
+    "origin": 32,
+    "bodyTileOffset": [
+      32,
+      32
+    ],
+    "bodyTileSize": [
+      64,
+      64
+    ],
+    "directions": [
+      "north",
+      "west",
+      "south",
+      "east"
+    ],
+    "leftFacingRow": 1,
+    "leftFacingY": 128,
+    "frameDurationMs": 110,
+    "recommendedImpactFrame": 4,
+    "alphaBBoxPerDirectionAndFrame": {
+      "north": [
+        [
+          42,
+          51,
+          91,
+          94
+        ],
+        [
+          41,
+          52,
+          86,
+          95
+        ],
+        [
+          35,
+          52,
+          81,
+          95
+        ],
+        [
+          42,
+          51,
+          87,
+          95
+        ],
+        [
+          40,
+          39,
+          94,
+          95
+        ],
+        [
+          45,
+          41,
+          112,
+          95
+        ]
+      ],
+      "west": [
+        [
+          42,
+          52,
+          87,
+          95
+        ],
+        [
+          45,
+          54,
+          82,
+          96
+        ],
+        [
+          45,
+          52,
+          84,
+          96
+        ],
+        [
+          24,
+          52,
+          83,
+          96
+        ],
+        [
+          20,
+          52,
+          84,
+          96
+        ],
+        [
+          20,
+          49,
+          85,
+          96
+        ]
+      ],
+      "south": [
+        [
+          44,
+          49,
+          95,
+          96
+        ],
+        [
+          41,
+          49,
+          86,
+          96
+        ],
+        [
+          34,
+          51,
+          80,
+          96
+        ],
+        [
+          35,
+          50,
+          89,
+          95
+        ],
+        [
+          43,
+          49,
+          109,
+          103
+        ],
+        [
+          47,
+          49,
+          113,
+          99
+        ]
+      ],
+      "east": [
+        [
+          41,
+          52,
+          86,
+          95
+        ],
+        [
+          46,
+          54,
+          83,
+          96
+        ],
+        [
+          44,
+          52,
+          83,
+          96
+        ],
+        [
+          45,
+          52,
+          104,
+          96
+        ],
+        [
+          44,
+          52,
+          108,
+          96
+        ],
+        [
+          43,
+          49,
+          108,
+          96
+        ]
+      ]
+    },
+    "sourceNativeTile": 192,
+    "sourceBodyOffset": [
+      64,
+      64
+    ],
+    "losslessCropPerSourceFrame": [
+      32,
+      32,
+      160,
+      160
+    ],
+    "revision": "86a3719ee4a7e2e9fb27c7c152e29a741d3e930a",
+    "license": "CC-BY-SA 3.0",
+    "sha256": "59e8e7a7c6ebba2aecc47e726ae3749b5a4f25cfecf24a296c5ddf2877059cdd",
+    "sourcePreset": "credits/orc/attack-preset.json",
+    "credits": "credits/orc/CREDITS.txt"
+  }
 }

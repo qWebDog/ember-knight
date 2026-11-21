@@ -69,3 +69,11 @@ ANIMATION NOTE
 The two-column idle-static sheet contains two copies of the same original standing frame, not a new animated idle cycle. The waraxe and round shield have original walk frames but no native idle layer. The complete 9-frame walk sheet is included.
 
 The images are standalone exports only. They have not been added to any game or deployed.
+
+
+ORC SLASH ATTACK ADDITION
+Same pinned ULPC revision: 86a3719ee4a7e2e9fb27c7c152e29a741d3e930a
+Selected license: CC-BY-SA 3.0. The same body, head, armor, round-shield and waraxe authors listed above apply to the corresponding original slash frames.
+Exact source-layer paths, hashes and z-order are in attack-preset.json.
+Changes: composite original slash layers, recolor body from ULPC light to ULPC green, losslessly center-crop oversized192x192 tiles to128x128. No new or redrawn weapon art.
+Geometry: 768x512, six128x128 frames per direction, rows north/west/south/east. Original64x64 body tile begins at32,32 in each final frame.

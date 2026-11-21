@@ -1,6 +1,6 @@
 EMBER — LPC ART CREDITS
 
-Original idle character, bare attack animation and three enemy presets.
+Original idle character, bare attack and walk animations, and three enemy presets.
 https://liberatedpixelcup.github.io/Universal-LPC-Spritesheet-Character-Generator/
 
 
@@ -83,6 +83,15 @@ Authors: bluecarrot16, Benjamin K. Smith (BenCreating), Stephen Challener (Redsh
 Upstream license options: OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0
 Source URLs: https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles, https://opengameart.org/content/lpc-character-bases
 Notes: original head by Redshrike, tweaks by BenCreating, modular version by bluecarrot16
+
+
+BARE HERO WALK SPRITES
+Same pinned Universal LPC revision: 86a3719ee4a7e2e9fb27c7c152e29a741d3e930a
+Layers: spritesheets/body/bodies/male/walk.png (zPos10), spritesheets/head/heads/human/male/walk.png (zPos100).
+The body and human-head authors and license options listed above also apply to these original walk layers.
+Selected license for all six assembled/recolored walk PNGs: CC-BY-SA 3.0.
+Geometry: 576x256; 9 columns of64x64; rows north/west/south/east. Column0 is standing; columns1 through8 form the walk cycle.
+Processing: alpha composite original layers and apply exact official ULPC body palette substitutions only. No equipment, clothing or custom drawn pixels.
 
 
 assets/enemies/lpc/CREDITS.txt
@@ -317,3 +326,11 @@ Offered licenses: OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0
 Source URLs: https://opengameart.org/content/lpc-medieval-fantasy-character-sprites, https://opengameart.org/content/lpc-expanded-hats-facial-helmets
 Notes: Brown hood by Wulax, original black/white recolors by ??, mapped to idle/run/jump/revised combat by JaidynReiman, along with additional recolors.
 
+
+
+ORC SLASH ATTACK ADDITION
+Same pinned ULPC revision: 86a3719ee4a7e2e9fb27c7c152e29a741d3e930a
+Selected license: CC-BY-SA 3.0. The same body, head, armor, round-shield and waraxe authors listed above apply to the corresponding original slash frames.
+Exact source-layer paths, hashes and z-order are in attack-preset.json.
+Changes: composite original slash layers, recolor body from ULPC light to ULPC green, losslessly center-crop oversized192x192 tiles to128x128. No new or redrawn weapon art.
+Geometry: 768x512, six128x128 frames per direction, rows north/west/south/east. Original64x64 body tile begins at32,32 in each final frame.
