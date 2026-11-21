@@ -12,8 +12,8 @@ const combatSource = fs.readFileSync(path.join(dist, 'combat.js'), 'utf8');
 
 // The real game controller and combat engine run together. Only browser surfaces,
 // image decoding and the animation clock are replaced; no combat logic is mocked.
-function createHarness({skin = 'bronze', preference, search = '', weapon, outfit} = {}) {
-  const storage = new Map([['ember.character.v1', JSON.stringify({version:1, skin, name:'Тестовый герой', level:1,weapon,outfit})]]);
+function createHarness({skin = 'bronze', preference, search = '', weapon, outfit, outfitColor} = {}) {
+  const storage = new Map([['ember.character.v1', JSON.stringify({version:1, skin, name:'Тестовый герой', level:1,weapon,outfit,outfitColor})]]);
   if (preference) storage.set('ember.combat.auto.v1', preference);
   const nodes = new Map(), pendingImages = [], loadedPaths = [], raf = [], resizeCallbacks = [];
   let battle, now = 0;
@@ -291,18 +291,25 @@ test('walking speed and gait follow distance; a pure viewport resize does not ad
 });
 
 
-test('all nine saved starter outfits appear in battle with matching weapon animation and range',async()=>{
-  const catalogue=require('../dist/loadouts.js');
-  for(const weapon of catalogue.weapons)for(const outfit of weapon.outfits){
-    const ui=createHarness({skin:'olive',weapon:weapon.id,outfit:outfit.id});await ui.loadAllImages();
-    const root=`assets/characters/loadouts/${weapon.id}/${outfit.id}/olive-`;
-    assert.ok(ui.loadedPaths.includes(root+'walk.png'));assert.ok(ui.loadedPaths.includes(root+'attack.png'));
-    const start=ui.heroX();ui.runFor(.7);
-    if(weapon.projectile==='melee')assert.ok(ui.heroX()>start);else{assert.equal(ui.heroX(),start);assert.equal(ui.node('[data-fighter="hero"]').dataset.motion,'idle');}
-    ui.runUntil(()=>ui.node('#player-sprite').draws.some(d=>d.src===root+'attack.png'));
-    const attacks=ui.node('#player-sprite').draws.filter(d=>d.src===root+'attack.png');
-    assert.ok(attacks.every(d=>d.crop[2]===weapon.attack.tile&&d.crop[1]===weapon.attack.tile*3));
-    ui.node('#profile-button').click();assert.ok(ui.node('#dialog-copy').textContent.includes(outfit.name));ui.node('#game-dialog').close();
-    ui.runUntil(()=>ui.state().phase==='victory',60);assert.equal(ui.storage.get('ember.test.gold.v1'),'25');
-  }
+test('all three fixed outfits and six clothing colors appear in battle with matching weapon animation and range',async()=>{
+ const catalogue=require('../dist/loadouts.js');
+ for(const weapon of catalogue.weapons)for(const color of catalogue.colors){
+  const outfit=weapon.outfits[0];
+  const ui=createHarness({skin:'olive',weapon:weapon.id,outfit:outfit.id,outfitColor:color.id});await ui.loadAllImages();
+  const root=`assets/characters/loadouts/${weapon.id}/${outfit.id}/${color.id}/olive-`;
+  assert.ok(ui.loadedPaths.includes(root+'walk.png'));assert.ok(ui.loadedPaths.includes(root+'attack.png'));
+  const start=ui.heroX();ui.runFor(.7);
+  if(weapon.projectile==='melee')assert.ok(ui.heroX()>start);else{assert.equal(ui.heroX(),start);assert.equal(ui.node('[data-fighter="hero"]').dataset.motion,'idle');}
+  ui.runUntil(()=>ui.node('#player-sprite').draws.some(d=>d.src===root+'attack.png'));
+  const attacks=ui.node('#player-sprite').draws.filter(d=>d.src===root+'attack.png');assert.ok(attacks.every(d=>d.crop[2]===weapon.attack.tile&&d.crop[1]===weapon.attack.tile*3));
+  ui.node('#profile-button').click();assert.ok(ui.node('#dialog-copy').textContent.includes(outfit.name));assert.ok(ui.node('#dialog-copy').textContent.includes(color.name.toLowerCase()));ui.node('#game-dialog').close();
+  ui.runUntil(()=>ui.state().phase==='victory',60);assert.equal(ui.storage.get('ember.test.gold.v1'),'25');
+ }
+});
+
+test('a previously saved alternative wardrobe uses the new fixed outfit without losing the hero skin',async()=>{
+ const ui=createHarness({skin:'bronze',weapon:'sword',outfit:'watchman'});await ui.loadAllImages();
+ assert.ok(ui.loadedPaths.includes('assets/characters/loadouts/sword/militia/blue/bronze-walk.png'));
+ assert.equal(JSON.parse(ui.storage.get('ember.character.v1')).outfit,'watchman');
+ ui.node('#profile-button').click();assert.ok(ui.node('#dialog-copy').textContent.includes('Ополченец'));
 });

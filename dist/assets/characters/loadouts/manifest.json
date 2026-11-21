@@ -1,9 +1,10 @@
 {
-  "sword/militia": {
+  "sword/militia/sand": {
     "generator": "Universal LPC Character Generator",
     "revision": "86a3719ee4a7e2e9fb27c7c152e29a741d3e930a",
     "weapon": "sword",
     "outfit": "militia",
+    "outfitColor": "sand",
     "layers": [
       {
         "z": 10,
@@ -74,11 +75,392 @@
       ]
     }
   },
-  "sword/watchman": {
+  "sword/militia/forest": {
     "generator": "Universal LPC Character Generator",
     "revision": "86a3719ee4a7e2e9fb27c7c152e29a741d3e930a",
     "weapon": "sword",
-    "outfit": "watchman",
+    "outfit": "militia",
+    "outfitColor": "forest",
+    "layers": [
+      {
+        "z": 10,
+        "source": "spritesheets/body/bodies/male/{a}.png",
+        "material": "body",
+        "palette": "SKIN",
+        "definition": "sheet_definitions/body/body.json"
+      },
+      {
+        "z": 100,
+        "source": "spritesheets/head/heads/human/male/{a}.png",
+        "material": "body",
+        "palette": "SKIN",
+        "definition": "sheet_definitions/head/heads/human/heads_human_male.json"
+      },
+      {
+        "z": 20,
+        "source": "spritesheets/legs/pants/male/{a}.png",
+        "material": "cloth",
+        "palette": "brown",
+        "definition": "sheet_definitions/legs/pants/legs_pants.json"
+      },
+      {
+        "z": 25,
+        "source": "spritesheets/feet/boots/basic/male/{a}.png",
+        "material": "cloth",
+        "palette": "leather",
+        "definition": "sheet_definitions/feet/boots/feet_boots_basic.json"
+      },
+      {
+        "z": 35,
+        "source": "spritesheets/torso/clothes/longsleeve/longsleeve/male/{a}.png",
+        "material": "cloth",
+        "palette": "forest",
+        "definition": "sheet_definitions/torso/shirts/longsleeve/torso_clothes_longsleeve.json"
+      },
+      {
+        "z": 70,
+        "source": "spritesheets/torso/waist/belt_leather/male/{a}/brown.png",
+        "material": "cloth",
+        "palette": null,
+        "definition": "sheet_definitions/torso/waist/belt_leather.json"
+      }
+    ],
+    "notes": [],
+    "walk": {
+      "file": "{skin}-walk.png",
+      "tile": 64,
+      "origin": 0,
+      "frames": 9,
+      "rows": [
+        "north",
+        "west",
+        "south",
+        "east"
+      ]
+    },
+    "attack": {
+      "file": "{skin}-attack.png",
+      "tile": 128,
+      "origin": 32,
+      "frames": 6,
+      "rows": [
+        "north",
+        "west",
+        "south",
+        "east"
+      ]
+    }
+  },
+  "sword/militia/blue": {
+    "generator": "Universal LPC Character Generator",
+    "revision": "86a3719ee4a7e2e9fb27c7c152e29a741d3e930a",
+    "weapon": "sword",
+    "outfit": "militia",
+    "outfitColor": "blue",
+    "layers": [
+      {
+        "z": 10,
+        "source": "spritesheets/body/bodies/male/{a}.png",
+        "material": "body",
+        "palette": "SKIN",
+        "definition": "sheet_definitions/body/body.json"
+      },
+      {
+        "z": 100,
+        "source": "spritesheets/head/heads/human/male/{a}.png",
+        "material": "body",
+        "palette": "SKIN",
+        "definition": "sheet_definitions/head/heads/human/heads_human_male.json"
+      },
+      {
+        "z": 20,
+        "source": "spritesheets/legs/pants/male/{a}.png",
+        "material": "cloth",
+        "palette": "brown",
+        "definition": "sheet_definitions/legs/pants/legs_pants.json"
+      },
+      {
+        "z": 25,
+        "source": "spritesheets/feet/boots/basic/male/{a}.png",
+        "material": "cloth",
+        "palette": "leather",
+        "definition": "sheet_definitions/feet/boots/feet_boots_basic.json"
+      },
+      {
+        "z": 35,
+        "source": "spritesheets/torso/clothes/longsleeve/longsleeve/male/{a}.png",
+        "material": "cloth",
+        "palette": "navy",
+        "definition": "sheet_definitions/torso/shirts/longsleeve/torso_clothes_longsleeve.json"
+      },
+      {
+        "z": 70,
+        "source": "spritesheets/torso/waist/belt_leather/male/{a}/brown.png",
+        "material": "cloth",
+        "palette": null,
+        "definition": "sheet_definitions/torso/waist/belt_leather.json"
+      }
+    ],
+    "notes": [],
+    "walk": {
+      "file": "{skin}-walk.png",
+      "tile": 64,
+      "origin": 0,
+      "frames": 9,
+      "rows": [
+        "north",
+        "west",
+        "south",
+        "east"
+      ]
+    },
+    "attack": {
+      "file": "{skin}-attack.png",
+      "tile": 128,
+      "origin": 32,
+      "frames": 6,
+      "rows": [
+        "north",
+        "west",
+        "south",
+        "east"
+      ]
+    }
+  },
+  "sword/militia/red": {
+    "generator": "Universal LPC Character Generator",
+    "revision": "86a3719ee4a7e2e9fb27c7c152e29a741d3e930a",
+    "weapon": "sword",
+    "outfit": "militia",
+    "outfitColor": "red",
+    "layers": [
+      {
+        "z": 10,
+        "source": "spritesheets/body/bodies/male/{a}.png",
+        "material": "body",
+        "palette": "SKIN",
+        "definition": "sheet_definitions/body/body.json"
+      },
+      {
+        "z": 100,
+        "source": "spritesheets/head/heads/human/male/{a}.png",
+        "material": "body",
+        "palette": "SKIN",
+        "definition": "sheet_definitions/head/heads/human/heads_human_male.json"
+      },
+      {
+        "z": 20,
+        "source": "spritesheets/legs/pants/male/{a}.png",
+        "material": "cloth",
+        "palette": "brown",
+        "definition": "sheet_definitions/legs/pants/legs_pants.json"
+      },
+      {
+        "z": 25,
+        "source": "spritesheets/feet/boots/basic/male/{a}.png",
+        "material": "cloth",
+        "palette": "leather",
+        "definition": "sheet_definitions/feet/boots/feet_boots_basic.json"
+      },
+      {
+        "z": 35,
+        "source": "spritesheets/torso/clothes/longsleeve/longsleeve/male/{a}.png",
+        "material": "cloth",
+        "palette": "maroon",
+        "definition": "sheet_definitions/torso/shirts/longsleeve/torso_clothes_longsleeve.json"
+      },
+      {
+        "z": 70,
+        "source": "spritesheets/torso/waist/belt_leather/male/{a}/brown.png",
+        "material": "cloth",
+        "palette": null,
+        "definition": "sheet_definitions/torso/waist/belt_leather.json"
+      }
+    ],
+    "notes": [],
+    "walk": {
+      "file": "{skin}-walk.png",
+      "tile": 64,
+      "origin": 0,
+      "frames": 9,
+      "rows": [
+        "north",
+        "west",
+        "south",
+        "east"
+      ]
+    },
+    "attack": {
+      "file": "{skin}-attack.png",
+      "tile": 128,
+      "origin": 32,
+      "frames": 6,
+      "rows": [
+        "north",
+        "west",
+        "south",
+        "east"
+      ]
+    }
+  },
+  "sword/militia/purple": {
+    "generator": "Universal LPC Character Generator",
+    "revision": "86a3719ee4a7e2e9fb27c7c152e29a741d3e930a",
+    "weapon": "sword",
+    "outfit": "militia",
+    "outfitColor": "purple",
+    "layers": [
+      {
+        "z": 10,
+        "source": "spritesheets/body/bodies/male/{a}.png",
+        "material": "body",
+        "palette": "SKIN",
+        "definition": "sheet_definitions/body/body.json"
+      },
+      {
+        "z": 100,
+        "source": "spritesheets/head/heads/human/male/{a}.png",
+        "material": "body",
+        "palette": "SKIN",
+        "definition": "sheet_definitions/head/heads/human/heads_human_male.json"
+      },
+      {
+        "z": 20,
+        "source": "spritesheets/legs/pants/male/{a}.png",
+        "material": "cloth",
+        "palette": "brown",
+        "definition": "sheet_definitions/legs/pants/legs_pants.json"
+      },
+      {
+        "z": 25,
+        "source": "spritesheets/feet/boots/basic/male/{a}.png",
+        "material": "cloth",
+        "palette": "leather",
+        "definition": "sheet_definitions/feet/boots/feet_boots_basic.json"
+      },
+      {
+        "z": 35,
+        "source": "spritesheets/torso/clothes/longsleeve/longsleeve/male/{a}.png",
+        "material": "cloth",
+        "palette": "purple",
+        "definition": "sheet_definitions/torso/shirts/longsleeve/torso_clothes_longsleeve.json"
+      },
+      {
+        "z": 70,
+        "source": "spritesheets/torso/waist/belt_leather/male/{a}/brown.png",
+        "material": "cloth",
+        "palette": null,
+        "definition": "sheet_definitions/torso/waist/belt_leather.json"
+      }
+    ],
+    "notes": [],
+    "walk": {
+      "file": "{skin}-walk.png",
+      "tile": 64,
+      "origin": 0,
+      "frames": 9,
+      "rows": [
+        "north",
+        "west",
+        "south",
+        "east"
+      ]
+    },
+    "attack": {
+      "file": "{skin}-attack.png",
+      "tile": 128,
+      "origin": 32,
+      "frames": 6,
+      "rows": [
+        "north",
+        "west",
+        "south",
+        "east"
+      ]
+    }
+  },
+  "sword/militia/gray": {
+    "generator": "Universal LPC Character Generator",
+    "revision": "86a3719ee4a7e2e9fb27c7c152e29a741d3e930a",
+    "weapon": "sword",
+    "outfit": "militia",
+    "outfitColor": "gray",
+    "layers": [
+      {
+        "z": 10,
+        "source": "spritesheets/body/bodies/male/{a}.png",
+        "material": "body",
+        "palette": "SKIN",
+        "definition": "sheet_definitions/body/body.json"
+      },
+      {
+        "z": 100,
+        "source": "spritesheets/head/heads/human/male/{a}.png",
+        "material": "body",
+        "palette": "SKIN",
+        "definition": "sheet_definitions/head/heads/human/heads_human_male.json"
+      },
+      {
+        "z": 20,
+        "source": "spritesheets/legs/pants/male/{a}.png",
+        "material": "cloth",
+        "palette": "brown",
+        "definition": "sheet_definitions/legs/pants/legs_pants.json"
+      },
+      {
+        "z": 25,
+        "source": "spritesheets/feet/boots/basic/male/{a}.png",
+        "material": "cloth",
+        "palette": "leather",
+        "definition": "sheet_definitions/feet/boots/feet_boots_basic.json"
+      },
+      {
+        "z": 35,
+        "source": "spritesheets/torso/clothes/longsleeve/longsleeve/male/{a}.png",
+        "material": "cloth",
+        "palette": "gray",
+        "definition": "sheet_definitions/torso/shirts/longsleeve/torso_clothes_longsleeve.json"
+      },
+      {
+        "z": 70,
+        "source": "spritesheets/torso/waist/belt_leather/male/{a}/brown.png",
+        "material": "cloth",
+        "palette": null,
+        "definition": "sheet_definitions/torso/waist/belt_leather.json"
+      }
+    ],
+    "notes": [],
+    "walk": {
+      "file": "{skin}-walk.png",
+      "tile": 64,
+      "origin": 0,
+      "frames": 9,
+      "rows": [
+        "north",
+        "west",
+        "south",
+        "east"
+      ]
+    },
+    "attack": {
+      "file": "{skin}-attack.png",
+      "tile": 128,
+      "origin": 32,
+      "frames": 6,
+      "rows": [
+        "north",
+        "west",
+        "south",
+        "east"
+      ]
+    }
+  },
+  "bow/wanderer/sand": {
+    "generator": "Universal LPC Character Generator",
+    "revision": "86a3719ee4a7e2e9fb27c7c152e29a741d3e930a",
+    "weapon": "bow",
+    "outfit": "wanderer",
+    "outfitColor": "sand",
     "layers": [
       {
         "z": 10,
@@ -105,7 +487,7 @@
         "z": 25,
         "source": "spritesheets/feet/boots/basic/male/{a}.png",
         "material": "cloth",
-        "palette": "brown",
+        "palette": "charcoal",
         "definition": "sheet_definitions/feet/boots/feet_boots_basic.json"
       },
       {
@@ -116,271 +498,25 @@
         "definition": "sheet_definitions/torso/shirts/longsleeve/torso_clothes_longsleeve.json"
       },
       {
-        "z": 50,
-        "source": "spritesheets/torso/chainmail/male/{a}.png",
-        "material": "cloth",
-        "palette": null,
-        "definition": "sheet_definitions/torso/torso_chainmail.json"
-      },
-      {
-        "z": 130,
-        "source": "spritesheets/hat/helmet/bascinet_round/adult/{a}.png",
-        "material": "cloth",
-        "palette": null,
-        "definition": "sheet_definitions/headwear/helmets/helmets/hat_helmet_bascinet_round.json"
-      }
-    ],
-    "notes": [],
-    "walk": {
-      "file": "{skin}-walk.png",
-      "tile": 64,
-      "origin": 0,
-      "frames": 9,
-      "rows": [
-        "north",
-        "west",
-        "south",
-        "east"
-      ]
-    },
-    "attack": {
-      "file": "{skin}-attack.png",
-      "tile": 128,
-      "origin": 32,
-      "frames": 6,
-      "rows": [
-        "north",
-        "west",
-        "south",
-        "east"
-      ]
-    }
-  },
-  "sword/guard": {
-    "generator": "Universal LPC Character Generator",
-    "revision": "86a3719ee4a7e2e9fb27c7c152e29a741d3e930a",
-    "weapon": "sword",
-    "outfit": "guard",
-    "layers": [
-      {
-        "z": 10,
-        "source": "spritesheets/body/bodies/male/{a}.png",
-        "material": "body",
-        "palette": "SKIN",
-        "definition": "sheet_definitions/body/body.json"
-      },
-      {
-        "z": 100,
-        "source": "spritesheets/head/heads/human/male/{a}.png",
-        "material": "body",
-        "palette": "SKIN",
-        "definition": "sheet_definitions/head/heads/human/heads_human_male.json"
-      },
-      {
-        "z": 20,
-        "source": "spritesheets/legs/pants/male/{a}.png",
-        "material": "cloth",
-        "palette": "charcoal",
-        "definition": "sheet_definitions/legs/pants/legs_pants.json"
-      },
-      {
-        "z": 25,
-        "source": "spritesheets/feet/boots/basic/male/{a}.png",
-        "material": "cloth",
-        "palette": "leather",
-        "definition": "sheet_definitions/feet/boots/feet_boots_basic.json"
-      },
-      {
-        "z": 35,
-        "source": "spritesheets/torso/clothes/longsleeve/longsleeve/male/{a}.png",
-        "material": "cloth",
-        "palette": "gray",
-        "definition": "sheet_definitions/torso/shirts/longsleeve/torso_clothes_longsleeve.json"
-      },
-      {
-        "z": 50,
-        "source": "spritesheets/torso/chainmail/male/{a}.png",
-        "material": "cloth",
-        "palette": null,
-        "definition": "sheet_definitions/torso/torso_chainmail.json"
-      },
-      {
-        "z": 55,
-        "source": "spritesheets/torso/jacket/tabard/male/{a}/red.png",
-        "material": "cloth",
-        "palette": null,
-        "definition": "sheet_definitions/torso/jacket/torso_jacket_tabard.json"
-      },
-      {
-        "z": 70,
-        "source": "spritesheets/torso/waist/belt_leather/male/{a}/brown.png",
-        "material": "cloth",
-        "palette": null,
-        "definition": "sheet_definitions/torso/waist/belt_leather.json"
-      }
-    ],
-    "notes": [],
-    "walk": {
-      "file": "{skin}-walk.png",
-      "tile": 64,
-      "origin": 0,
-      "frames": 9,
-      "rows": [
-        "north",
-        "west",
-        "south",
-        "east"
-      ]
-    },
-    "attack": {
-      "file": "{skin}-attack.png",
-      "tile": 128,
-      "origin": 32,
-      "frames": 6,
-      "rows": [
-        "north",
-        "west",
-        "south",
-        "east"
-      ]
-    }
-  },
-  "bow/scout": {
-    "generator": "Universal LPC Character Generator",
-    "revision": "86a3719ee4a7e2e9fb27c7c152e29a741d3e930a",
-    "weapon": "bow",
-    "outfit": "scout",
-    "layers": [
-      {
-        "z": 10,
-        "source": "spritesheets/body/bodies/male/{a}.png",
-        "material": "body",
-        "palette": "SKIN",
-        "definition": "sheet_definitions/body/body.json"
-      },
-      {
-        "z": 100,
-        "source": "spritesheets/head/heads/human/male/{a}.png",
-        "material": "body",
-        "palette": "SKIN",
-        "definition": "sheet_definitions/head/heads/human/heads_human_male.json"
-      },
-      {
-        "z": 20,
-        "source": "spritesheets/legs/pants/male/{a}.png",
-        "material": "cloth",
-        "palette": "brown",
-        "definition": "sheet_definitions/legs/pants/legs_pants.json"
-      },
-      {
-        "z": 25,
-        "source": "spritesheets/feet/boots/basic/male/{a}.png",
-        "material": "cloth",
-        "palette": "leather",
-        "definition": "sheet_definitions/feet/boots/feet_boots_basic.json"
-      },
-      {
-        "z": 35,
-        "source": "spritesheets/torso/clothes/longsleeve/longsleeve/male/{a}.png",
-        "material": "cloth",
-        "palette": "green",
-        "definition": "sheet_definitions/torso/shirts/longsleeve/torso_clothes_longsleeve.json"
-      },
-      {
         "z": 130,
         "source": "spritesheets/hat/cloth/hood/adult/{a}.png",
         "material": "cloth",
-        "palette": "forest",
+        "palette": "tan",
         "definition": "sheet_definitions/headwear/coverings/hoods/hat_hood_cloth.json"
       },
       {
-        "z": 90,
-        "source": "spritesheets/torso/waist/sash/male/{a}.png",
-        "material": "cloth",
-        "palette": "brown",
-        "definition": "sheet_definitions/torso/waist/belt_sash.json"
-      }
-    ],
-    "notes": [],
-    "walk": {
-      "file": "{skin}-walk.png",
-      "tile": 128,
-      "origin": 32,
-      "frames": 9,
-      "rows": [
-        "north",
-        "west",
-        "south",
-        "east"
-      ]
-    },
-    "attack": {
-      "file": "{skin}-attack.png",
-      "tile": 64,
-      "origin": 0,
-      "frames": 13,
-      "rows": [
-        "north",
-        "west",
-        "south",
-        "east"
-      ]
-    }
-  },
-  "bow/hunter": {
-    "generator": "Universal LPC Character Generator",
-    "revision": "86a3719ee4a7e2e9fb27c7c152e29a741d3e930a",
-    "weapon": "bow",
-    "outfit": "hunter",
-    "layers": [
-      {
-        "z": 10,
-        "source": "spritesheets/body/bodies/male/{a}.png",
-        "material": "body",
-        "palette": "SKIN",
-        "definition": "sheet_definitions/body/body.json"
-      },
-      {
-        "z": 100,
-        "source": "spritesheets/head/heads/human/male/{a}.png",
-        "material": "body",
-        "palette": "SKIN",
-        "definition": "sheet_definitions/head/heads/human/heads_human_male.json"
-      },
-      {
-        "z": 20,
-        "source": "spritesheets/legs/pants/male/{a}.png",
-        "material": "cloth",
-        "palette": "gray",
-        "definition": "sheet_definitions/legs/pants/legs_pants.json"
-      },
-      {
-        "z": 25,
-        "source": "spritesheets/feet/boots/basic/male/{a}.png",
-        "material": "cloth",
-        "palette": "brown",
-        "definition": "sheet_definitions/feet/boots/feet_boots_basic.json"
-      },
-      {
-        "z": 35,
-        "source": "spritesheets/torso/clothes/longsleeve/longsleeve/male/{a}.png",
+        "z": 5,
+        "source": "spritesheets/cape/tattered/bg/{a}.png",
         "material": "cloth",
         "palette": "tan",
-        "definition": "sheet_definitions/torso/shirts/longsleeve/torso_clothes_longsleeve.json"
+        "definition": "sheet_definitions/torso/cape/cape_tattered.json"
       },
       {
-        "z": 60,
-        "source": "spritesheets/torso/armour/leather/male/{a}.png",
+        "z": 85,
+        "source": "spritesheets/cape/tattered/fg/{a}.png",
         "material": "cloth",
-        "palette": null,
-        "definition": "sheet_definitions/torso/armour/torso_armour_leather.json"
-      },
-      {
-        "z": 90,
-        "source": "spritesheets/torso/waist/sash/male/{a}.png",
-        "material": "cloth",
-        "palette": "brown",
-        "definition": "sheet_definitions/torso/waist/belt_sash.json"
+        "palette": "tan",
+        "definition": "sheet_definitions/torso/cape/cape_tattered.json"
       }
     ],
     "notes": [],
@@ -409,11 +545,12 @@
       ]
     }
   },
-  "bow/ranger": {
+  "bow/wanderer/forest": {
     "generator": "Universal LPC Character Generator",
     "revision": "86a3719ee4a7e2e9fb27c7c152e29a741d3e930a",
     "weapon": "bow",
-    "outfit": "ranger",
+    "outfit": "wanderer",
+    "outfitColor": "forest",
     "layers": [
       {
         "z": 10,
@@ -447,7 +584,7 @@
         "z": 35,
         "source": "spritesheets/torso/clothes/longsleeve/longsleeve/male/{a}.png",
         "material": "cloth",
-        "palette": "navy",
+        "palette": "bluegray",
         "definition": "sheet_definitions/torso/shirts/longsleeve/torso_clothes_longsleeve.json"
       },
       {
@@ -498,11 +635,12 @@
       ]
     }
   },
-  "wand/apprentice": {
+  "bow/wanderer/blue": {
     "generator": "Universal LPC Character Generator",
     "revision": "86a3719ee4a7e2e9fb27c7c152e29a741d3e930a",
-    "weapon": "wand",
-    "outfit": "apprentice",
+    "weapon": "bow",
+    "outfit": "wanderer",
+    "outfitColor": "blue",
     "layers": [
       {
         "z": 10,
@@ -522,14 +660,381 @@
         "z": 20,
         "source": "spritesheets/legs/pants/male/{a}.png",
         "material": "cloth",
-        "palette": "navy",
+        "palette": "charcoal",
         "definition": "sheet_definitions/legs/pants/legs_pants.json"
       },
       {
         "z": 25,
         "source": "spritesheets/feet/boots/basic/male/{a}.png",
         "material": "cloth",
-        "palette": "leather",
+        "palette": "charcoal",
+        "definition": "sheet_definitions/feet/boots/feet_boots_basic.json"
+      },
+      {
+        "z": 35,
+        "source": "spritesheets/torso/clothes/longsleeve/longsleeve/male/{a}.png",
+        "material": "cloth",
+        "palette": "bluegray",
+        "definition": "sheet_definitions/torso/shirts/longsleeve/torso_clothes_longsleeve.json"
+      },
+      {
+        "z": 130,
+        "source": "spritesheets/hat/cloth/hood/adult/{a}.png",
+        "material": "cloth",
+        "palette": "navy",
+        "definition": "sheet_definitions/headwear/coverings/hoods/hat_hood_cloth.json"
+      },
+      {
+        "z": 5,
+        "source": "spritesheets/cape/tattered/bg/{a}.png",
+        "material": "cloth",
+        "palette": "navy",
+        "definition": "sheet_definitions/torso/cape/cape_tattered.json"
+      },
+      {
+        "z": 85,
+        "source": "spritesheets/cape/tattered/fg/{a}.png",
+        "material": "cloth",
+        "palette": "navy",
+        "definition": "sheet_definitions/torso/cape/cape_tattered.json"
+      }
+    ],
+    "notes": [],
+    "walk": {
+      "file": "{skin}-walk.png",
+      "tile": 128,
+      "origin": 32,
+      "frames": 9,
+      "rows": [
+        "north",
+        "west",
+        "south",
+        "east"
+      ]
+    },
+    "attack": {
+      "file": "{skin}-attack.png",
+      "tile": 64,
+      "origin": 0,
+      "frames": 13,
+      "rows": [
+        "north",
+        "west",
+        "south",
+        "east"
+      ]
+    }
+  },
+  "bow/wanderer/red": {
+    "generator": "Universal LPC Character Generator",
+    "revision": "86a3719ee4a7e2e9fb27c7c152e29a741d3e930a",
+    "weapon": "bow",
+    "outfit": "wanderer",
+    "outfitColor": "red",
+    "layers": [
+      {
+        "z": 10,
+        "source": "spritesheets/body/bodies/male/{a}.png",
+        "material": "body",
+        "palette": "SKIN",
+        "definition": "sheet_definitions/body/body.json"
+      },
+      {
+        "z": 100,
+        "source": "spritesheets/head/heads/human/male/{a}.png",
+        "material": "body",
+        "palette": "SKIN",
+        "definition": "sheet_definitions/head/heads/human/heads_human_male.json"
+      },
+      {
+        "z": 20,
+        "source": "spritesheets/legs/pants/male/{a}.png",
+        "material": "cloth",
+        "palette": "charcoal",
+        "definition": "sheet_definitions/legs/pants/legs_pants.json"
+      },
+      {
+        "z": 25,
+        "source": "spritesheets/feet/boots/basic/male/{a}.png",
+        "material": "cloth",
+        "palette": "charcoal",
+        "definition": "sheet_definitions/feet/boots/feet_boots_basic.json"
+      },
+      {
+        "z": 35,
+        "source": "spritesheets/torso/clothes/longsleeve/longsleeve/male/{a}.png",
+        "material": "cloth",
+        "palette": "bluegray",
+        "definition": "sheet_definitions/torso/shirts/longsleeve/torso_clothes_longsleeve.json"
+      },
+      {
+        "z": 130,
+        "source": "spritesheets/hat/cloth/hood/adult/{a}.png",
+        "material": "cloth",
+        "palette": "maroon",
+        "definition": "sheet_definitions/headwear/coverings/hoods/hat_hood_cloth.json"
+      },
+      {
+        "z": 5,
+        "source": "spritesheets/cape/tattered/bg/{a}.png",
+        "material": "cloth",
+        "palette": "maroon",
+        "definition": "sheet_definitions/torso/cape/cape_tattered.json"
+      },
+      {
+        "z": 85,
+        "source": "spritesheets/cape/tattered/fg/{a}.png",
+        "material": "cloth",
+        "palette": "maroon",
+        "definition": "sheet_definitions/torso/cape/cape_tattered.json"
+      }
+    ],
+    "notes": [],
+    "walk": {
+      "file": "{skin}-walk.png",
+      "tile": 128,
+      "origin": 32,
+      "frames": 9,
+      "rows": [
+        "north",
+        "west",
+        "south",
+        "east"
+      ]
+    },
+    "attack": {
+      "file": "{skin}-attack.png",
+      "tile": 64,
+      "origin": 0,
+      "frames": 13,
+      "rows": [
+        "north",
+        "west",
+        "south",
+        "east"
+      ]
+    }
+  },
+  "bow/wanderer/purple": {
+    "generator": "Universal LPC Character Generator",
+    "revision": "86a3719ee4a7e2e9fb27c7c152e29a741d3e930a",
+    "weapon": "bow",
+    "outfit": "wanderer",
+    "outfitColor": "purple",
+    "layers": [
+      {
+        "z": 10,
+        "source": "spritesheets/body/bodies/male/{a}.png",
+        "material": "body",
+        "palette": "SKIN",
+        "definition": "sheet_definitions/body/body.json"
+      },
+      {
+        "z": 100,
+        "source": "spritesheets/head/heads/human/male/{a}.png",
+        "material": "body",
+        "palette": "SKIN",
+        "definition": "sheet_definitions/head/heads/human/heads_human_male.json"
+      },
+      {
+        "z": 20,
+        "source": "spritesheets/legs/pants/male/{a}.png",
+        "material": "cloth",
+        "palette": "charcoal",
+        "definition": "sheet_definitions/legs/pants/legs_pants.json"
+      },
+      {
+        "z": 25,
+        "source": "spritesheets/feet/boots/basic/male/{a}.png",
+        "material": "cloth",
+        "palette": "charcoal",
+        "definition": "sheet_definitions/feet/boots/feet_boots_basic.json"
+      },
+      {
+        "z": 35,
+        "source": "spritesheets/torso/clothes/longsleeve/longsleeve/male/{a}.png",
+        "material": "cloth",
+        "palette": "bluegray",
+        "definition": "sheet_definitions/torso/shirts/longsleeve/torso_clothes_longsleeve.json"
+      },
+      {
+        "z": 130,
+        "source": "spritesheets/hat/cloth/hood/adult/{a}.png",
+        "material": "cloth",
+        "palette": "purple",
+        "definition": "sheet_definitions/headwear/coverings/hoods/hat_hood_cloth.json"
+      },
+      {
+        "z": 5,
+        "source": "spritesheets/cape/tattered/bg/{a}.png",
+        "material": "cloth",
+        "palette": "purple",
+        "definition": "sheet_definitions/torso/cape/cape_tattered.json"
+      },
+      {
+        "z": 85,
+        "source": "spritesheets/cape/tattered/fg/{a}.png",
+        "material": "cloth",
+        "palette": "purple",
+        "definition": "sheet_definitions/torso/cape/cape_tattered.json"
+      }
+    ],
+    "notes": [],
+    "walk": {
+      "file": "{skin}-walk.png",
+      "tile": 128,
+      "origin": 32,
+      "frames": 9,
+      "rows": [
+        "north",
+        "west",
+        "south",
+        "east"
+      ]
+    },
+    "attack": {
+      "file": "{skin}-attack.png",
+      "tile": 64,
+      "origin": 0,
+      "frames": 13,
+      "rows": [
+        "north",
+        "west",
+        "south",
+        "east"
+      ]
+    }
+  },
+  "bow/wanderer/gray": {
+    "generator": "Universal LPC Character Generator",
+    "revision": "86a3719ee4a7e2e9fb27c7c152e29a741d3e930a",
+    "weapon": "bow",
+    "outfit": "wanderer",
+    "outfitColor": "gray",
+    "layers": [
+      {
+        "z": 10,
+        "source": "spritesheets/body/bodies/male/{a}.png",
+        "material": "body",
+        "palette": "SKIN",
+        "definition": "sheet_definitions/body/body.json"
+      },
+      {
+        "z": 100,
+        "source": "spritesheets/head/heads/human/male/{a}.png",
+        "material": "body",
+        "palette": "SKIN",
+        "definition": "sheet_definitions/head/heads/human/heads_human_male.json"
+      },
+      {
+        "z": 20,
+        "source": "spritesheets/legs/pants/male/{a}.png",
+        "material": "cloth",
+        "palette": "charcoal",
+        "definition": "sheet_definitions/legs/pants/legs_pants.json"
+      },
+      {
+        "z": 25,
+        "source": "spritesheets/feet/boots/basic/male/{a}.png",
+        "material": "cloth",
+        "palette": "charcoal",
+        "definition": "sheet_definitions/feet/boots/feet_boots_basic.json"
+      },
+      {
+        "z": 35,
+        "source": "spritesheets/torso/clothes/longsleeve/longsleeve/male/{a}.png",
+        "material": "cloth",
+        "palette": "bluegray",
+        "definition": "sheet_definitions/torso/shirts/longsleeve/torso_clothes_longsleeve.json"
+      },
+      {
+        "z": 130,
+        "source": "spritesheets/hat/cloth/hood/adult/{a}.png",
+        "material": "cloth",
+        "palette": "gray",
+        "definition": "sheet_definitions/headwear/coverings/hoods/hat_hood_cloth.json"
+      },
+      {
+        "z": 5,
+        "source": "spritesheets/cape/tattered/bg/{a}.png",
+        "material": "cloth",
+        "palette": "gray",
+        "definition": "sheet_definitions/torso/cape/cape_tattered.json"
+      },
+      {
+        "z": 85,
+        "source": "spritesheets/cape/tattered/fg/{a}.png",
+        "material": "cloth",
+        "palette": "gray",
+        "definition": "sheet_definitions/torso/cape/cape_tattered.json"
+      }
+    ],
+    "notes": [],
+    "walk": {
+      "file": "{skin}-walk.png",
+      "tile": 128,
+      "origin": 32,
+      "frames": 9,
+      "rows": [
+        "north",
+        "west",
+        "south",
+        "east"
+      ]
+    },
+    "attack": {
+      "file": "{skin}-attack.png",
+      "tile": 64,
+      "origin": 0,
+      "frames": 13,
+      "rows": [
+        "north",
+        "west",
+        "south",
+        "east"
+      ]
+    }
+  },
+  "wand/acolyte/sand": {
+    "generator": "Universal LPC Character Generator",
+    "revision": "86a3719ee4a7e2e9fb27c7c152e29a741d3e930a",
+    "weapon": "wand",
+    "outfit": "acolyte",
+    "outfitColor": "sand",
+    "layers": [
+      {
+        "z": 10,
+        "source": "spritesheets/body/bodies/male/{a}.png",
+        "material": "body",
+        "palette": "SKIN",
+        "definition": "sheet_definitions/body/body.json"
+      },
+      {
+        "z": 100,
+        "source": "spritesheets/head/heads/human/male/{a}.png",
+        "material": "body",
+        "palette": "SKIN",
+        "definition": "sheet_definitions/head/heads/human/heads_human_male.json"
+      },
+      {
+        "z": 20,
+        "source": "spritesheets/legs/pants/male/{a}.png",
+        "material": "cloth",
+        "palette": "charcoal",
+        "definition": "sheet_definitions/legs/pants/legs_pants.json"
+      },
+      {
+        "z": 22,
+        "source": "spritesheets/legs/skirts/slit/thin/{a}.png",
+        "material": "cloth",
+        "palette": "tan",
+        "definition": "sheet_definitions/legs/skirts/legs_skirts_slit.json"
+      },
+      {
+        "z": 25,
+        "source": "spritesheets/feet/boots/basic/male/{a}.png",
+        "material": "cloth",
+        "palette": "charcoal",
         "definition": "sheet_definitions/feet/boots/feet_boots_basic.json"
       },
       {
@@ -540,18 +1045,32 @@
         "definition": "sheet_definitions/torso/shirts/longsleeve/torso_clothes_longsleeve.json"
       },
       {
-        "z": 55,
-        "source": "spritesheets/torso/clothes/vest/male/{a}/blue.png",
+        "z": 130,
+        "source": "spritesheets/hat/cloth/hood/adult/{a}.png",
         "material": "cloth",
-        "palette": null,
-        "definition": "sheet_definitions/torso/vest/torso_clothes_vest.json"
+        "palette": "tan",
+        "definition": "sheet_definitions/headwear/coverings/hoods/hat_hood_cloth.json"
       },
       {
         "z": 90,
         "source": "spritesheets/torso/waist/sash/male/{a}.png",
         "material": "cloth",
-        "palette": "tan",
+        "palette": "charcoal",
         "definition": "sheet_definitions/torso/waist/belt_sash.json"
+      },
+      {
+        "z": 5,
+        "source": "spritesheets/cape/tattered/bg/{a}.png",
+        "material": "cloth",
+        "palette": "tan",
+        "definition": "sheet_definitions/torso/cape/cape_tattered.json"
+      },
+      {
+        "z": 85,
+        "source": "spritesheets/cape/tattered/fg/{a}.png",
+        "material": "cloth",
+        "palette": "tan",
+        "definition": "sheet_definitions/torso/cape/cape_tattered.json"
       }
     ],
     "notes": [
@@ -582,11 +1101,330 @@
       ]
     }
   },
-  "wand/acolyte": {
+  "wand/acolyte/forest": {
     "generator": "Universal LPC Character Generator",
     "revision": "86a3719ee4a7e2e9fb27c7c152e29a741d3e930a",
     "weapon": "wand",
     "outfit": "acolyte",
+    "outfitColor": "forest",
+    "layers": [
+      {
+        "z": 10,
+        "source": "spritesheets/body/bodies/male/{a}.png",
+        "material": "body",
+        "palette": "SKIN",
+        "definition": "sheet_definitions/body/body.json"
+      },
+      {
+        "z": 100,
+        "source": "spritesheets/head/heads/human/male/{a}.png",
+        "material": "body",
+        "palette": "SKIN",
+        "definition": "sheet_definitions/head/heads/human/heads_human_male.json"
+      },
+      {
+        "z": 20,
+        "source": "spritesheets/legs/pants/male/{a}.png",
+        "material": "cloth",
+        "palette": "charcoal",
+        "definition": "sheet_definitions/legs/pants/legs_pants.json"
+      },
+      {
+        "z": 22,
+        "source": "spritesheets/legs/skirts/slit/thin/{a}.png",
+        "material": "cloth",
+        "palette": "forest",
+        "definition": "sheet_definitions/legs/skirts/legs_skirts_slit.json"
+      },
+      {
+        "z": 25,
+        "source": "spritesheets/feet/boots/basic/male/{a}.png",
+        "material": "cloth",
+        "palette": "charcoal",
+        "definition": "sheet_definitions/feet/boots/feet_boots_basic.json"
+      },
+      {
+        "z": 35,
+        "source": "spritesheets/torso/clothes/longsleeve/longsleeve/male/{a}.png",
+        "material": "cloth",
+        "palette": "green",
+        "definition": "sheet_definitions/torso/shirts/longsleeve/torso_clothes_longsleeve.json"
+      },
+      {
+        "z": 130,
+        "source": "spritesheets/hat/cloth/hood/adult/{a}.png",
+        "material": "cloth",
+        "palette": "forest",
+        "definition": "sheet_definitions/headwear/coverings/hoods/hat_hood_cloth.json"
+      },
+      {
+        "z": 90,
+        "source": "spritesheets/torso/waist/sash/male/{a}.png",
+        "material": "cloth",
+        "palette": "charcoal",
+        "definition": "sheet_definitions/torso/waist/belt_sash.json"
+      },
+      {
+        "z": 5,
+        "source": "spritesheets/cape/tattered/bg/{a}.png",
+        "material": "cloth",
+        "palette": "forest",
+        "definition": "sheet_definitions/torso/cape/cape_tattered.json"
+      },
+      {
+        "z": 85,
+        "source": "spritesheets/cape/tattered/fg/{a}.png",
+        "material": "cloth",
+        "palette": "forest",
+        "definition": "sheet_definitions/torso/cape/cape_tattered.json"
+      }
+    ],
+    "notes": [
+      "Wand has native slash only. WALK uses the official standing wand with a 0–1px gait-compatible translation; no custom weapon pixels drawn."
+    ],
+    "walk": {
+      "file": "{skin}-walk.png",
+      "tile": 64,
+      "origin": 0,
+      "frames": 9,
+      "rows": [
+        "north",
+        "west",
+        "south",
+        "east"
+      ]
+    },
+    "attack": {
+      "file": "{skin}-attack.png",
+      "tile": 64,
+      "origin": 0,
+      "frames": 6,
+      "rows": [
+        "north",
+        "west",
+        "south",
+        "east"
+      ]
+    }
+  },
+  "wand/acolyte/blue": {
+    "generator": "Universal LPC Character Generator",
+    "revision": "86a3719ee4a7e2e9fb27c7c152e29a741d3e930a",
+    "weapon": "wand",
+    "outfit": "acolyte",
+    "outfitColor": "blue",
+    "layers": [
+      {
+        "z": 10,
+        "source": "spritesheets/body/bodies/male/{a}.png",
+        "material": "body",
+        "palette": "SKIN",
+        "definition": "sheet_definitions/body/body.json"
+      },
+      {
+        "z": 100,
+        "source": "spritesheets/head/heads/human/male/{a}.png",
+        "material": "body",
+        "palette": "SKIN",
+        "definition": "sheet_definitions/head/heads/human/heads_human_male.json"
+      },
+      {
+        "z": 20,
+        "source": "spritesheets/legs/pants/male/{a}.png",
+        "material": "cloth",
+        "palette": "charcoal",
+        "definition": "sheet_definitions/legs/pants/legs_pants.json"
+      },
+      {
+        "z": 22,
+        "source": "spritesheets/legs/skirts/slit/thin/{a}.png",
+        "material": "cloth",
+        "palette": "navy",
+        "definition": "sheet_definitions/legs/skirts/legs_skirts_slit.json"
+      },
+      {
+        "z": 25,
+        "source": "spritesheets/feet/boots/basic/male/{a}.png",
+        "material": "cloth",
+        "palette": "charcoal",
+        "definition": "sheet_definitions/feet/boots/feet_boots_basic.json"
+      },
+      {
+        "z": 35,
+        "source": "spritesheets/torso/clothes/longsleeve/longsleeve/male/{a}.png",
+        "material": "cloth",
+        "palette": "blue",
+        "definition": "sheet_definitions/torso/shirts/longsleeve/torso_clothes_longsleeve.json"
+      },
+      {
+        "z": 130,
+        "source": "spritesheets/hat/cloth/hood/adult/{a}.png",
+        "material": "cloth",
+        "palette": "navy",
+        "definition": "sheet_definitions/headwear/coverings/hoods/hat_hood_cloth.json"
+      },
+      {
+        "z": 90,
+        "source": "spritesheets/torso/waist/sash/male/{a}.png",
+        "material": "cloth",
+        "palette": "charcoal",
+        "definition": "sheet_definitions/torso/waist/belt_sash.json"
+      },
+      {
+        "z": 5,
+        "source": "spritesheets/cape/tattered/bg/{a}.png",
+        "material": "cloth",
+        "palette": "navy",
+        "definition": "sheet_definitions/torso/cape/cape_tattered.json"
+      },
+      {
+        "z": 85,
+        "source": "spritesheets/cape/tattered/fg/{a}.png",
+        "material": "cloth",
+        "palette": "navy",
+        "definition": "sheet_definitions/torso/cape/cape_tattered.json"
+      }
+    ],
+    "notes": [
+      "Wand has native slash only. WALK uses the official standing wand with a 0–1px gait-compatible translation; no custom weapon pixels drawn."
+    ],
+    "walk": {
+      "file": "{skin}-walk.png",
+      "tile": 64,
+      "origin": 0,
+      "frames": 9,
+      "rows": [
+        "north",
+        "west",
+        "south",
+        "east"
+      ]
+    },
+    "attack": {
+      "file": "{skin}-attack.png",
+      "tile": 64,
+      "origin": 0,
+      "frames": 6,
+      "rows": [
+        "north",
+        "west",
+        "south",
+        "east"
+      ]
+    }
+  },
+  "wand/acolyte/red": {
+    "generator": "Universal LPC Character Generator",
+    "revision": "86a3719ee4a7e2e9fb27c7c152e29a741d3e930a",
+    "weapon": "wand",
+    "outfit": "acolyte",
+    "outfitColor": "red",
+    "layers": [
+      {
+        "z": 10,
+        "source": "spritesheets/body/bodies/male/{a}.png",
+        "material": "body",
+        "palette": "SKIN",
+        "definition": "sheet_definitions/body/body.json"
+      },
+      {
+        "z": 100,
+        "source": "spritesheets/head/heads/human/male/{a}.png",
+        "material": "body",
+        "palette": "SKIN",
+        "definition": "sheet_definitions/head/heads/human/heads_human_male.json"
+      },
+      {
+        "z": 20,
+        "source": "spritesheets/legs/pants/male/{a}.png",
+        "material": "cloth",
+        "palette": "charcoal",
+        "definition": "sheet_definitions/legs/pants/legs_pants.json"
+      },
+      {
+        "z": 22,
+        "source": "spritesheets/legs/skirts/slit/thin/{a}.png",
+        "material": "cloth",
+        "palette": "maroon",
+        "definition": "sheet_definitions/legs/skirts/legs_skirts_slit.json"
+      },
+      {
+        "z": 25,
+        "source": "spritesheets/feet/boots/basic/male/{a}.png",
+        "material": "cloth",
+        "palette": "charcoal",
+        "definition": "sheet_definitions/feet/boots/feet_boots_basic.json"
+      },
+      {
+        "z": 35,
+        "source": "spritesheets/torso/clothes/longsleeve/longsleeve/male/{a}.png",
+        "material": "cloth",
+        "palette": "red",
+        "definition": "sheet_definitions/torso/shirts/longsleeve/torso_clothes_longsleeve.json"
+      },
+      {
+        "z": 130,
+        "source": "spritesheets/hat/cloth/hood/adult/{a}.png",
+        "material": "cloth",
+        "palette": "maroon",
+        "definition": "sheet_definitions/headwear/coverings/hoods/hat_hood_cloth.json"
+      },
+      {
+        "z": 90,
+        "source": "spritesheets/torso/waist/sash/male/{a}.png",
+        "material": "cloth",
+        "palette": "charcoal",
+        "definition": "sheet_definitions/torso/waist/belt_sash.json"
+      },
+      {
+        "z": 5,
+        "source": "spritesheets/cape/tattered/bg/{a}.png",
+        "material": "cloth",
+        "palette": "maroon",
+        "definition": "sheet_definitions/torso/cape/cape_tattered.json"
+      },
+      {
+        "z": 85,
+        "source": "spritesheets/cape/tattered/fg/{a}.png",
+        "material": "cloth",
+        "palette": "maroon",
+        "definition": "sheet_definitions/torso/cape/cape_tattered.json"
+      }
+    ],
+    "notes": [
+      "Wand has native slash only. WALK uses the official standing wand with a 0–1px gait-compatible translation; no custom weapon pixels drawn."
+    ],
+    "walk": {
+      "file": "{skin}-walk.png",
+      "tile": 64,
+      "origin": 0,
+      "frames": 9,
+      "rows": [
+        "north",
+        "west",
+        "south",
+        "east"
+      ]
+    },
+    "attack": {
+      "file": "{skin}-attack.png",
+      "tile": 64,
+      "origin": 0,
+      "frames": 6,
+      "rows": [
+        "north",
+        "west",
+        "south",
+        "east"
+      ]
+    }
+  },
+  "wand/acolyte/purple": {
+    "generator": "Universal LPC Character Generator",
+    "revision": "86a3719ee4a7e2e9fb27c7c152e29a741d3e930a",
+    "weapon": "wand",
+    "outfit": "acolyte",
+    "outfitColor": "purple",
     "layers": [
       {
         "z": 10,
@@ -641,7 +1479,7 @@
         "z": 90,
         "source": "spritesheets/torso/waist/sash/male/{a}.png",
         "material": "cloth",
-        "palette": "purple",
+        "palette": "charcoal",
         "definition": "sheet_definitions/torso/waist/belt_sash.json"
       },
       {
@@ -687,11 +1525,12 @@
       ]
     }
   },
-  "wand/adept": {
+  "wand/acolyte/gray": {
     "generator": "Universal LPC Character Generator",
     "revision": "86a3719ee4a7e2e9fb27c7c152e29a741d3e930a",
     "weapon": "wand",
-    "outfit": "adept",
+    "outfit": "acolyte",
+    "outfitColor": "gray",
     "layers": [
       {
         "z": 10,
@@ -718,7 +1557,7 @@
         "z": 22,
         "source": "spritesheets/legs/skirts/slit/thin/{a}.png",
         "material": "cloth",
-        "palette": "navy",
+        "palette": "gray",
         "definition": "sheet_definitions/legs/skirts/legs_skirts_slit.json"
       },
       {
@@ -732,29 +1571,36 @@
         "z": 35,
         "source": "spritesheets/torso/clothes/longsleeve/longsleeve/male/{a}.png",
         "material": "cloth",
-        "palette": "navy",
+        "palette": "slate",
         "definition": "sheet_definitions/torso/shirts/longsleeve/torso_clothes_longsleeve.json"
       },
       {
         "z": 130,
-        "source": "spritesheets/hat/magic/wizard/base/adult/{a}/navy.png",
+        "source": "spritesheets/hat/cloth/hood/adult/{a}.png",
         "material": "cloth",
-        "palette": null,
-        "definition": "sheet_definitions/headwear/hats/magic/hat_magic_wizard.json"
-      },
-      {
-        "z": 131,
-        "source": "spritesheets/hat/magic/wizard/belt/adult/{a}.png",
-        "material": "cloth",
-        "palette": "yellow",
-        "definition": "sheet_definitions/headwear/hats/magic/hat_magic_wizard_belt.json"
+        "palette": "gray",
+        "definition": "sheet_definitions/headwear/coverings/hoods/hat_hood_cloth.json"
       },
       {
         "z": 90,
         "source": "spritesheets/torso/waist/sash/male/{a}.png",
         "material": "cloth",
-        "palette": "yellow",
+        "palette": "charcoal",
         "definition": "sheet_definitions/torso/waist/belt_sash.json"
+      },
+      {
+        "z": 5,
+        "source": "spritesheets/cape/tattered/bg/{a}.png",
+        "material": "cloth",
+        "palette": "gray",
+        "definition": "sheet_definitions/torso/cape/cape_tattered.json"
+      },
+      {
+        "z": 85,
+        "source": "spritesheets/cape/tattered/fg/{a}.png",
+        "material": "cloth",
+        "palette": "gray",
+        "definition": "sheet_definitions/torso/cape/cape_tattered.json"
       }
     ],
     "notes": [

@@ -1,5 +1,5 @@
 EMBER — ORIGINAL UNIVERSAL LPC CHARACTER GENERATOR ART
-All original authors, sources, layer licenses and changes are listed below.
+Authors, sources, source-layer licenses and documented modifications follow.
 
 characters/CREDITS.txt
 
@@ -395,24 +395,6 @@ Authors: Johannes Sjölund (wulax), JaidynReiman
 Licenses: OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0
 Sources: https://opengameart.org/content/lpc-medieval-fantasy-character-sprites, https://opengameart.org/content/lpc-expanded-hats-facial-helmets
 
-DEFINITION: sheet_definitions/headwear/hats/magic/hat_magic_wizard.json
-Asset: hat/magic/wizard
-Authors: Michael Whitlock (bigbeargames), Tuomo Untinen (reemax), JaidynReiman
-Licenses: CC-BY-SA 3.0, GPL 2.0, GPL 3.0
-Sources: https://opengameart.org/content/lpc-items-and-game-effects, https://opengameart.org/content/lpc-pointed-hats, https://opengameart.org/content/lpc-expanded-hats-facial-helmets
-
-DEFINITION: sheet_definitions/headwear/hats/magic/hat_magic_wizard_belt.json
-Asset: hat/magic/wizard
-Authors: Michael Whitlock (bigbeargames), Tuomo Untinen (reemax), JaidynReiman
-Licenses: CC-BY-SA 3.0, GPL 2.0, GPL 3.0
-Sources: https://opengameart.org/content/lpc-items-and-game-effects, https://opengameart.org/content/lpc-pointed-hats, https://opengameart.org/content/lpc-expanded-hats-facial-helmets
-
-DEFINITION: sheet_definitions/headwear/helmets/helmets/hat_helmet_bascinet_round.json
-Asset: hat/helmet/bascinet_round
-Authors: bluecarrot16, JaidynReiman, ElizaWy, Sander Frenken (castelonia)
-Licenses: OGA-BY 3.0, CC-BY-SA 4.0, CC-BY-SA 3.0, GPL 3.0
-Sources: https://opengameart.org/content/lpc-realistic-helmet-pack, https://opengameart.org/content/lpc-helmets-mega-pack, https://opengameart.org/content/lpc-expanded-hats-facial-helmets
-
 DEFINITION: sheet_definitions/legs/pants/legs_pants.json
 Asset: legs/pants/male
 Authors: bluecarrot16, JaidynReiman, ElizaWy, Matthew Krohn (makrohn), Johannes Sjölund (wulax), Stephen Challener (Redshrike)
@@ -430,22 +412,6 @@ Authors: Nila122, ElizaWy, bluecarrot16
 Licenses: OGA-BY 3.0, CC-BY-SA 3.0, GPL 2.0, GPL 3.0
 Sources: https://opengameart.org/content/lpc-clothes-and-hair, http://opengameart.org/content/lpc-clothing-updates
 
-DEFINITION: sheet_definitions/torso/armour/torso_armour_leather.json
-Asset: torso/armour/leather
-Authors: Johannes Sjölund (wulax), bluecarrot16, JaidynReiman
-Licenses: OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0
-Sources: https://opengameart.org/content/lpc-medieval-fantasy-character-sprites, https://opengameart.org/content/lpc-clothing-updates, https://opengameart.org/content/lpc-expanded-armor
-
-Asset: torso/armour/leather/female
-Authors: Michael Whitlock (bigbeargames), Matthew Krohn (makrohn), Johannes Sjölund (wulax), bluecarrot16, JaidynReiman
-Licenses: OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0
-Sources: https://opengameart.org/content/lpc-medieval-fantasy-character-sprites, https://opengameart.org/content/lpc-combat-armor-for-women, https://opengameart.org/content/lpc-clothing-updates, https://opengameart.org/content/lpc-expanded-armor
-
-Asset: torso/armour/leather/teen
-Authors: Michael Whitlock (bigbeargames), Matthew Krohn (makrohn), Johannes Sjölund (wulax), bluecarrot16, JaidynReiman
-Licenses: OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0
-Sources: https://opengameart.org/content/lpc-medieval-fantasy-character-sprites, https://opengameart.org/content/lpc-combat-armor-for-women, https://opengameart.org/content/lpc-clothing-updates, https://opengameart.org/content/lpc-expanded-armor
-
 DEFINITION: sheet_definitions/torso/backpack/quiver.json
 Asset: quiver
 Authors: Johannes Sjölund (wulax)
@@ -462,17 +428,6 @@ Asset: cape/tattered/bg
 Authors: Nila122, JaidynReiman
 Licenses: OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0
 Sources: https://opengameart.org/content/lpc-curly-hair-elven-ears-white-cape-with-blue-trim-and-more, https://opengameart.org/content/lpc-roman-armor
-
-DEFINITION: sheet_definitions/torso/jacket/torso_jacket_tabard.json
-Asset: torso/jacket/tabard
-Authors: bluecarrot16, Johannes Sjölund (wulax)
-Licenses: OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0
-Sources: https://opengameart.org/content/lpc-medieval-fantasy-character-sprites, http://opengameart.org/content/lpc-clothing-updates
-
-Asset: torso/jacket/tabard/female
-Authors: JaidynReiman, Matthew Krohn (makrohn), Johannes Sjölund (wulax)
-Licenses: OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0
-Sources: https://opengameart.org/content/lpc-medieval-fantasy-character-sprites, https://opengameart.org/content/lpc-combat-armor-for-women, http://opengameart.org/content/lpc-clothing-updates
 
 DEFINITION: sheet_definitions/torso/shirts/longsleeve/torso_clothes_longsleeve.json
 Asset: torso/clothes/longsleeve/longsleeve/male
@@ -494,28 +449,6 @@ Asset: torso/clothes/longsleeve/longsleeve/pregnant
 Authors: bluecarrot16, ElizaWy, Stephen Challener (Redshrike), Johannes Sjölund (wulax)
 Licenses: CC-BY-SA 3.0, GPL 3.0
 Sources: https://opengameart.org/content/lpc-7-womens-shirts, http://opengameart.org/content/lpc-clothing-updates, https://opengameart.org/content/lpc-revised-character-basics, https://github.com/ElizaWy/LPC/tree/main/Characters/Clothing, https://opengameart.org/content/lpc-expanded-sit-run-jump-more, https://opengameart.org/content/lpc-expanded-simple-shirts
-
-DEFINITION: sheet_definitions/torso/torso_chainmail.json
-Asset: torso/chainmail
-Authors: Johannes Sjölund (wulax), Napsio (Vitruvian Studio), JaidynReiman
-Licenses: OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0
-Sources: https://opengameart.org/content/lpc-medieval-fantasy-character-sprites
-
-DEFINITION: sheet_definitions/torso/vest/torso_clothes_vest.json
-Asset: torso/clothes/vest
-Authors: bluecarrot16, Thane Brimhall (pennomi), laetissima, Stephen Challener (Redshrike), Johannes Sjölund (wulax)
-Licenses: CC-BY-SA 3.0, GPL 3.0
-Sources: https://opengameart.org/content/lpc-2-characters, https://opengameart.org/content/lpc-gentleman, https://opengameart.org/content/lpc-pirates
-
-Asset: torso/clothes/vest/male/gray_striped.png
-Authors: Michael Whitlock (bigbeargames), bluecarrot16, Thane Brimhall (pennomi), laetissima
-Licenses: CC-BY-SA 3.0, GPL 3.0
-Sources: https://opengameart.org/content/lpc-2-characters
-
-Asset: torso/clothes/vest/male/gray.png
-Authors: Michael Whitlock (bigbeargames), bluecarrot16, Thane Brimhall (pennomi), laetissima
-Licenses: CC-BY-SA 3.0, GPL 3.0
-Sources: https://opengameart.org/content/lpc-2-characters
 
 DEFINITION: sheet_definitions/torso/waist/belt_leather.json
 Asset: torso/waist/belt_leather

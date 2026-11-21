@@ -195,7 +195,7 @@
     actor.bar.querySelector('i').style.width = `${unit.hp / unit.maxHp * 100}%`;
     actor.bar.setAttribute('aria-valuenow',unit.hp);
     actor.bar.setAttribute('aria-valuemax',unit.maxHp);
-    actor.element.setAttribute('aria-label', `${unit.name}${id === 'hero' && loadout ? `, ${starterWeapon.name}, наряд ${starterOutfit.name}` : ''}: ${unit.hp} из ${unit.maxHp} здоровья`);
+    actor.element.setAttribute('aria-label', `${unit.name}${id === 'hero' && loadout ? `, ${starterWeapon.name}, наряд ${starterOutfit.name}, ${loadouts.color(loadout.outfitColor).name}` : ''}: ${unit.hp} из ${unit.maxHp} здоровья`);
   }
   // Walking pace and frame phase both follow travelled distance, never a fixed slide tween.
   function updateMovement(dt,state) {
@@ -296,7 +296,7 @@
     $('#sprite-credits').hidden=!profile;
     if (!dialog.open) dialog.showModal(); syncPause();
   }
-  $('#profile-button').addEventListener('click', () => openInfo('ТВОЙ ГЕРОЙ',name,`Уровень ${level} · Сила 12 · ${skinNames[skinIds.indexOf(skin)]} оттенок кожи. ${loadout ? `${starterWeapon.name} · наряд «${starterOutfit.name}».` : 'Без класса, брони и оружия.'} В тестовом бою: 200 здоровья.`,true));
+  $('#profile-button').addEventListener('click', () => openInfo('ТВОЙ ГЕРОЙ',name,`Уровень ${level} · Сила 12 · ${skinNames[skinIds.indexOf(skin)]} оттенок кожи. ${loadout ? `${starterWeapon.name} · наряд «${starterOutfit.name}», ${loadouts.color(loadout.outfitColor).name.toLowerCase()} цвет.` : 'Без класса, брони и оружия.'} В тестовом бою: 200 здоровья.`,true));
   document.querySelectorAll('[data-info]').forEach(button=>button.addEventListener('click',()=>openInfo(...information[button.dataset.info]())));
   dialog.querySelectorAll('.dialog-close,.dialog-action').forEach(button=>button.addEventListener('click',()=>dialog.close()));
   dialog.addEventListener('close',syncPause);

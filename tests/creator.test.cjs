@@ -18,7 +18,7 @@ function harness({saved=null,blocked=false}={}){
  const groups={
   '.skin-option':['light','amber','olive','bronze','brown','black'].map(id=>{let n=node('skin:'+id);n.dataset.skin=id;return n}),
   '[data-weapon]':['sword','bow','wand'].map(id=>{let n=node('weapon:'+id);n.dataset.weapon=id;return n}),
-  '[data-outfit-index]':[0,1,2].map(i=>{let n=node('outfit:'+i);n.dataset.outfitIndex=String(i);return n}),
+  '[data-outfit-color]':['sand','forest','blue','red','purple','gray'].map(id=>{let n=node('color:'+id);n.dataset.outfitColor=id;return n}),
   '[data-go-step]':[0,1,2].map(i=>{let n=node('progress:'+i);n.dataset.goStep=String(i);return n}),
   '[data-step]':[0,1,2].map(i=>{let n=node('panel:'+i);n.dataset.step=String(i);return n}),
   dialog:['#info-dialog','#success-dialog','#credits-dialog'].map(node)
@@ -33,32 +33,40 @@ function harness({saved=null,blocked=false}={}){
  async function load(){await flush();while(pending.length){pending.shift().onload();await flush()}}
  return {node,groups,storage,load,window};
 }
-test('creation follows skin→weapon→outfit, preserves selected skin, and saves complete equipment',async()=>{
+test('creation follows skin→weapon→clothing color and saves the single matching outfit',async()=>{
  const ui=harness();assert.equal(ui.node('#create-button').disabled,true);await ui.load();
  ui.node('skin:brown').click();await ui.load();ui.node('#create-button').click();await ui.load();
  assert.equal(ui.node('#step-title').textContent,'Начальное оружие');ui.node('weapon:bow').click();await ui.load();
  assert.equal(ui.node('#hero').width,128);assert.equal(ui.node('#hero').style.width,'200%');
- ui.node('#create-button').click();await ui.load();ui.node('outfit:1').click();await ui.load();ui.node('#create-button').click();
- const saved=JSON.parse(ui.storage.get('ember.character.v1'));assert.deepEqual([saved.skin,saved.weapon,saved.outfit],['brown','bow','hunter']);assert.deepEqual(saved.equipment,['bow','hunter']);
- assert.equal(ui.node('#success-dialog').open,true);assert.match(ui.node('#saved-loadout').textContent,/Охотник/);
+ ui.node('#create-button').click();await ui.load();assert.equal(ui.node('#fixed-outfit-name').textContent,'Странник');
+ ui.node('color:red').click();await ui.load();ui.node('#create-button').click();
+ const saved=JSON.parse(ui.storage.get('ember.character.v1'));assert.deepEqual([saved.skin,saved.weapon,saved.outfit,saved.outfitColor],['brown','bow','wanderer','red']);assert.deepEqual(saved.equipment,['bow','wanderer']);
+ assert.equal(ui.node('#success-dialog').open,true);assert.match(ui.node('#saved-loadout').textContent,/Странник.*Бордовый/);
  ui.node('#start-adventure').click();assert.equal(ui.window.location.href,'./');
 });
-test('all nine outfits preview and rotate in the chosen skin and persist matching weapon',async()=>{
- const sets={sword:['militia','watchman','guard'],bow:['scout','hunter','ranger'],wand:['apprentice','acolyte','adept']};
- for(const [weapon,outfits]of Object.entries(sets))for(let i=0;i<3;i++){
+test('all eighteen weapon and clothing-color choices preview, rotate and retain the independent skin',async()=>{
+ const sets={sword:'militia',bow:'wanderer',wand:'acolyte'};
+ for(const [weapon,outfit]of Object.entries(sets))for(const color of ['sand','forest','blue','red','purple','gray']){
   const ui=harness();await ui.load();ui.node('skin:black').click();await ui.load();ui.node('#create-button').click();await ui.load();
-  ui.node('weapon:'+weapon).click();await ui.load();ui.node('#create-button').click();await ui.load();ui.node('outfit:'+i).click();await ui.load();
+  ui.node('weapon:'+weapon).click();await ui.load();ui.node('#create-button').click();await ui.load();ui.node('color:'+color).click();await ui.load();
   ui.node('#scene').dispatch('keydown',{key:'ArrowRight'});
-  const draw=ui.node('#hero').draws.at(-1);assert.ok(draw.src.endsWith(`${weapon}/${outfits[i]}/black-walk.png`));assert.equal(draw.crop[1],weapon==='bow'?384:192);
-  ui.node('#create-button').click();const saved=JSON.parse(ui.storage.get('ember.character.v1'));assert.equal(saved.weapon,weapon);assert.equal(saved.outfit,outfits[i]);assert.equal(saved.skin,'black');
+  const draw=ui.node('#hero').draws.at(-1);assert.ok(draw.src.endsWith(`${weapon}/${outfit}/${color}/black-walk.png`));assert.equal(draw.crop[1],weapon==='bow'?384:192);
+  ui.node('#create-button').click();const saved=JSON.parse(ui.storage.get('ember.character.v1'));assert.deepEqual([saved.weapon,saved.outfit,saved.outfitColor,saved.skin],[weapon,outfit,color,'black']);
  }
 });
-test('back navigation and existing character restoration preserve prior outfit, name, level and creation time',async()=>{
- const ui=harness({saved:{version:1,skin:'amber',weapon:'wand',outfit:'acolyte',name:'Рыцарь',level:7,createdAt:'old'}});await ui.load();
+test('legacy wardrobe migrates on save and back navigation preserves color, name, level and creation time',async()=>{
+ const ui=harness({saved:{version:1,skin:'amber',weapon:'wand',outfit:'adept',name:'Рыцарь',level:7,createdAt:'old'}});await ui.load();
+ assert.equal(JSON.parse(ui.storage.get('ember.character.v1')).outfit,'adept','no eager write on load');
  ui.node('#create-button').click();await ui.load();assert.equal(ui.node('weapon:wand').attrs['aria-checked'],'true');ui.node('#create-button').click();await ui.load();
- assert.equal(ui.node('outfit:1').attrs['aria-checked'],'true');ui.node('progress:0').click();await ui.load();ui.node('skin:olive').click();await ui.load();
- ui.node('progress:2').click();await ui.load();assert.equal(ui.node('outfit:1').attrs['aria-checked'],'true');ui.node('#create-button').click();
- const saved=JSON.parse(ui.storage.get('ember.character.v1'));assert.deepEqual([saved.name,saved.level,saved.createdAt,saved.skin,saved.outfit],['Рыцарь',7,'old','olive','acolyte']);
+ assert.equal(ui.node('color:blue').attrs['aria-checked'],'true');assert.equal(ui.node('#fixed-outfit-name').textContent,'Послушник');
+ ui.node('color:gray').click();await ui.load();ui.node('progress:0').click();await ui.load();ui.node('skin:olive').click();await ui.load();
+ ui.node('progress:2').click();await ui.load();assert.equal(ui.node('color:gray').attrs['aria-checked'],'true');ui.node('#create-button').click();
+ const saved=JSON.parse(ui.storage.get('ember.character.v1'));assert.deepEqual([saved.name,saved.level,saved.createdAt,saved.skin,saved.outfit,saved.outfitColor],['Рыцарь',7,'old','olive','acolyte','gray']);assert.deepEqual(saved.equipment,['wand','acolyte']);
+});
+test('each weapon remembers its own clothing color during edits',async()=>{
+ const ui=harness();await ui.load();ui.node('#create-button').click();await ui.load();ui.node('#create-button').click();await ui.load();
+ ui.node('color:red').click();await ui.load();ui.node('#back-button').click();await ui.load();ui.node('weapon:bow').click();await ui.load();ui.node('#create-button').click();await ui.load();assert.equal(ui.node('color:forest').attrs['aria-checked'],'true');
+ ui.node('color:gray').click();await ui.load();ui.node('#back-button').click();await ui.load();ui.node('weapon:sword').click();await ui.load();ui.node('#create-button').click();await ui.load();assert.equal(ui.node('color:red').attrs['aria-checked'],'true');
 });
 test('a stale asynchronous image cannot replace the newest selection; storage failure reports no success',async()=>{
  const ui=harness({blocked:true});ui.node('skin:amber').click();await ui.load();assert.ok(ui.node('#hero').draws.at(-1).src.endsWith('/amber.png'));

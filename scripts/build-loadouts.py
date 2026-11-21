@@ -42,6 +42,27 @@ recipes[('wand','apprentice')]=base()+[pants('navy'),boots(),shirt('white'),L(55
 recipes[('wand','acolyte')]=base()+[pants('charcoal'),L(22,'legs/skirts/slit/thin/{a}.png','purple','legs/skirts/legs_skirts_slit.json'),boots('charcoal'),shirt('lavender'),hood('purple'),sash('purple')]+cape('purple')
 recipes[('wand','adept')]=base()+[pants('charcoal'),L(22,'legs/skirts/slit/thin/{a}.png','navy','legs/skirts/legs_skirts_slit.json'),boots('charcoal'),shirt('navy'),L(130,'hat/magic/wizard/base/adult/{a}/navy.png',None,'headwear/hats/magic/hat_magic_wizard.json'),L(131,'hat/magic/wizard/belt/adult/{a}.png','yellow','headwear/hats/magic/hat_magic_wizard_belt.json'),sash('yellow')]
 weapondefs={'sword':['weapons/sword/weapon_sword_arming.json','weapons/shields/shield_round.json'],'bow':['weapons/ranged/bow/weapon_ranged_bow_normal.json','weapons/ranged/bow/weapon_ranged_bow_arrow.json','torso/backpack/quiver.json'],'wand':['weapons/magic/weapon_magic_wand.json']}
+# One starter silhouette per weapon; six official cloth palettes, skin remains independent.
+colorways = {
+ 'sand': ('tan','white'), 'forest': ('forest','green'), 'blue': ('navy','blue'),
+ 'red': ('maroon','red'), 'purple': ('purple','lavender'), 'gray': ('gray','slate')
+}
+base_recipes = {('sword','militia'):recipes[('sword','militia')],('bow','wanderer'):recipes[('bow','ranger')],('wand','acolyte'):recipes[('wand','acolyte')]}
+recipes = {}
+for (weapon,outfit), layers in base_recipes.items():
+ for color_id,(main,light) in colorways.items():
+  variant=[]
+  for z,path,material,color,definition in layers:
+   if weapon=='sword' and 'torso/clothes/longsleeve/' in path:color=main
+   elif weapon=='bow':
+    if 'cape/tattered/' in path or 'hat/cloth/hood/' in path:color=main
+    elif 'torso/clothes/longsleeve/' in path:color='bluegray'
+   elif weapon=='wand':
+    if any(part in path for part in ['cape/tattered/','hat/cloth/hood/','legs/skirts/']):color=main
+    elif 'torso/clothes/longsleeve/' in path:color=light
+    elif 'torso/waist/sash/' in path:color='charcoal'
+   variant.append((z,path,material,color,definition))
+  recipes[(weapon,outfit+'/'+color_id)]=variant
 # Fetch missing layers concurrently before composing.
 needed=set()
 for (w,id),ls in recipes.items():
@@ -72,7 +93,7 @@ def cell(im,frame,row,src_tile):return im.crop((frame*src_tile,row*src_tile,(fra
 allcredits={}; outputmeta={}
 for (w,id),ls in recipes.items():
  dest=ROOT/w/id;dest.mkdir(parents=True,exist_ok=True)
- meta={'generator':'Universal LPC Character Generator','revision':REV,'weapon':w,'outfit':id,'layers':[],'notes':[]}
+ meta={'generator':'Universal LPC Character Generator','revision':REV,'weapon':w,'outfit':id.split('/')[0],'outfitColor':id.split('/')[1],'layers':[],'notes':[]}
  defs=set([l[4] for l in ls if l[4]]+[D+d for d in weapondefs[w]])
  for d in defs:allcredits[d]=json.load(open(source(d)))
  for skin in ['light','amber','olive','bronze','brown','black']:
@@ -119,9 +140,18 @@ for p,d in sorted(allcredits.items()):
  for c in d.get('credits',[]):lines+=['Asset: '+c.get('file',''),'Authors: '+', '.join(c.get('authors',[])),'Licenses: '+', '.join(c.get('licenses',[])),'Sources: '+', '.join(c.get('urls',[])),'']
 (ROOT/'CREDITS.txt').write_text('\n'.join(lines))
 (ROOT/'manifest.json').write_text(json.dumps(outputmeta,ensure_ascii=False,indent=2))
-board=Image.new('RGB',(768,768),'#202b24')
+board=Image.new('RGB',(1152,576),'#202b24')
 for j,w in enumerate(['sword','bow','wand']):
  for i,id in enumerate([k[1] for k in recipes if k[0]==w]):
-  im=Image.open(ROOT/w/id/'light-preview.png').resize((256,256),Image.Resampling.NEAREST);board.paste(im,(i*256,j*256),im)
-board.save(CACHE/'loadouts-contact.png')
-print('DONE nine presets,54 skin variants,108 animated sheets +54 previews',flush=True)
+  im=Image.open(ROOT/w/id/'light-preview.png').resize((192,192),Image.Resampling.NEAREST);board.paste(im,(i*192,j*192),im)
+CACHE.mkdir(parents=True,exist_ok=True)
+board.save(CACHE/'loadout-colors-contact.png')
+# Remove superseded wardrobe alternatives and uncolored sheets; saved records are normalized by the catalogue.
+keep={'sword':'militia','bow':'wanderer','wand':'acolyte'}
+for w,base_id in keep.items():
+ for folder in (ROOT/w).iterdir():
+  if folder.is_dir() and folder.name not in [base_id,'source']:shutil.rmtree(folder)
+ base_folder=ROOT/w/base_id
+ for old in list(base_folder.glob('*.png'))+[base_folder/'manifest.json']:
+  if old.is_file():old.unlink()
+print('DONE three starter outfits, six cloth colors, six skin colors;324 animated/preview PNGs',flush=True)

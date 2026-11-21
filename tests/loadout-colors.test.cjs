@@ -1,0 +1,88 @@
+'use strict';
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const catalogue = require('../dist/loadouts.js');
+const dist = path.resolve(__dirname, '../dist');
+const skins = ['light','amber','olive','bronze','brown','black'];
+const signature = Buffer.from([137,80,78,71,13,10,26,10]);
+
+test('three weapons have exactly one fixed silhouette each and six independent clothing colors', () => {
+  assert.deepEqual(catalogue.weapons.map(weapon => [weapon.id, weapon.outfits.map(outfit => [outfit.id,outfit.name])]), [
+    ['sword',[['militia','Ополченец']]],
+    ['bow',[['wanderer','Странник']]],
+    ['wand',[['acolyte','Послушник']]]
+  ]);
+  assert.equal(catalogue.colors.length, 6);
+  assert.equal(new Set(catalogue.colors.map(color => color.id)).size, 6);
+  for (const color of catalogue.colors) {
+    assert.ok(color.name);
+    assert.match(color.swatch, /^#[\da-f]{6}$/i);
+    assert.equal(catalogue.color(color.id), color);
+  }
+  for (const weapon of catalogue.weapons) assert.ok(catalogue.color(weapon.defaultColor));
+});
+
+test('all 108 weapon/color/skin combinations have unique paths and renderer-compatible PNG sheets', () => {
+  const dimensions = {
+    sword:{walk:[576,256],attack:[768,512],preview:[64,64]},
+    bow:{walk:[1152,512],attack:[832,256],preview:[64,64]},
+    wand:{walk:[576,256],attack:[384,256],preview:[64,64]}
+  };
+  const paths = new Set();
+  let combinations = 0;
+  for (const weapon of catalogue.weapons) for (const color of catalogue.colors) for (const skin of skins) {
+    const choice = {weapon:weapon.id,outfit:weapon.outfits[0].id,outfitColor:color.id};
+    for (const animation of ['walk','attack','preview']) {
+      const relative = catalogue.path(choice,skin,animation);
+      assert.equal(relative, `assets/characters/loadouts/${choice.weapon}/${choice.outfit}/${color.id}/${skin}-${animation}.png`);
+      assert.ok(!paths.has(relative), `duplicate asset path: ${relative}`);
+      paths.add(relative);
+      const png = fs.readFileSync(path.join(dist,relative));
+      assert.deepEqual(png.subarray(0,8), signature, relative);
+      assert.deepEqual([png.readUInt32BE(16),png.readUInt32BE(20)], dimensions[weapon.id][animation], relative);
+      if (animation !== 'preview') {
+        const descriptor = weapon[animation];
+        assert.deepEqual(dimensions[weapon.id][animation], [descriptor.tile*descriptor.frames,descriptor.tile*4]);
+      }
+    }
+    combinations++;
+  }
+  assert.equal(combinations, 108);
+  assert.equal(paths.size, 324);
+});
+
+test('legacy outfits normalize without input mutation, and valid explicit colors take precedence', () => {
+  const cases = [
+    ['sword','militia','militia','sand'],['sword','watchman','militia','blue'],['sword','guard','militia','red'],
+    ['bow','scout','wanderer','forest'],['bow','hunter','wanderer','sand'],['bow','ranger','wanderer','forest'],
+    ['wand','apprentice','acolyte','blue'],['wand','acolyte','acolyte','purple'],['wand','adept','acolyte','blue']
+  ];
+  for (const [weapon,oldOutfit,outfit,outfitColor] of cases) {
+    const saved = Object.freeze({version:1,weapon,outfit:oldOutfit,skin:'black',name:'Старый герой',level:7,createdAt:'2026-11-20',equipment:Object.freeze([weapon,oldOutfit])});
+    const before = JSON.stringify(saved);
+    assert.deepEqual(catalogue.selection(saved), {weapon,outfit,outfitColor});
+    for (const color of catalogue.colors) {
+      const explicit = Object.freeze({...saved,outfitColor:color.id});
+      assert.deepEqual(catalogue.selection(explicit), {weapon,outfit,outfitColor:color.id});
+    }
+    assert.equal(JSON.stringify(saved), before);
+  }
+  for (const weapon of catalogue.weapons) {
+    assert.deepEqual(catalogue.selection({weapon:weapon.id,outfit:weapon.outfits[0].id}), {
+      weapon:weapon.id,outfit:weapon.outfits[0].id,outfitColor:weapon.defaultColor
+    });
+  }
+});
+
+test('invalid selections, skins and animations cannot construct arbitrary asset paths', () => {
+  const valid = {weapon:'bow',outfit:'wanderer',outfitColor:'forest'};
+  for (const invalid of [null,{}, {weapon:'../../',outfit:'wanderer'}, {weapon:'bow',outfit:'../ranger'}, {weapon:'bow',outfit:'__proto__'}]) {
+    assert.equal(catalogue.selection(invalid), null);
+    assert.throws(() => catalogue.path(invalid,'light'), /Invalid starter appearance/);
+  }
+  for (const skin of ['../light','light.png','constructor',null]) assert.throws(() => catalogue.path(valid,skin), /Invalid starter appearance/);
+  for (const animation of ['../walk','__proto__','attack.png',null]) assert.throws(() => catalogue.path(valid,'light',animation), /Invalid starter appearance/);
+  assert.equal(catalogue.path({...valid,outfitColor:'../../secret'},'light'), catalogue.path(valid,'light'));
+});

@@ -1,0 +1,90 @@
+{
+  "generator": "Universal LPC Character Generator",
+  "revision": "86a3719ee4a7e2e9fb27c7c152e29a741d3e930a",
+  "weapon": "bow",
+  "outfit": "wanderer",
+  "outfitColor": "blue",
+  "layers": [
+    {
+      "z": 10,
+      "source": "spritesheets/body/bodies/male/{a}.png",
+      "material": "body",
+      "palette": "SKIN",
+      "definition": "sheet_definitions/body/body.json"
+    },
+    {
+      "z": 100,
+      "source": "spritesheets/head/heads/human/male/{a}.png",
+      "material": "body",
+      "palette": "SKIN",
+      "definition": "sheet_definitions/head/heads/human/heads_human_male.json"
+    },
+    {
+      "z": 20,
+      "source": "spritesheets/legs/pants/male/{a}.png",
+      "material": "cloth",
+      "palette": "charcoal",
+      "definition": "sheet_definitions/legs/pants/legs_pants.json"
+    },
+    {
+      "z": 25,
+      "source": "spritesheets/feet/boots/basic/male/{a}.png",
+      "material": "cloth",
+      "palette": "charcoal",
+      "definition": "sheet_definitions/feet/boots/feet_boots_basic.json"
+    },
+    {
+      "z": 35,
+      "source": "spritesheets/torso/clothes/longsleeve/longsleeve/male/{a}.png",
+      "material": "cloth",
+      "palette": "bluegray",
+      "definition": "sheet_definitions/torso/shirts/longsleeve/torso_clothes_longsleeve.json"
+    },
+    {
+      "z": 130,
+      "source": "spritesheets/hat/cloth/hood/adult/{a}.png",
+      "material": "cloth",
+      "palette": "navy",
+      "definition": "sheet_definitions/headwear/coverings/hoods/hat_hood_cloth.json"
+    },
+    {
+      "z": 5,
+      "source": "spritesheets/cape/tattered/bg/{a}.png",
+      "material": "cloth",
+      "palette": "navy",
+      "definition": "sheet_definitions/torso/cape/cape_tattered.json"
+    },
+    {
+      "z": 85,
+      "source": "spritesheets/cape/tattered/fg/{a}.png",
+      "material": "cloth",
+      "palette": "navy",
+      "definition": "sheet_definitions/torso/cape/cape_tattered.json"
+    }
+  ],
+  "notes": [],
+  "walk": {
+    "file": "{skin}-walk.png",
+    "tile": 128,
+    "origin": 32,
+    "frames": 9,
+    "rows": [
+      "north",
+      "west",
+      "south",
+      "east"
+    ]
+  },
+  "attack": {
+    "file": "{skin}-attack.png",
+    "tile": 64,
+    "origin": 0,
+    "frames": 13,
+    "rows": [
+      "north",
+      "west",
+      "south",
+      "east"
+    ]
+  }
+}
