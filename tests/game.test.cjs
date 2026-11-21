@@ -12,10 +12,10 @@ const combatSource = fs.readFileSync(path.join(dist, 'combat.js'), 'utf8');
 
 // The real game controller and combat engine run together. Only browser surfaces,
 // image decoding and the animation clock are replaced; no combat logic is mocked.
-function createHarness({skin = 'bronze', preference, search = '', weapon, outfit, outfitColor} = {}) {
+function createHarness({skin = 'bronze', preference, search = '', weapon, outfit, outfitColor, reducedMotion = false} = {}) {
   const storage = new Map([['ember.character.v1', JSON.stringify({version:1, skin, name:'Тестовый герой', level:1,weapon,outfit,outfitColor})]]);
   if (preference) storage.set('ember.combat.auto.v1', preference);
-  const nodes = new Map(), pendingImages = [], loadedPaths = [], raf = [], resizeCallbacks = [];
+  const nodes = new Map(), pendingImages = [], loadedPaths = [], raf = [], resizeCallbacks = [], events = [];
   let battle, now = 0;
 
   class Element {
@@ -107,7 +107,7 @@ function createHarness({skin = 'bronze', preference, search = '', weapon, outfit
   }
   const window = {
     innerWidth:800, innerHeight:800, location:{search},
-    matchMedia:() => ({matches:false}), addEventListener() {},
+    matchMedia:() => ({matches:reducedMotion}), addEventListener() {},
     requestAnimationFrame:callback => raf.push(callback)
   };
   const context = vm.createContext({
@@ -118,7 +118,16 @@ function createHarness({skin = 'bronze', preference, search = '', weapon, outfit
   vm.runInContext(fs.readFileSync(path.join(dist,'loadouts.js'),'utf8'), context, {filename:'loadouts.js'});
   vm.runInContext(combatSource, context, {filename:'combat.js'});
   const createBattle = window.EmberCombat.createBattle;
-  window.EmberCombat.createBattle = options => { battle = createBattle(options); return battle; };
+  window.EmberCombat.createBattle = options => {
+    battle = createBattle(options);
+    const advance = battle.advance;
+    battle.advance = seconds => {
+      const emitted = advance(seconds);
+      events.push(...JSON.parse(JSON.stringify(emitted)));
+      return emitted;
+    };
+    return battle;
+  };
   vm.runInContext(gameSource, context, {filename:'game.js'});
 
   async function flushPromises() { for (let i=0; i<12; i++) await Promise.resolve(); }
@@ -159,7 +168,7 @@ function createHarness({skin = 'bronze', preference, search = '', weapon, outfit
     if(modelSize)for(const id of ['hero','orc','archer','mage'])node(`[data-fighter="${id}"]`).offsetWidth=modelSize;
     resizeCallbacks.forEach(callback => callback());
   }
-  return {node, storage, loadedPaths, document, state, loadNextImage, loadAllImages, runFor, runUntil, frame, heroX, orcX, visualState, resizeField};
+  return {node, storage, loadedPaths, document, state, events, loadNextImage, loadAllImages, runFor, runUntil, frame, heroX, orcX, visualState, resizeField};
 }
 
 test('controller waits for assets, walks into range before damage, and uses selected skin and correct LPC rows', async () => {
@@ -349,4 +358,94 @@ test('paused viewport changes rescale both melee fighters once and preserve cont
  const h=ui.heroX(),o=ui.orcX(),middle=(h+o)/2,elapsed=ui.state().elapsed;
  ui.resizeField(1000,50);assert.ok(Math.abs((ui.heroX()+ui.orcX())/2-middle*1.25)<1e-8);assert.ok(Math.abs(ui.orcX()-ui.heroX()-50*.57)<.01);
  const h2=ui.heroX(),o2=ui.orcX();ui.frame(0);assert.equal(ui.heroX(),h2);assert.equal(ui.orcX(),o2);assert.equal(ui.state().elapsed,elapsed);
+});
+
+test('sword combo selects all three native sheets and plays every frame of the 13-frame heavy backslash', async () => {
+  const ui = createHarness({skin:'bronze',weapon:'sword',outfit:'militia',outfitColor:'red'});
+  await ui.loadAllImages();
+  const prefix = 'assets/characters/loadouts/sword/militia/red/bronze-';
+  const hero = ui.node('[data-fighter="hero"]'), canvas = ui.node('#player-sprite');
+  for (const file of ['halfslash.png','attack.png','backslash.png']) assert.ok(ui.loadedPaths.includes(prefix+file));
+  for (const [variant,file] of [['halfslash','halfslash.png'],['slash','attack.png'],['backslash','backslash.png']]) {
+    ui.runUntil(() => hero.dataset.attack === variant);
+    assert.equal(canvas.draws.at(-1).src, prefix+file);
+    assert.deepEqual(canvas.draws.at(-1).crop, [0,384,128,128], `${variant} begins at its own native first frame`);
+    assert.equal(canvas.width,128); assert.equal(canvas.height,128);
+    assert.equal(canvas.style.width,'200%'); assert.equal(canvas.style.height,'200%');
+    assert.equal(canvas.style.left,'-50%'); assert.equal(canvas.style.top,'-50%');
+    assert.equal(hero.classes.has('is-heavy'),variant === 'backslash');
+    if (variant === 'backslash') assert.ok(ui.node('.battlefield').children.some(element => element.className.includes('heavy-number')));
+  }
+  for (let i=0;i<80 && hero.dataset.attack === 'backslash';i++) ui.frame(16);
+  const heavyFrames = canvas.draws.filter(draw => draw.src === prefix+'backslash.png');
+  assert.deepEqual([...new Set(heavyFrames.map(draw => draw.crop[0]/128))].sort((a,b)=>a-b), [...Array(13).keys()]);
+  assert.ok(heavyFrames.every(draw => draw.crop[1]===384 && draw.crop[2]===128 && draw.crop[3]===128));
+  const regular = ui.events.filter(event => event.type==='attack' && event.sourceId==='hero' && !event.counter);
+  assert.deepEqual(regular.slice(0,3).map(event => [event.variant,event.comboStep,Boolean(event.heavy)]), [
+    ['halfslash',1,false],['slash',2,false],['backslash',3,true]
+  ]);
+});
+
+test('shield block and fast counter use separate feedback; pause freezes them and replay clears sword state', async () => {
+  const ui = createHarness({weapon:'sword',outfit:'militia',outfitColor:'sand'});
+  await ui.loadAllImages();
+  const hero = ui.node('[data-fighter="hero"]');
+  ui.runUntil(() => ui.state().elapsed >= 4.7);
+  const hpBeforeBlock = ui.state().hero.hp;
+  ui.runUntil(() => ui.events.some(event => event.type==='block'));
+  const block = ui.events.find(event => event.type==='block');
+  assert.equal(block.targetId,'hero'); assert.equal(block.blockedDamage,3);
+  assert.equal(ui.state().hero.hp,hpBeforeBlock-3,'the shield absorbs half of the six-damage melee hit');
+  assert.equal(ui.node('healthbar:hero:fill').style.width, `${ui.state().hero.hp/ui.state().hero.maxHp*100}%`);
+  assert.equal(hero.classes.has('is-blocking'),true);
+  assert.equal(hero.dataset.attack,'halfslash','block feedback does not replace the in-progress regular swing');
+  assert.ok(ui.node('.battlefield').children.some(element => element.className.includes('block-number') && element.textContent==='Блок'));
+  const visual = () => ({...ui.visualState(),attack:hero.dataset.attack,counter:hero.dataset.counter,heavy:hero.classes.has('is-heavy'),blocking:hero.classes.has('is-blocking'),effects:ui.node('.battlefield').children.map(element=>({className:element.className,text:element.textContent,left:element.style.left,top:element.style.top,opacity:element.style.opacity}))});
+  ui.node('#auto-button').click(); const paused = visual(); ui.runFor(2); assert.deepEqual(visual(),paused);
+  ui.node('#auto-button').click();
+  ui.runUntil(() => ui.events.some(event => event.type==='attack' && event.counter));
+  const counter = ui.events.find(event => event.type==='attack' && event.counter);
+  assert.equal(counter.sourceId,'hero'); assert.equal(counter.variant,'halfslash');
+  assert.ok(counter.animationDuration < ui.events.find(event=>event.sourceId==='hero' && !event.counter).animationDuration);
+  assert.equal(hero.dataset.attack,'halfslash'); assert.equal(hero.dataset.counter,'true');
+  assert.equal(hero.classes.has('is-heavy'),false);
+  assert.ok(ui.node('#player-sprite').draws.at(-1).src.endsWith('-halfslash.png'));
+  assert.ok(ui.node('.battlefield').children.some(element=>element.className.includes('counter-number') && element.textContent.startsWith('Ответ')));
+  ui.node('#auto-button').click(); const pausedCounter=visual(); ui.runFor(2); assert.deepEqual(visual(),pausedCounter);
+  ui.node('#auto-button').click(); ui.runUntil(()=>ui.state().phase==='victory',60);
+  const eventCount=ui.events.length; ui.node('#replay-button').click();
+  assert.equal(hero.dataset.attack,''); assert.equal(hero.dataset.counter,'false');
+  assert.equal(hero.classes.has('is-heavy'),false); assert.equal(hero.classes.has('is-blocking'),false);
+  assert.equal(ui.node('.battlefield').children.length,0,'old floating block/counter effects do not survive replay');
+  ui.runUntil(()=>ui.events.slice(eventCount).some(event=>event.type==='attack' && event.sourceId==='hero'));
+  const first=ui.events.slice(eventCount).find(event=>event.type==='attack' && event.sourceId==='hero');
+  assert.equal(first.variant,'halfslash'); assert.equal(first.comboStep,1); assert.equal(Boolean(first.counter),false);
+});
+
+test('bow and wand retain their own attacks and never load or render sword combo or shield effects', async () => {
+  for (const [weapon,outfit,projectile] of [['bow','wanderer','arrow'],['wand','acolyte','magic']]) {
+    const ui=createHarness({weapon,outfit,outfitColor:'blue'}); await ui.loadAllImages();
+    ui.runUntil(()=>ui.state().phase==='victory',60);
+    assert.ok(!ui.loadedPaths.some(file=>file.endsWith('-halfslash.png') || file.endsWith('-backslash.png')));
+    assert.ok(ui.events.filter(event=>event.type==='attack' && event.sourceId==='hero').every(event=>event.projectile===projectile && !event.counter && !event.heavy && !['halfslash','slash','backslash'].includes(event.variant)));
+    assert.ok(!ui.events.some(event=>event.type==='block'));
+    assert.equal(ui.state().elapsed,27.6); assert.equal(ui.state().hero.hp,58);
+    assert.equal(ui.storage.get('ember.test.gold.v1'),'25');
+  }
+});
+
+test('reduced motion suppresses sword animation and block effects while preserving every combat event', async () => {
+  const options={weapon:'sword',outfit:'militia',outfitColor:'forest'};
+  const normal=createHarness(options), reduced=createHarness({...options,reducedMotion:true});
+  await normal.loadAllImages(); await reduced.loadAllImages();
+  reduced.runUntil(()=>reduced.events.some(event=>event.type==='attack' && event.counter),60);
+  const hero=reduced.node('[data-fighter="hero"]');
+  assert.equal(hero.dataset.motion,'idle'); assert.equal(hero.dataset.attack,''); assert.equal(hero.dataset.counter,'false');
+  assert.equal(hero.classes.has('is-heavy'),false); assert.equal(hero.classes.has('is-blocking'),false);
+  assert.equal(reduced.node('.battlefield').children.length,0);
+  assert.ok(reduced.node('#player-sprite').draws.every(draw=>draw.src.endsWith('-walk.png')),'reduced-motion hero holds the equipped idle pose');
+  normal.runUntil(()=>normal.state().phase==='victory',60); reduced.runUntil(()=>reduced.state().phase==='victory',60);
+  assert.deepEqual(reduced.events,normal.events);
+  assert.deepEqual(reduced.state(),normal.state());
+  assert.equal(reduced.storage.get('ember.test.gold.v1'),'25');
 });

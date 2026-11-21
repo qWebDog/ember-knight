@@ -1,6 +1,9 @@
 from pathlib import Path
 from PIL import Image,ImageColor,ImageDraw,ImageFont
-import json,urllib.request,concurrent.futures,hashlib,shutil
+import json,urllib.request,concurrent.futures,hashlib,shutil,argparse
+parser=argparse.ArgumentParser(description='Compose pinned Universal LPC starter appearances.')
+parser.add_argument('--sword-combo-only',action='store_true',help='Add native sword halfslash/backslash sheets without rebuilding existing appearances.')
+COMBO_ONLY=parser.parse_args().sword_combo_only
 REV='86a3719ee4a7e2e9fb27c7c152e29a741d3e930a'; BASE=f'https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/{REV}/'
 PROJECT=Path(__file__).resolve().parents[1]
 ROOT=PROJECT/'dist/assets/characters/loadouts'; CACHE=PROJECT/'.cache/lpc'
@@ -64,12 +67,23 @@ for (weapon,outfit), layers in base_recipes.items():
    variant.append((z,path,material,color,definition))
   recipes[(weapon,outfit+'/'+color_id)]=variant
 # Fetch missing layers concurrently before composing.
+SWORD_COMBO=('halfslash','backslash')
+def animations(w):
+ if COMBO_ONLY:return [(a,a) for a in SWORD_COMBO] if w=='sword' else []
+ return [('walk','walk'),('attack','shoot' if w=='bow' else 'slash')]+([(a,a) for a in SWORD_COMBO] if w=='sword' else [])
+def clothing_source(p,a):
+ # This classic accessory has no revised halfslash/backslash source. Keep its
+ # official standing frame; the body, shirt, pants and boots use native frames.
+ still=a in SWORD_COMBO and 'torso/waist/belt_leather/' in p
+ return p.format(a='slash' if still else a),still
 needed=set()
 for (w,id),ls in recipes.items():
+ if not animations(w):continue
  for z,p,m,c,d in ls:
-  for a in ['walk','shoot' if w=='bow' else 'slash']:needed.add(p.format(a=a))
+  for _,a in animations(w):needed.add(clothing_source(p,a)[0])
   if d:needed.add(d)
  for d in weapondefs[w]:needed.add(D+d)
+needed.add('sources/custom-animations.ts')
 fail=[]
 def get(p):
  try:source(p);return None
@@ -80,44 +94,49 @@ if fail:print('MISSING',fail,flush=True);raise SystemExit(1)
 def weapons(w,a):
  if w=='sword':
   if a=='walk':paths=[(9,'weapon/sword/arming/universal/bg/walk/steel.png'),(110,'shield/round/walk/brown.png'),(140,'weapon/sword/arming/universal/fg/walk/steel.png')]
-  else:paths=[(8,'weapon/sword/arming/attack_slash/bg/steel.png'),(110,'shield/round/slash/brown.png'),(140,'weapon/sword/arming/attack_slash/fg/steel.png')]
+  else:paths=[(8,f'weapon/sword/arming/attack_{a}/bg/steel.png'),(110,'shield/round/slash/brown.png'),(150 if a in SWORD_COMBO else 140,f'weapon/sword/arming/attack_{a}/fg/steel.png')]
  elif w=='bow':
   if a=='walk':paths=[(-1,'weapon/ranged/bow/normal/walk/background/light.png'),(140,'weapon/ranged/bow/normal/walk/foreground/light.png'),(0,'quiver/walk/quiver.png')]
   else:paths=[(-1,'weapon/ranged/bow/normal/universal/background/shoot/light.png'),(140,'weapon/ranged/bow/normal/universal/foreground/shoot/light.png'),(141,'weapon/ranged/bow/arrow/shoot/arrow.png'),(0,'quiver/shoot/quiver.png')]
  else:paths=[(140,'weapon/magic/wand/male/slash/wand.png')]
  return [(z,'spritesheets/'+p,read('spritesheets/'+p)) for z,p in paths]
 for w in ['sword','bow','wand']:
- for a in ['walk','shoot' if w=='bow' else 'slash']:weapons(w,a)
+ for _,a in animations(w):weapons(w,a)
 
 def cell(im,frame,row,src_tile):return im.crop((frame*src_tile,row*src_tile,(frame+1)*src_tile,(row+1)*src_tile))
-allcredits={}; outputmeta={}
+allcredits={}; outputmeta=json.load(open(ROOT/'manifest.json')) if COMBO_ONLY else {}
 for (w,id),ls in recipes.items():
+ if not animations(w):continue
  dest=ROOT/w/id;dest.mkdir(parents=True,exist_ok=True)
- meta={'generator':'Universal LPC Character Generator','revision':REV,'weapon':w,'outfit':id.split('/')[0],'outfitColor':id.split('/')[1],'layers':[],'notes':[]}
+ meta=json.load(open(dest/'manifest.json')) if COMBO_ONLY else {'generator':'Universal LPC Character Generator','revision':REV,'weapon':w,'outfit':id.split('/')[0],'outfitColor':id.split('/')[1],'layers':[],'notes':[]}
  defs=set([l[4] for l in ls if l[4]]+[D+d for d in weapondefs[w]])
  for d in defs:allcredits[d]=json.load(open(source(d)))
  for skin in ['light','amber','olive','bronze','brown','black']:
-  for outa,a in [('walk','walk'),('attack','shoot' if w=='bow' else 'slash')]:
-   frames=9 if a=='walk' else 13 if a=='shoot' else 6
-   tile=128 if (w=='sword' and a=='slash') or (w=='bow' and a=='walk') else 64
+  for outa,a in animations(w):
+   frames=9 if a=='walk' else 13 if a in ['shoot','backslash'] else 6
+   tile=128 if (w=='sword' and a in ('slash',)+SWORD_COMBO) or (w=='bow' and a=='walk') else 64
    origin=(tile-64)//2
    sheet=Image.new('RGBA',(frames*tile,4*tile))
    layers=[]
    for z,p,m,c,d in ls:
-    path=p.format(a=a);im=read(path)
+    path,still=clothing_source(p,a);im=read(path)
     if c:im=recolor(im,m,skin if c=='SKIN' else c)
-    layers.append((z,path,im,64,False))
+    layers.append((z,path,im,64,'still' if still else None))
    for z,path,im in weapons(w,a):
-    st=128 if (w=='sword' and 'attack_slash' in path) or (w=='bow' and a=='walk' and 'bow/normal/walk' in path) else 64
-    layers.append((z,path,im,st,w=='wand' and a=='walk'))
+    st=128 if (w=='sword' and '/arming/attack_' in path) or (w=='bow' and a=='walk' and 'bow/normal/walk' in path) else 64
+    mode='wandwalk' if w=='wand' and a=='walk' else 'still' if a in SWORD_COMBO and 'shield/round/' in path else None
+    layers.append((z,path,im,st,mode))
+   for z,path,im,st,mode in layers:
+    # Some official walk weapon sheets reserve 13 columns although WALK uses9.
+    assert im.height==4*st and im.width%st==0 and (mode or im.width>=frames*st),(path,im.size,frames,st)
    for row in range(4):
     for frame in range(frames):
-     for z,path,im,st,wandwalk in sorted(layers,key=lambda x:x[0]):
-      f=0 if wandwalk else frame
+     for z,path,im,st,mode in sorted(layers,key=lambda x:x[0]):
+      f=0 if mode else frame
       piece=cell(im,f,row,st)
       # Official wand has no native walk. Move its standing frame with the source gait's hands.
       dx=dy=0
-      if wandwalk and frame:
+      if mode=='wandwalk' and frame:
        dy=[0,0,-1,-1,0,0,0,0,0][frame]
        dx=([0,-1,0,1,0,1,0,-1,0][frame] if row in [1,3] else 0)
       offset=(tile-st)//2
@@ -127,9 +146,14 @@ for (w,id),ls in recipes.items():
     sheet.crop((origin,2*tile+origin,origin+64,2*tile+origin+64)).save(dest/f'{skin}-preview.png')
    if skin=='light':
     meta[outa]={'file':f'{{skin}}-{outa}.png','tile':tile,'origin':origin,'frames':frames,'rows':['north','west','south','east']}
-  if skin=='light':
+    if a in SWORD_COMBO:
+     meta[outa].update({'animation':a+'_128','animationDefinition':'definitions/sources/custom-animations.ts','layers':[{'z':z,'source':path,'sourceURL':BASE+path,'sourceTile':st,'frameMode':'standing frame 0' if mode=='still' else 'native','sha256':hashlib.sha256(source(path).read_bytes()).hexdigest()} for z,path,im,st,mode in sorted(layers,key=lambda x:x[0])]})
+  if skin=='light' and not COMBO_ONLY:
    for z,p,m,c,d in ls:meta['layers'].append({'z':z,'source':p,'material':m,'palette':c,'definition':d})
  if w=='wand':meta['notes'].append('Wand has native slash only. WALK uses the official standing wand with a 0–1px gait-compatible translation; no custom weapon pixels drawn.')
+ if w=='sword':
+  note='Native halfslash_128 (6 frames) and backslash_128 (13 frames) use matching official body/head/shirt/pants/boots and arming-sword layers. The classic round shield and leather belt have no revised native source, so their original slash standing frame 0 is held throughout these two animations.'
+  if note not in meta['notes']:meta['notes'].append(note)
  (dest/'manifest.json').write_text(json.dumps(meta,ensure_ascii=False,indent=2));outputmeta[f'{w}/{id}']=meta
  print('READY',w,id,flush=True)
 # Keep source definitions + full attribution accessible, rather than huge duplicate PNG originals.
@@ -138,8 +162,16 @@ for p,d in sorted(allcredits.items()):
  q=ROOT/'definitions'/p;q.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(source(p),q)
  lines.append('DEFINITION: '+p)
  for c in d.get('credits',[]):lines+=['Asset: '+c.get('file',''),'Authors: '+', '.join(c.get('authors',[])),'Licenses: '+', '.join(c.get('licenses',[])),'Sources: '+', '.join(c.get('urls',[])),'']
-(ROOT/'CREDITS.txt').write_text('\n'.join(lines))
+animation_definition=ROOT/'definitions/sources/custom-animations.ts';animation_definition.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(source('sources/custom-animations.ts'),animation_definition)
+combo_credit='SWORD COMBO ANIMATIONS — '+REV+'\nNative halfslash_128: 6 frames; native backslash_128: 13 frames. Matching original body, human head, shirt, pants, boots and steel arming-sword layers, with original oversized128 tiles. Original round-shield and leather-belt slash standing frame0 retained because these classic accessories have no revised animation. Official body and cloth recolors only. No frames reversed, no new weapon pixels drawn. Existing per-component authors and OGA-BY3.0 / CC-BY-SA3.0 options above apply; source paths and hashes are recorded in each outfit-color manifest.\n'
+if COMBO_ONLY:
+ previous=(ROOT/'CREDITS.txt').read_text().split('\nSWORD COMBO ANIMATIONS — ',1)[0]
+ (ROOT/'CREDITS.txt').write_text(previous+'\n'+combo_credit)
+else:(ROOT/'CREDITS.txt').write_text('\n'.join(lines)+'\n'+combo_credit)
 (ROOT/'manifest.json').write_text(json.dumps(outputmeta,ensure_ascii=False,indent=2))
+if COMBO_ONLY:
+ print('DONE native sword combo:72 new PNGs (6cloth colors x6skin colors x2animations); existing assets unchanged.',flush=True)
+ raise SystemExit(0)
 board=Image.new('RGB',(1152,576),'#202b24')
 for j,w in enumerate(['sword','bow','wand']):
  for i,id in enumerate([k[1] for k in recipes if k[0]==w]):
@@ -154,4 +186,4 @@ for w,base_id in keep.items():
  base_folder=ROOT/w/base_id
  for old in list(base_folder.glob('*.png'))+[base_folder/'manifest.json']:
   if old.is_file():old.unlink()
-print('DONE three starter outfits, six cloth colors, six skin colors;324 animated/preview PNGs',flush=True)
+print('DONE three starter outfits, six cloth colors, six skin colors;396 animated/preview PNGs including native sword combo.',flush=True)

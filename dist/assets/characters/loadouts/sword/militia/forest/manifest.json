@@ -48,7 +48,9 @@
       "definition": "sheet_definitions/torso/waist/belt_leather.json"
     }
   ],
-  "notes": [],
+  "notes": [
+    "Native halfslash_128 (6 frames) and backslash_128 (13 frames) use matching official body/head/shirt/pants/boots and arming-sword layers. The classic round shield and leather belt have no revised native source, so their original slash standing frame 0 is held throughout these two animations."
+  ],
   "walk": {
     "file": "{skin}-walk.png",
     "tile": 64,
@@ -71,6 +73,182 @@
       "west",
       "south",
       "east"
+    ]
+  },
+  "halfslash": {
+    "file": "{skin}-halfslash.png",
+    "tile": 128,
+    "origin": 32,
+    "frames": 6,
+    "rows": [
+      "north",
+      "west",
+      "south",
+      "east"
+    ],
+    "animation": "halfslash_128",
+    "animationDefinition": "definitions/sources/custom-animations.ts",
+    "layers": [
+      {
+        "z": 8,
+        "source": "spritesheets/weapon/sword/arming/attack_halfslash/bg/steel.png",
+        "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/weapon/sword/arming/attack_halfslash/bg/steel.png",
+        "sourceTile": 128,
+        "frameMode": "native",
+        "sha256": "231bd7f7c7ff3a41fd5f330c019dfe17e46b9921d36c4d5a9b14b8ef00f8ac6c"
+      },
+      {
+        "z": 10,
+        "source": "spritesheets/body/bodies/male/halfslash.png",
+        "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/body/bodies/male/halfslash.png",
+        "sourceTile": 64,
+        "frameMode": "native",
+        "sha256": "670610b1f20947ceddbe7994ceaaec960fc4c8716f6daab5772872c86e8e6cb7"
+      },
+      {
+        "z": 20,
+        "source": "spritesheets/legs/pants/male/halfslash.png",
+        "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/legs/pants/male/halfslash.png",
+        "sourceTile": 64,
+        "frameMode": "native",
+        "sha256": "1c5073aaeaaaf1781000b200a8578f770bb3b418c0ff740c40db5153f76628da"
+      },
+      {
+        "z": 25,
+        "source": "spritesheets/feet/boots/basic/male/halfslash.png",
+        "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/feet/boots/basic/male/halfslash.png",
+        "sourceTile": 64,
+        "frameMode": "native",
+        "sha256": "9855dff0be2af274018f030e04b753470f13a8be64249bdafea22f6dee53ead9"
+      },
+      {
+        "z": 35,
+        "source": "spritesheets/torso/clothes/longsleeve/longsleeve/male/halfslash.png",
+        "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/torso/clothes/longsleeve/longsleeve/male/halfslash.png",
+        "sourceTile": 64,
+        "frameMode": "native",
+        "sha256": "29598e6c589cd50d5f6cc808b5497cb5815736060ed583556abd35770d29075c"
+      },
+      {
+        "z": 70,
+        "source": "spritesheets/torso/waist/belt_leather/male/slash/brown.png",
+        "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/torso/waist/belt_leather/male/slash/brown.png",
+        "sourceTile": 64,
+        "frameMode": "standing frame 0",
+        "sha256": "322945095ebaaaa1205dfaa5a321fc2ebee4f49590d80453b6439519433d6c2a"
+      },
+      {
+        "z": 100,
+        "source": "spritesheets/head/heads/human/male/halfslash.png",
+        "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/head/heads/human/male/halfslash.png",
+        "sourceTile": 64,
+        "frameMode": "native",
+        "sha256": "a24d3ba26cfb1cd26e88a3f48f8938c49b14be55ec1fecd1cdd55d079f923c41"
+      },
+      {
+        "z": 110,
+        "source": "spritesheets/shield/round/slash/brown.png",
+        "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/round/slash/brown.png",
+        "sourceTile": 64,
+        "frameMode": "standing frame 0",
+        "sha256": "a489dbc8632ea4a55a7c12445e1e449c7bc499cd257ec5fb43f2be313fe737fe"
+      },
+      {
+        "z": 150,
+        "source": "spritesheets/weapon/sword/arming/attack_halfslash/fg/steel.png",
+        "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/weapon/sword/arming/attack_halfslash/fg/steel.png",
+        "sourceTile": 128,
+        "frameMode": "native",
+        "sha256": "1c8ff5d69d72121da13498b654ee567ef29601f956f912497d36e867d759a0e8"
+      }
+    ]
+  },
+  "backslash": {
+    "file": "{skin}-backslash.png",
+    "tile": 128,
+    "origin": 32,
+    "frames": 13,
+    "rows": [
+      "north",
+      "west",
+      "south",
+      "east"
+    ],
+    "animation": "backslash_128",
+    "animationDefinition": "definitions/sources/custom-animations.ts",
+    "layers": [
+      {
+        "z": 8,
+        "source": "spritesheets/weapon/sword/arming/attack_backslash/bg/steel.png",
+        "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/weapon/sword/arming/attack_backslash/bg/steel.png",
+        "sourceTile": 128,
+        "frameMode": "native",
+        "sha256": "8fce0a01b9995ff8df9088f7461f20a9ba8ae637b15b84729fb76f0dba8f682e"
+      },
+      {
+        "z": 10,
+        "source": "spritesheets/body/bodies/male/backslash.png",
+        "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/body/bodies/male/backslash.png",
+        "sourceTile": 64,
+        "frameMode": "native",
+        "sha256": "bcdf000ae13e79322799036441a10d01369e7bc5bff23255a9aea622835e8a56"
+      },
+      {
+        "z": 20,
+        "source": "spritesheets/legs/pants/male/backslash.png",
+        "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/legs/pants/male/backslash.png",
+        "sourceTile": 64,
+        "frameMode": "native",
+        "sha256": "2b60e6fd8b0a62e80dbaefdf927289498e9583876665456cf1b3471cc9d90421"
+      },
+      {
+        "z": 25,
+        "source": "spritesheets/feet/boots/basic/male/backslash.png",
+        "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/feet/boots/basic/male/backslash.png",
+        "sourceTile": 64,
+        "frameMode": "native",
+        "sha256": "0bbb55d45d99c20fb305d2eb6f92e0770f5c0feba8957f11c7ce0dab569b4561"
+      },
+      {
+        "z": 35,
+        "source": "spritesheets/torso/clothes/longsleeve/longsleeve/male/backslash.png",
+        "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/torso/clothes/longsleeve/longsleeve/male/backslash.png",
+        "sourceTile": 64,
+        "frameMode": "native",
+        "sha256": "4ce70704baa9b7c5f5726770e92a6ee9345443d69154bdf909f41cba1893a6da"
+      },
+      {
+        "z": 70,
+        "source": "spritesheets/torso/waist/belt_leather/male/slash/brown.png",
+        "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/torso/waist/belt_leather/male/slash/brown.png",
+        "sourceTile": 64,
+        "frameMode": "standing frame 0",
+        "sha256": "322945095ebaaaa1205dfaa5a321fc2ebee4f49590d80453b6439519433d6c2a"
+      },
+      {
+        "z": 100,
+        "source": "spritesheets/head/heads/human/male/backslash.png",
+        "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/head/heads/human/male/backslash.png",
+        "sourceTile": 64,
+        "frameMode": "native",
+        "sha256": "0f24a58a02d7390e23b82e8cf8da6428c19b31304ccf2e98b6943ec184649e17"
+      },
+      {
+        "z": 110,
+        "source": "spritesheets/shield/round/slash/brown.png",
+        "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/round/slash/brown.png",
+        "sourceTile": 64,
+        "frameMode": "standing frame 0",
+        "sha256": "a489dbc8632ea4a55a7c12445e1e449c7bc499cd257ec5fb43f2be313fe737fe"
+      },
+      {
+        "z": 150,
+        "source": "spritesheets/weapon/sword/arming/attack_backslash/fg/steel.png",
+        "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/weapon/sword/arming/attack_backslash/fg/steel.png",
+        "sourceTile": 128,
+        "frameMode": "native",
+        "sha256": "35710708e027fac5e0fa9e2f775d0670f7eda5478c1bb25d0d959c5a0e75780a"
+      }
     ]
   }
 }

@@ -76,6 +76,28 @@ test('legacy outfits normalize without input mutation, and valid explicit colors
   }
 });
 
+test('every sword color and skin has native short and reverse attacks with the same body anchor', () => {
+  const sword = catalogue.weapon('sword');
+  assert.deepEqual(Object.keys(sword.attacks), ['halfslash','slash','backslash']);
+  for (const color of catalogue.colors) for (const skin of skins) {
+    const choice = {weapon:'sword',outfit:'militia',outfitColor:color.id};
+    for (const [variant,descriptor] of Object.entries(sword.attacks)) {
+      const relative = catalogue.path(choice,skin,variant === 'slash' ? 'attack' : variant);
+      const png = fs.readFileSync(path.join(dist,relative));
+      assert.deepEqual(png.subarray(0,8), signature, relative);
+      assert.deepEqual([png.readUInt32BE(16),png.readUInt32BE(20)], [descriptor.frames*128,512], relative);
+      assert.equal(descriptor.tile,128);
+      assert.equal(descriptor.origin,32);
+      assert.equal(descriptor.frames,variant === 'backslash' ? 13 : 6);
+    }
+  }
+  for (const weapon of ['bow','wand']) {
+    const choice = {weapon,outfit:catalogue.weapon(weapon).outfits[0].id};
+    assert.throws(() => catalogue.path(choice,'light','backslash'), /Invalid starter appearance/);
+    assert.throws(() => catalogue.path(choice,'light','halfslash'), /Invalid starter appearance/);
+  }
+});
+
 test('invalid selections, skins and animations cannot construct arbitrary asset paths', () => {
   const valid = {weapon:'bow',outfit:'wanderer',outfitColor:'forest'};
   for (const invalid of [null,{}, {weapon:'../../',outfit:'wanderer'}, {weapon:'bow',outfit:'../ranger'}, {weapon:'bow',outfit:'__proto__'}]) {

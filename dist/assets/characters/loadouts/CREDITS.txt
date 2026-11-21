@@ -154,3 +154,6 @@ Asset: weapon/sword/arming
 Authors: ElizaWy; walk and down by JaidynReiman
 Licenses: OGA-BY 3.0
 Sources: https://github.com/ElizaWy/LPC/tree/main/Characters/Props/Sword%2001%20-%20Arming%20Sword, https://opengameart.org/content/lpc-expanded-sit-run-jump-more
+
+SWORD COMBO ANIMATIONS — 86a3719ee4a7e2e9fb27c7c152e29a741d3e930a
+Native halfslash_128: 6 frames; native backslash_128: 13 frames. Matching original body, human head, shirt, pants, boots and steel arming-sword layers, with original oversized128 tiles. Original round-shield and leather-belt slash standing frame0 retained because these classic accessories have no revised animation. Official body and cloth recolors only. No frames reversed, no new weapon pixels drawn. Existing per-component authors and OGA-BY3.0 / CC-BY-SA3.0 options above apply; source paths and hashes are recorded in each outfit-color manifest.

@@ -27,13 +27,13 @@
   $('#player-name').textContent = name;
   $('.fighter-name').textContent = name;
   $('#level-badge').textContent = level;
-  const battle = window.EmberCombat.createBattle({heroName:name,heroProjectile:starterWeapon?.projectile});
+  const battle = window.EmberCombat.createBattle({heroName:name,heroProjectile:starterWeapon?.projectile,heroWeapon:starterWeapon?.id});
   battle.pause();
   let ready = false, assetError = false, rewardPaid = false, lastFrameTime = null;
   const actors = {};
   for (const id of ['hero','orc','archer','mage']) {
     const element = document.querySelector(`[data-fighter="${id}"]`);
-    actors[id] = {element, canvas:element.querySelector('canvas'), bar:element.querySelector('.healthbar'), images:{}, animation:null, hitAt:-10, lastKey:null};
+    actors[id] = {element, canvas:element.querySelector('canvas'), bar:element.querySelector('.healthbar'), images:{}, animation:null, hitAt:-10, blockAt:-10, lastKey:null};
   }
   const effects = [];
   const orcSpawnRatio = battlefield.clientWidth ? actors.orc.element.offsetLeft / battlefield.clientWidth : .6;
@@ -80,6 +80,13 @@
         actors.hero.images.idle = {image:walk,row:3,still:0,...starterWeapon.walk};
         actors.hero.images.walk = {image:walk,row:3,...starterWeapon.walk};
         actors.hero.images.attack = {image:attack,row:3,...starterWeapon.attack};
+        if (starterWeapon.attacks) {
+          const variants = await Promise.all(Object.entries(starterWeapon.attacks).map(async ([variant,geometry]) => {
+            const image = variant === 'slash' ? attack : await loadImage(loadouts.path(loadout,skin,variant));
+            return [variant,{image,row:3,...geometry}];
+          }));
+          actors.hero.images.attacks = Object.fromEntries(variants);
+        }
       } else {
         idle = await loadImage(`assets/characters/${skin}.png`).catch(() => loadImage('assets/characters/light.png'));
         actors.hero.images.idle = {image:idle,frames:2,row:3};
@@ -144,17 +151,21 @@
   function addEffect(type, sourceId, targetId, text, at) {
     if (reducedMotion.matches) return;
     const element = document.createElement('span');
-    element.className = type === 'damage' ? `damage-number ${targetId === 'hero' ? 'enemy-damage' : ''}` : `projectile ${type}`;
+    const floating = ['damage','heavy','counter','block'].includes(type);
+    element.className = floating ? `damage-number ${type}-number ${targetId === 'hero' && type !== 'block' ? 'enemy-damage' : ''}` : `projectile ${type}`;
     element.setAttribute('aria-hidden','true'); if (text) element.textContent = text;
-    battlefield.appendChild(element); effects.push({element,type,sourceId,targetId,at:activeTime,duration:type === 'damage' ? .85 : .38});
+    battlefield.appendChild(element); effects.push({element,type,floating,sourceId,targetId,at:activeTime,duration:floating ? .85 : .38});
   }
   function handleEvents(events) {
     for (const event of events) {
       if (event.type === 'attack') {
-        actors[event.sourceId].animation = {at:activeTime,duration:event.sourceId === 'archer' || (event.sourceId === 'hero' && starterWeapon?.id === 'bow') ? .9 : .66};
+        actors[event.sourceId].animation = {at:activeTime,duration:event.animationDuration || (event.sourceId === 'archer' || (event.sourceId === 'hero' && starterWeapon?.id === 'bow') ? .9 : .66),variant:event.variant,heavy:event.heavy,counter:event.counter};
         actors[event.targetId].hitAt = activeTime;
-        addEffect('damage',event.sourceId,event.targetId,`−${event.damage}`,event.at);
+        addEffect(event.counter ? 'counter' : event.heavy ? 'heavy' : 'damage',event.sourceId,event.targetId,event.counter ? `Ответ −${event.damage}` : `−${event.damage}`,event.at);
         if (event.projectile !== 'melee') addEffect(event.projectile,event.sourceId,event.targetId,null,event.at);
+      } else if (event.type === 'block') {
+        actors.hero.blockAt = activeTime;
+        addEffect('block',event.sourceId,'hero','Блок',event.at);
       } else if (event.type === 'death') {
         $('#status').textContent = event.id === 'hero' ? 'Герой пал' : `${battle.getState().enemies.find(enemy=>enemy.id===event.id).name} побеждён`;
       } else if (event.type === 'end') {
@@ -181,11 +192,11 @@
     const walking = ((id === 'hero' && heroMoving) || (id === 'orc' && orcMoving)) && distance > 0 && unit.hp > 0 && !ended && !reducedMotion.matches && actor.images.walk?.frames > 1;
     const attacking = !walking && !ended && age >= 0 && age < (actor.animation?.duration || 0) && unit.hp > 0 && !reducedMotion.matches;
     const kind = walking ? 'walk' : attacking ? 'attack' : 'idle';
-    const descriptor = actor.images[kind];
+    const descriptor = attacking && actor.images.attacks?.[actor.animation.variant] || actor.images[kind];
     const row = walking ? id === 'orc' ? orcWalkDirection : walkDirection : descriptor.row;
     const tile = descriptor.tile || 64, origin = descriptor.origin || 0;
     const cell = walking ? 1 + Math.floor((distance / .75 % 1) * 8) : attacking ? Math.min(descriptor.frames-1,Math.floor(age / actor.animation.duration * descriptor.frames)) : Number.isInteger(descriptor.still) ? descriptor.still : id === 'hero' && auto && unit.hp > 0 && !ended && !reducedMotion.matches ? Math.floor(activeTime / .65) % 2 : 0;
-    const key = `${kind}-${cell}-${row}-${tile}`;
+    const key = `${kind}-${descriptor.image.src}-${cell}-${row}-${tile}-${origin}`;
     if (actor.lastKey !== key) {
       actor.canvas.width = tile; actor.canvas.height = tile;
       const ctx = actor.canvas.getContext('2d'); ctx.clearRect(0,0,tile,tile); ctx.imageSmoothingEnabled = false;
@@ -194,6 +205,10 @@
       actor.canvas.style.left = `${-origin / 64 * 100}%`; actor.canvas.style.top = `${-origin / 64 * 100}%`;
     }
     actor.element.dataset.motion = kind;
+    actor.element.dataset.attack = attacking ? actor.animation.variant || 'basic' : '';
+    actor.element.dataset.counter = String(Boolean(attacking && actor.animation.counter));
+    actor.element.classList.toggle('is-heavy',Boolean(attacking && actor.animation.heavy));
+    actor.element.classList.toggle('is-blocking',!ended && !reducedMotion.matches && activeTime - actor.blockAt < .28);
     actor.element.classList.toggle('is-defeated',unit.hp <= 0);
     actor.element.classList.toggle('is-target',id === state.targetId);
     actor.element.classList.toggle('is-hit',!ended && !reducedMotion.matches && activeTime - actor.hitAt < .16);
@@ -268,7 +283,7 @@
       if (age >= effect.duration || reducedMotion.matches) { effect.element.remove(); effects.splice(i,1); continue; }
       const target = actors[effect.targetId].element.getBoundingClientRect(), source = actors[effect.sourceId].element.getBoundingClientRect();
       const p = Math.max(0,age/effect.duration), tx=target.left+target.width/2-field.left, ty=target.top+target.height*.4-field.top;
-      if (effect.type === 'damage') {
+      if (effect.floating) {
         effect.element.style.left = `${tx}px`; effect.element.style.top = `${ty-p*22}px`; effect.element.style.opacity = String(1-p);
       } else {
         const sx=source.left+source.width*(effect.sourceId==='hero'?.7:.3)-field.left, sy=source.top+source.height*.45-field.top;
@@ -308,7 +323,7 @@
   $('#replay-button').addEventListener('click', () => {
     if (assetError) { resultPanel.hidden = true; loadAssets(); return; }
     battle.restart(); auto = true; rewardPaid = false; heroX = null; orcX = null; fieldWidth = null; walkDistance = 0; orcWalkDistance = 0; activeTime = 0; moving = heroMoving = orcMoving = false; pairContacted = false; previousSeparation = null;
-    for (const actor of Object.values(actors)) { actor.animation=null; actor.hitAt=-10; actor.lastKey=null; }
+    for (const actor of Object.values(actors)) { actor.animation=null; actor.hitAt=-10; actor.blockAt=-10; actor.lastKey=null; }
     effects.splice(0).forEach(effect => effect.element.remove()); resultPanel.hidden = true; lastFrameTime = null;
     try { localStorage.setItem('ember.combat.auto.v1','on'); } catch {}
     updateMovement(0,battle.getState()); render(battle.getState()); syncPause(); $('#status').textContent = 'Новый тестовый бой начался';
@@ -318,7 +333,7 @@
     crystals: () => ['КОШЕЛЁК','Кристаллы','Редкие кристаллы для особых находок. Их история начнётся в следующих главах.'],
     rewards: () => ['НАГРАДЫ','Трофеи первого боя',`За победу над орком, лучником и колдуном — 25 золота. Сейчас в кошельке: ${wallet}.`],
     map: () => ['ГЛАВА I','Забытый лес','Битва 1–1: орк-щитоносец, скелет-лучник и могильный колдун. Тестовый бой можно повторять.'],
-    fist: () => ['УМЕНИЕ','Натиск','Откроется на 3 уровне. Сейчас герой использует базовую атаку своего оружия.'],
+    fist: () => ['УМЕНИЕ','Натиск',starterWeapon?.id === 'sword' ? 'Мечник чередует короткий, рубящий и обратный удар. Третий удар наносит на 50% больше урона до брони. Щит смягчает каждый второй удар ближнего боя наполовину и открывает контратаку. Натиск откроется на 3 уровне.' : 'Откроется на 3 уровне. Сейчас герой использует базовую атаку своего оружия.'],
     dash: () => ['УМЕНИЕ','Рывок','Откроется на 5 уровне. В нужный момент решает один быстрый шаг.'],
     fire: () => ['УМЕНИЕ','Внутренний огонь','Откроется на 10 уровне. Сила, которую ещё предстоит пробудить.']
   };
