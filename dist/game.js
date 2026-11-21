@@ -1,37 +1,38 @@
 (() => {
   'use strict';
+  const $ = selector => document.querySelector(selector);
   const skinIds = ['light','amber','olive','bronze','brown','black'];
   const skinNames = ['Светлый','Тёплый','Оливковый','Бронзовый','Смуглый','Тёмный'];
   const telegram = window.Telegram?.WebApp;
-  const arena = document.querySelector('.adventure');
-  const sprite = document.querySelector('#player-sprite');
-  const avatar = document.querySelector('#avatar');
-  const dialog = document.querySelector('#game-dialog');
-  const autoButton = document.querySelector('#auto-button');
+  const arena = $('.adventure'), battlefield = $('.battlefield'), dialog = $('#game-dialog');
+  const autoButton = $('#auto-button'), resultPanel = $('#battle-result');
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-  let character = null;
-  let auto = true;
-  let frame = 0;
-  let sheet = null;
+  let character = null, auto = true, wallet = 0;
   try {
     const saved = JSON.parse(localStorage.getItem('ember.character.v1'));
     if (saved?.version === 1 && skinIds.includes(saved.skin)) character = saved;
-    const preference = localStorage.getItem('ember.auto.v1');
-    if (preference !== null) auto = preference === 'on';
-  } catch { /* The screen remains usable when browser storage is unavailable. */ }
+    auto = localStorage.getItem('ember.combat.auto.v1') !== 'off';
+    const coins = Number(localStorage.getItem('ember.test.gold.v1'));
+    if (Number.isSafeInteger(coins) && coins >= 0) wallet = Math.min(coins,999999999);
+  } catch {}
+  if (new URLSearchParams(window.location.search).get('battle') === 'test') auto = true;
   const skin = character?.skin || 'light';
   const name = typeof character?.name === 'string' && character.name.trim() ? character.name.slice(0,24) : 'Странник';
   const level = Number.isInteger(character?.level) ? Math.max(1,Math.min(99,character.level)) : 1;
-  document.querySelector('#player-name').textContent = name;
-  document.querySelector('.fighter-name').textContent = name;
-  document.querySelector('#level-badge').textContent = level;
-  document.querySelector('.battlefield').setAttribute('aria-label', `${name} без экипировки в Забытом лесу. Впереди два лесных слизня и огонёк.`);
-  try {
-    telegram?.ready();
-    telegram?.expand();
-    telegram?.setHeaderColor('#14231f');
-    telegram?.setBackgroundColor('#161e18');
-  } catch {}
+  $('#player-name').textContent = name;
+  $('.fighter-name').textContent = name;
+  $('#level-badge').textContent = level;
+  const battle = window.EmberCombat.createBattle({heroName:name});
+  battle.pause();
+  let ready = false, assetError = false, rewardPaid = false, lastFrameTime = null;
+  const actors = {};
+  for (const id of ['hero','orc','archer','mage']) {
+    const element = document.querySelector(`[data-fighter="${id}"]`);
+    actors[id] = {element, canvas:element.querySelector('canvas'), bar:element.querySelector('.healthbar'), images:{}, animation:null, hitAt:-10, lastKey:null};
+  }
+  const effects = [];
+  let heroX = null, moveFrom = 0, moveAt = 0, currentTarget = null;
+  try { telegram?.ready(); telegram?.expand(); telegram?.setHeaderColor('#14231f'); telegram?.setBackgroundColor('#161e18'); } catch {}
   function syncViewport() {
     const visible = window.visualViewport?.height || window.innerHeight;
     const tgHeight = telegram?.initData && Number(telegram.viewportHeight);
@@ -42,84 +43,205 @@
   telegram?.onEvent?.('viewportChanged', syncViewport);
   syncViewport();
   function alignTerrain() {
-    const bounds = arena.getBoundingClientRect();
-    const fighter = document.querySelector('.player').getBoundingClientRect();
+    const bounds = arena.getBoundingClientRect(), fighter = actors.hero.element.getBoundingClientRect();
     const feet = fighter.bottom - bounds.top - fighter.height * 2 / 64;
     const scale = Math.max(bounds.width / 900, feet / 330, (bounds.height - feet) / 150);
-    const art = document.querySelector('.battle-landscape');
+    const art = $('.battle-landscape');
     art.style.backgroundSize = `${900 * scale}px ${480 * scale}px`;
     art.style.backgroundPosition = `center ${feet - 330 * scale}px`;
   }
   new ResizeObserver(alignTerrain).observe(arena);
   alignTerrain();
-  function draw() {
-    if (!sheet) return;
-    const context = sprite.getContext('2d');
-    context.clearRect(0,0,64,64);
-    context.imageSmoothingEnabled = false;
-    context.drawImage(sheet,frame * 64,192,64,64,0,0,64,64);
-    const face = avatar.getContext('2d');
-    face.clearRect(0,0,32,32);
-    face.imageSmoothingEnabled = false;
-    face.drawImage(sheet,19,140,26,26,0,0,32,32);
+  function updateWallet() {
+    $('.gold strong').textContent = wallet >= 10000 ? `${Math.floor(wallet/1000)}k` : wallet;
+    $('.gold').setAttribute('aria-label', `Золото: ${wallet}`);
   }
-  function loadHero(id, canFallback = true) {
-    const image = new Image();
-    image.onload = () => { sheet = image; draw(); };
-    image.onerror = () => {
-      if (canFallback && id !== 'light') { loadHero('light', false); return; }
-      document.querySelector('#status').textContent = 'Не удалось загрузить спрайт героя. Обнови страницу.';
-    };
-    image.src = `assets/characters/${id}.png`;
+  updateWallet();
+  function loadImage(path) {
+    return new Promise((resolve,reject) => { const image = new Image(); image.onload = () => resolve(image); image.onerror = () => reject(new Error(path)); image.src = path; });
   }
-  loadHero(skin);
-  function applyAuto() {
-    arena.classList.toggle('is-paused', !auto);
-    autoButton.classList.toggle('active', auto);
-    autoButton.setAttribute('aria-pressed', String(auto));
-    autoButton.setAttribute('aria-label', `Автобой ${auto ? 'включён' : 'выключен'}`);
-    document.querySelector('#auto-label').textContent = auto ? 'ВКЛ' : 'ВЫКЛ';
-    document.querySelector('#battle-state').textContent = auto ? 'В пути' : 'На привале';
+  async function loadAssets() {
+    ready = false; assetError = false; updateControls();
+    try {
+      const idle = await loadImage(`assets/characters/${skin}.png`).catch(() => loadImage('assets/characters/light.png'));
+      actors.hero.images.idle = {image:idle, frames:2, row:3};
+      const attack = await loadImage(`assets/characters/combat/${skin}-attack.png`).catch(() => null);
+      actors.hero.images.attack = attack ? {image:attack,frames:6,row:3} : actors.hero.images.idle;
+      await Promise.all([
+        ['orc','orc-walk.png','orc-left.png',9,0],
+        ['archer','skeleton-shoot.png','skeleton-left.png',13,5],
+        ['mage','mage-spellcast.png','mage-left.png',7,0]
+      ].map(async ([id,sheet,fallback,frames,idleFrame]) => {
+        try {
+          const image = await loadImage(`assets/enemies/lpc/${sheet}`);
+          actors[id].images.idle = {image,frames,row:1,still:idleFrame};
+          actors[id].images.attack = {image,frames,row:1};
+        } catch {
+          const image = await loadImage(`assets/enemies/lpc/${fallback}`);
+          actors[id].images.idle = actors[id].images.attack = {image,frames:1,row:0,still:0};
+        }
+      }));
+      const face = $('#avatar').getContext('2d'); face.imageSmoothingEnabled = false;
+      face.drawImage(idle,19,140,26,26,0,0,32,32);
+      ready = true;
+      if (auto) battle.resume();
+      $('#status').textContent = 'Тестовый бой готов: орк-щитоносец, скелет-лучник и могильный колдун.';
+      render(battle.getState()); updateControls();
+    } catch {
+      assetError = true;
+      $('#result-title').textContent = 'Не удалось загрузить бой';
+      $('#result-copy').textContent = 'Проверь соединение и попробуй ещё раз.';
+      $('#replay-button').textContent = 'Повторить загрузку'; resultPanel.hidden = false;
+      $('#status').textContent = 'Не удалось загрузить спрайты боя.'; updateControls();
+    }
   }
-  applyAuto();
+  function updateControls() {
+    const state = battle.getState(), ended = ['victory','defeat'].includes(state.phase);
+    arena.classList.toggle('is-paused', !ready || !auto || dialog.open || ended);
+    autoButton.disabled = !ready || ended;
+    autoButton.classList.toggle('active', auto && !ended);
+    autoButton.setAttribute('aria-pressed', String(auto && !ended));
+    autoButton.setAttribute('aria-label', ended ? 'Бой завершён' : `Автобой ${auto ? 'включён' : 'приостановлен'}`);
+    $('#auto-label').textContent = ended ? '✓' : auto ? 'ВКЛ' : 'ВЫКЛ';
+    $('#battle-state').textContent = !ready ? assetError ? 'Ошибка загрузки' : 'Загрузка боя' : state.phase === 'victory' ? 'Победа · 3/3' : state.phase === 'defeat' ? 'Поражение' : auto ? 'Тестовый бой' : 'Пауза';
+  }
+  function syncPause() {
+    if (ready && auto && !document.hidden && !dialog.open) battle.resume(); else battle.pause();
+    lastFrameTime = null; updateControls();
+  }
   autoButton.addEventListener('click', () => {
-    auto = !auto;
-    applyAuto();
-    try { localStorage.setItem('ember.auto.v1', auto ? 'on' : 'off'); } catch {}
-    try { telegram?.HapticFeedback?.selectionChanged(); } catch {}
-    document.querySelector('#status').textContent = auto ? 'Автобой включён' : 'Автобой приостановлен';
+    if (!ready || ['victory','defeat'].includes(battle.getState().phase)) return;
+    auto = !auto; syncPause();
+    try { localStorage.setItem('ember.combat.auto.v1',auto ? 'on' : 'off'); telegram?.HapticFeedback?.selectionChanged(); } catch {}
+    $('#status').textContent = auto ? 'Бой продолжается' : 'Бой приостановлен';
   });
-  setInterval(() => {
-    if (!auto || reducedMotion.matches || document.hidden) return;
-    frame = frame ? 0 : 1;
-    draw();
-  }, 650);
-  const information = {
-    gold: ['КОШЕЛЁК','Золото','Золото пригодится для снаряжения и развития героя. Первые награды ждут впереди.'],
-    crystals: ['КОШЕЛЁК','Кристаллы','Редкие кристаллы для особых находок. Их история начнётся в следующих главах.'],
-    rewards: ['НАГРАДЫ','Первый трофей впереди','Награды за пройденные битвы появятся здесь. Сейчас твой путь только начинается.'],
-    map: ['ГЛАВА I','Забытый лес','Опушка леса · Битва 1–1. Три волны отделяют странника от следующего шага в неизвестность.'],
-    fist: ['УМЕНИЕ','Натиск','Откроется на 3 уровне. Первый шаг к собственной боевой технике.'],
-    dash: ['УМЕНИЕ','Рывок','Откроется на 5 уровне. В нужный момент решает один быстрый шаг.'],
-    fire: ['УМЕНИЕ','Внутренний огонь','Откроется на 10 уровне. Сила, которую ещё предстоит пробудить.']
-  };
-  function openInfo(eyebrow,title,copy,profile = false) {
-    document.querySelector('#dialog-eyebrow').textContent = eyebrow;
-    document.querySelector('#dialog-title').textContent = title;
-    document.querySelector('#dialog-copy').textContent = copy;
-    const link = document.querySelector('#profile-link');
-    link.hidden = !profile;
-    link.textContent = character ? 'Изменить облик' : 'Создать героя';
-    if (!dialog.open) dialog.showModal();
+  document.addEventListener('visibilitychange', syncPause);
+  function addEffect(type, sourceId, targetId, text, at) {
+    if (reducedMotion.matches) return;
+    const element = document.createElement('span');
+    element.className = type === 'damage' ? `damage-number ${targetId === 'hero' ? 'enemy-damage' : ''}` : `projectile ${type}`;
+    element.setAttribute('aria-hidden','true'); if (text) element.textContent = text;
+    battlefield.appendChild(element); effects.push({element,type,sourceId,targetId,at,duration:type === 'damage' ? .85 : .38});
   }
-  document.querySelector('#profile-button').addEventListener('click', () => {
-    const description = character ? `Уровень ${level} · Сила 12 · ${skinNames[skinIds.indexOf(skin)]} оттенок кожи. Пока без класса, брони и оружия. Вся история впереди.` : 'Твоя история ещё не написана. Выбери облик странника, прежде чем отправиться в путь.';
-    openInfo('ТВОЙ ГЕРОЙ',name,description,true);
+  function handleEvents(events) {
+    for (const event of events) {
+      if (event.type === 'attack') {
+        actors[event.sourceId].animation = {at:event.at,duration:event.sourceId === 'archer' ? .9 : .66};
+        actors[event.targetId].hitAt = event.at;
+        addEffect('damage',event.sourceId,event.targetId,`−${event.damage}`,event.at);
+        if (event.projectile !== 'melee') addEffect(event.projectile,event.sourceId,event.targetId,null,event.at);
+      } else if (event.type === 'death') {
+        $('#status').textContent = event.id === 'hero' ? 'Герой пал' : `${battle.getState().enemies.find(enemy=>enemy.id===event.id).name} побеждён`;
+      } else if (event.type === 'end') {
+        if (event.result === 'victory' && !rewardPaid) {
+          rewardPaid = true; wallet = Math.min(999999999,wallet + event.reward); updateWallet();
+          try { localStorage.setItem('ember.test.gold.v1',String(wallet)); } catch {}
+        }
+        $('#result-title').textContent = event.result === 'victory' ? 'Победа!' : 'Попробуем ещё?';
+        $('#result-copy').textContent = event.result === 'victory' ? `Все три врага повержены. +${event.reward} золота · ${event.at.toFixed(1).replace('.',',')} сек.` : 'Герой пал. Восстанови силы и начни бой заново.';
+        $('#replay-button').textContent = 'Снова в бой'; resultPanel.hidden = false;
+        $('#status').textContent = event.result === 'victory' ? `Победа. Получено ${event.reward} золота.` : 'Поражение. Можно повторить бой.';
+        try { telegram?.HapticFeedback?.notificationOccurred(event.result === 'victory' ? 'success' : 'warning'); } catch {}
+        effects.splice(0).forEach(effect => effect.element.remove());
+        updateControls();
+      }
+    }
+  }
+  function drawActor(id, state) {
+    const actor = actors[id], unit = id === 'hero' ? state.hero : state.enemies.find(enemy=>enemy.id===id);
+    if (!actor.images.idle) return;
+    const age = actor.animation ? state.elapsed - actor.animation.at : 100;
+    const ended = ['victory','defeat'].includes(state.phase);
+    const attacking = !ended && age >= 0 && age < (actor.animation?.duration || 0) && unit.hp > 0;
+    const descriptor = attacking && !reducedMotion.matches ? actor.images.attack : actor.images.idle;
+    const cell = attacking && !reducedMotion.matches ? Math.min(descriptor.frames-1,Math.floor(age / actor.animation.duration * descriptor.frames)) : id === 'hero' && auto && unit.hp > 0 && !reducedMotion.matches ? Math.floor(state.elapsed / .65) % 2 : descriptor.still || 0;
+    const key = `${attacking}-${cell}-${descriptor.row}`;
+    if (actor.lastKey !== key) {
+      const ctx = actor.canvas.getContext('2d'); ctx.clearRect(0,0,64,64); ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(descriptor.image,cell*64,descriptor.row*64,64,64,0,0,64,64); actor.lastKey = key;
+    }
+    actor.element.classList.toggle('is-defeated',unit.hp <= 0);
+    actor.element.classList.toggle('is-target',id === state.targetId);
+    actor.element.classList.toggle('is-hit',!ended && !reducedMotion.matches && state.elapsed - actor.hitAt < .16);
+    const lunge = !reducedMotion.matches && attacking ? Math.sin(age / actor.animation.duration * Math.PI) * (id === 'hero' ? 12 : id === 'orc' ? -9 : 0) : 0;
+    actor.canvas.style.transform = `translateX(${lunge}px)`;
+    actor.bar.querySelector('i').style.width = `${unit.hp / unit.maxHp * 100}%`;
+    actor.bar.setAttribute('aria-valuenow',unit.hp);
+    actor.bar.setAttribute('aria-valuemax',unit.maxHp);
+    actor.element.setAttribute('aria-label', `${unit.name}: ${unit.hp} из ${unit.maxHp} здоровья`);
+  }
+  function moveHero(state) {
+    const width = battlefield.clientWidth;
+    const home = width * (window.innerWidth > 700 ? .18 : .22);
+    if (heroX === null) { heroX = home; moveFrom = home; }
+    if (currentTarget !== state.targetId) { moveFrom = heroX; moveAt = state.elapsed; currentTarget = state.targetId; }
+    if (state.targetId) {
+      const target = actors[state.targetId].element;
+      const separation = actors.hero.element.offsetWidth * .23 + target.offsetWidth * .34;
+      const goal = Math.max(home,target.offsetLeft - separation);
+      const progress = reducedMotion.matches ? 1 : Math.min(1,(state.elapsed - moveAt)/.8);
+      heroX = moveFrom + (goal - moveFrom) * progress;
+    }
+    actors.hero.element.style.left = `${heroX}px`;
+  }
+  function renderEffects(state) {
+    const field = battlefield.getBoundingClientRect();
+    for (let i=effects.length-1;i>=0;i--) {
+      const effect = effects[i], age = state.elapsed - effect.at;
+      if (age >= effect.duration || reducedMotion.matches) { effect.element.remove(); effects.splice(i,1); continue; }
+      const target = actors[effect.targetId].element.getBoundingClientRect(), source = actors[effect.sourceId].element.getBoundingClientRect();
+      const p = Math.max(0,age/effect.duration), tx=target.left+target.width/2-field.left, ty=target.top+target.height*.4-field.top;
+      if (effect.type === 'damage') {
+        effect.element.style.left = `${tx}px`; effect.element.style.top = `${ty-p*22}px`; effect.element.style.opacity = String(1-p);
+      } else {
+        const sx=source.left+source.width*.3-field.left, sy=source.top+source.height*.45-field.top;
+        effect.element.style.left = `${sx+(tx-sx)*p}px`; effect.element.style.top = `${sy+(ty-sy)*p}px`;
+      }
+    }
+  }
+  function render(state) {
+    moveHero(state);
+    for (const id of Object.keys(actors)) drawActor(id,state);
+    $('#hero-vital').textContent = `${state.hero.hp} / ${state.hero.maxHp} HP`;
+    const waves = document.querySelectorAll('.wave');
+    waves.forEach((wave,i) => { wave.classList.toggle('done',i<state.defeatedCount); wave.classList.toggle('current',i===state.defeatedCount); });
+    $('.stage-progress').setAttribute('aria-label',`Побеждено ${state.defeatedCount} из 3 врагов`);
+    renderEffects(state);
+  }
+  function tick(timestamp) {
+    if (lastFrameTime === null) lastFrameTime = timestamp;
+    const dt = Math.min(.1,Math.max(0,(timestamp-lastFrameTime)/1000)); lastFrameTime = timestamp;
+    if (ready && auto && !document.hidden && !dialog.open) handleEvents(battle.advance(dt));
+    if (ready) render(battle.getState());
+    window.requestAnimationFrame(tick);
+  }
+  $('#replay-button').addEventListener('click', () => {
+    if (assetError) { resultPanel.hidden = true; loadAssets(); return; }
+    battle.restart(); auto = true; rewardPaid = false; heroX = null; currentTarget = null;
+    for (const actor of Object.values(actors)) { actor.animation=null; actor.hitAt=-10; actor.lastKey=null; }
+    effects.splice(0).forEach(effect => effect.element.remove()); resultPanel.hidden = true; lastFrameTime = null;
+    try { localStorage.setItem('ember.combat.auto.v1','on'); } catch {}
+    render(battle.getState()); syncPause(); $('#status').textContent = 'Новый тестовый бой начался';
   });
-  document.querySelectorAll('[data-info]').forEach(button => button.addEventListener('click', () => openInfo(...information[button.dataset.info])));
-  dialog.querySelectorAll('.dialog-close,.dialog-action').forEach(button => button.addEventListener('click', () => dialog.close()));
-  dialog.addEventListener('click', event => {
-    const rect = dialog.getBoundingClientRect();
-    if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) dialog.close();
-  });
+  const information = {
+    gold: () => ['КОШЕЛЁК','Золото',`В кошельке ${wallet} золота. Победа в тестовом бою приносит 25 золота. Сохранение — на этом устройстве.`],
+    crystals: () => ['КОШЕЛЁК','Кристаллы','Редкие кристаллы для особых находок. Их история начнётся в следующих главах.'],
+    rewards: () => ['НАГРАДЫ','Трофеи первого боя',`За победу над орком, лучником и колдуном — 25 золота. Сейчас в кошельке: ${wallet}.`],
+    map: () => ['ГЛАВА I','Забытый лес','Битва 1–1: орк-щитоносец, скелет-лучник и могильный колдун. Тестовый бой можно повторять.'],
+    fist: () => ['УМЕНИЕ','Натиск','Откроется на 3 уровне. В тестовом бою герой сражается обычными ударами.'],
+    dash: () => ['УМЕНИЕ','Рывок','Откроется на 5 уровне. В нужный момент решает один быстрый шаг.'],
+    fire: () => ['УМЕНИЕ','Внутренний огонь','Откроется на 10 уровне. Сила, которую ещё предстоит пробудить.']
+  };
+  function openInfo(eyebrow,title,copy,profile=false) {
+    $('#dialog-eyebrow').textContent=eyebrow; $('#dialog-title').textContent=title; $('#dialog-copy').textContent=copy;
+    const link=$('#profile-link'); link.hidden=!profile; link.textContent=character?'Изменить облик':'Создать героя';
+    $('#sprite-credits').hidden=!profile;
+    if (!dialog.open) dialog.showModal(); syncPause();
+  }
+  $('#profile-button').addEventListener('click', () => openInfo('ТВОЙ ГЕРОЙ',name,`Уровень ${level} · Сила 12 · ${skinNames[skinIds.indexOf(skin)]} оттенок кожи. Без класса, брони и оружия. В тестовом бою: 200 здоровья.`,true));
+  document.querySelectorAll('[data-info]').forEach(button=>button.addEventListener('click',()=>openInfo(...information[button.dataset.info]())));
+  dialog.querySelectorAll('.dialog-close,.dialog-action').forEach(button=>button.addEventListener('click',()=>dialog.close()));
+  dialog.addEventListener('close',syncPause);
+  dialog.addEventListener('click',event=>{const r=dialog.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)dialog.close();});
+  loadAssets(); window.requestAnimationFrame(tick);
 })();

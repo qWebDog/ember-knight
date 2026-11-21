@@ -1,0 +1,53 @@
+SKELETON ARCHER — UNIVERSAL LPC CHARACTER GENERATOR
+
+Repository: https://github.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator
+Pinned revision: 86a3719ee4a7e2e9fb27c7c152e29a741d3e930a
+
+License selected for the exported sprite: OGA-BY 3.0.
+The bow is offered as OGA-BY 3.0+; version 3.0 is selected.
+All original alternative licenses remain recorded in the definitions and preset.json.
+License text: source/OGA-BY-3.0.txt — https://static.opengameart.org/OGA-BY-3.0.txt
+
+Changes: layered original PNGs in generator zPos order, cropped shoot frame 5 facing left, enlarged preview with nearest-neighbor scaling. No custom pixel drawing or recoloring.
+
+Layer attribution: body/bodies/skeleton
+Authors: bluecarrot16, Napsio, JaidynReiman, Johannes Sjölund (wulax), Stephen Challener (Redshrike)
+License alternatives: OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0
+Notes: (none)
+Sources:
+  https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles
+  https://opengameart.org/content/lpc-medieval-fantasy-character-sprites
+  https://opengameart.org/content/lpc-skeleton
+  https://opengameart.org/content/lpc-character-bases
+
+Layer attribution: head/heads/skeleton
+Authors: bluecarrot16, Napsio, JaidynReiman, Johannes Sjölund (wulax), Stephen Challener (Redshrike)
+License alternatives: OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0
+Notes: (none)
+Sources:
+  https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles
+  https://opengameart.org/content/lpc-medieval-fantasy-character-sprites
+  https://opengameart.org/content/lpc-skeleton
+  https://opengameart.org/content/lpc-character-bases
+
+Layer attribution: quiver
+Authors: Johannes Sjölund (wulax)
+License alternatives: OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0
+Notes: (none)
+Sources:
+  https://opengameart.org/content/lpc-medieval-fantasy-character-sprites
+
+Layer attribution: weapon/ranged/bow/normal
+Authors: Johannes Sjölund (wulax), Pierre Vigier (pvigier)
+License alternatives: OGA-BY 3.0+, GPL 3.0, CC-BY 4.0
+Notes: original by wulax, walk animations by pvigier, split into layers and tweaked for v3 character bases by bluecarrot16. pvigier has agreed to license this sheet as OGA-BY 3.0+.
+Sources:
+  https://opengameart.org/content/lpc-medieval-fantasy-character-sprites
+  https://opengameart.org/content/lpc-walk-animations-for-bows
+
+Layer attribution: weapon/ranged/bow/arrow
+Authors: Johannes Sjölund (wulax)
+License alternatives: OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0
+Notes: (none)
+Sources:
+  https://opengameart.org/content/lpc-medieval-fantasy-character-sprites

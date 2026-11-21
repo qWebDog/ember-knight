@@ -1,0 +1,75 @@
+{
+  "name": "Могильный колдун",
+  "role": "Маг: проклятия и магические атаки",
+  "generator": "Universal LPC Spritesheet Character Generator",
+  "revision": "86a3719ee4a7e2e9fb27c7c152e29a741d3e930a",
+  "animation": "spellcast",
+  "frame_size": [
+    64,
+    64
+  ],
+  "sheet_size": [
+    448,
+    256
+  ],
+  "frame_count": 7,
+  "rows": [
+    "north",
+    "west",
+    "south",
+    "east"
+  ],
+  "preview_frame": 4,
+  "layers": [
+    {
+      "zPos": 5,
+      "source": "spritesheets/cape/tattered/bg/spellcast.png",
+      "palette": "cloth.ulpc.purple",
+      "definition": "sheet_definitions/torso/cape/cape_tattered.json"
+    },
+    {
+      "zPos": 10,
+      "source": "spritesheets/body/bodies/zombie/spellcast/zombie.png",
+      "palette": null,
+      "definition": "sheet_definitions/body/special/body_zombie.json"
+    },
+    {
+      "zPos": 20,
+      "source": "spritesheets/legs/skirts/slit/thin/spellcast.png",
+      "palette": "cloth.ulpc.purple",
+      "definition": "sheet_definitions/legs/skirts/legs_skirts_slit.json"
+    },
+    {
+      "zPos": 25,
+      "source": "spritesheets/feet/boots/basic/male/spellcast.png",
+      "palette": "cloth.ulpc.charcoal",
+      "definition": "sheet_definitions/feet/boots/feet_boots_basic.json"
+    },
+    {
+      "zPos": 35,
+      "source": "spritesheets/torso/clothes/longsleeve/longsleeve/male/spellcast.png",
+      "palette": "cloth.ulpc.lavender",
+      "definition": "sheet_definitions/torso/shirts/longsleeve/torso_clothes_longsleeve.json"
+    },
+    {
+      "zPos": 85,
+      "source": "spritesheets/cape/tattered/fg/spellcast.png",
+      "palette": "cloth.ulpc.purple",
+      "definition": "sheet_definitions/torso/cape/cape_tattered.json"
+    },
+    {
+      "zPos": 100,
+      "source": "spritesheets/head/heads/zombie/adult/spellcast.png",
+      "palette": null,
+      "definition": "sheet_definitions/head/heads/undead/heads_zombie.json"
+    },
+    {
+      "zPos": 130,
+      "source": "spritesheets/hat/cloth/hood/adult/spellcast.png",
+      "palette": "cloth.ulpc.purple",
+      "definition": "sheet_definitions/headwear/coverings/hoods/hat_hood_cloth.json"
+    }
+  ],
+  "changes": "Composited official layers in zPos order. Recolored cloth from official white base to official ULPC purple/lavender/charcoal palettes. Cropped original spellcast frame4; no custom drawn pixels.",
+  "license": "CC-BY-SA-3.0"
+}

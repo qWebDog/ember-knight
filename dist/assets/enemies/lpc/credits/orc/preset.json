@@ -1,0 +1,342 @@
+{
+  "name": "Орк-щитоносец",
+  "role": "Танк",
+  "description": "Зелёный орк в стальных латах, с круглым деревянным щитом и боевым топором.",
+  "generator": "Universal LPC Spritesheet Character Generator",
+  "repository": "https://github.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator",
+  "revision": "86a3719ee4a7e2e9fb27c7c152e29a741d3e930a",
+  "bodyType": "male",
+  "license": "CC-BY-SA 3.0",
+  "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
+  "layerOrder": "ascending zPos, matching the ULPC sheet definitions",
+  "layers": [
+    {
+      "zPos": 9,
+      "path": "spritesheets/weapon/blunt/waraxe/behind/walk/waraxe.png",
+      "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/weapon/blunt/waraxe/behind/walk/waraxe.png",
+      "recolor": null,
+      "sha256": "18460135dbb834d045809ecdc33663d531286e052142da6d4cf57d11051c2d6a"
+    },
+    {
+      "zPos": 10,
+      "path": "spritesheets/body/bodies/male/walk.png",
+      "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/body/bodies/male/walk.png",
+      "recolor": {
+        "material": "body",
+        "from": "ulpc.light",
+        "to": "ulpc.green",
+        "sourcePalettePath": "palette_definitions/body/body_ulpc.json",
+        "sourceColors": [
+          "#271920",
+          "#99423c",
+          "#cc8665",
+          "#E4A47C",
+          "#F9D5BA",
+          "#FAECE7"
+        ],
+        "targetColors": [
+          "#140C09",
+          "#09320B",
+          "#19541D",
+          "#228236",
+          "#39AA4E",
+          "#53BF71"
+        ]
+      },
+      "sha256": "1e0e8f0c11ba5f4f7b3d4439fc416802b4227da2fe146c13de3de254d9f87f77"
+    },
+    {
+      "zPos": 15,
+      "path": "spritesheets/feet/armour/plate/male/walk.png",
+      "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/feet/armour/plate/male/walk.png",
+      "recolor": null,
+      "sha256": "fbd88f84d611310acecd313f0094aeb7678097464cbedf2ee49e446025d672a6"
+    },
+    {
+      "zPos": 20,
+      "path": "spritesheets/legs/armour/plate/male/walk.png",
+      "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/legs/armour/plate/male/walk.png",
+      "recolor": null,
+      "sha256": "4bc6b60aa84d52eb258cd0083843d566f8b89b30e2b31e8ea00401e95faa7f0a"
+    },
+    {
+      "zPos": 60,
+      "path": "spritesheets/torso/armour/plate/male/walk.png",
+      "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/torso/armour/plate/male/walk.png",
+      "recolor": null,
+      "sha256": "4ef811417e7c1163b8da47aa48afd80b398302b18d4ee90c6fbb79667b9cc046"
+    },
+    {
+      "zPos": 100,
+      "path": "spritesheets/head/heads/orc/male/walk.png",
+      "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/head/heads/orc/male/walk.png",
+      "recolor": null,
+      "sha256": "f674158c9ab2c6ef73fc7131120aa5e641d541003ba4d42b9133371d0a3ef0e6"
+    },
+    {
+      "zPos": 110,
+      "path": "spritesheets/shield/round/walk/brown.png",
+      "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/round/walk/brown.png",
+      "recolor": null,
+      "sha256": "8c3f821080f46dc47d59db2c59c2fb78db722ff9940c3e0ac3e56b1f5c60ae45"
+    },
+    {
+      "zPos": 140,
+      "path": "spritesheets/weapon/blunt/waraxe/walk/waraxe.png",
+      "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/weapon/blunt/waraxe/walk/waraxe.png",
+      "recolor": null,
+      "sha256": "0296d76311e79591490f4346da7a6c79de9ff24784d23ba9c99b88ee1bf2995d"
+    }
+  ],
+  "unchangedMaterials": {
+    "orcHead": "ulpc.green (native source)",
+    "plateArmor": "ulpc.steel (native source)",
+    "shield": "brown variant (native source)",
+    "waraxe": "native source colors"
+  },
+  "sourceDefinitions": [
+    "sheet_definitions/body/body.json",
+    "sheet_definitions/head/heads/fantasy/heads_orc_male.json",
+    "sheet_definitions/feet/feet_armour.json",
+    "sheet_definitions/legs/legs_armour.json",
+    "sheet_definitions/torso/armour/torso_armour_plate.json",
+    "sheet_definitions/weapons/shields/shield_round.json",
+    "sheet_definitions/weapons/blunt/weapon_blunt_waraxe.json"
+  ],
+  "outputs": {
+    "orc-bruiser-walk.png": {
+      "width": 576,
+      "height": 256,
+      "tileWidth": 64,
+      "tileHeight": 64,
+      "framesPerDirection": 9,
+      "directions": [
+        "north",
+        "west",
+        "south",
+        "east"
+      ],
+      "animation": "original walk, all nine source columns"
+    },
+    "orc-bruiser-idle-static.png": {
+      "width": 128,
+      "height": 256,
+      "tileWidth": 64,
+      "tileHeight": 64,
+      "framesPerDirection": 2,
+      "directions": [
+        "north",
+        "west",
+        "south",
+        "east"
+      ],
+      "animation": "static only; source walk column 0 repeated twice per direction; waraxe and shield do not provide idle animation"
+    },
+    "orc-bruiser-left-64.png": {
+      "width": 64,
+      "height": 64,
+      "direction": "west",
+      "sourceCrop": [
+        0,
+        64,
+        64,
+        64
+      ],
+      "visibleBBox": [
+        10,
+        20,
+        55,
+        63
+      ]
+    },
+    "orc-bruiser-front-64.png": {
+      "width": 64,
+      "height": 64,
+      "direction": "south",
+      "sourceCrop": [
+        0,
+        128,
+        64,
+        64
+      ],
+      "visibleBBox": [
+        12,
+        17,
+        63,
+        64
+      ]
+    },
+    "orc-bruiser-left-256.png": {
+      "width": 256,
+      "height": 256,
+      "source": "orc-bruiser-left-64.png",
+      "scale": 4,
+      "resampling": "nearest neighbor"
+    },
+    "orc-bruiser-front-256.png": {
+      "width": 256,
+      "height": 256,
+      "source": "orc-bruiser-front-64.png",
+      "scale": 4,
+      "resampling": "nearest neighbor"
+    }
+  },
+  "changes": [
+    "Combined unmodified modular ULPC artwork in its defined layer order.",
+    "Recolored male skin from ULPC light to ULPC green by exact official palette substitution.",
+    "Extracted source standing frames and nearest-neighbor enlarged previews.",
+    "Duplicated the original stationary walk frame into a static two-column compatibility sheet. No new pixels or equipment were drawn."
+  ],
+  "credits": [
+    {
+      "file": "body/bodies/male",
+      "notes": "see details at https://opengameart.org/content/lpc-character-bases; 'Thick' Male Revised Run/Climb by JaidynReiman (based on ElizaWy's LPC Revised)",
+      "authors": [
+        "bluecarrot16",
+        "JaidynReiman",
+        "Benjamin K. Smith (BenCreating)",
+        "Evert",
+        "Eliza Wyatt (ElizaWy)",
+        "TheraHedwig",
+        "MuffinElZangano",
+        "Durrani",
+        "Johannes Sjölund (wulax)",
+        "Stephen Challener (Redshrike)"
+      ],
+      "licenses": [
+        "OGA-BY 3.0",
+        "CC-BY-SA 3.0",
+        "GPL 3.0"
+      ],
+      "urls": [
+        "https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles",
+        "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites",
+        "https://opengameart.org/content/lpc-male-jumping-animation-by-durrani",
+        "https://opengameart.org/content/lpc-runcycle-and-diagonal-walkcycle",
+        "https://opengameart.org/content/lpc-revised-character-basics",
+        "https://opengameart.org/content/lpc-be-seated",
+        "https://opengameart.org/content/lpc-runcycle-for-male-muscular-and-pregnant-character-bases-with-modular-heads",
+        "https://opengameart.org/content/lpc-jump-expanded",
+        "https://opengameart.org/content/lpc-character-bases"
+      ],
+      "definition": "sheet_definitions/body/body.json"
+    },
+    {
+      "file": "head/heads/orc/male",
+      "notes": "Sinbad the ogre design by Zi Ye, original 4-direction sprite by Redshrike, additional hurt/cast animations by makrohn, headless version by bluecarrot16",
+      "authors": [
+        "bluecarrot16",
+        "Matthew Krohn (makrohn)",
+        "Stephen Challener (Redshrike)",
+        "Zi Ye"
+      ],
+      "licenses": [
+        "OGA-BY 3.0",
+        "CC-BY-SA 3.0",
+        "GPL 3.0"
+      ],
+      "urls": [
+        "https://opengameart.org/content/four-characters-my-lpc-entries",
+        "https://opengameart.org/content/sinbad-the-ogre",
+        "https://opengameart.org/content/lpc-male-sheets",
+        "https://opengameart.org/content/lpc-character-bases"
+      ],
+      "definition": "sheet_definitions/head/heads/fantasy/heads_orc_male.json"
+    },
+    {
+      "file": "feet/armour/plate",
+      "notes": "original by wulax, recolors by bigbeargames, edits for v3 base and recolors by bluecarrot16",
+      "authors": [
+        "Matthew Krohn (makrohn)",
+        "Johannes Sjölund (wulax)"
+      ],
+      "licenses": [
+        "OGA-BY 3.0",
+        "CC-BY-SA 3.0",
+        "GPL 3.0"
+      ],
+      "urls": [
+        "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites"
+      ],
+      "definition": "sheet_definitions/feet/feet_armour.json"
+    },
+    {
+      "file": "legs/armour/plate",
+      "notes": "reduced to 7 colors an adapted to v3 bases by bluecarrot16, climb/jump/sit/emote/run by JaidynReiman",
+      "authors": [
+        "bluecarrot16",
+        "JaidynReiman",
+        "Michael Whitlock (bigbeargames)",
+        "Matthew Krohn (makrohn)",
+        "Johannes Sjölund (wulax)"
+      ],
+      "licenses": [
+        "OGA-BY 3.0",
+        "CC-BY-SA 3.0",
+        "GPL 3.0"
+      ],
+      "urls": [
+        "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites"
+      ],
+      "definition": "sheet_definitions/legs/legs_armour.json"
+    },
+    {
+      "file": "torso/armour/plate/male",
+      "notes": "original by wulax, recolor by bigbeargames, color reduced to 7 colors and adapted to v3 bases by bluecarrot16, run/jump/sit/climb/revised combat by JaidynReiman, reduced colors to 6 (based on Napsio's Vitruvian)",
+      "authors": [
+        "Napsio (Vitruvian Studio)",
+        "JaidynReiman",
+        "bluecarrot16",
+        "Michael Whitlock (bigbeargames)",
+        "Johannes Sjölund (wulax)"
+      ],
+      "licenses": [
+        "OGA-BY 3.0",
+        "CC-BY-SA 3.0",
+        "GPL 3.0"
+      ],
+      "urls": [
+        "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites",
+        "https://opengameart.org/content/lpc-combat-armor-for-women"
+      ],
+      "definition": "sheet_definitions/torso/armour/torso_armour_plate.json"
+    },
+    {
+      "file": "shield/round",
+      "notes": "",
+      "authors": [
+        "Johannes Sjölund (wulax)",
+        "Michael Whitlock (bigbeargames)",
+        "DarkwallLKE",
+        "Tuomo Untinen (reemax)"
+      ],
+      "licenses": [
+        "OGA-BY 3.0",
+        "CC-BY-SA 3.0",
+        "GPL 3.0"
+      ],
+      "urls": [
+        "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites",
+        "https://opengameart.org/content/lpc-shields-pack"
+      ],
+      "definition": "sheet_definitions/weapons/shields/shield_round.json"
+    },
+    {
+      "file": "weapon/blunt/waraxe",
+      "notes": "",
+      "authors": [
+        "Benjamin K. Smith (BenCreating)",
+        "bluecarrot16",
+        "Sander Frenken (castelonia)"
+      ],
+      "licenses": [
+        "CC-BY-SA 3.0",
+        "GPL 3.0"
+      ],
+      "urls": [
+        "https://opengameart.org/content/lpc-medieval-weapons"
+      ],
+      "definition": "sheet_definitions/weapons/blunt/weapon_blunt_waraxe.json"
+    }
+  ]
+}

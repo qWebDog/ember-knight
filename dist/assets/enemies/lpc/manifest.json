@@ -1,0 +1,92 @@
+{
+  "generator": "Universal LPC Spritesheet Character Generator",
+  "revision": "86a3719ee4a7e2e9fb27c7c152e29a741d3e930a",
+  "frameWidth": 64,
+  "frameHeight": 64,
+  "directions": [
+    "north",
+    "west",
+    "south",
+    "east"
+  ],
+  "leftFacingRow": 1,
+  "leftFacingY": 64,
+  "presets": [
+    {
+      "id": "orc",
+      "name": "Орк-щитоносец",
+      "role": "tank",
+      "sheet": "orc-walk.png",
+      "staticLeft": "orc-left.png",
+      "animation": "walk",
+      "width": 576,
+      "height": 256,
+      "frames": 9,
+      "frameDurationMs": 130,
+      "idleFrame": 0,
+      "leftFacingRow": 1,
+      "staticPreviewSourceFrame": 0,
+      "staticAlphaBBox": [
+        10,
+        20,
+        55,
+        63
+      ],
+      "sourcePreset": "credits/orc/preset.json",
+      "credits": "credits/orc/CREDITS.txt",
+      "license": "CC-BY-SA 3.0",
+      "sha256": "62add3c13485080e8c57d4373d88811d1f3807c98239913290010815b98b8a81"
+    },
+    {
+      "id": "skeleton",
+      "name": "Скелет-лучник",
+      "role": "ranged",
+      "sheet": "skeleton-shoot.png",
+      "staticLeft": "skeleton-left.png",
+      "animation": "shoot",
+      "width": 832,
+      "height": 256,
+      "frames": 13,
+      "frameDurationMs": 110,
+      "idleFrame": 0,
+      "leftFacingRow": 1,
+      "staticPreviewSourceFrame": 5,
+      "staticAlphaBBox": [
+        0,
+        9,
+        44,
+        62
+      ],
+      "sourcePreset": "credits/skeleton/preset.json",
+      "credits": "credits/skeleton/CREDITS.txt",
+      "license": "OGA-BY 3.0",
+      "sha256": "72e9481e0f905c114cfd88ef814bc06f6e734e8b6bfc1a28eb151e330da8aa12"
+    },
+    {
+      "id": "mage",
+      "name": "Могильный колдун",
+      "role": "mage",
+      "sheet": "mage-spellcast.png",
+      "staticLeft": "mage-left.png",
+      "animation": "spellcast",
+      "width": 448,
+      "height": 256,
+      "frames": 7,
+      "frameDurationMs": 130,
+      "idleFrame": 0,
+      "leftFacingRow": 1,
+      "staticPreviewSourceFrame": 4,
+      "staticAlphaBBox": [
+        18,
+        15,
+        51,
+        62
+      ],
+      "sourcePreset": "credits/mage/preset.json",
+      "credits": "credits/mage/CREDITS.txt",
+      "license": "CC-BY-SA 3.0",
+      "sha256": "1cc4f8a62f34d60725cf3cc1c9f08bea8124ceb4756ee9533db0b50abb9cb58b"
+    }
+  ],
+  "attribution": "CREDITS.txt"
+}

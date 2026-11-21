@@ -1,0 +1,174 @@
+{
+  "generator": "Universal LPC Spritesheet Character Generator",
+  "revision": "86a3719ee4a7e2e9fb27c7c152e29a741d3e930a",
+  "repository": "https://github.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator",
+  "animation": "slash (bare hands; no weapon layer)",
+  "frameWidth": 64,
+  "frameHeight": 64,
+  "width": 384,
+  "height": 256,
+  "frames": 6,
+  "directions": [
+    "north",
+    "west",
+    "south",
+    "east"
+  ],
+  "rightFacingRow": 3,
+  "rightFacingY": 192,
+  "recommendedFrameDurationMs": 110,
+  "recommendedImpactFrame": 4,
+  "license": "CC-BY-SA 3.0",
+  "licenseURL": "https://creativecommons.org/licenses/by-sa/3.0/",
+  "layers": [
+    {
+      "zPos": 10,
+      "source": "spritesheets/body/bodies/male/slash.png",
+      "basePalette": "ulpc.light"
+    },
+    {
+      "zPos": 100,
+      "source": "spritesheets/head/heads/human/male/slash.png",
+      "basePalette": "ulpc.light"
+    }
+  ],
+  "paletteSource": "palette_definitions/body/body_ulpc.json",
+  "skins": [
+    {
+      "id": "light",
+      "file": "light-attack.png",
+      "palette": [
+        "#271920",
+        "#99423c",
+        "#cc8665",
+        "#E4A47C",
+        "#F9D5BA",
+        "#FAECE7"
+      ],
+      "sha256": "51378aeef9931e88f520576a8dada7eb6c9ec42c7ccb5bdc747108b7a085cc36"
+    },
+    {
+      "id": "amber",
+      "file": "amber-attack.png",
+      "palette": [
+        "#281716",
+        "#9E3E37",
+        "#D28144",
+        "#EA9F54",
+        "#FDD082",
+        "#FBE7A4"
+      ],
+      "sha256": "3e121642b4589c8b47b5416aa2e2eb2c8647e38acfe049aff98a475e2ad439fa"
+    },
+    {
+      "id": "olive",
+      "file": "olive-attack.png",
+      "palette": [
+        "#271920",
+        "#442725",
+        "#7F4C31",
+        "#AE6B3F",
+        "#D38B59",
+        "#E4A47C"
+      ],
+      "sha256": "f915bdcd2694abf719aed7da88001cb0c45b50c4b73f80ad05887d05f7552fec"
+    },
+    {
+      "id": "bronze",
+      "file": "bronze-attack.png",
+      "palette": [
+        "#1A1213",
+        "#442725",
+        "#644133",
+        "#7F4C31",
+        "#AE6B3F",
+        "#D38B59"
+      ],
+      "sha256": "7de8ef234dd8bea62f1f942c3e0cc2236df0d5da4d2418d2b8d21ef0e9bb1ea0"
+    },
+    {
+      "id": "brown",
+      "file": "brown-attack.png",
+      "palette": [
+        "#120E10",
+        "#412B29",
+        "#5F4539",
+        "#76513A",
+        "#9C663E",
+        "#B8773F"
+      ],
+      "sha256": "608f36bb2178e55deb9275b823c0aced120ea94711420d0b4cb7404872c3be77"
+    },
+    {
+      "id": "black",
+      "file": "black-attack.png",
+      "palette": [
+        "#000000",
+        "#1A1213",
+        "#2E1F1C",
+        "#442725",
+        "#603429",
+        "#7F4C31"
+      ],
+      "sha256": "e6d86e3e805bf6872f229b42254c163b9adcf5af29de3baec2d53ef6118c048e"
+    }
+  ],
+  "changes": [
+    "Composed official modular adult male body and human male head slash sheets.",
+    "Exact official ULPC skin-palette substitutions; no added gear, clothing, weapons or drawn pixels."
+  ],
+  "credits": [
+    {
+      "file": "body/bodies/male",
+      "notes": "see details at https://opengameart.org/content/lpc-character-bases; 'Thick' Male Revised Run/Climb by JaidynReiman (based on ElizaWy's LPC Revised)",
+      "authors": [
+        "bluecarrot16",
+        "JaidynReiman",
+        "Benjamin K. Smith (BenCreating)",
+        "Evert",
+        "Eliza Wyatt (ElizaWy)",
+        "TheraHedwig",
+        "MuffinElZangano",
+        "Durrani",
+        "Johannes Sjölund (wulax)",
+        "Stephen Challener (Redshrike)"
+      ],
+      "licenses": [
+        "OGA-BY 3.0",
+        "CC-BY-SA 3.0",
+        "GPL 3.0"
+      ],
+      "urls": [
+        "https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles",
+        "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites",
+        "https://opengameart.org/content/lpc-male-jumping-animation-by-durrani",
+        "https://opengameart.org/content/lpc-runcycle-and-diagonal-walkcycle",
+        "https://opengameart.org/content/lpc-revised-character-basics",
+        "https://opengameart.org/content/lpc-be-seated",
+        "https://opengameart.org/content/lpc-runcycle-for-male-muscular-and-pregnant-character-bases-with-modular-heads",
+        "https://opengameart.org/content/lpc-jump-expanded",
+        "https://opengameart.org/content/lpc-character-bases"
+      ],
+      "definition": "sheet_definitions/body/body.json"
+    },
+    {
+      "file": "head/heads/human/male",
+      "notes": "original head by Redshrike, tweaks by BenCreating, modular version by bluecarrot16",
+      "authors": [
+        "bluecarrot16",
+        "Benjamin K. Smith (BenCreating)",
+        "Stephen Challener (Redshrike)"
+      ],
+      "licenses": [
+        "OGA-BY 3.0",
+        "CC-BY-SA 3.0",
+        "GPL 3.0"
+      ],
+      "urls": [
+        "https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles",
+        "https://opengameart.org/content/lpc-character-bases"
+      ],
+      "definition": "sheet_definitions/head/heads/human/heads_human_male.json"
+    }
+  ]
+}

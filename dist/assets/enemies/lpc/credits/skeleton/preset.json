@@ -1,0 +1,253 @@
+{
+  "name": "Skeleton archer",
+  "name_ru": "Скелет-лучник",
+  "generator": "Universal LPC Character Generator",
+  "repository": "https://github.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator",
+  "revision": "86a3719ee4a7e2e9fb27c7c152e29a741d3e930a",
+  "choices": {
+    "body": "Skeleton",
+    "bodyType": "male",
+    "head": "Skeleton",
+    "weapon": "Normal bow",
+    "weaponVariant": "light",
+    "quiver": "quiver",
+    "ammo": "arrow"
+  },
+  "selected_asset_license": "OGA-BY 3.0 (bow offers OGA-BY 3.0+, selected at version 3.0)",
+  "processing": [
+    "alpha composite only, ascending zPos",
+    "crop original shoot direction left (row index 1)",
+    "static native frame index 5",
+    "preview nearest-neighbor resize 4x; no drawing or recoloring"
+  ],
+  "sprite": {
+    "file": "skeleton-archer.png",
+    "width": 64,
+    "height": 64,
+    "transparent": true,
+    "direction": "left",
+    "animation": "shoot",
+    "frame": 5,
+    "source_cell": {
+      "x": 320,
+      "y": 64,
+      "width": 64,
+      "height": 64
+    },
+    "alpha_bbox": [
+      0,
+      9,
+      44,
+      62
+    ],
+    "foot_anchor": [
+      32,
+      62
+    ]
+  },
+  "preview": {
+    "file": "skeleton-archer-256.png",
+    "width": 256,
+    "height": 256,
+    "scale": 4,
+    "resampling": "NEAREST",
+    "transparent": true
+  },
+  "shoot": {
+    "file": "shoot-4directions.png",
+    "width": 832,
+    "height": 256,
+    "frame_width": 64,
+    "frame_height": 64,
+    "frames_per_direction": 13,
+    "direction_order": [
+      "up",
+      "left",
+      "down",
+      "right"
+    ],
+    "left_strip": "shoot-left.png",
+    "left_animated_preview": "shoot-left.gif",
+    "frame_duration_ms": 110
+  },
+  "layers": [
+    {
+      "local_file": "source/bow-back-shoot.png",
+      "repository_path": "spritesheets/weapon/ranged/bow/normal/universal/background/shoot/light.png",
+      "raw_url": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/weapon/ranged/bow/normal/universal/background/shoot/light.png",
+      "zPos": -1,
+      "sha256": "46f9f47bcc0c91f86ae0ed37a39bb0150ad183ccdc01f0abd24e9729bf531c6f"
+    },
+    {
+      "local_file": "source/quiver-shoot.png",
+      "repository_path": "spritesheets/quiver/shoot/quiver.png",
+      "raw_url": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/quiver/shoot/quiver.png",
+      "zPos": 8,
+      "sha256": "6501afed698174d0dc6c598063d626360be05e9be39bc55e3da416bbfe677a9c"
+    },
+    {
+      "local_file": "source/body-shoot.png",
+      "repository_path": "spritesheets/body/bodies/skeleton/shoot.png",
+      "raw_url": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/body/bodies/skeleton/shoot.png",
+      "zPos": 10,
+      "sha256": "af20eeed4d84b5942ac075c7abe3c952bb0c2779ab2f4adf154e8bbb0cadd217"
+    },
+    {
+      "local_file": "source/head-shoot.png",
+      "repository_path": "spritesheets/head/heads/skeleton/adult/shoot.png",
+      "raw_url": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/head/heads/skeleton/adult/shoot.png",
+      "zPos": 100,
+      "sha256": "e7739c7ca23d40377ee511562dc2016be40a852a1da8062930ebb8f646c8f8b4"
+    },
+    {
+      "local_file": "source/bow-front-shoot.png",
+      "repository_path": "spritesheets/weapon/ranged/bow/normal/universal/foreground/shoot/light.png",
+      "raw_url": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/weapon/ranged/bow/normal/universal/foreground/shoot/light.png",
+      "zPos": 140,
+      "sha256": "8d43328e996ed02d5c3d651e7cc6d3b8d02f6a99d4f0642f2805f8bad299bc04"
+    },
+    {
+      "local_file": "source/arrow-shoot.png",
+      "repository_path": "spritesheets/weapon/ranged/bow/arrow/shoot/arrow.png",
+      "raw_url": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/weapon/ranged/bow/arrow/shoot/arrow.png",
+      "zPos": 150,
+      "sha256": "f801794a220a2bc951bf5ce469a6ef7abe9fad80d54c04e283d56b1ac835f88f"
+    }
+  ],
+  "definitions": [
+    {
+      "local_file": "source/body_skeleton.json",
+      "repository_path": "sheet_definitions/body/special/body_skeleton.json",
+      "raw_url": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/sheet_definitions/body/special/body_skeleton.json"
+    },
+    {
+      "local_file": "source/heads_skeleton.json",
+      "repository_path": "sheet_definitions/head/heads/undead/heads_skeleton.json",
+      "raw_url": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/sheet_definitions/head/heads/undead/heads_skeleton.json"
+    },
+    {
+      "local_file": "source/quiver.json",
+      "repository_path": "sheet_definitions/torso/backpack/quiver.json",
+      "raw_url": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/sheet_definitions/torso/backpack/quiver.json"
+    },
+    {
+      "local_file": "source/weapon_ranged_bow_normal.json",
+      "repository_path": "sheet_definitions/weapons/ranged/bow/weapon_ranged_bow_normal.json",
+      "raw_url": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/sheet_definitions/weapons/ranged/bow/weapon_ranged_bow_normal.json"
+    },
+    {
+      "local_file": "source/weapon_ranged_bow_arrow.json",
+      "repository_path": "sheet_definitions/weapons/ranged/bow/weapon_ranged_bow_arrow.json",
+      "raw_url": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/sheet_definitions/weapons/ranged/bow/weapon_ranged_bow_arrow.json"
+    }
+  ],
+  "credits": [
+    {
+      "file": "body/bodies/skeleton",
+      "notes": "",
+      "authors": [
+        "bluecarrot16",
+        "Napsio",
+        "JaidynReiman",
+        "Johannes Sjölund (wulax)",
+        "Stephen Challener (Redshrike)"
+      ],
+      "licenses": [
+        "OGA-BY 3.0",
+        "CC-BY-SA 3.0",
+        "GPL 3.0"
+      ],
+      "urls": [
+        "https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles",
+        "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites",
+        "https://opengameart.org/content/lpc-skeleton",
+        "https://opengameart.org/content/lpc-character-bases"
+      ]
+    },
+    {
+      "file": "head/heads/skeleton",
+      "notes": "",
+      "authors": [
+        "bluecarrot16",
+        "Napsio",
+        "JaidynReiman",
+        "Johannes Sjölund (wulax)",
+        "Stephen Challener (Redshrike)"
+      ],
+      "licenses": [
+        "OGA-BY 3.0",
+        "CC-BY-SA 3.0",
+        "GPL 3.0"
+      ],
+      "urls": [
+        "https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles",
+        "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites",
+        "https://opengameart.org/content/lpc-skeleton",
+        "https://opengameart.org/content/lpc-character-bases"
+      ]
+    },
+    {
+      "file": "quiver",
+      "notes": "",
+      "authors": [
+        "Johannes Sjölund (wulax)"
+      ],
+      "licenses": [
+        "OGA-BY 3.0",
+        "CC-BY-SA 3.0",
+        "GPL 3.0"
+      ],
+      "urls": [
+        "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites"
+      ]
+    },
+    {
+      "file": "weapon/ranged/bow/normal",
+      "notes": "original by wulax, walk animations by pvigier, split into layers and tweaked for v3 character bases by bluecarrot16. pvigier has agreed to license this sheet as OGA-BY 3.0+.",
+      "authors": [
+        "Johannes Sjölund (wulax)",
+        "Pierre Vigier (pvigier)"
+      ],
+      "licenses": [
+        "OGA-BY 3.0+",
+        "GPL 3.0",
+        "CC-BY 4.0"
+      ],
+      "urls": [
+        "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites",
+        "https://opengameart.org/content/lpc-walk-animations-for-bows"
+      ]
+    },
+    {
+      "file": "weapon/ranged/bow/arrow",
+      "notes": "",
+      "authors": [
+        "Johannes Sjölund (wulax)"
+      ],
+      "licenses": [
+        "OGA-BY 3.0",
+        "CC-BY-SA 3.0",
+        "GPL 3.0"
+      ],
+      "urls": [
+        "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites"
+      ]
+    }
+  ],
+  "front_sprite": {
+    "file": "skeleton-archer-front.png",
+    "width": 64,
+    "height": 64,
+    "transparent": true,
+    "direction": "down/front",
+    "animation": "shoot",
+    "frame": 5,
+    "source_cell": {
+      "x": 320,
+      "y": 128,
+      "width": 64,
+      "height": 64
+    },
+    "preview": "skeleton-archer-front-256.png"
+  }
+}

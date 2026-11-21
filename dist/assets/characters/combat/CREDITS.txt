@@ -1,0 +1,22 @@
+BARE HERO ATTACK SPRITES
+Universal LPC Spritesheet Character Generator
+https://github.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator
+Revision: 86a3719ee4a7e2e9fb27c7c152e29a741d3e930a
+Selected license for the assembled and recolored PNGs: CC-BY-SA 3.0
+https://creativecommons.org/licenses/by-sa/3.0/
+https://creativecommons.org/licenses/by-sa/3.0/legalcode
+
+Changes: alpha-composited original body and human head; substituted six official ULPC body palettes. No clothing or weapons added.
+Geometry: 384x256, 6 columns of 64x64, rows north/west/south/east. Right-facing battle crop y=192.
+
+Asset: body/bodies/male
+Authors: bluecarrot16, JaidynReiman, Benjamin K. Smith (BenCreating), Evert, Eliza Wyatt (ElizaWy), TheraHedwig, MuffinElZangano, Durrani, Johannes Sjölund (wulax), Stephen Challener (Redshrike)
+Upstream license options: OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0
+Source URLs: https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles, https://opengameart.org/content/lpc-medieval-fantasy-character-sprites, https://opengameart.org/content/lpc-male-jumping-animation-by-durrani, https://opengameart.org/content/lpc-runcycle-and-diagonal-walkcycle, https://opengameart.org/content/lpc-revised-character-basics, https://opengameart.org/content/lpc-be-seated, https://opengameart.org/content/lpc-runcycle-for-male-muscular-and-pregnant-character-bases-with-modular-heads, https://opengameart.org/content/lpc-jump-expanded, https://opengameart.org/content/lpc-character-bases
+Notes: see details at https://opengameart.org/content/lpc-character-bases; 'Thick' Male Revised Run/Climb by JaidynReiman (based on ElizaWy's LPC Revised)
+
+Asset: head/heads/human/male
+Authors: bluecarrot16, Benjamin K. Smith (BenCreating), Stephen Challener (Redshrike)
+Upstream license options: OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0
+Source URLs: https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles, https://opengameart.org/content/lpc-character-bases
+Notes: original head by Redshrike, tweaks by BenCreating, modular version by bluecarrot16

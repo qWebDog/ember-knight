@@ -1,0 +1,319 @@
+EMBER — LPC ART CREDITS
+
+Original idle character, bare attack animation and three enemy presets.
+https://liberatedpixelcup.github.io/Universal-LPC-Spritesheet-Character-Generator/
+
+
+assets/characters/CREDITS.txt
+
+CHARACTER ART CREDITS
+
+Universal LPC Spritesheet Character Generator
+https://github.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator
+https://liberatedpixelcup.github.io/Universal-LPC-Spritesheet-Character-Generator/
+Source revision: 86a3719ee4a7e2e9fb27c7c152e29a741d3e930a
+
+Assets used:
+- spritesheets/body/bodies/male/idle.png
+- spritesheets/head/heads/human/male/idle.png
+- palette_definitions/body/body_ulpc.json
+
+Body authors (as listed by the source sheet definition):
+bluecarrot16, JaidynReiman, Benjamin K. Smith (BenCreating), Evert,
+Eliza Wyatt (ElizaWy), TheraHedwig, MuffinElZangano, Durrani,
+Johannes Sjölund (wulax), Stephen Challener (Redshrike).
+
+Head authors:
+bluecarrot16, Benjamin K. Smith (BenCreating),
+Stephen Challener (Redshrike).
+Original head by Redshrike, tweaks by BenCreating,
+modular version by bluecarrot16.
+
+Source artwork links:
+https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles
+https://opengameart.org/content/lpc-character-bases
+https://opengameart.org/content/lpc-medieval-fantasy-character-sprites
+https://opengameart.org/content/lpc-revised-character-basics
+
+The source definitions offer this artwork under OGA-BY 3.0,
+CC-BY-SA 3.0, and GPL 3.0. For the six included derived preset
+images, this project elects Creative Commons Attribution-ShareAlike 3.0:
+https://creativecommons.org/licenses/by-sa/3.0/
+Legal terms: https://creativecommons.org/licenses/by-sa/3.0/legalcode
+
+Changes: composed the original modular adult male body and human male
+head on the same 128x256 idle sheet, then recolored their skin using
+six official ULPC body palettes (light, amber, olive, bronze, brown,
+black). No clothing, hair, equipment, or weapons were added.
+The resulting preset PNGs retain the same CC-BY-SA 3.0 license.
+The unmodified source sheets and sheet-definition metadata are
+included beside the presets. LPC-LICENSE.txt is the upstream
+repository's GPL license; artwork licensing is recorded above and
+in the upstream sheet definitions.
+
+SPRITE GEOMETRY
+Each preset PNG is 128x256 pixels, transparent.
+Tile size: 64x64. Two idle frames per row.
+Rows: 0=back/north, 1=left/west, 2=front/south, 3=right/east.
+Default front crop: x=0, y=128, width=64, height=64.
+Use nearest-neighbor / image-rendering: pixelated when scaling.
+
+
+assets/characters/combat/CREDITS.txt
+
+BARE HERO ATTACK SPRITES
+Universal LPC Spritesheet Character Generator
+https://github.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator
+Revision: 86a3719ee4a7e2e9fb27c7c152e29a741d3e930a
+Selected license for the assembled and recolored PNGs: CC-BY-SA 3.0
+https://creativecommons.org/licenses/by-sa/3.0/
+https://creativecommons.org/licenses/by-sa/3.0/legalcode
+
+Changes: alpha-composited original body and human head; substituted six official ULPC body palettes. No clothing or weapons added.
+Geometry: 384x256, 6 columns of 64x64, rows north/west/south/east. Right-facing battle crop y=192.
+
+Asset: body/bodies/male
+Authors: bluecarrot16, JaidynReiman, Benjamin K. Smith (BenCreating), Evert, Eliza Wyatt (ElizaWy), TheraHedwig, MuffinElZangano, Durrani, Johannes Sjölund (wulax), Stephen Challener (Redshrike)
+Upstream license options: OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0
+Source URLs: https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles, https://opengameart.org/content/lpc-medieval-fantasy-character-sprites, https://opengameart.org/content/lpc-male-jumping-animation-by-durrani, https://opengameart.org/content/lpc-runcycle-and-diagonal-walkcycle, https://opengameart.org/content/lpc-revised-character-basics, https://opengameart.org/content/lpc-be-seated, https://opengameart.org/content/lpc-runcycle-for-male-muscular-and-pregnant-character-bases-with-modular-heads, https://opengameart.org/content/lpc-jump-expanded, https://opengameart.org/content/lpc-character-bases
+Notes: see details at https://opengameart.org/content/lpc-character-bases; 'Thick' Male Revised Run/Climb by JaidynReiman (based on ElizaWy's LPC Revised)
+
+Asset: head/heads/human/male
+Authors: bluecarrot16, Benjamin K. Smith (BenCreating), Stephen Challener (Redshrike)
+Upstream license options: OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0
+Source URLs: https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles, https://opengameart.org/content/lpc-character-bases
+Notes: original head by Redshrike, tweaks by BenCreating, modular version by bluecarrot16
+
+
+assets/enemies/lpc/CREDITS.txt
+
+UNIVERSAL LPC ENEMY PRESETS
+https://github.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator
+Pinned revision: 86a3719ee4a7e2e9fb27c7c152e29a741d3e930a
+
+These are exact copies of the standalone generated presets; source layer selections and authors are preserved under credits/. No custom drawn artwork was substituted.
+
+LICENSES
+Orc shield-bearer: CC-BY-SA 3.0, https://creativecommons.org/licenses/by-sa/3.0/
+Skeleton archer: OGA-BY 3.0, https://static.opengameart.org/OGA-BY-3.0.txt
+Grave mage: CC-BY-SA 3.0, https://creativecommons.org/licenses/by-sa/3.0/
+
+FULL PER-ASSET ATTRIBUTIONS FOLLOW.
+
+================ ORC ================
+ORC SHIELD-BEARER / ОРК-ЩИТОНОСЕЦ
+
+Universal LPC Spritesheet Character Generator
+https://github.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator
+Pinned revision: 86a3719ee4a7e2e9fb27c7c152e29a741d3e930a
+
+SELECTED LICENSE: Creative Commons Attribution-ShareAlike 3.0 Unported (CC-BY-SA 3.0)
+https://creativecommons.org/licenses/by-sa/3.0/
+Legal text: https://creativecommons.org/licenses/by-sa/3.0/legalcode
+
+All layers offer CC-BY-SA 3.0 as an available license. This combined preset and its recolored/assembled PNGs are distributed under that license. Alternative upstream licenses remain recorded below and in the source definitions.
+
+Asset: body/bodies/male
+Definition: sheet_definitions/body/body.json
+Authors: bluecarrot16, JaidynReiman, Benjamin K. Smith (BenCreating), Evert, Eliza Wyatt (ElizaWy), TheraHedwig, MuffinElZangano, Durrani, Johannes Sjölund (wulax), Stephen Challener (Redshrike)
+Upstream license options: OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0
+Notes: see details at https://opengameart.org/content/lpc-character-bases; 'Thick' Male Revised Run/Climb by JaidynReiman (based on ElizaWy's LPC Revised)
+Sources: https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles, https://opengameart.org/content/lpc-medieval-fantasy-character-sprites, https://opengameart.org/content/lpc-male-jumping-animation-by-durrani, https://opengameart.org/content/lpc-runcycle-and-diagonal-walkcycle, https://opengameart.org/content/lpc-revised-character-basics, https://opengameart.org/content/lpc-be-seated, https://opengameart.org/content/lpc-runcycle-for-male-muscular-and-pregnant-character-bases-with-modular-heads, https://opengameart.org/content/lpc-jump-expanded, https://opengameart.org/content/lpc-character-bases
+
+Asset: head/heads/orc/male
+Definition: sheet_definitions/head/heads/fantasy/heads_orc_male.json
+Authors: bluecarrot16, Matthew Krohn (makrohn), Stephen Challener (Redshrike), Zi Ye
+Upstream license options: OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0
+Notes: Sinbad the ogre design by Zi Ye, original 4-direction sprite by Redshrike, additional hurt/cast animations by makrohn, headless version by bluecarrot16
+Sources: https://opengameart.org/content/four-characters-my-lpc-entries, https://opengameart.org/content/sinbad-the-ogre, https://opengameart.org/content/lpc-male-sheets, https://opengameart.org/content/lpc-character-bases
+
+Asset: feet/armour/plate
+Definition: sheet_definitions/feet/feet_armour.json
+Authors: Matthew Krohn (makrohn), Johannes Sjölund (wulax)
+Upstream license options: OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0
+Notes: original by wulax, recolors by bigbeargames, edits for v3 base and recolors by bluecarrot16
+Sources: https://opengameart.org/content/lpc-medieval-fantasy-character-sprites
+
+Asset: legs/armour/plate
+Definition: sheet_definitions/legs/legs_armour.json
+Authors: bluecarrot16, JaidynReiman, Michael Whitlock (bigbeargames), Matthew Krohn (makrohn), Johannes Sjölund (wulax)
+Upstream license options: OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0
+Notes: reduced to 7 colors an adapted to v3 bases by bluecarrot16, climb/jump/sit/emote/run by JaidynReiman
+Sources: https://opengameart.org/content/lpc-medieval-fantasy-character-sprites
+
+Asset: torso/armour/plate/male
+Definition: sheet_definitions/torso/armour/torso_armour_plate.json
+Authors: Napsio (Vitruvian Studio), JaidynReiman, bluecarrot16, Michael Whitlock (bigbeargames), Johannes Sjölund (wulax)
+Upstream license options: OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0
+Notes: original by wulax, recolor by bigbeargames, color reduced to 7 colors and adapted to v3 bases by bluecarrot16, run/jump/sit/climb/revised combat by JaidynReiman, reduced colors to 6 (based on Napsio's Vitruvian)
+Sources: https://opengameart.org/content/lpc-medieval-fantasy-character-sprites, https://opengameart.org/content/lpc-combat-armor-for-women
+
+Asset: shield/round
+Definition: sheet_definitions/weapons/shields/shield_round.json
+Authors: Johannes Sjölund (wulax), Michael Whitlock (bigbeargames), DarkwallLKE, Tuomo Untinen (reemax)
+Upstream license options: OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0
+Notes: 
+Sources: https://opengameart.org/content/lpc-medieval-fantasy-character-sprites, https://opengameart.org/content/lpc-shields-pack
+
+Asset: weapon/blunt/waraxe
+Definition: sheet_definitions/weapons/blunt/weapon_blunt_waraxe.json
+Authors: Benjamin K. Smith (BenCreating), bluecarrot16, Sander Frenken (castelonia)
+Upstream license options: CC-BY-SA 3.0, GPL 3.0
+Notes: 
+Sources: https://opengameart.org/content/lpc-medieval-weapons
+
+CHANGES
+Combined unmodified modular ULPC artwork in its defined layer order.
+Recolored male skin from ULPC light to ULPC green by exact official palette substitution.
+Extracted source standing frames and nearest-neighbor enlarged previews.
+Duplicated the original stationary walk frame into a static two-column compatibility sheet. No new pixels or equipment were drawn.
+
+ANIMATION NOTE
+The two-column idle-static sheet contains two copies of the same original standing frame, not a new animated idle cycle. The waraxe and round shield have original walk frames but no native idle layer. The complete 9-frame walk sheet is included.
+
+The images are standalone exports only. They have not been added to any game or deployed.
+
+
+================ SKELETON ================
+SKELETON ARCHER — UNIVERSAL LPC CHARACTER GENERATOR
+
+Repository: https://github.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator
+Pinned revision: 86a3719ee4a7e2e9fb27c7c152e29a741d3e930a
+
+License selected for the exported sprite: OGA-BY 3.0.
+The bow is offered as OGA-BY 3.0+; version 3.0 is selected.
+All original alternative licenses remain recorded in the definitions and preset.json.
+License text: source/OGA-BY-3.0.txt — https://static.opengameart.org/OGA-BY-3.0.txt
+
+Changes: layered original PNGs in generator zPos order, cropped shoot frame 5 facing left, enlarged preview with nearest-neighbor scaling. No custom pixel drawing or recoloring.
+
+Layer attribution: body/bodies/skeleton
+Authors: bluecarrot16, Napsio, JaidynReiman, Johannes Sjölund (wulax), Stephen Challener (Redshrike)
+License alternatives: OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0
+Notes: (none)
+Sources:
+  https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles
+  https://opengameart.org/content/lpc-medieval-fantasy-character-sprites
+  https://opengameart.org/content/lpc-skeleton
+  https://opengameart.org/content/lpc-character-bases
+
+Layer attribution: head/heads/skeleton
+Authors: bluecarrot16, Napsio, JaidynReiman, Johannes Sjölund (wulax), Stephen Challener (Redshrike)
+License alternatives: OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0
+Notes: (none)
+Sources:
+  https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles
+  https://opengameart.org/content/lpc-medieval-fantasy-character-sprites
+  https://opengameart.org/content/lpc-skeleton
+  https://opengameart.org/content/lpc-character-bases
+
+Layer attribution: quiver
+Authors: Johannes Sjölund (wulax)
+License alternatives: OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0
+Notes: (none)
+Sources:
+  https://opengameart.org/content/lpc-medieval-fantasy-character-sprites
+
+Layer attribution: weapon/ranged/bow/normal
+Authors: Johannes Sjölund (wulax), Pierre Vigier (pvigier)
+License alternatives: OGA-BY 3.0+, GPL 3.0, CC-BY 4.0
+Notes: original by wulax, walk animations by pvigier, split into layers and tweaked for v3 character bases by bluecarrot16. pvigier has agreed to license this sheet as OGA-BY 3.0+.
+Sources:
+  https://opengameart.org/content/lpc-medieval-fantasy-character-sprites
+  https://opengameart.org/content/lpc-walk-animations-for-bows
+
+Layer attribution: weapon/ranged/bow/arrow
+Authors: Johannes Sjölund (wulax)
+License alternatives: OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0
+Notes: (none)
+Sources:
+  https://opengameart.org/content/lpc-medieval-fantasy-character-sprites
+
+
+================ MAGE ================
+Могильный колдун — Universal LPC preset
+Source: https://github.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator
+Revision: 86a3719ee4a7e2e9fb27c7c152e29a741d3e930a
+Selected license for composed derivative: Creative Commons Attribution-ShareAlike 3.0
+https://creativecommons.org/licenses/by-sa/3.0/
+Changes: official layer composition, official cloth palette recoloring, crop and nearest-neighbor preview.
+
+DEFINITION: sheet_definitions/torso/cape/cape_tattered.json
+Asset: cape/tattered/fg
+Authors: Nila122, JaidynReiman
+Offered licenses: OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0
+Source URLs: https://opengameart.org/content/lpc-curly-hair-elven-ears-white-cape-with-blue-trim-and-more, https://opengameart.org/content/lpc-roman-armor
+Notes: 
+
+Asset: cape/tattered/bg
+Authors: Nila122, JaidynReiman
+Offered licenses: OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0
+Source URLs: https://opengameart.org/content/lpc-curly-hair-elven-ears-white-cape-with-blue-trim-and-more, https://opengameart.org/content/lpc-roman-armor
+Notes: 
+
+DEFINITION: sheet_definitions/body/special/body_zombie.json
+Asset: body/bodies/zombie
+Authors: Stephen Challener (Redshrike), Johannes Sjölund (wulax), Sander Frenken (castelonia), Benjamin K. Smith (BenCreating), bluecarrot16
+Offered licenses: OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0
+Source URLs: https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles, https://opengameart.org/content/lpc-medieval-fantasy-character-sprites, https://opengameart.org/content/lpc-zombie, https://opengameart.org/content/lpc-character-bases
+Notes: 
+
+DEFINITION: sheet_definitions/legs/skirts/legs_skirts_slit.json
+Asset: legs/skirts/slit
+Authors: Nila122, ElizaWy, bluecarrot16
+Offered licenses: OGA-BY 3.0, CC-BY-SA 3.0, GPL 2.0, GPL 3.0
+Source URLs: https://opengameart.org/content/lpc-clothes-and-hair, http://opengameart.org/content/lpc-clothing-updates
+Notes: original "TightDress" by Nila122, edited to skirt by ElizaWy, extended to all animation frames and edited for v3 bases by bluecarrot16
+
+DEFINITION: sheet_definitions/feet/boots/feet_boots_basic.json
+Asset: feet/boots/basic
+Authors: JaidynReiman, bluecarrot16, Nila122
+Offered licenses: OGA-BY 3.0, CC-BY-SA 3.0, GPL 2.0, GPL 3.0
+Source URLs: https://opengameart.org/content/lpc-clothes-and-hair, https://opengameart.org/content/lpc-expanded-socks-shoes
+Notes: original by Nila122, edited for male and v3 bases by bluecarrot16, Jump/Sit/Emote/Run/Revised Combat by JaidynReiman
+
+Asset: feet/boots/basic/thin
+Authors: JaidynReiman, bluecarrot16, Nila122
+Offered licenses: OGA-BY 3.0, CC-BY-SA 3.0, GPL 2.0, GPL 3.0
+Source URLs: https://opengameart.org/content/lpc-clothes-and-hair, https://opengameart.org/content/lpc-expanded-socks-shoes
+Notes: original by Nila122, edited for v3 bases by bluecarrot16, Jump/Sit/Emote/Run/Revised Combat by JaidynReiman
+
+DEFINITION: sheet_definitions/torso/shirts/longsleeve/torso_clothes_longsleeve.json
+Asset: torso/clothes/longsleeve/longsleeve/male
+Authors: JaidynReiman, Johannes Sjölund (wulax)
+Offered licenses: OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0
+Source URLs: https://opengameart.org/content/lpc-medieval-fantasy-character-sprites, http://opengameart.org/content/lpc-clothing-updates, https://opengameart.org/content/lpc-revised-character-basics, https://github.com/ElizaWy/LPC/tree/main/Characters/Clothing, https://opengameart.org/content/lpc-expanded-sit-run-jump-more, https://opengameart.org/content/lpc-expanded-simple-shirts
+Notes: original by wulax; tweaks and further recolors by bluecarrot16; cleanup and climb/jump/run/sit/emote/revised combat adapted from LPC Revised by JaidynReiman
+
+Asset: torso/clothes/longsleeve/longsleeve/female
+Authors: bluecarrot16, ElizaWy, JaidynReiman, Stephen Challener (Redshrike)
+Offered licenses: OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0
+Source URLs: https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles, https://opengameart.org/content/lpc-7-womens-shirts, http://opengameart.org/content/lpc-clothing-updates, https://opengameart.org/content/lpc-revised-character-basics, https://github.com/ElizaWy/LPC/tree/main/Characters/Clothing, https://opengameart.org/content/lpc-expanded-sit-run-jump-more, https://opengameart.org/content/lpc-expanded-simple-shirts
+Notes: original by ElizaWy, edited to v3 bases by bluecarrot16; cleanup and climb/jump/run/sit/emote/revised combat adapted from LPC Revised by JaidynReiman
+
+Asset: torso/clothes/longsleeve/longsleeve/teen
+Authors: bluecarrot16, ElizaWy, JaidynReiman, Stephen Challener (Redshrike), Johannes Sjölund (wulax)
+Offered licenses: OGA-BY 3.0, GPL 3.0
+Source URLs: https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles, https://opengameart.org/content/lpc-teen-unisex-base-clothes, http://opengameart.org/content/lpc-clothing-updates, https://opengameart.org/content/lpc-revised-character-basics, https://github.com/ElizaWy/LPC/tree/main/Characters/Clothing, https://opengameart.org/content/lpc-expanded-sit-run-jump-more, https://opengameart.org/content/lpc-expanded-simple-shirts
+Notes: body by Redshrike, shirt by ElizaWy derived from base, edited by bluecarrot16 to v3 bases; cleanup and climb/jump/run/sit/emote/revised combat adapted from LPC Revised by JaidynReiman
+
+Asset: torso/clothes/longsleeve/longsleeve/pregnant
+Authors: bluecarrot16, ElizaWy, Stephen Challener (Redshrike), Johannes Sjölund (wulax)
+Offered licenses: CC-BY-SA 3.0, GPL 3.0
+Source URLs: https://opengameart.org/content/lpc-7-womens-shirts, http://opengameart.org/content/lpc-clothing-updates, https://opengameart.org/content/lpc-revised-character-basics, https://github.com/ElizaWy/LPC/tree/main/Characters/Clothing, https://opengameart.org/content/lpc-expanded-sit-run-jump-more, https://opengameart.org/content/lpc-expanded-simple-shirts
+Notes: original by ElizaWy, edited to pregnant v3 bases by bluecarrot16
+
+DEFINITION: sheet_definitions/head/heads/undead/heads_zombie.json
+Asset: head/heads/zombie
+Authors: bluecarrot16, Benjamin K. Smith (BenCreating), Sander Frenken (castelonia), Stephen Challener (Redshrike)
+Offered licenses: CC-BY-SA 3.0, GPL 3.0
+Source URLs: https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles, https://opengameart.org/content/lpc-zombie, https://opengameart.org/content/lpc-character-bases
+Notes: 
+
+DEFINITION: sheet_definitions/headwear/coverings/hoods/hat_hood_cloth.json
+Asset: hat/cloth/hood
+Authors: Johannes Sjölund (wulax), JaidynReiman
+Offered licenses: OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0
+Source URLs: https://opengameart.org/content/lpc-medieval-fantasy-character-sprites, https://opengameart.org/content/lpc-expanded-hats-facial-helmets
+Notes: Brown hood by Wulax, original black/white recolors by ??, mapped to idle/run/jump/revised combat by JaidynReiman, along with additional recolors.
+
