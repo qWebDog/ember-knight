@@ -90,3 +90,8 @@ test('oversized, fixed-step and irregular-step advances produce identical events
   assert.notEqual(whole.state.hero.hp, 999);
   assert.notEqual(whole.state.enemies[0].hp, 999);
 });
+
+
+test('starter ranged weapons emit their own projectile while preserving battle balance',()=>{
+ for(const projectile of ['arrow','magic','melee']){const b=createBattle({heroProjectile:projectile});const events=b.advance(100);assert.ok(events.filter(e=>e.sourceId==='hero').every(e=>e.projectile===projectile));assert.equal(b.state.hero.hp,58);assert.equal(b.state.phase,'victory');}
+});

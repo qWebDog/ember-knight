@@ -1,114 +1,115 @@
 (() => {
   'use strict';
+  const $ = selector => document.querySelector(selector);
+  const catalogue = window.EmberLoadouts;
   const skins = [
-    {id:'light', label:'Светлый', color:'#F9D5BA'},
-    {id:'amber', label:'Тёплый', color:'#FDD082'},
-    {id:'olive', label:'Оливковый', color:'#D38B59'},
-    {id:'bronze', label:'Бронзовый', color:'#AE6B3F'},
-    {id:'brown', label:'Смуглый', color:'#9C663E'},
-    {id:'black', label:'Тёмный', color:'#603429'}
+    {id:'light',label:'Светлый',color:'#F9D5BA'},{id:'amber',label:'Тёплый',color:'#FDD082'},
+    {id:'olive',label:'Оливковый',color:'#D38B59'},{id:'bronze',label:'Бронзовый',color:'#AE6B3F'},
+    {id:'brown',label:'Смуглый',color:'#9C663E'},{id:'black',label:'Тёмный',color:'#603429'}
   ];
-  const key = 'ember.character.v1';
-  const canvas = document.querySelector('#hero');
-  const ctx = canvas.getContext('2d');
+  const key = 'ember.character.v1', canvas = $('#hero'), createButton = $('#create-button'), status = $('#status');
   const controls = [...document.querySelectorAll('.skin-option')];
-  const createButton = document.querySelector('#create-button');
-  const status = document.querySelector('#status');
-  const images = new Map();
-  let selected = 'light', direction = 2, frame = 0, saved = null, imageReady = false;
-  let loadingError = false;
-  const directionNames = ['Вид сзади', 'Левый бок', 'Вид спереди', 'Правый бок'];
-  const telegram = window.Telegram?.WebApp;
+  const weaponButtons = [...document.querySelectorAll('[data-weapon]')];
+  const outfitButtons = [...document.querySelectorAll('[data-outfit-index]')];
+  const progressButtons = [...document.querySelectorAll('[data-go-step]')];
+  const cache = new Map();
+  let selected='light', weapon='sword', step=0, furthest=0, direction=2, frame=0, saved=null;
+  let imageReady=false, loadingError=false, imageVersion=0, previewImage=null, previewDescriptor=null;
+  const remembered={sword:'militia',bow:'scout',wand:'apprentice'};
+  const directionNames=['Вид сзади','Левый бок','Вид спереди','Правый бок'];
+  const telegram=window.Telegram?.WebApp;
+  try {telegram?.ready();telegram?.expand();telegram?.setHeaderColor('#111613');telegram?.setBackgroundColor('#111613');}catch{}
   try {
-    telegram?.ready();
-    telegram?.expand();
-    telegram?.setHeaderColor('#111613');
-    telegram?.setBackgroundColor('#111613');
-  } catch { /* The screen also works outside Telegram. */ }
-  try {
-    const candidate = JSON.parse(localStorage.getItem(key));
-    if (candidate?.version === 1 && skins.some(s => s.id === candidate.skin)) {
-      saved = candidate;
-      selected = candidate.skin;
+    const candidate=JSON.parse(localStorage.getItem(key));
+    if(candidate?.version===1&&skins.some(s=>s.id===candidate.skin)){
+      saved=candidate;selected=candidate.skin;
+      const choice=catalogue.selection(candidate);
+      if(choice){weapon=choice.weapon;remembered[weapon]=choice.outfit;}
     }
-  } catch { /* Storage can be unavailable in private webviews. */ }
-  function haptic(type = 'selectionChanged') {
-    try { telegram?.HapticFeedback?.[type]?.(); } catch {}
+  }catch{}
+  function choice(){return {weapon,outfit:remembered[weapon]};}
+  function outfit(){return catalogue.outfit(weapon,remembered[weapon]);}
+  function haptic(){try{telegram?.HapticFeedback?.selectionChanged();}catch{}}
+  function syncViewport(){
+    const visible=window.visualViewport?.height||window.innerHeight;
+    const tgHeight=telegram?.initData&&Number(telegram.viewportHeight);
+    document.documentElement.style.setProperty('--app-height',`${Math.floor(tgHeight>0?Math.min(visible,tgHeight):visible)}px`);
   }
-  // Fit the actual browser/Telegram viewport, including sheet expansion and rotation.
-  function syncViewport() {
-    const browserHeight = window.visualViewport?.height || window.innerHeight;
-    const telegramHeight = telegram?.initData && Number(telegram.viewportHeight);
-    const height = telegramHeight > 0 ? Math.min(browserHeight, telegramHeight) : browserHeight;
-    document.documentElement.style.setProperty('--app-height', `${Math.floor(height)}px`);
+  window.addEventListener('resize',syncViewport);window.visualViewport?.addEventListener('resize',syncViewport);telegram?.onEvent?.('viewportChanged',syncViewport);syncViewport();
+  function alignCharacter(){
+    const scene=$('#scene'),stage=$('.sprite-stage');
+    const bottom=Number(getComputedStyle(scene).getPropertyValue('--scene-bottom'))||122;
+    const feet=Math.max(30,scene.clientHeight-bottom);
+    const scale=Math.max(1,Math.min(5,Math.floor((feet-32)/47)));
+    stage.style.width=`${scale*64}px`;stage.style.height=`${scale*64}px`;stage.style.top=`${feet-62*scale}px`;
+    const artScale=Math.max(scene.clientWidth/760,feet/500,(scene.clientHeight-feet)/160);
+    scene.style.backgroundSize=`${760*artScale}px ${660*artScale}px`;scene.style.backgroundPosition=`center ${feet-500*artScale}px`;
   }
-  window.addEventListener('resize', syncViewport);
-  window.visualViewport?.addEventListener('resize', syncViewport);
-  telegram?.onEvent?.('viewportChanged', syncViewport);
-  syncViewport();
-  function alignCharacter() {
-    const scene = document.querySelector('#scene');
-    const stage = document.querySelector('.sprite-stage');
-    const bottom = Number(getComputedStyle(scene).getPropertyValue('--scene-bottom')) || 122;
-    const feet = Math.max(30, scene.clientHeight - bottom);
-    // Keep the entire LPC silhouette above its nameplate even in a short webview.
-    const pixelScale = Math.max(1, Math.min(5, Math.floor((feet - 32) / 47)));
-    const size = pixelScale * 64;
-    stage.style.width = `${size}px`;
-    stage.style.height = `${size}px`;
-    stage.style.top = `${feet - 62 * pixelScale}px`;
-    // Position the background's actual pedestal under the feet at every aspect ratio.
-    const artScale = Math.max(scene.clientWidth / 760, feet / 500, (scene.clientHeight - feet) / 160);
-    scene.style.backgroundSize = `${760 * artScale}px ${660 * artScale}px`;
-    scene.style.backgroundPosition = `center ${feet - 500 * artScale}px`;
+  new ResizeObserver(alignCharacter).observe($('#scene'));alignCharacter();
+  function getImage(path){
+    if(!cache.has(path))cache.set(path,new Promise((resolve,reject)=>{const im=new Image();im.onload=()=>resolve(im);im.onerror=()=>{cache.delete(path);reject(new Error(path));};im.src=path;}));
+    return cache.get(path);
   }
-  new ResizeObserver(alignCharacter).observe(document.querySelector('#scene'));
-  alignCharacter();
-  function draw() {
-    const img = images.get(selected);
-    if (!img) return;
-    ctx.clearRect(0, 0, 64, 64);
-    ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(img, frame * 64, direction * 64, 64, 64, 0, 0, 64, 64);
-    canvas.setAttribute('aria-label', `Странник без экипировки. Цвет кожи: ${skins.find(s => s.id === selected).label}. ${directionNames[direction]}.`);
+  function draw(){
+    if(!previewImage||!previewDescriptor)return;
+    const d=previewDescriptor,tile=d.tile||64,origin=d.origin||0,cell=step===0?frame:0;
+    if(canvas.width!==tile){canvas.width=tile;canvas.height=tile;}
+    const ctx=canvas.getContext('2d');ctx.clearRect(0,0,tile,tile);ctx.imageSmoothingEnabled=false;
+    ctx.drawImage(previewImage,cell*tile,direction*tile,tile,tile,0,0,tile,tile);
+    canvas.style.width=`${tile/64*100}%`;canvas.style.height=`${tile/64*100}%`;canvas.style.left=`${-origin/64*100}%`;canvas.style.top=`${-origin/64*100}%`;
+    const description=step===0?'без экипировки':`${catalogue.weapon(weapon).name}, наряд ${outfit().name}`;
+    canvas.setAttribute('aria-label',`Странник: ${description}. Цвет кожи: ${skins.find(s=>s.id===selected).label}. ${directionNames[direction]}.`);
   }
-  function updateButton() {
-    createButton.disabled = !imageReady;
-    createButton.querySelector('span').textContent = loadingError ? 'Повторить загрузку' : !imageReady ? 'Загружаем героя…' : saved ? 'Сохранить облик' : 'Создать персонажа';
-    if (loadingError) createButton.disabled = false;
+  function updateButton(){
+    createButton.disabled=!imageReady&&!loadingError;
+    createButton.querySelector('span').textContent=loadingError?'Повторить загрузку':!imageReady?'Загружаем героя…':step===0?'Далее':step===1?'Выбрать наряд':saved?'Сохранить героя':'Создать персонажа';
   }
-  function selectSkin(id, feedback = false) {
-    selected = id;
-    controls.forEach((button) => {
-      const isSelected = button.dataset.skin === id;
-      button.classList.toggle('selected', isSelected);
-      button.setAttribute('aria-checked', String(isSelected));
-      button.tabIndex = isSelected ? 0 : -1;
+  async function loadPreview(){
+    const version=++imageVersion;imageReady=false;loadingError=false;updateButton();
+    const path=step===0?`assets/characters/${selected}.png`:catalogue.path(choice(),selected,'walk');
+    try {
+      const image=await getImage(path);if(version!==imageVersion)return;
+      previewImage=image;previewDescriptor=step===0?{tile:64,origin:0}:catalogue.weapon(weapon).walk;
+      imageReady=true;draw();status.textContent=step===0?'Выбери оттенок кожи':`${catalogue.weapon(weapon).name}, ${outfit().name}`;
+    }catch{if(version!==imageVersion)return;loadingError=true;status.textContent='Не удалось загрузить облик. Нажми «Повторить загрузку».';}
+    updateButton();
+  }
+  function markRadios(buttons,isSelected){buttons.forEach(b=>{const yes=isSelected(b);b.setAttribute('aria-checked',String(yes));b.classList.toggle('selected',yes);b.tabIndex=yes?0:-1;});}
+  function updateChoices(){
+    markRadios(controls,b=>b.dataset.skin===selected);$('#skin-name').textContent=skins.find(s=>s.id===selected).label;
+    markRadios(weaponButtons,b=>b.dataset.weapon===weapon);
+    const item=catalogue.weapon(weapon);$('#weapon-description').textContent=item.description;
+    outfitButtons.forEach((button,i)=>{
+      const itemOutfit=item.outfits[i];button.dataset.outfit=itemOutfit.id;button.setAttribute('aria-label',`${itemOutfit.name}: ${itemOutfit.description}`);
+      button.querySelector('strong').textContent=itemOutfit.name;const image=button.querySelector('img');image.alt=itemOutfit.name;
+      const path=catalogue.path({weapon,outfit:itemOutfit.id},selected,'preview');if(image.getAttribute('src')!==path)image.src=path;
     });
-    document.querySelector('#skin-name').textContent = skins.find(s => s.id === id).label;
-    if (feedback) haptic();
-    draw();
+    markRadios(outfitButtons,b=>b.dataset.outfit===remembered[weapon]);$('#outfit-description').textContent=outfit().description;
+    const label=step===0?'Выбери цвет кожи':`${item.short} · ${outfit().name}`;
+    $('#preview-summary').textContent=label;$('#nameplate-subtitle').textContent=step===0?'Твой путь начинается здесь':label;
   }
-  controls.forEach((button, i) => {
-    button.style.setProperty('--skin', skins[i].color);
-    button.addEventListener('click', () => selectSkin(button.dataset.skin, true));
-    button.addEventListener('keydown', event => {
-      if (!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End'].includes(event.key)) return;
-      event.preventDefault();
-      let index = i;
-      if (event.key === 'Home') index = 0;
-      else if (event.key === 'End') index = skins.length - 1;
-      else index = (i + (['ArrowRight','ArrowDown'].includes(event.key) ? 1 : -1) + skins.length) % skins.length;
-      selectSkin(skins[index].id, true);
-      controls[index].focus();
-    });
-  });
-  function rotate(delta) {
-    direction = (direction + delta + 4) % 4;
-    document.querySelector('#view-label').textContent = directionNames[direction];
-    haptic();
-    draw();
+  function showStep(index){
+    step=Math.max(0,Math.min(2,index));furthest=Math.max(furthest,step);
+    const titles=['Цвет кожи','Начальное оружие','Стартовый наряд'];$('#step-title').textContent=titles[step];$('#step-count').textContent=`ШАГ ${step+1} ИЗ 3`;
+    document.querySelectorAll('[data-step]').forEach(panel=>panel.hidden=Number(panel.dataset.step)!==step);
+    $('#back-button').hidden=step===0;
+    progressButtons.forEach((button,i)=>{button.disabled=i>furthest;button.classList.toggle('current',i===step);button.classList.toggle('complete',i<step);if(i===step)button.setAttribute('aria-current','step');else button.removeAttribute('aria-current');});
+    updateChoices();loadPreview();
   }
+  function radioKeys(buttons,select){buttons.forEach((button,i)=>button.addEventListener('keydown',event=>{
+    if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End'].includes(event.key))return;
+    event.preventDefault();const index=event.key==='Home'?0:event.key==='End'?buttons.length-1:(i+(['ArrowRight','ArrowDown'].includes(event.key)?1:-1)+buttons.length)%buttons.length;
+    select(buttons[index]);buttons[index].focus();
+  }));}
+  function selectSkin(button){selected=button.dataset.skin;haptic();updateChoices();loadPreview();}
+  function selectWeapon(button){weapon=button.dataset.weapon;haptic();updateChoices();loadPreview();}
+  function selectOutfit(button){remembered[weapon]=button.dataset.outfit;haptic();updateChoices();loadPreview();}
+  controls.forEach(button=>button.addEventListener('click',()=>selectSkin(button)));radioKeys(controls,selectSkin);
+  weaponButtons.forEach(button=>button.addEventListener('click',()=>selectWeapon(button)));radioKeys(weaponButtons,selectWeapon);
+  outfitButtons.forEach(button=>button.addEventListener('click',()=>selectOutfit(button)));radioKeys(outfitButtons,selectOutfit);
+  progressButtons.forEach((button,i)=>button.addEventListener('click',()=>{if(i<=furthest)showStep(i);}));
+  $('#back-button').addEventListener('click',()=>showStep(step-1));
+  function rotate(delta){direction=(direction+delta+4)%4;$('#view-label').textContent=directionNames[direction];haptic();draw();}
   const preview = document.querySelector('#scene');
   let swipe = null;
   function cancelSwipe() {
@@ -152,66 +153,31 @@
     event.preventDefault();
     rotate(event.key === 'ArrowRight' ? 1 : -1);
   });
-  function openDialog(id) {
-    const dialog = document.querySelector(id);
-    if (!dialog.open) dialog.showModal();
-  }
-  document.querySelector('#help-button').addEventListener('click', () => openDialog('#info-dialog'));
-  document.querySelector('#credits-button').addEventListener('click', () => openDialog('#credits-dialog'));
-  document.querySelectorAll('dialog').forEach(dialog => {
-    dialog.querySelectorAll('.dialog-close, .dialog-action').forEach(button => button.addEventListener('click', () => dialog.close()));
-    dialog.addEventListener('click', event => {
-      const rect = dialog.getBoundingClientRect();
-      if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) dialog.close();
-    });
+  function openDialog(id){const dialog=$(id);if(!dialog.open)dialog.showModal();}
+  $('#help-button').addEventListener('click',()=>openDialog('#info-dialog'));
+  $('#credits-button').addEventListener('click',()=>openDialog('#credits-dialog'));
+  document.querySelectorAll('dialog').forEach(dialog=>{
+    dialog.querySelectorAll('.dialog-close,.dialog-action').forEach(button=>button.addEventListener('click',()=>dialog.close()));
+    dialog.addEventListener('click',event=>{const r=dialog.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)dialog.close();});
   });
-  document.querySelector('#start-adventure').addEventListener('click', () => { window.location.href = './'; });
-  async function loadSprites() {
-    loadingError = false;
-    imageReady = false;
-    updateButton();
-    try {
-      await Promise.all(skins.map(skin => new Promise((resolve, reject) => {
-        const img = new Image();
-        img.onload = () => { images.set(skin.id, img); resolve(); };
-        img.onerror = reject;
-        img.src = `assets/characters/${skin.id}.png`;
-      })));
-      imageReady = true;
-      status.textContent = 'Герой готов. Выбери цвет кожи.';
-      draw();
-    } catch {
-      loadingError = true;
-      status.textContent = 'Не удалось загрузить героя. Нажми «Повторить загрузку».';
-    }
-    updateButton();
-  }
-  createButton.addEventListener('click', () => {
-    if (loadingError) { loadSprites(); return; }
-    if (!imageReady) return;
-    const character = {version:1, name:'Странник', level:1, skin:selected, class:null, equipment:[], createdAt:saved?.createdAt || new Date().toISOString(), updatedAt:new Date().toISOString()};
-    try {
-      localStorage.setItem(key, JSON.stringify(character));
-      saved = character;
-      document.querySelector('#success-dialog h2').textContent = 'Герой создан.';
-      document.querySelector('#success-dialog > p:not(.eyebrow)').innerHTML = 'Странник готов к своей истории.<br>Облик сохранён на этом устройстве.';
-      document.querySelector('#saved-skin').textContent = skins.find(s => s.id === selected).label;
-      updateButton();
-      openDialog('#success-dialog');
-      try { telegram?.HapticFeedback?.notificationOccurred('success'); } catch {}
-    } catch {
-      status.textContent = 'Хранилище недоступно. Разреши сохранение данных в браузере и попробуй снова.';
-      document.querySelector('#info-dialog h2').textContent = 'Не удалось сохранить';
-      document.querySelector('#info-dialog > p:not(.eyebrow)').textContent = 'Хранилище браузера недоступно. Разреши сохранение данных для этого сайта и попробуй снова.';
-      openDialog('#info-dialog');
+  $('#start-adventure').addEventListener('click',()=>{window.location.href='./';});
+  createButton.addEventListener('click',()=>{
+    if(loadingError){loadPreview();return;}if(!imageReady)return;
+    if(step<2){showStep(step+1);return;}
+    const editing=!!saved;
+    const character={version:1,name:saved?.name||'Странник',level:saved?.level||1,skin:selected,weapon,outfit:remembered[weapon],class:saved?.class||null,equipment:weapon==='sword'?['sword','shield',remembered[weapon]]:[weapon,remembered[weapon]],createdAt:saved?.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()};
+    try{
+      localStorage.setItem(key,JSON.stringify(character));saved=character;
+      $('#success-dialog h2').textContent=editing?'Облик сохранён.':'Герой создан.';
+      $('#success-dialog > p:not(.eyebrow)').textContent='Кожа, оружие и выбранный наряд сохранены на этом устройстве.';
+      $('#saved-skin').textContent=skins.find(s=>s.id===selected).label;$('#saved-loadout').textContent=`${catalogue.weapon(weapon).name} · ${outfit().name}`;
+      updateButton();openDialog('#success-dialog');try{telegram?.HapticFeedback?.notificationOccurred('success');}catch{}
+    }catch{
+      status.textContent='Хранилище недоступно. Разреши сохранение данных и попробуй снова.';
+      $('#info-dialog h2').textContent='Не удалось сохранить';$('#info-dialog > p:not(.eyebrow)').textContent='Разреши браузеру сохранять данные для этого сайта и попробуй ещё раз.';openDialog('#info-dialog');
     }
   });
-  selectSkin(selected);
-  loadSprites();
-  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-  setInterval(() => {
-    if (!imageReady || reducedMotion.matches || document.hidden) return;
-    frame = frame ? 0 : 1;
-    draw();
-  }, 650);
+  showStep(0);
+  const reducedMotion=window.matchMedia('(prefers-reduced-motion: reduce)');
+  setInterval(()=>{if(step!==0||!imageReady||reducedMotion.matches||document.hidden)return;frame=frame?0:1;draw();},650);
 })();

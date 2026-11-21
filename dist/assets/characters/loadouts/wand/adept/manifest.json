@@ -1,0 +1,98 @@
+{
+  "generator": "Universal LPC Character Generator",
+  "revision": "86a3719ee4a7e2e9fb27c7c152e29a741d3e930a",
+  "weapon": "wand",
+  "outfit": "adept",
+  "layers": [
+    {
+      "z": 10,
+      "source": "spritesheets/body/bodies/male/{a}.png",
+      "material": "body",
+      "palette": "SKIN",
+      "definition": "sheet_definitions/body/body.json"
+    },
+    {
+      "z": 100,
+      "source": "spritesheets/head/heads/human/male/{a}.png",
+      "material": "body",
+      "palette": "SKIN",
+      "definition": "sheet_definitions/head/heads/human/heads_human_male.json"
+    },
+    {
+      "z": 20,
+      "source": "spritesheets/legs/pants/male/{a}.png",
+      "material": "cloth",
+      "palette": "charcoal",
+      "definition": "sheet_definitions/legs/pants/legs_pants.json"
+    },
+    {
+      "z": 22,
+      "source": "spritesheets/legs/skirts/slit/thin/{a}.png",
+      "material": "cloth",
+      "palette": "navy",
+      "definition": "sheet_definitions/legs/skirts/legs_skirts_slit.json"
+    },
+    {
+      "z": 25,
+      "source": "spritesheets/feet/boots/basic/male/{a}.png",
+      "material": "cloth",
+      "palette": "charcoal",
+      "definition": "sheet_definitions/feet/boots/feet_boots_basic.json"
+    },
+    {
+      "z": 35,
+      "source": "spritesheets/torso/clothes/longsleeve/longsleeve/male/{a}.png",
+      "material": "cloth",
+      "palette": "navy",
+      "definition": "sheet_definitions/torso/shirts/longsleeve/torso_clothes_longsleeve.json"
+    },
+    {
+      "z": 130,
+      "source": "spritesheets/hat/magic/wizard/base/adult/{a}/navy.png",
+      "material": "cloth",
+      "palette": null,
+      "definition": "sheet_definitions/headwear/hats/magic/hat_magic_wizard.json"
+    },
+    {
+      "z": 131,
+      "source": "spritesheets/hat/magic/wizard/belt/adult/{a}.png",
+      "material": "cloth",
+      "palette": "yellow",
+      "definition": "sheet_definitions/headwear/hats/magic/hat_magic_wizard_belt.json"
+    },
+    {
+      "z": 90,
+      "source": "spritesheets/torso/waist/sash/male/{a}.png",
+      "material": "cloth",
+      "palette": "yellow",
+      "definition": "sheet_definitions/torso/waist/belt_sash.json"
+    }
+  ],
+  "notes": [
+    "Wand has native slash only. WALK uses the official standing wand with a 0–1px gait-compatible translation; no custom weapon pixels drawn."
+  ],
+  "walk": {
+    "file": "{skin}-walk.png",
+    "tile": 64,
+    "origin": 0,
+    "frames": 9,
+    "rows": [
+      "north",
+      "west",
+      "south",
+      "east"
+    ]
+  },
+  "attack": {
+    "file": "{skin}-attack.png",
+    "tile": 64,
+    "origin": 0,
+    "frames": 6,
+    "rows": [
+      "north",
+      "west",
+      "south",
+      "east"
+    ]
+  }
+}

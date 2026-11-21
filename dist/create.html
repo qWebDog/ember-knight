@@ -4,7 +4,7 @@
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#111613">
 <meta name="description" content="Создай своего героя в EMBER — пиксельной idle RPG. Твоя легенда начинается здесь.">
 <title>EMBER — Создание героя</title>
-<link rel="stylesheet" href="styles.css"><script src="https://telegram.org/js/telegram-web-app.js"></script><script src="app.js" defer></script>
+<link rel="stylesheet" href="styles.css"><script src="https://telegram.org/js/telegram-web-app.js"></script><script src="loadouts.js" defer></script><script src="app.js" defer></script>
 </head>
 <body>
 <svg class="svg-defs" xmlns="http://www.w3.org/2000/svg"><defs>
@@ -28,35 +28,30 @@
 <div class="scene" id="scene" tabindex="0" role="group" aria-label="Предпросмотр персонажа. Поворот свайпом или клавишами влево и вправо" aria-describedby="swipe-hint view-label" aria-keyshortcuts="ArrowLeft ArrowRight"><div class="scene-top"><span class="location"><span class="tiny-diamond"></span> ЗАБЫТЫЙ ДВОР</span><span class="preview-tag">УРОВЕНЬ 1</span></div>
 <div class="ambient-light"></div><div class="firefly f1"></div><div class="firefly f2"></div><div class="firefly f3"></div><div class="firefly f4"></div>
 <div class="sprite-stage"><div class="character-shadow"></div><canvas id="hero" width="64" height="64" aria-label="Персонаж без экипировки, вид спереди" role="img"></canvas></div>
-<div class="nameplate"><span class="nameplate-line"></span><div><strong>Странник</strong><span>Без брони. Без оружия. Всё впереди.</span></div><span class="nameplate-line"></span></div>
+<div class="nameplate"><span class="nameplate-line"></span><div><strong>Странник</strong><span id="nameplate-subtitle">Твой путь начинается здесь</span></div><span class="nameplate-line"></span></div>
 <div class="rotation"><span id="view-label" role="status" aria-live="polite">Вид спереди</span><span id="swipe-hint">Проведи влево или вправо</span></div>
 </div>
-<div class="preview-bottom"><span class="live-dot"></span><span>Без брони. Без оружия. Всё впереди.</span><span class="pixel-badge">LPC</span></div>
+<div class="preview-bottom"><span class="live-dot"></span><span id="preview-summary">Выбери цвет кожи</span><span class="pixel-badge">LPC</span></div>
 </div>
-<div class="customize-panel">
-<div class="character-heading"><div class="title-icon"><svg><use href="#shield"/></svg></div><div><p class="eyebrow">ТВОЙ ПЕРСОНАЖ</p><h2>Странник</h2></div><span class="level-badge">УР. <b>1</b></span></div>
-<p class="character-description">Пока просто путник. Однажды — легенда.</p>
-<div class="section-divider"></div>
-<div class="skin-heading"><h3>Цвет кожи</h3><span id="skin-name" aria-live="polite">Тёплый</span></div>
-<div class="skin-options" role="radiogroup" aria-label="Цвет кожи">
-<button class="skin-option" role="radio" aria-checked="false" data-skin="light" aria-label="Светлый" style="--skin:#f3d4b5"><span><svg><use href="#check"/></svg></span></button>
-<button class="skin-option selected" role="radio" aria-checked="true" data-skin="amber" aria-label="Тёплый" style="--skin:#e2af83" tabindex="0"><span><svg><use href="#check"/></svg></span></button>
-<button class="skin-option" role="radio" aria-checked="false" data-skin="olive" aria-label="Оливковый" style="--skin:#b9976e"><span><svg><use href="#check"/></svg></span></button>
-<button class="skin-option" role="radio" aria-checked="false" data-skin="bronze" aria-label="Бронзовый" style="--skin:#bb8057"><span><svg><use href="#check"/></svg></span></button>
-<button class="skin-option" role="radio" aria-checked="false" data-skin="brown" aria-label="Смуглый" style="--skin:#8d5b42"><span><svg><use href="#check"/></svg></span></button>
-<button class="skin-option" role="radio" aria-checked="false" data-skin="black" aria-label="Тёмный" style="--skin:#543c32"><span><svg><use href="#check"/></svg></span></button>
+<div class="customize-panel wizard">
+<div class="wizard-heading"><h2 id="step-title">Цвет кожи</h2><span id="step-count">ШАГ 1 ИЗ 3</span></div>
+<div class="wizard-body">
+<div class="step-panel" data-step="0"><div class="skin-heading"><h3>Облик героя</h3><span id="skin-name" aria-live="polite">Светлый</span></div><div class="skin-options" role="radiogroup" aria-label="Цвет кожи"><button class="skin-option" role="radio" aria-checked="false" data-skin="light" aria-label="Светлый" style="--skin:#F9D5BA"><span><svg><use href="#check"/></svg></span></button><button class="skin-option" role="radio" aria-checked="false" data-skin="amber" aria-label="Тёплый" style="--skin:#FDD082"><span><svg><use href="#check"/></svg></span></button><button class="skin-option" role="radio" aria-checked="false" data-skin="olive" aria-label="Оливковый" style="--skin:#D38B59"><span><svg><use href="#check"/></svg></span></button><button class="skin-option" role="radio" aria-checked="false" data-skin="bronze" aria-label="Бронзовый" style="--skin:#AE6B3F"><span><svg><use href="#check"/></svg></span></button><button class="skin-option" role="radio" aria-checked="false" data-skin="brown" aria-label="Смуглый" style="--skin:#9C663E"><span><svg><use href="#check"/></svg></span></button><button class="skin-option" role="radio" aria-checked="false" data-skin="black" aria-label="Тёмный" style="--skin:#603429"><span><svg><use href="#check"/></svg></span></button></div><p class="choice-description">Выбери оттенок кожи. На следующем шаге — оружие.</p></div>
+<div class="step-panel" data-step="1" hidden><div class="weapon-options" role="radiogroup" aria-label="Начальное оружие">
+<button class="choice-card weapon-card" role="radio" aria-checked="true" data-weapon="sword"><svg><use href="#shield"/></svg><strong>Меч и щит</strong><span>Ближний бой</span></button>
+<button class="choice-card weapon-card" role="radio" aria-checked="false" data-weapon="bow"><svg><use href="#bow"/></svg><strong>Лук</strong><span>Дальний бой</span></button>
+<button class="choice-card weapon-card" role="radio" aria-checked="false" data-weapon="wand"><svg><use href="#magic"/></svg><strong>Палочка</strong><span>Магия</span></button>
+</div><p class="choice-description" id="weapon-description">Надёжное начало для ближнего боя.</p></div>
+<div class="step-panel" data-step="2" hidden><div class="outfit-options" role="radiogroup" aria-label="Начальный наряд"><button class="choice-card outfit-card" role="radio" aria-checked="false" data-outfit-index="0"><img width="64" height="64" alt=""><strong></strong><span class="outfit-check"><svg><use href="#check"/></svg></span></button><button class="choice-card outfit-card" role="radio" aria-checked="false" data-outfit-index="1"><img width="64" height="64" alt=""><strong></strong><span class="outfit-check"><svg><use href="#check"/></svg></span></button><button class="choice-card outfit-card" role="radio" aria-checked="false" data-outfit-index="2"><img width="64" height="64" alt=""><strong></strong><span class="outfit-check"><svg><use href="#check"/></svg></span></button></div><p class="choice-description" id="outfit-description"></p><span class="cosmetic-note">Наряды меняют облик, а не характеристики</span></div>
 </div>
-<p class="skin-note">Внешность не влияет на характеристики героя.</p>
-<div class="origin-note"><span class="origin-star">✧</span><div><strong>Чистый лист</strong><p>Никакой экипировки и выбранного класса.<br>Кем стать — решишь в приключении.</p></div></div>
-<button class="create-button" id="create-button"><svg><use href="#flame"/></svg><span>Создать персонажа</span></button>
-<p class="save-note"><svg><use href="#lock"/></svg> Твой герой сохранится на этом устройстве</p>
-</div>
-</section>
-<section class="future-path" aria-label="Будущие пути развития"><div class="future-intro"><span class="branch-symbol">⌘</span><div><h3>Один герой. Множество путей.</h3><p>Выбери своё призвание, когда придёт время.</p></div></div><div class="paths"><div class="path"><svg class="path-icon"><use href="#shield"/></svg><span>Танк</span><svg class="path-lock"><use href="#lock"/></svg></div><div class="path"><svg class="path-icon"><use href="#bow"/></svg><span>Стрелок</span><svg class="path-lock"><use href="#lock"/></svg></div><div class="path"><svg class="path-icon"><use href="#magic"/></svg><span>Маг</span><svg class="path-lock"><use href="#lock"/></svg></div><span class="and-more">и другие</span></div></section>
+<div class="wizard-nav"><button id="back-button" class="back-button" hidden>Назад</button><button class="create-button" id="create-button"><svg><use href="#flame"/></svg><span>Далее</span></button></div>
+<p class="save-note"><svg><use href="#lock"/></svg> Герой сохранится на этом устройстве</p>
+</div></section>
+<nav class="creation-progress" aria-label="Шаги создания"><button data-go-step="0" class="current" aria-current="step"><span>1</span> Кожа</button><i></i><button data-go-step="1" disabled><span>2</span> Оружие</button><i></i><button data-go-step="2" disabled><span>3</span> Наряд</button></nav>
 </main>
 <footer><span>НЕ СПЕШИ. ТВОЯ ЛЕГЕНДА ДОЖДЁТСЯ.</span><button id="credits-button">Пиксельный мир с душой <span>✦</span></button></footer>
-<dialog id="info-dialog"><button class="dialog-close" aria-label="Закрыть">×</button><p class="eyebrow">ДОБРО ПОЖАЛОВАТЬ В EMBER</p><h2>У каждой легенды<br>есть начало.</h2><p>Это первое окно idle RPG для Telegram. Выбери оттенок кожи, поверни героя свайпом влево или вправо и сохрани его облик.</p><p>Внешность не влияет на характеристики. Герой начинает без экипировки и выбранного класса. Танк, стрелок, маг и другие пути откроются в следующих главах.</p><button class="dialog-action">Продолжить</button></dialog>
-<dialog id="success-dialog"><button class="dialog-close" aria-label="Закрыть">×</button><div class="success-sigil"><svg><use href="#flame"/></svg></div><p class="eyebrow">ПЕРВЫЙ ШАГ СДЕЛАН</p><h2>Герой создан.</h2><p>Странник готов к своей истории.<br>Облик сохранён на этом устройстве.</p><div class="saved-character"><span>Странник · Уровень 1</span><strong id="saved-skin"></strong></div><p class="coming-soon">Забытый лес ждёт своего героя.</p><button class="dialog-action" id="start-adventure">В путь</button></dialog>
-<dialog id="credits-dialog"><button class="dialog-close" aria-label="Закрыть">×</button><p class="eyebrow">ПИКСЕЛИ С ИСТОРИЕЙ</p><h2>Universal LPC</h2><p>Персонаж создан из оригинальных спрайтов Universal LPC Character Generator.</p><div id="credits-content"></div><p><a href="assets/characters/CREDITS.txt" target="_blank" rel="noopener">Авторы и лицензии спрайтов</a></p><p><a href="https://liberatedpixelcup.github.io/Universal-LPC-Spritesheet-Character-Generator/" target="_blank" rel="noopener">Открыть генератор LPC</a></p><button class="dialog-action">Понятно</button></dialog>
+<dialog id="info-dialog"><button class="dialog-close" aria-label="Закрыть">×</button><p class="eyebrow">ДОБРО ПОЖАЛОВАТЬ В EMBER</p><h2>У каждой легенды<br>есть начало.</h2><p>Это первое окно idle RPG для Telegram. Выбери цвет кожи, затем меч со щитом, лук или палочку и один из трёх нарядов. Героя можно повернуть свайпом влево или вправо.</p><p>Для каждого оружия есть три стартовых комплекта. Наряд меняет внешность; ветки развития ты выберешь позже в приключении.</p><button class="dialog-action">Продолжить</button></dialog>
+<dialog id="success-dialog"><button class="dialog-close" aria-label="Закрыть">×</button><div class="success-sigil"><svg><use href="#flame"/></svg></div><p class="eyebrow">ПЕРВЫЙ ШАГ СДЕЛАН</p><h2>Герой создан.</h2><p>Странник готов к своей истории.<br>Облик сохранён на этом устройстве.</p><div class="saved-character"><span>Странник · Уровень 1</span><strong id="saved-skin"></strong></div><p id="saved-loadout"></p><p class="coming-soon">Забытый лес ждёт своего героя.</p><button class="dialog-action" id="start-adventure">В путь</button></dialog>
+<dialog id="credits-dialog"><button class="dialog-close" aria-label="Закрыть">×</button><p class="eyebrow">ПИКСЕЛИ С ИСТОРИЕЙ</p><h2>Universal LPC</h2><p>Персонаж создан из оригинальных спрайтов Universal LPC Character Generator.</p><div id="credits-content"></div><p><a href="assets/CREDITS.txt" target="_blank" rel="noopener">Авторы и лицензии спрайтов</a></p><p><a href="https://liberatedpixelcup.github.io/Universal-LPC-Spritesheet-Character-Generator/" target="_blank" rel="noopener">Открыть генератор LPC</a></p><button class="dialog-action">Понятно</button></dialog>
 <div id="status" class="sr-only" role="status"></div>
 </body></html>

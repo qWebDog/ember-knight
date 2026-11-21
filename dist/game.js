@@ -16,13 +16,18 @@
     if (Number.isSafeInteger(coins) && coins >= 0) wallet = Math.min(coins,999999999);
   } catch {}
   if (new URLSearchParams(window.location.search).get('battle') === 'test') auto = true;
+  const loadouts = window.EmberLoadouts;
+  const loadout = loadouts?.selection(character) || null;
+  const starterWeapon = loadout ? loadouts.weapon(loadout.weapon) : null;
+  const starterOutfit = loadout ? loadouts.outfit(loadout.weapon,loadout.outfit) : null;
+  const ranged = starterWeapon && starterWeapon.projectile !== 'melee';
   const skin = character?.skin || 'light';
   const name = typeof character?.name === 'string' && character.name.trim() ? character.name.slice(0,24) : 'Странник';
   const level = Number.isInteger(character?.level) ? Math.max(1,Math.min(99,character.level)) : 1;
   $('#player-name').textContent = name;
   $('.fighter-name').textContent = name;
   $('#level-badge').textContent = level;
-  const battle = window.EmberCombat.createBattle({heroName:name});
+  const battle = window.EmberCombat.createBattle({heroName:name,heroProjectile:starterWeapon?.projectile});
   battle.pause();
   let ready = false, assetError = false, rewardPaid = false, lastFrameTime = null;
   const actors = {};
@@ -64,12 +69,22 @@
   async function loadAssets() {
     ready = false; assetError = false; updateControls();
     try {
-      const idle = await loadImage(`assets/characters/${skin}.png`).catch(() => loadImage('assets/characters/light.png'));
-      actors.hero.images.idle = {image:idle, frames:2, row:3};
-      const walk = await loadImage(`assets/characters/combat/${skin}-walk.png`).catch(() => loadImage('assets/characters/combat/light-walk.png'));
-      actors.hero.images.walk = {image:walk,frames:9,row:3};
-      const attack = await loadImage(`assets/characters/combat/${skin}-attack.png`).catch(() => null);
-      actors.hero.images.attack = attack ? {image:attack,frames:6,row:3} : actors.hero.images.idle;
+      let idle;
+      if (loadout) {
+        const walk = await loadImage(loadouts.path(loadout,skin,'walk'));
+        const attack = await loadImage(loadouts.path(loadout,skin,'attack'));
+        idle = walk;
+        actors.hero.images.idle = {image:walk,row:3,still:0,...starterWeapon.walk};
+        actors.hero.images.walk = {image:walk,row:3,...starterWeapon.walk};
+        actors.hero.images.attack = {image:attack,row:3,...starterWeapon.attack};
+      } else {
+        idle = await loadImage(`assets/characters/${skin}.png`).catch(() => loadImage('assets/characters/light.png'));
+        actors.hero.images.idle = {image:idle,frames:2,row:3};
+        const walk = await loadImage(`assets/characters/combat/${skin}-walk.png`).catch(() => loadImage('assets/characters/combat/light-walk.png'));
+        actors.hero.images.walk = {image:walk,frames:9,row:3};
+        const attack = await loadImage(`assets/characters/combat/${skin}-attack.png`).catch(() => null);
+        actors.hero.images.attack = attack ? {image:attack,frames:6,row:3} : actors.hero.images.idle;
+      }
       await Promise.all([
         ['orc','orc-walk.png','orc-left.png',9,0],
         ['archer','skeleton-shoot.png','skeleton-left.png',13,5],
@@ -87,7 +102,8 @@
       const orcAttack = await loadImage('assets/enemies/lpc/orc-attack.png').catch(() => null);
       actors.orc.images.attack = orcAttack ? {image:orcAttack,frames:6,row:1,tile:128,origin:32} : { ...actors.orc.images.idle,frames:1 };
       const face = $('#avatar').getContext('2d'); face.imageSmoothingEnabled = false;
-      face.drawImage(idle,19,140,26,26,0,0,32,32);
+      const avatarTile=loadout?starterWeapon.walk.tile:64, avatarOrigin=loadout?starterWeapon.walk.origin:0;
+      face.drawImage(idle,avatarOrigin+19,avatarTile*2+avatarOrigin+12,26,26,0,0,32,32);
       ready = true;
       updateMovement(0,battle.getState());
       $('#status').textContent = 'Тестовый бой готов: орк-щитоносец, скелет-лучник и могильный колдун.';
@@ -131,7 +147,7 @@
   function handleEvents(events) {
     for (const event of events) {
       if (event.type === 'attack') {
-        actors[event.sourceId].animation = {at:activeTime,duration:event.sourceId === 'archer' ? .9 : .66};
+        actors[event.sourceId].animation = {at:activeTime,duration:event.sourceId === 'archer' || (event.sourceId === 'hero' && starterWeapon?.id === 'bow') ? .9 : .66};
         actors[event.targetId].hitAt = activeTime;
         addEffect('damage',event.sourceId,event.targetId,`−${event.damage}`,event.at);
         if (event.projectile !== 'melee') addEffect(event.projectile,event.sourceId,event.targetId,null,event.at);
@@ -163,7 +179,7 @@
     const descriptor = actor.images[kind];
     const row = walking ? walkDirection : descriptor.row;
     const tile = descriptor.tile || 64, origin = descriptor.origin || 0;
-    const cell = walking ? 1 + Math.floor((walkDistance / .75 % 1) * 8) : attacking ? Math.min(descriptor.frames-1,Math.floor(age / actor.animation.duration * descriptor.frames)) : id === 'hero' && auto && unit.hp > 0 && !ended && !reducedMotion.matches ? Math.floor(activeTime / .65) % 2 : descriptor.still || 0;
+    const cell = walking ? 1 + Math.floor((walkDistance / .75 % 1) * 8) : attacking ? Math.min(descriptor.frames-1,Math.floor(age / actor.animation.duration * descriptor.frames)) : Number.isInteger(descriptor.still) ? descriptor.still : id === 'hero' && auto && unit.hp > 0 && !ended && !reducedMotion.matches ? Math.floor(activeTime / .65) % 2 : 0;
     const key = `${kind}-${cell}-${row}-${tile}`;
     if (actor.lastKey !== key) {
       actor.canvas.width = tile; actor.canvas.height = tile;
@@ -179,7 +195,7 @@
     actor.bar.querySelector('i').style.width = `${unit.hp / unit.maxHp * 100}%`;
     actor.bar.setAttribute('aria-valuenow',unit.hp);
     actor.bar.setAttribute('aria-valuemax',unit.maxHp);
-    actor.element.setAttribute('aria-label', `${unit.name}: ${unit.hp} из ${unit.maxHp} здоровья`);
+    actor.element.setAttribute('aria-label', `${unit.name}${id === 'hero' && loadout ? `, ${starterWeapon.name}, наряд ${starterOutfit.name}` : ''}: ${unit.hp} из ${unit.maxHp} здоровья`);
   }
   // Walking pace and frame phase both follow travelled distance, never a fixed slide tween.
   function updateMovement(dt,state) {
@@ -191,6 +207,10 @@
     fieldWidth = width;
     moving = false;
     let usedTime = 0;
+    if (ranged) {
+      // Ranged starter weapons fight from their starting position, without a melee approach.
+      heroX = home; actors.hero.element.style.left = `${heroX}px`; return 0;
+    }
     if (state.targetId && !['victory','defeat'].includes(state.phase)) {
       const target = actors[state.targetId].element;
       const separation = size * .23 + target.offsetWidth * .34;
@@ -219,7 +239,8 @@
       if (effect.type === 'damage') {
         effect.element.style.left = `${tx}px`; effect.element.style.top = `${ty-p*22}px`; effect.element.style.opacity = String(1-p);
       } else {
-        const sx=source.left+source.width*.3-field.left, sy=source.top+source.height*.45-field.top;
+        const sx=source.left+source.width*(effect.sourceId==='hero'?.7:.3)-field.left, sy=source.top+source.height*.45-field.top;
+        if(effect.type==='arrow')effect.element.style.transform=`translate(-50%,-50%) rotate(${tx>=sx?180:0}deg)`;
         effect.element.style.left = `${sx+(tx-sx)*p}px`; effect.element.style.top = `${sy+(ty-sy)*p}px`;
       }
     }
@@ -265,7 +286,7 @@
     crystals: () => ['КОШЕЛЁК','Кристаллы','Редкие кристаллы для особых находок. Их история начнётся в следующих главах.'],
     rewards: () => ['НАГРАДЫ','Трофеи первого боя',`За победу над орком, лучником и колдуном — 25 золота. Сейчас в кошельке: ${wallet}.`],
     map: () => ['ГЛАВА I','Забытый лес','Битва 1–1: орк-щитоносец, скелет-лучник и могильный колдун. Тестовый бой можно повторять.'],
-    fist: () => ['УМЕНИЕ','Натиск','Откроется на 3 уровне. В тестовом бою герой сражается обычными ударами.'],
+    fist: () => ['УМЕНИЕ','Натиск','Откроется на 3 уровне. Сейчас герой использует базовую атаку своего оружия.'],
     dash: () => ['УМЕНИЕ','Рывок','Откроется на 5 уровне. В нужный момент решает один быстрый шаг.'],
     fire: () => ['УМЕНИЕ','Внутренний огонь','Откроется на 10 уровне. Сила, которую ещё предстоит пробудить.']
   };
@@ -275,7 +296,7 @@
     $('#sprite-credits').hidden=!profile;
     if (!dialog.open) dialog.showModal(); syncPause();
   }
-  $('#profile-button').addEventListener('click', () => openInfo('ТВОЙ ГЕРОЙ',name,`Уровень ${level} · Сила 12 · ${skinNames[skinIds.indexOf(skin)]} оттенок кожи. Без класса, брони и оружия. В тестовом бою: 200 здоровья.`,true));
+  $('#profile-button').addEventListener('click', () => openInfo('ТВОЙ ГЕРОЙ',name,`Уровень ${level} · Сила 12 · ${skinNames[skinIds.indexOf(skin)]} оттенок кожи. ${loadout ? `${starterWeapon.name} · наряд «${starterOutfit.name}».` : 'Без класса, брони и оружия.'} В тестовом бою: 200 здоровья.`,true));
   document.querySelectorAll('[data-info]').forEach(button=>button.addEventListener('click',()=>openInfo(...information[button.dataset.info]())));
   dialog.querySelectorAll('.dialog-close,.dialog-action').forEach(button=>button.addEventListener('click',()=>dialog.close()));
   dialog.addEventListener('close',syncPause);

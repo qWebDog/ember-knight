@@ -12,8 +12,8 @@ const combatSource = fs.readFileSync(path.join(dist, 'combat.js'), 'utf8');
 
 // The real game controller and combat engine run together. Only browser surfaces,
 // image decoding and the animation clock are replaced; no combat logic is mocked.
-function createHarness({skin = 'bronze', preference, search = ''} = {}) {
-  const storage = new Map([['ember.character.v1', JSON.stringify({version:1, skin, name:'Тестовый герой', level:1})]]);
+function createHarness({skin = 'bronze', preference, search = '', weapon, outfit} = {}) {
+  const storage = new Map([['ember.character.v1', JSON.stringify({version:1, skin, name:'Тестовый герой', level:1,weapon,outfit})]]);
   if (preference) storage.set('ember.combat.auto.v1', preference);
   const nodes = new Map(), pendingImages = [], loadedPaths = [], raf = [], resizeCallbacks = [];
   let battle, now = 0;
@@ -115,6 +115,7 @@ function createHarness({skin = 'bronze', preference, search = ''} = {}) {
     ResizeObserver:class {constructor(callback) {this.callback = callback;} observe() {resizeCallbacks.push(this.callback); this.callback();}},
     localStorage:{getItem:key => storage.get(key) ?? null, setItem:(key,value) => storage.set(key,String(value))}
   });
+  vm.runInContext(fs.readFileSync(path.join(dist,'loadouts.js'),'utf8'), context, {filename:'loadouts.js'});
   vm.runInContext(combatSource, context, {filename:'combat.js'});
   const createBattle = window.EmberCombat.createBattle;
   window.EmberCombat.createBattle = options => { battle = createBattle(options); return battle; };
@@ -287,4 +288,21 @@ test('walking speed and gait follow distance; a pure viewport resize does not ad
   assert.deepEqual(ui.node('#player-sprite').draws.at(-1), phase);
   assert.equal(hero.dataset.motion, 'walk');
   assert.ok(before.crop[0] >= 64);
+});
+
+
+test('all nine saved starter outfits appear in battle with matching weapon animation and range',async()=>{
+  const catalogue=require('../dist/loadouts.js');
+  for(const weapon of catalogue.weapons)for(const outfit of weapon.outfits){
+    const ui=createHarness({skin:'olive',weapon:weapon.id,outfit:outfit.id});await ui.loadAllImages();
+    const root=`assets/characters/loadouts/${weapon.id}/${outfit.id}/olive-`;
+    assert.ok(ui.loadedPaths.includes(root+'walk.png'));assert.ok(ui.loadedPaths.includes(root+'attack.png'));
+    const start=ui.heroX();ui.runFor(.7);
+    if(weapon.projectile==='melee')assert.ok(ui.heroX()>start);else{assert.equal(ui.heroX(),start);assert.equal(ui.node('[data-fighter="hero"]').dataset.motion,'idle');}
+    ui.runUntil(()=>ui.node('#player-sprite').draws.some(d=>d.src===root+'attack.png'));
+    const attacks=ui.node('#player-sprite').draws.filter(d=>d.src===root+'attack.png');
+    assert.ok(attacks.every(d=>d.crop[2]===weapon.attack.tile&&d.crop[1]===weapon.attack.tile*3));
+    ui.node('#profile-button').click();assert.ok(ui.node('#dialog-copy').textContent.includes(outfit.name));ui.node('#game-dialog').close();
+    ui.runUntil(()=>ui.state().phase==='victory',60);assert.equal(ui.storage.get('ember.test.gold.v1'),'25');
+  }
 });

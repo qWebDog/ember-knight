@@ -1,0 +1,75 @@
+{
+  "generator": "Universal LPC Character Generator",
+  "revision": "86a3719ee4a7e2e9fb27c7c152e29a741d3e930a",
+  "weapon": "sword",
+  "outfit": "militia",
+  "layers": [
+    {
+      "z": 10,
+      "source": "spritesheets/body/bodies/male/{a}.png",
+      "material": "body",
+      "palette": "SKIN",
+      "definition": "sheet_definitions/body/body.json"
+    },
+    {
+      "z": 100,
+      "source": "spritesheets/head/heads/human/male/{a}.png",
+      "material": "body",
+      "palette": "SKIN",
+      "definition": "sheet_definitions/head/heads/human/heads_human_male.json"
+    },
+    {
+      "z": 20,
+      "source": "spritesheets/legs/pants/male/{a}.png",
+      "material": "cloth",
+      "palette": "brown",
+      "definition": "sheet_definitions/legs/pants/legs_pants.json"
+    },
+    {
+      "z": 25,
+      "source": "spritesheets/feet/boots/basic/male/{a}.png",
+      "material": "cloth",
+      "palette": "leather",
+      "definition": "sheet_definitions/feet/boots/feet_boots_basic.json"
+    },
+    {
+      "z": 35,
+      "source": "spritesheets/torso/clothes/longsleeve/longsleeve/male/{a}.png",
+      "material": "cloth",
+      "palette": "tan",
+      "definition": "sheet_definitions/torso/shirts/longsleeve/torso_clothes_longsleeve.json"
+    },
+    {
+      "z": 70,
+      "source": "spritesheets/torso/waist/belt_leather/male/{a}/brown.png",
+      "material": "cloth",
+      "palette": null,
+      "definition": "sheet_definitions/torso/waist/belt_leather.json"
+    }
+  ],
+  "notes": [],
+  "walk": {
+    "file": "{skin}-walk.png",
+    "tile": 64,
+    "origin": 0,
+    "frames": 9,
+    "rows": [
+      "north",
+      "west",
+      "south",
+      "east"
+    ]
+  },
+  "attack": {
+    "file": "{skin}-attack.png",
+    "tile": 128,
+    "origin": 32,
+    "frames": 6,
+    "rows": [
+      "north",
+      "west",
+      "south",
+      "east"
+    ]
+  }
+}

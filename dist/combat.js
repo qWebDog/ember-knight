@@ -19,7 +19,8 @@
   function createBattle(options = {}) {
     const config = {
       name:typeof options.heroName === 'string' && options.heroName.trim() ? options.heroName.trim() : 'Странник',
-      maxHp:positive(options.heroMaxHp, 200), damage:positive(options.heroDamage, 12)
+      maxHp:positive(options.heroMaxHp, 200), damage:positive(options.heroDamage, 12),
+      projectile:['melee','arrow','magic'].includes(options.heroProjectile) ? options.heroProjectile : 'melee'
     };
     let phase, elapsed, remainder, hero, enemies, nextHero, nextEnemies, reward;
     function getState() {
@@ -74,7 +75,7 @@
         // Tie policy: hero first; then living enemies in orc/archer/mage order.
         if (nextHero === next) {
           const target = enemies.find(enemy => enemy.hp > 0);
-          hit('hero', target, Math.max(1, hero.damage - target.armor), 'melee');
+          hit('hero', target, Math.max(1, hero.damage - target.armor), config.projectile);
           nextHero += HERO_INTERVAL;
           if (enemies.every(enemy => enemy.hp === 0)) { end('victory'); break; }
         }

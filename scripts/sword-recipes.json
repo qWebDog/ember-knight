@@ -1,0 +1,902 @@
+{
+  "militia": {
+    "id": "militia",
+    "name": "Ополченец",
+    "description": "Льняная рубаха, коричневые штаны, кожаный пояс и простые сапоги.",
+    "bodyType": "male",
+    "revision": "86a3719ee4a7e2e9fb27c7c152e29a741d3e930a",
+    "repository": "https://github.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator",
+    "license": "CC-BY-SA 3.0",
+    "layers": [
+      {
+        "id": "pants",
+        "zPos": 20,
+        "definition": "sheet_definitions/legs/pants/legs_pants.json",
+        "sources": {
+          "walk": "spritesheets/legs/pants/male/walk.png",
+          "slash": "spritesheets/legs/pants/male/slash.png"
+        },
+        "recolor": {
+          "material": "cloth",
+          "base": "white",
+          "palette": "brown",
+          "baseColors": [
+            "#281820",
+            "#4D4A5D",
+            "#958080",
+            "#C4B59F",
+            "#E5E6C7",
+            "#FFFFFF"
+          ],
+          "targetColors": [
+            "#1d131e",
+            "#411E05",
+            "#4B2B13",
+            "#62351C",
+            "#744B30",
+            "#996B4A"
+          ],
+          "paletteDefinition": "palette_definitions/cloth/cloth_ulpc.json"
+        },
+        "variant": null,
+        "sourceURLs": {
+          "walk": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/legs/pants/male/walk.png",
+          "slash": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/legs/pants/male/slash.png"
+        },
+        "sha256": {
+          "walk": "2de5a3247743ffa37febdf3464cc0a83e79f64d1028aed410832ee29bea850b6",
+          "slash": "0c324cb85970493872400e1e161ef8a246fda5013967253b6933cea909674c9a"
+        }
+      },
+      {
+        "id": "boots",
+        "zPos": 25,
+        "definition": "sheet_definitions/feet/boots/feet_boots_basic.json",
+        "sources": {
+          "walk": "spritesheets/feet/boots/basic/male/walk.png",
+          "slash": "spritesheets/feet/boots/basic/male/slash.png"
+        },
+        "recolor": {
+          "material": "cloth",
+          "base": "white",
+          "palette": "leather",
+          "baseColors": [
+            "#281820",
+            "#4D4A5D",
+            "#958080",
+            "#C4B59F",
+            "#E5E6C7",
+            "#FFFFFF"
+          ],
+          "targetColors": [
+            "#2b1c1d",
+            "#311210",
+            "#4B2B13",
+            "#704325",
+            "#75502D",
+            "#9A6F37"
+          ],
+          "paletteDefinition": "palette_definitions/cloth/cloth_ulpc.json"
+        },
+        "variant": null,
+        "sourceURLs": {
+          "walk": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/feet/boots/basic/male/walk.png",
+          "slash": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/feet/boots/basic/male/slash.png"
+        },
+        "sha256": {
+          "walk": "13521e96fe8c6033c54622a8137cc1a05964a9db3bd1f5a115028951e5cecf18",
+          "slash": "ac90bfe3e272ac6c404c43f249006421e823a44ae747efc9ac01a53ad06abeef"
+        }
+      },
+      {
+        "id": "shirt",
+        "zPos": 35,
+        "definition": "sheet_definitions/torso/shirts/longsleeve/torso_clothes_longsleeve.json",
+        "sources": {
+          "walk": "spritesheets/torso/clothes/longsleeve/longsleeve/male/walk.png",
+          "slash": "spritesheets/torso/clothes/longsleeve/longsleeve/male/slash.png"
+        },
+        "recolor": {
+          "material": "cloth",
+          "base": "white",
+          "palette": "tan",
+          "baseColors": [
+            "#281820",
+            "#4D4A5D",
+            "#958080",
+            "#C4B59F",
+            "#E5E6C7",
+            "#FFFFFF"
+          ],
+          "targetColors": [
+            "#3e2613",
+            "#684415",
+            "#986A20",
+            "#B78C41",
+            "#B7996A",
+            "#CFC587"
+          ],
+          "paletteDefinition": "palette_definitions/cloth/cloth_ulpc.json"
+        },
+        "variant": null,
+        "sourceURLs": {
+          "walk": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/torso/clothes/longsleeve/longsleeve/male/walk.png",
+          "slash": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/torso/clothes/longsleeve/longsleeve/male/slash.png"
+        },
+        "sha256": {
+          "walk": "8b1c79d535d7a233371c9398ca51b196aa8fdf06117bd0eafd7fbcbf438d711b",
+          "slash": "2a2a872196d4636f00bdda8ef642a2acac0c463f1b29c228f97696d3ffff08e3"
+        }
+      },
+      {
+        "id": "belt",
+        "zPos": 70,
+        "definition": "sheet_definitions/torso/waist/belt_leather.json",
+        "sources": {
+          "walk": "spritesheets/torso/waist/belt_leather/male/walk/brown.png",
+          "slash": "spritesheets/torso/waist/belt_leather/male/slash/brown.png"
+        },
+        "recolor": null,
+        "variant": "brown",
+        "sourceURLs": {
+          "walk": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/torso/waist/belt_leather/male/walk/brown.png",
+          "slash": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/torso/waist/belt_leather/male/slash/brown.png"
+        },
+        "sha256": {
+          "walk": "21c697fcd697a9e60ba634498ea9eefac4cdc2a25706b4352100a7f933113c7c",
+          "slash": "322945095ebaaaa1205dfaa5a321fc2ebee4f49590d80453b6439519433d6c2a"
+        }
+      }
+    ],
+    "credits": [
+      {
+        "file": "legs/pants/male",
+        "notes": "original male pants by wulax, recolors and edits to v3 base by bluecarrot16, climb/jump/run/sit/emotes/revised combat by JaidynReiman based on ElizaWy's LPC Revised",
+        "authors": [
+          "bluecarrot16",
+          "JaidynReiman",
+          "ElizaWy",
+          "Matthew Krohn (makrohn)",
+          "Johannes Sjölund (wulax)",
+          "Stephen Challener (Redshrike)"
+        ],
+        "licenses": [
+          "OGA-BY 3.0",
+          "GPL 3.0",
+          "CC-BY-SA 3.0"
+        ],
+        "urls": [
+          "https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles",
+          "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites",
+          "https://opengameart.org/content/lpc-expanded-pants"
+        ],
+        "definition": "sheet_definitions/legs/pants/legs_pants.json"
+      },
+      {
+        "file": "feet/boots/basic",
+        "notes": "original by Nila122, edited for male and v3 bases by bluecarrot16, Jump/Sit/Emote/Run/Revised Combat by JaidynReiman",
+        "authors": [
+          "JaidynReiman",
+          "bluecarrot16",
+          "Nila122"
+        ],
+        "licenses": [
+          "OGA-BY 3.0",
+          "CC-BY-SA 3.0",
+          "GPL 2.0",
+          "GPL 3.0"
+        ],
+        "urls": [
+          "https://opengameart.org/content/lpc-clothes-and-hair",
+          "https://opengameart.org/content/lpc-expanded-socks-shoes"
+        ],
+        "definition": "sheet_definitions/feet/boots/feet_boots_basic.json"
+      },
+      {
+        "file": "torso/clothes/longsleeve/longsleeve/male",
+        "notes": "original by wulax; tweaks and further recolors by bluecarrot16; cleanup and climb/jump/run/sit/emote/revised combat adapted from LPC Revised by JaidynReiman",
+        "authors": [
+          "JaidynReiman",
+          "Johannes Sjölund (wulax)"
+        ],
+        "licenses": [
+          "OGA-BY 3.0",
+          "CC-BY-SA 3.0",
+          "GPL 3.0"
+        ],
+        "urls": [
+          "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites",
+          "http://opengameart.org/content/lpc-clothing-updates",
+          "https://opengameart.org/content/lpc-revised-character-basics",
+          "https://github.com/ElizaWy/LPC/tree/main/Characters/Clothing",
+          "https://opengameart.org/content/lpc-expanded-sit-run-jump-more",
+          "https://opengameart.org/content/lpc-expanded-simple-shirts"
+        ],
+        "definition": "sheet_definitions/torso/shirts/longsleeve/torso_clothes_longsleeve.json"
+      },
+      {
+        "file": "torso/waist/belt_leather",
+        "notes": "",
+        "authors": [
+          "bluecarrot16",
+          "Johannes Sjölund (wulax)",
+          "Matthew Krohn (makrohn)"
+        ],
+        "licenses": [
+          "OGA-BY 3.0",
+          "CC-BY-SA 3.0",
+          "GPL 3.0"
+        ],
+        "urls": [
+          "https://opengameart.org/content/lpc-combat-armor-for-women",
+          "https://opengameart.org/content/lpc-pirates"
+        ],
+        "definition": "sheet_definitions/torso/waist/belt_leather.json"
+      }
+    ],
+    "notes": [
+      "All layers are native64x64 cells: WALK576x256(9frames), SLASH384x256(6frames), rows north/west/south/east.",
+      "Exact ULPC palettes only. Cloth sources are white; metal sources steel. Belt and red tabard are official precolored variant PNGs.",
+      "No custom pixels or shifted layer order. Chainmail z50 renders under tabard z55; plate/leather z60 would hide the tabard."
+    ]
+  },
+  "watchman": {
+    "id": "watchman",
+    "name": "Дозорный",
+    "description": "Кольчужная рубаха, серо-синие рукава, тёмные штаны и стальной открытый шлем.",
+    "bodyType": "male",
+    "revision": "86a3719ee4a7e2e9fb27c7c152e29a741d3e930a",
+    "repository": "https://github.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator",
+    "license": "CC-BY-SA 3.0",
+    "layers": [
+      {
+        "id": "pants",
+        "zPos": 20,
+        "definition": "sheet_definitions/legs/pants/legs_pants.json",
+        "sources": {
+          "walk": "spritesheets/legs/pants/male/walk.png",
+          "slash": "spritesheets/legs/pants/male/slash.png"
+        },
+        "recolor": {
+          "material": "cloth",
+          "base": "white",
+          "palette": "charcoal",
+          "baseColors": [
+            "#281820",
+            "#4D4A5D",
+            "#958080",
+            "#C4B59F",
+            "#E5E6C7",
+            "#FFFFFF"
+          ],
+          "targetColors": [
+            "#000000",
+            "#130D14",
+            "#1C2222",
+            "#2A3034",
+            "#4A5057",
+            "#6E7675"
+          ],
+          "paletteDefinition": "palette_definitions/cloth/cloth_ulpc.json"
+        },
+        "variant": null,
+        "sourceURLs": {
+          "walk": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/legs/pants/male/walk.png",
+          "slash": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/legs/pants/male/slash.png"
+        },
+        "sha256": {
+          "walk": "2de5a3247743ffa37febdf3464cc0a83e79f64d1028aed410832ee29bea850b6",
+          "slash": "0c324cb85970493872400e1e161ef8a246fda5013967253b6933cea909674c9a"
+        }
+      },
+      {
+        "id": "boots",
+        "zPos": 25,
+        "definition": "sheet_definitions/feet/boots/feet_boots_basic.json",
+        "sources": {
+          "walk": "spritesheets/feet/boots/basic/male/walk.png",
+          "slash": "spritesheets/feet/boots/basic/male/slash.png"
+        },
+        "recolor": {
+          "material": "cloth",
+          "base": "white",
+          "palette": "brown",
+          "baseColors": [
+            "#281820",
+            "#4D4A5D",
+            "#958080",
+            "#C4B59F",
+            "#E5E6C7",
+            "#FFFFFF"
+          ],
+          "targetColors": [
+            "#1d131e",
+            "#411E05",
+            "#4B2B13",
+            "#62351C",
+            "#744B30",
+            "#996B4A"
+          ],
+          "paletteDefinition": "palette_definitions/cloth/cloth_ulpc.json"
+        },
+        "variant": null,
+        "sourceURLs": {
+          "walk": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/feet/boots/basic/male/walk.png",
+          "slash": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/feet/boots/basic/male/slash.png"
+        },
+        "sha256": {
+          "walk": "13521e96fe8c6033c54622a8137cc1a05964a9db3bd1f5a115028951e5cecf18",
+          "slash": "ac90bfe3e272ac6c404c43f249006421e823a44ae747efc9ac01a53ad06abeef"
+        }
+      },
+      {
+        "id": "shirt",
+        "zPos": 35,
+        "definition": "sheet_definitions/torso/shirts/longsleeve/torso_clothes_longsleeve.json",
+        "sources": {
+          "walk": "spritesheets/torso/clothes/longsleeve/longsleeve/male/walk.png",
+          "slash": "spritesheets/torso/clothes/longsleeve/longsleeve/male/slash.png"
+        },
+        "recolor": {
+          "material": "cloth",
+          "base": "white",
+          "palette": "bluegray",
+          "baseColors": [
+            "#281820",
+            "#4D4A5D",
+            "#958080",
+            "#C4B59F",
+            "#E5E6C7",
+            "#FFFFFF"
+          ],
+          "targetColors": [
+            "#11150b",
+            "#0B2B28",
+            "#2E403A",
+            "#315B49",
+            "#557E85",
+            "#79979D"
+          ],
+          "paletteDefinition": "palette_definitions/cloth/cloth_ulpc.json"
+        },
+        "variant": null,
+        "sourceURLs": {
+          "walk": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/torso/clothes/longsleeve/longsleeve/male/walk.png",
+          "slash": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/torso/clothes/longsleeve/longsleeve/male/slash.png"
+        },
+        "sha256": {
+          "walk": "8b1c79d535d7a233371c9398ca51b196aa8fdf06117bd0eafd7fbcbf438d711b",
+          "slash": "2a2a872196d4636f00bdda8ef642a2acac0c463f1b29c228f97696d3ffff08e3"
+        }
+      },
+      {
+        "id": "chain",
+        "zPos": 50,
+        "definition": "sheet_definitions/torso/torso_chainmail.json",
+        "sources": {
+          "walk": "spritesheets/torso/chainmail/male/walk.png",
+          "slash": "spritesheets/torso/chainmail/male/slash.png"
+        },
+        "recolor": {
+          "material": "metal",
+          "base": "steel",
+          "palette": "steel",
+          "baseColors": [
+            "#1D131E",
+            "#4D4A5D",
+            "#726B7E",
+            "#867E7F",
+            "#C4B59F",
+            "#FFFFFF"
+          ],
+          "targetColors": [
+            "#1D131E",
+            "#4D4A5D",
+            "#726B7E",
+            "#867E7F",
+            "#C4B59F",
+            "#FFFFFF"
+          ],
+          "paletteDefinition": "palette_definitions/metal/metal_ulpc.json"
+        },
+        "variant": null,
+        "sourceURLs": {
+          "walk": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/torso/chainmail/male/walk.png",
+          "slash": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/torso/chainmail/male/slash.png"
+        },
+        "sha256": {
+          "walk": "99a223adc3065e478415a9adc42e43f2c09a21ddc227fdc414fd45e5603e41e0",
+          "slash": "32cf016cfb33d7db1b74ab7851f6d3bc0dfcf3c8c394c99860480752e82ebed1"
+        }
+      },
+      {
+        "id": "helmet",
+        "zPos": 130,
+        "definition": "sheet_definitions/headwear/helmets/helmets/hat_helmet_bascinet_round.json",
+        "sources": {
+          "walk": "spritesheets/hat/helmet/bascinet_round/adult/walk.png",
+          "slash": "spritesheets/hat/helmet/bascinet_round/adult/slash.png"
+        },
+        "recolor": {
+          "material": "metal",
+          "base": "steel",
+          "palette": "steel",
+          "baseColors": [
+            "#1D131E",
+            "#4D4A5D",
+            "#726B7E",
+            "#867E7F",
+            "#C4B59F",
+            "#FFFFFF"
+          ],
+          "targetColors": [
+            "#1D131E",
+            "#4D4A5D",
+            "#726B7E",
+            "#867E7F",
+            "#C4B59F",
+            "#FFFFFF"
+          ],
+          "paletteDefinition": "palette_definitions/metal/metal_ulpc.json"
+        },
+        "variant": null,
+        "sourceURLs": {
+          "walk": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/hat/helmet/bascinet_round/adult/walk.png",
+          "slash": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/hat/helmet/bascinet_round/adult/slash.png"
+        },
+        "sha256": {
+          "walk": "ee6bbdd3abec95572bd888141237e3d339e553de018bf3e63a44ae3a6a7b2430",
+          "slash": "7515c5e4393a490cdc7b7bf5922afe86c5bc888c69620b09ea8f1fc262556789"
+        }
+      }
+    ],
+    "credits": [
+      {
+        "file": "legs/pants/male",
+        "notes": "original male pants by wulax, recolors and edits to v3 base by bluecarrot16, climb/jump/run/sit/emotes/revised combat by JaidynReiman based on ElizaWy's LPC Revised",
+        "authors": [
+          "bluecarrot16",
+          "JaidynReiman",
+          "ElizaWy",
+          "Matthew Krohn (makrohn)",
+          "Johannes Sjölund (wulax)",
+          "Stephen Challener (Redshrike)"
+        ],
+        "licenses": [
+          "OGA-BY 3.0",
+          "GPL 3.0",
+          "CC-BY-SA 3.0"
+        ],
+        "urls": [
+          "https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles",
+          "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites",
+          "https://opengameart.org/content/lpc-expanded-pants"
+        ],
+        "definition": "sheet_definitions/legs/pants/legs_pants.json"
+      },
+      {
+        "file": "feet/boots/basic",
+        "notes": "original by Nila122, edited for male and v3 bases by bluecarrot16, Jump/Sit/Emote/Run/Revised Combat by JaidynReiman",
+        "authors": [
+          "JaidynReiman",
+          "bluecarrot16",
+          "Nila122"
+        ],
+        "licenses": [
+          "OGA-BY 3.0",
+          "CC-BY-SA 3.0",
+          "GPL 2.0",
+          "GPL 3.0"
+        ],
+        "urls": [
+          "https://opengameart.org/content/lpc-clothes-and-hair",
+          "https://opengameart.org/content/lpc-expanded-socks-shoes"
+        ],
+        "definition": "sheet_definitions/feet/boots/feet_boots_basic.json"
+      },
+      {
+        "file": "torso/clothes/longsleeve/longsleeve/male",
+        "notes": "original by wulax; tweaks and further recolors by bluecarrot16; cleanup and climb/jump/run/sit/emote/revised combat adapted from LPC Revised by JaidynReiman",
+        "authors": [
+          "JaidynReiman",
+          "Johannes Sjölund (wulax)"
+        ],
+        "licenses": [
+          "OGA-BY 3.0",
+          "CC-BY-SA 3.0",
+          "GPL 3.0"
+        ],
+        "urls": [
+          "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites",
+          "http://opengameart.org/content/lpc-clothing-updates",
+          "https://opengameart.org/content/lpc-revised-character-basics",
+          "https://github.com/ElizaWy/LPC/tree/main/Characters/Clothing",
+          "https://opengameart.org/content/lpc-expanded-sit-run-jump-more",
+          "https://opengameart.org/content/lpc-expanded-simple-shirts"
+        ],
+        "definition": "sheet_definitions/torso/shirts/longsleeve/torso_clothes_longsleeve.json"
+      },
+      {
+        "file": "torso/chainmail",
+        "notes": "minor edits by bluecarrot16, reduced colors by Napsio, adjusted Male colors and Idle/Sit/Emote/Climb/Run by JaidynReiman",
+        "authors": [
+          "Johannes Sjölund (wulax)",
+          "Napsio (Vitruvian Studio)",
+          "JaidynReiman"
+        ],
+        "licenses": [
+          "OGA-BY 3.0",
+          "CC-BY-SA 3.0",
+          "GPL 3.0"
+        ],
+        "urls": [
+          "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites"
+        ],
+        "definition": "sheet_definitions/torso/torso_chainmail.json"
+      },
+      {
+        "file": "hat/helmet/bascinet_round",
+        "notes": "Original Bascinet Round by ElizaWy/Bluecarrot16, split from visor and base Bascinet by JaidynReiman",
+        "authors": [
+          "bluecarrot16",
+          "JaidynReiman",
+          "ElizaWy",
+          "Sander Frenken (castelonia)"
+        ],
+        "licenses": [
+          "OGA-BY 3.0",
+          "CC-BY-SA 4.0",
+          "CC-BY-SA 3.0",
+          "GPL 3.0"
+        ],
+        "urls": [
+          "https://opengameart.org/content/lpc-realistic-helmet-pack",
+          "https://opengameart.org/content/lpc-helmets-mega-pack",
+          "https://opengameart.org/content/lpc-expanded-hats-facial-helmets"
+        ],
+        "definition": "sheet_definitions/headwear/helmets/helmets/hat_helmet_bascinet_round.json"
+      }
+    ],
+    "notes": [
+      "All layers are native64x64 cells: WALK576x256(9frames), SLASH384x256(6frames), rows north/west/south/east.",
+      "Exact ULPC palettes only. Cloth sources are white; metal sources steel. Belt and red tabard are official precolored variant PNGs.",
+      "No custom pixels or shifted layer order. Chainmail z50 renders under tabard z55; plate/leather z60 would hide the tabard."
+    ]
+  },
+  "guard": {
+    "id": "guard",
+    "name": "Страж",
+    "description": "Красный табард поверх лёгкой кольчуги, кожаный пояс, тёмные штаны и сапоги.",
+    "bodyType": "male",
+    "revision": "86a3719ee4a7e2e9fb27c7c152e29a741d3e930a",
+    "repository": "https://github.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator",
+    "license": "CC-BY-SA 3.0",
+    "layers": [
+      {
+        "id": "pants",
+        "zPos": 20,
+        "definition": "sheet_definitions/legs/pants/legs_pants.json",
+        "sources": {
+          "walk": "spritesheets/legs/pants/male/walk.png",
+          "slash": "spritesheets/legs/pants/male/slash.png"
+        },
+        "recolor": {
+          "material": "cloth",
+          "base": "white",
+          "palette": "charcoal",
+          "baseColors": [
+            "#281820",
+            "#4D4A5D",
+            "#958080",
+            "#C4B59F",
+            "#E5E6C7",
+            "#FFFFFF"
+          ],
+          "targetColors": [
+            "#000000",
+            "#130D14",
+            "#1C2222",
+            "#2A3034",
+            "#4A5057",
+            "#6E7675"
+          ],
+          "paletteDefinition": "palette_definitions/cloth/cloth_ulpc.json"
+        },
+        "variant": null,
+        "sourceURLs": {
+          "walk": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/legs/pants/male/walk.png",
+          "slash": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/legs/pants/male/slash.png"
+        },
+        "sha256": {
+          "walk": "2de5a3247743ffa37febdf3464cc0a83e79f64d1028aed410832ee29bea850b6",
+          "slash": "0c324cb85970493872400e1e161ef8a246fda5013967253b6933cea909674c9a"
+        }
+      },
+      {
+        "id": "boots",
+        "zPos": 25,
+        "definition": "sheet_definitions/feet/boots/feet_boots_basic.json",
+        "sources": {
+          "walk": "spritesheets/feet/boots/basic/male/walk.png",
+          "slash": "spritesheets/feet/boots/basic/male/slash.png"
+        },
+        "recolor": {
+          "material": "cloth",
+          "base": "white",
+          "palette": "leather",
+          "baseColors": [
+            "#281820",
+            "#4D4A5D",
+            "#958080",
+            "#C4B59F",
+            "#E5E6C7",
+            "#FFFFFF"
+          ],
+          "targetColors": [
+            "#2b1c1d",
+            "#311210",
+            "#4B2B13",
+            "#704325",
+            "#75502D",
+            "#9A6F37"
+          ],
+          "paletteDefinition": "palette_definitions/cloth/cloth_ulpc.json"
+        },
+        "variant": null,
+        "sourceURLs": {
+          "walk": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/feet/boots/basic/male/walk.png",
+          "slash": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/feet/boots/basic/male/slash.png"
+        },
+        "sha256": {
+          "walk": "13521e96fe8c6033c54622a8137cc1a05964a9db3bd1f5a115028951e5cecf18",
+          "slash": "ac90bfe3e272ac6c404c43f249006421e823a44ae747efc9ac01a53ad06abeef"
+        }
+      },
+      {
+        "id": "shirt",
+        "zPos": 35,
+        "definition": "sheet_definitions/torso/shirts/longsleeve/torso_clothes_longsleeve.json",
+        "sources": {
+          "walk": "spritesheets/torso/clothes/longsleeve/longsleeve/male/walk.png",
+          "slash": "spritesheets/torso/clothes/longsleeve/longsleeve/male/slash.png"
+        },
+        "recolor": {
+          "material": "cloth",
+          "base": "white",
+          "palette": "gray",
+          "baseColors": [
+            "#281820",
+            "#4D4A5D",
+            "#958080",
+            "#C4B59F",
+            "#E5E6C7",
+            "#FFFFFF"
+          ],
+          "targetColors": [
+            "#0e0e18",
+            "#201E2B",
+            "#373340",
+            "#585561",
+            "#797580",
+            "#A2A0A4"
+          ],
+          "paletteDefinition": "palette_definitions/cloth/cloth_ulpc.json"
+        },
+        "variant": null,
+        "sourceURLs": {
+          "walk": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/torso/clothes/longsleeve/longsleeve/male/walk.png",
+          "slash": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/torso/clothes/longsleeve/longsleeve/male/slash.png"
+        },
+        "sha256": {
+          "walk": "8b1c79d535d7a233371c9398ca51b196aa8fdf06117bd0eafd7fbcbf438d711b",
+          "slash": "2a2a872196d4636f00bdda8ef642a2acac0c463f1b29c228f97696d3ffff08e3"
+        }
+      },
+      {
+        "id": "chain",
+        "zPos": 50,
+        "definition": "sheet_definitions/torso/torso_chainmail.json",
+        "sources": {
+          "walk": "spritesheets/torso/chainmail/male/walk.png",
+          "slash": "spritesheets/torso/chainmail/male/slash.png"
+        },
+        "recolor": {
+          "material": "metal",
+          "base": "steel",
+          "palette": "steel",
+          "baseColors": [
+            "#1D131E",
+            "#4D4A5D",
+            "#726B7E",
+            "#867E7F",
+            "#C4B59F",
+            "#FFFFFF"
+          ],
+          "targetColors": [
+            "#1D131E",
+            "#4D4A5D",
+            "#726B7E",
+            "#867E7F",
+            "#C4B59F",
+            "#FFFFFF"
+          ],
+          "paletteDefinition": "palette_definitions/metal/metal_ulpc.json"
+        },
+        "variant": null,
+        "sourceURLs": {
+          "walk": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/torso/chainmail/male/walk.png",
+          "slash": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/torso/chainmail/male/slash.png"
+        },
+        "sha256": {
+          "walk": "99a223adc3065e478415a9adc42e43f2c09a21ddc227fdc414fd45e5603e41e0",
+          "slash": "32cf016cfb33d7db1b74ab7851f6d3bc0dfcf3c8c394c99860480752e82ebed1"
+        }
+      },
+      {
+        "id": "tabard",
+        "zPos": 55,
+        "definition": "sheet_definitions/torso/jacket/torso_jacket_tabard.json",
+        "sources": {
+          "walk": "spritesheets/torso/jacket/tabard/male/walk/red.png",
+          "slash": "spritesheets/torso/jacket/tabard/male/slash/red.png"
+        },
+        "recolor": null,
+        "variant": "red",
+        "sourceURLs": {
+          "walk": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/torso/jacket/tabard/male/walk/red.png",
+          "slash": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/torso/jacket/tabard/male/slash/red.png"
+        },
+        "sha256": {
+          "walk": "164328aabcd288f2cfbd06805fa11235db20f1cf0a78bcaec48fc5382f40c132",
+          "slash": "040ba69270531f64863e6159181c26b9402e3ec3402d9f6f95e37d2f68232454"
+        }
+      },
+      {
+        "id": "belt",
+        "zPos": 70,
+        "definition": "sheet_definitions/torso/waist/belt_leather.json",
+        "sources": {
+          "walk": "spritesheets/torso/waist/belt_leather/male/walk/brown.png",
+          "slash": "spritesheets/torso/waist/belt_leather/male/slash/brown.png"
+        },
+        "recolor": null,
+        "variant": "brown",
+        "sourceURLs": {
+          "walk": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/torso/waist/belt_leather/male/walk/brown.png",
+          "slash": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/torso/waist/belt_leather/male/slash/brown.png"
+        },
+        "sha256": {
+          "walk": "21c697fcd697a9e60ba634498ea9eefac4cdc2a25706b4352100a7f933113c7c",
+          "slash": "322945095ebaaaa1205dfaa5a321fc2ebee4f49590d80453b6439519433d6c2a"
+        }
+      }
+    ],
+    "credits": [
+      {
+        "file": "legs/pants/male",
+        "notes": "original male pants by wulax, recolors and edits to v3 base by bluecarrot16, climb/jump/run/sit/emotes/revised combat by JaidynReiman based on ElizaWy's LPC Revised",
+        "authors": [
+          "bluecarrot16",
+          "JaidynReiman",
+          "ElizaWy",
+          "Matthew Krohn (makrohn)",
+          "Johannes Sjölund (wulax)",
+          "Stephen Challener (Redshrike)"
+        ],
+        "licenses": [
+          "OGA-BY 3.0",
+          "GPL 3.0",
+          "CC-BY-SA 3.0"
+        ],
+        "urls": [
+          "https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles",
+          "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites",
+          "https://opengameart.org/content/lpc-expanded-pants"
+        ],
+        "definition": "sheet_definitions/legs/pants/legs_pants.json"
+      },
+      {
+        "file": "feet/boots/basic",
+        "notes": "original by Nila122, edited for male and v3 bases by bluecarrot16, Jump/Sit/Emote/Run/Revised Combat by JaidynReiman",
+        "authors": [
+          "JaidynReiman",
+          "bluecarrot16",
+          "Nila122"
+        ],
+        "licenses": [
+          "OGA-BY 3.0",
+          "CC-BY-SA 3.0",
+          "GPL 2.0",
+          "GPL 3.0"
+        ],
+        "urls": [
+          "https://opengameart.org/content/lpc-clothes-and-hair",
+          "https://opengameart.org/content/lpc-expanded-socks-shoes"
+        ],
+        "definition": "sheet_definitions/feet/boots/feet_boots_basic.json"
+      },
+      {
+        "file": "torso/clothes/longsleeve/longsleeve/male",
+        "notes": "original by wulax; tweaks and further recolors by bluecarrot16; cleanup and climb/jump/run/sit/emote/revised combat adapted from LPC Revised by JaidynReiman",
+        "authors": [
+          "JaidynReiman",
+          "Johannes Sjölund (wulax)"
+        ],
+        "licenses": [
+          "OGA-BY 3.0",
+          "CC-BY-SA 3.0",
+          "GPL 3.0"
+        ],
+        "urls": [
+          "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites",
+          "http://opengameart.org/content/lpc-clothing-updates",
+          "https://opengameart.org/content/lpc-revised-character-basics",
+          "https://github.com/ElizaWy/LPC/tree/main/Characters/Clothing",
+          "https://opengameart.org/content/lpc-expanded-sit-run-jump-more",
+          "https://opengameart.org/content/lpc-expanded-simple-shirts"
+        ],
+        "definition": "sheet_definitions/torso/shirts/longsleeve/torso_clothes_longsleeve.json"
+      },
+      {
+        "file": "torso/chainmail",
+        "notes": "minor edits by bluecarrot16, reduced colors by Napsio, adjusted Male colors and Idle/Sit/Emote/Climb/Run by JaidynReiman",
+        "authors": [
+          "Johannes Sjölund (wulax)",
+          "Napsio (Vitruvian Studio)",
+          "JaidynReiman"
+        ],
+        "licenses": [
+          "OGA-BY 3.0",
+          "CC-BY-SA 3.0",
+          "GPL 3.0"
+        ],
+        "urls": [
+          "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites"
+        ],
+        "definition": "sheet_definitions/torso/torso_chainmail.json"
+      },
+      {
+        "file": "torso/jacket/tabard",
+        "notes": "original by wulax, edited to v3 base by bluecarrot16",
+        "authors": [
+          "bluecarrot16",
+          "Johannes Sjölund (wulax)"
+        ],
+        "licenses": [
+          "OGA-BY 3.0",
+          "CC-BY-SA 3.0",
+          "GPL 3.0"
+        ],
+        "urls": [
+          "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites",
+          "http://opengameart.org/content/lpc-clothing-updates"
+        ],
+        "definition": "sheet_definitions/torso/jacket/torso_jacket_tabard.json"
+      },
+      {
+        "file": "torso/waist/belt_leather",
+        "notes": "",
+        "authors": [
+          "bluecarrot16",
+          "Johannes Sjölund (wulax)",
+          "Matthew Krohn (makrohn)"
+        ],
+        "licenses": [
+          "OGA-BY 3.0",
+          "CC-BY-SA 3.0",
+          "GPL 3.0"
+        ],
+        "urls": [
+          "https://opengameart.org/content/lpc-combat-armor-for-women",
+          "https://opengameart.org/content/lpc-pirates"
+        ],
+        "definition": "sheet_definitions/torso/waist/belt_leather.json"
+      }
+    ],
+    "notes": [
+      "All layers are native64x64 cells: WALK576x256(9frames), SLASH384x256(6frames), rows north/west/south/east.",
+      "Exact ULPC palettes only. Cloth sources are white; metal sources steel. Belt and red tabard are official precolored variant PNGs.",
+      "No custom pixels or shifted layer order. Chainmail z50 renders under tabard z55; plate/leather z60 would hide the tabard."
+    ]
+  }
+}
