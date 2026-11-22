@@ -40,4 +40,16 @@ dialog{width:min(380px,calc(100% - 32px));max-height:calc(var(--app-height) - 32
 .enemy .fighter-shadow{bottom:0}
 .player .healthbar,.enemy .enemy-health{top:8%;height:4px;padding:0;left:24%;right:24%}
 .enemy-one .enemy-health{top:20%}
+/* Wave actors share one ground line; only the controller's active wave is shown. */
+.fighter[hidden]{display:none!important}
+.wave-archer{transform:translateX(-50%);bottom:19px;z-index:2}
+.wave-archer[data-fighter="archer1"]{left:62%}
+.wave-archer[data-fighter="archer2"]{left:61%}
+.wave-archer[data-fighter="archer3"]{left:80%}
+.enemy-one{left:65%;bottom:19px}
+.fighter{transition:opacity .12s ease}
+.battlefield.is-between-waves .fighter{opacity:0;pointer-events:none}
+.battle-controls{z-index:11}
+.damage-number.coin-number{color:#f3cf79;font-size:13px;white-space:nowrap;text-shadow:0 2px 0 #132117,0 0 6px #b5813033}
+@media(orientation:landscape) and (max-height:600px){.wave-archer,.enemy-one{bottom:14px}}
 .enemy.is-target:after{height:5px;bottom:0}

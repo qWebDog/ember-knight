@@ -1,9 +1,29 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const {createBattle} = require('../dist/combat.js');
+const {createBattle:createDefaultBattle} = require('../dist/combat.js');
 
-test('normal unarmed battle wins in 25–35s, with about 30% health and one 25-gold reward', () => {
+// Focused mechanic regressions retain the original three-enemy party as a
+// test-local encounter fixture. Production default-wave behavior is tested below.
+const focusedEncounter = [{id:'orc',type:'orc'},{id:'archer',type:'archer'},{id:'mage',type:'mage'}];
+function encounterFixture(waves,{slowFlight=false}={}) {
+  const fs=require('node:fs'),vm=require('node:vm');
+  let source=fs.readFileSync(require.resolve('../dist/combat.js'),'utf8');
+  const declaration=/  const waveTemplates = \[\n[\s\S]*?\n  \];/;
+  assert.ok(declaration.test(source));
+  source=source.replace(declaration,'  const waveTemplates = '+JSON.stringify(waves)+';');
+  if(slowFlight){const anchor='flightDuration:.48';assert.ok(source.includes(anchor));source=source.replace(anchor,'flightDuration:2.4');}
+  const context={module:{exports:{}}};vm.runInNewContext(source,context,{filename:'combat-encounter-fixture.js'});
+  const create=context.module.exports.createBattle;
+  // Return ordinary host objects so assertions compare data, not VM prototypes.
+  return options=>{
+    const battle=create(options),snapshot=()=>JSON.parse(JSON.stringify(battle.getState()));
+    return {getState:snapshot,get state(){return snapshot();},advance:(...args)=>JSON.parse(JSON.stringify(battle.advance(...args))),pause:()=>JSON.parse(JSON.stringify(battle.pause())),resume:()=>JSON.parse(JSON.stringify(battle.resume())),restart:()=>JSON.parse(JSON.stringify(battle.restart()))};
+  };
+}
+const createBattle=encounterFixture([focusedEncounter]);
+
+test('focused unarmed encounter retains its timing and grants five gold per kill with no terminal bonus', () => {
   const battle = createBattle();
   const events = battle.advance(100);
   const state = battle.getState();
@@ -12,8 +32,8 @@ test('normal unarmed battle wins in 25–35s, with about 30% health and one 25-g
   assert.ok(state.hero.hp / state.hero.maxHp >= .25 && state.hero.hp / state.hero.maxHp <= .35);
   assert.equal(state.defeatedCount, 3);
   assert.equal(state.targetId, null);
-  assert.equal(state.reward, 25);
-  assert.deepEqual(events.filter(event => event.type === 'end'), [{type:'end', result:'victory', reward:25, at:state.elapsed}]);
+  assert.equal(state.reward, 15);
+  assert.deepEqual(events.filter(event => event.type === 'end'), [{type:'end', result:'victory', reward:0,totalReward:15,at:state.elapsed}]);
   assert.ok(events.filter(event => event.type === 'attack').every(event => event.at >= 1 && event.hp >= 0));
   for (const [id, projectile] of [['orc','melee'],['archer','arrow'],['mage','magic']]) {
     assert.ok(events.some(event => event.sourceId === id && event.projectile === projectile));
@@ -93,7 +113,7 @@ test('oversized, fixed-step and irregular-step advances produce identical events
 
 
 test('starter weapons keep their projectile and reward, with magic damage delayed until impact',()=>{
- for(const projectile of ['arrow','magic','melee']){const b=createBattle({heroProjectile:projectile});const events=b.advance(100);assert.ok(events.filter(e=>e.sourceId==='hero').every(e=>e.projectile===projectile));assert.equal(b.state.hero.hp,projectile==='magic'?52:58);assert.equal(b.state.elapsed,projectile==='magic'?28.5:27.6);assert.equal(b.state.phase,'victory');assert.equal(b.state.reward,25);}
+ for(const projectile of ['arrow','magic','melee']){const b=createBattle({heroProjectile:projectile});const events=b.advance(100);assert.ok(events.filter(e=>e.sourceId==='hero').every(e=>e.projectile===projectile));assert.equal(b.state.hero.hp,projectile==='magic'?52:58);assert.equal(b.state.elapsed,projectile==='magic'?28.5:27.6);assert.equal(b.state.phase,'victory');assert.equal(b.state.reward,15);}
 });
 
 test('sword opts into a deterministic three-hit combo with a heavier third hit before armor', () => {
@@ -168,7 +188,7 @@ test('sword terminal state pays once and its block/counter timeline is independe
   for(let i=0;i<1000;i++){smallEvents.push(...small.advance(.1));irregularEvents.push(...irregular.advance(.037),...irregular.advance(.063));}
   assert.deepEqual(smallEvents,expected);assert.deepEqual(irregularEvents,expected);
   assert.deepEqual(small.state,whole.state);assert.deepEqual(irregular.state,whole.state);
-  assert.equal(whole.state.phase,'victory'); assert.equal(whole.state.reward,25);
+  assert.equal(whole.state.phase,'victory'); assert.equal(whole.state.reward,15);
   assert.equal(expected.filter(event=>event.type==='end').length,1);
   const finished=whole.state;whole.pause();whole.resume();
   assert.deepEqual(whole.advance(100),[]); assert.deepEqual(whole.state,finished);
@@ -357,15 +377,9 @@ test('in-flight magic advances independently of range readiness, while real paus
 // The shipped encounter targets its only mage last, and .9 s flight is shorter
 // than hero cadence, so two general queue branches are otherwise unreachable.
 function magicEncounterFixture({mageFirst=false,slowFlight=false}={}) {
-  const fs=require('node:fs'),vm=require('node:vm');
-  let source=fs.readFileSync(require.resolve('../dist/combat.js'),'utf8');
-  if(mageFirst){
-    const anchor='  function positive(value, fallback) {';assert.ok(source.includes(anchor));
-    source=source.replace(anchor,"  templates.sort((a,b)=>Number(b.id==='mage')-Number(a.id==='mage'));\n"+anchor);
-  }
-  if(slowFlight){const anchor='flightDuration:.48';assert.ok(source.includes(anchor));source=source.replace(anchor,'flightDuration:2.4');}
-  const context={module:{exports:{}}};vm.runInNewContext(source,context,{filename:'combat-data-fixture.js'});
-  return context.module.exports.createBattle;
+  const units=focusedEncounter.map(unit=>({...unit}));
+  if(mageFirst)units.sort((a,b)=>Number(b.type==='mage')-Number(a.type==='mage'));
+  return encounterFixture([units],{slowFlight});
 }
 
 test('a shadow already launched still impacts after the mage dies while other enemies remain alive', () => {
@@ -387,7 +401,7 @@ test('multiple queued spells aimed at a dead target are discarded without duplic
   assert.ok(events.filter(event=>event.type==='cast'&&event.sourceId==='hero'&&event.targetId==='orc').length>=3);
   assert.equal(events.filter(event=>event.type==='attack'&&event.sourceId==='hero'&&event.targetId==='orc').length,1);
   assert.equal(events.filter(event=>event.type==='death'&&event.id==='orc').length,1);
-  assert.equal(events.filter(event=>event.type==='end').length,1);assert.equal(battle.state.reward,25);
+  assert.equal(events.filter(event=>event.type==='end').length,1);assert.equal(battle.state.reward,15);
   assert.deepEqual(JSON.parse(JSON.stringify(battle.advance(100))),[]);
 });
 
@@ -396,7 +410,7 @@ test('terminal victory and defeat clear outstanding spells before they can apply
   const won=victory.advance(100), shadow=won.find(event=>event.type==='cast'&&event.sourceId==='mage');
   assert.ok(shadow);assert.equal(shadow.impactAt,4.7);assert.equal(victory.state.elapsed,4.65);assert.equal(victory.state.phase,'victory');
   assert.ok(!won.some(event=>event.type==='attack'&&event.castId===shadow.castId));
-  assert.deepEqual(victory.advance(100),[]);assert.equal(victory.state.reward,25);
+  assert.deepEqual(victory.advance(100),[]);assert.equal(victory.state.reward,15);
   const defeat=createBattle({heroProjectile:'magic',heroDamage:500,heroMaxHp:1});
   const lost=defeat.advance(100), late=lost.find(event=>event.type==='cast'&&event.sourceId==='hero'&&event.targetId==='archer');
   assert.ok(late);assert.equal(late.impactAt,3.3);assert.equal(defeat.state.elapsed,3.1);assert.equal(defeat.state.phase,'defeat');
@@ -434,4 +448,138 @@ test('magic launch, impact and range-gated flight queues are invariant to elapse
     assert.deepEqual(small.battle.state,whole.battle.state);assert.deepEqual(irregular.battle.state,whole.battle.state);
     assert.equal(whole.battle.state.phase,'victory');
   }
+});
+
+test('default encounter exposes only one wave at a time: one archer, two archers, then one orc', () => {
+  const battle=createDefaultBattle();
+  assert.deepEqual(battle.state.enemies.map(enemy=>[enemy.id,enemy.type,enemy.hp]),[['archer1','archer',60]]);
+  assert.deepEqual([battle.state.waveIndex,battle.state.waveNumber,battle.state.waveCount,battle.state.completedWaves,battle.state.totalEnemies],[0,1,3,0,4]);
+  const first=battle.advance(6);
+  assert.equal(battle.state.phase,'intermission');assert.equal(battle.state.reward,5);assert.equal(battle.state.defeatedCount,1);
+  assert.deepEqual(battle.state.enemies.map(enemy=>enemy.id),['archer1']);assert.equal(battle.state.targetId,null);
+  assert.ok(first.some(event=>event.type==='wave_clear'&&event.waveNumber===1&&event.at===6));
+  assert.deepEqual(battle.advance(.699999),[]);assert.equal(battle.state.waveNumber,1);
+  const spawned=battle.advance(.000001).find(event=>event.type==='wave');
+  assert.ok(spawned);assert.equal(spawned.at,6.7);assert.equal(spawned.waveNumber,2);
+  assert.deepEqual(spawned.enemies.map(enemy=>[enemy.id,enemy.type]),[['archer2','archer'],['archer3','archer']]);
+  assert.equal(battle.state.hero.hp,193,'hero health carries across the boundary');
+  spawned.enemies[0].hp=-999;assert.equal(battle.state.enemies[0].hp,60,'wave event snapshots do not expose engine state');
+  const rest=battle.advance(100), third=rest.find(event=>event.type==='wave'&&event.waveNumber===3);
+  assert.deepEqual(third.enemies.map(enemy=>[enemy.id,enemy.type]),[['orc','orc']]);
+  assert.equal(battle.state.phase,'victory');assert.equal(battle.state.completedWaves,3);assert.equal(battle.state.totalDefeated,4);
+  assert.deepEqual(battle.state.enemies.map(enemy=>enemy.id),['orc']);
+});
+
+test('default four kills grant exactly twenty gold immediately and terminal victory grants no extra bonus', () => {
+  const battle=createDefaultBattle(),events=battle.advance(100);
+  const deaths=events.filter(event=>event.type==='death'&&event.id!=='hero');
+  assert.deepEqual(deaths.map(event=>[event.id,event.reward,event.totalReward]),[['archer1',5,5],['archer2',5,10],['archer3',5,15],['orc',5,20]]);
+  assert.equal(new Set(deaths.map(event=>event.id)).size,4);
+  assert.deepEqual(events.filter(event=>event.type==='wave_clear').map(event=>event.waveNumber),[1,2,3]);
+  const end=events.filter(event=>event.type==='end');assert.equal(end.length,1);assert.equal(end[0].reward,0);assert.equal(end[0].totalReward,20);
+  assert.equal(battle.state.reward,20);assert.equal(battle.state.defeatedCount,4);assert.equal(battle.state.totalEnemies,4);
+  const final=battle.state;assert.deepEqual(battle.advance(100),[]);battle.pause();battle.resume();assert.deepEqual(battle.state,final);
+});
+
+test('kill rewards survive defeat even when the next wave has only been partly defeated', () => {
+  for(const [maxHp,expectedReward,expectedKills] of [[15,5,1],[22,10,2]]){
+    const battle=createDefaultBattle({heroMaxHp:maxHp}),events=battle.advance(100);
+    assert.equal(battle.state.phase,'defeat');assert.equal(battle.state.hero.hp,0);
+    assert.equal(battle.state.reward,expectedReward);assert.equal(battle.state.totalDefeated,expectedKills);assert.equal(battle.state.waveNumber,2);
+    const paid=events.filter(event=>event.type==='death'&&event.reward>0);
+    assert.equal(paid.length,expectedKills);assert.ok(paid.every(event=>event.reward===5));
+    const heroDeath=events.find(event=>event.type==='death'&&event.id==='hero');assert.equal(heroDeath.reward,0);assert.equal(heroDeath.totalReward,expectedReward);
+    assert.deepEqual(events.at(-1),{type:'end',result:'defeat',reward:0,totalReward:expectedReward,at:battle.state.elapsed});
+    assert.deepEqual(battle.advance(100),[]);
+    const reset=battle.restart();assert.equal(reset.hero.hp,maxHp);assert.equal(reset.reward,0);assert.equal(reset.waveNumber,1);assert.equal(reset.totalDefeated,0);
+  }
+});
+
+test('pause and resume preserve an intermission remainder and no actors attack during its seven tenths', () => {
+  const battle=createDefaultBattle();battle.advance(6.2);
+  assert.equal(battle.state.phase,'intermission');assert.equal(battle.state.intermissionRemaining,.5);
+  const paused=battle.pause();assert.equal(paused.phase,'paused');assert.equal(paused.intermissionRemaining,.5);
+  assert.deepEqual(battle.advance(50),[]);assert.deepEqual(battle.state,paused);
+  assert.equal(battle.resume().phase,'intermission');
+  assert.deepEqual(battle.advance(.499999),[]);assert.equal(battle.state.waveNumber,1);
+  const events=battle.advance(.000001);assert.equal(events.length,1);assert.equal(events[0].type,'wave');assert.equal(events[0].at,6.7);
+  assert.equal(battle.state.hero.hp,193);assert.equal(battle.state.phase,'running');
+});
+
+test('new wave timers and sword combo reset at spawn while hero health and earned gold carry over', () => {
+  const battle=createDefaultBattle({heroWeapon:'sword'}),events=battle.advance(100);
+  const spawns=[{at:0,waveNumber:1},...events.filter(event=>event.type==='wave')];
+  for(const spawn of spawns){
+    const nextSpawn=spawns.find(other=>other.waveNumber===spawn.waveNumber+1);
+    const first=events.find(event=>event.type==='attack'&&event.sourceId==='hero'&&!event.counter&&event.at>spawn.at&&(!nextSpawn||event.at<nextSpawn.at));
+    assert.ok(first);assert.equal(Math.round((first.at-spawn.at)*1000000),1050000);assert.equal(first.variant,'halfslash');assert.equal(first.comboStep,1);
+  }
+  const orcSpawn=spawns.find(event=>event.waveNumber===3);
+  const orcHits=events.filter(event=>event.type==='attack'&&event.sourceId==='orc');
+  assert.equal(Math.round((orcHits[0].at-orcSpawn.at)*1000000),2400000);assert.equal(orcHits[0].damage,6);
+  assert.equal(orcHits[1].damage,3);assert.equal(events.filter(event=>event.type==='block')[0].at,orcHits[1].at);
+  assert.equal(battle.state.reward,20);assert.equal(battle.state.hero.hp,147);
+});
+
+test('wave boundaries clear old magic flights instead of applying damage to the next wave', () => {
+  const createFixture=encounterFixture([focusedEncounter,[{id:'nextArcher',type:'archer'}]]);
+  const battle=createFixture({heroWeapon:'sword',heroDamage:70});
+  const cleared=battle.advance(4.65),spell=cleared.find(event=>event.type==='cast'&&event.sourceId==='mage');
+  assert.ok(spell);assert.equal(spell.impactAt,4.7);assert.equal(battle.state.phase,'intermission');assert.equal(battle.state.reward,15);
+  const hp=battle.state.hero.hp;
+  const transition=battle.advance(.7);assert.equal(battle.state.hero.hp,hp);assert.deepEqual(transition.map(event=>event.type),['wave']);
+  assert.equal(transition[0].at,5.35);assert.deepEqual(battle.state.enemies.map(enemy=>enemy.id),['nextArcher']);
+  const tail=battle.advance(100);assert.ok(!tail.some(event=>event.castId===spell.castId));
+  assert.equal(battle.state.phase,'victory');assert.equal(battle.state.reward,20);assert.equal(battle.state.hero.hp,hp);
+});
+
+test('wave boundaries discard queued sword counters and old regular cadence before resetting the next combo', () => {
+  const createFixture=encounterFixture([[{id:'orc',type:'orc'}],[{id:'nextArcher',type:'archer'}]]);
+  const battle=createFixture({heroWeapon:'sword',heroDamage:8.75,heroMaxHp:1000});
+  const events=battle.advance(17.2);
+  assert.ok(events.some(event=>event.type==='block'&&event.at===14.4));
+  assert.ok(events.some(event=>event.type==='wave_clear'&&event.at===15.45));
+  const spawn=events.find(event=>event.type==='wave');assert.equal(spawn.at,16.15);
+  assert.ok(!events.some(event=>event.counter&&event.at>=15.45));
+  const next=events.find(event=>event.type==='attack'&&event.sourceId==='hero'&&event.at>15.45);
+  assert.equal(next.at,17.2);assert.equal(next.targetId,'nextArcher');assert.equal(next.comboStep,1);assert.equal(next.variant,'halfslash');
+});
+
+test('archers keep firing during an approach and range gates do not stall an intermission spawn', () => {
+  const battle=createDefaultBattle();
+  const approach=battle.advance(4,{heroCanAttack:false,orcCanAttack:false});
+  assert.deepEqual(approach.filter(event=>event.type==='attack').map(event=>[event.sourceId,event.at]),[['archer1',3.1]]);
+  assert.equal(battle.state.hero.hp,193);assert.equal(battle.state.enemies[0].hp,60);assert.equal(battle.state.elapsed,4);
+  assert.equal(battle.advance(1.2)[0].at,5.2);
+  const separate=createDefaultBattle();separate.advance(6);
+  const spawn=separate.advance(.7,{heroCanAttack:false,orcCanAttack:false});assert.equal(spawn[0].type,'wave');assert.equal(spawn[0].at,6.7);
+  assert.equal(separate.advance(1.2)[0].at,7.9);
+});
+
+test('default waves, per-kill rewards and intermissions are invariant to large, fixed and irregular advances', () => {
+  const schedule=[[2.13,{heroCanAttack:false,orcCanAttack:false}],[3.17,{}],[1.37,{heroCanAttack:false}],[100,{}]];
+  function run(options,pattern){
+    const battle=createDefaultBattle({...options,heroMaxHp:1000}),events=[];let index=0;
+    for(const [seconds,gates] of schedule){
+      if(!pattern){events.push(...battle.advance(seconds,gates));continue;}
+      let remaining=Math.round(seconds*1000000);
+      while(remaining>0){const ticks=Math.min(remaining,pattern[index++%pattern.length]);events.push(...battle.advance(ticks/1000000,gates));remaining-=ticks;}
+    }
+    return {battle,events};
+  }
+  for(const options of [{},{heroWeapon:'sword'},{heroProjectile:'magic',heroMagic:'ice'}]){
+    const whole=run(options),small=run(options,[100000]),irregular=run(options,[37000,63000]);
+    assert.deepEqual(small.events,whole.events);assert.deepEqual(irregular.events,whole.events);
+    assert.deepEqual(small.battle.state,whole.battle.state);assert.deepEqual(irregular.battle.state,whole.battle.state);
+    assert.equal(whole.battle.state.phase,'victory');assert.equal(whole.battle.state.reward,20);assert.equal(whole.battle.state.completedWaves,3);
+    assert.equal(whole.events.filter(event=>event.type==='death'&&event.reward===5).length,4);
+  }
+});
+
+test('default restart restores only wave one and clears previous wave, health, reward and projectile state', () => {
+  const battle=createDefaultBattle({heroProjectile:'magic',heroMagic:'ice'});
+  const initial=battle.state;battle.advance(100);assert.equal(battle.state.phase,'victory');
+  assert.deepEqual(battle.restart(),initial);
+  const fresh=battle.advance(1.2);assert.equal(fresh.length,1);assert.equal(fresh[0].type,'cast');assert.equal(fresh[0].magic,'ice');assert.equal(fresh[0].targetId,'archer1');
+  assert.equal(battle.state.reward,0);assert.equal(battle.state.completedWaves,0);
 });
