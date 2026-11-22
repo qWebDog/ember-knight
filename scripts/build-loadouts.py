@@ -44,7 +44,7 @@ recipes[('bow','ranger')]=base()+[pants('charcoal'),boots('charcoal'),shirt('nav
 recipes[('wand','apprentice')]=base()+[pants('navy'),boots(),shirt('white'),L(55,'torso/clothes/vest/male/{a}/blue.png',None,'torso/vest/torso_clothes_vest.json'),sash('tan')]
 recipes[('wand','acolyte')]=base()+[pants('charcoal'),L(22,'legs/skirts/slit/thin/{a}.png','purple','legs/skirts/legs_skirts_slit.json'),boots('charcoal'),shirt('lavender'),hood('purple'),sash('purple')]+cape('purple')
 recipes[('wand','adept')]=base()+[pants('charcoal'),L(22,'legs/skirts/slit/thin/{a}.png','navy','legs/skirts/legs_skirts_slit.json'),boots('charcoal'),shirt('navy'),L(130,'hat/magic/wizard/base/adult/{a}/navy.png',None,'headwear/hats/magic/hat_magic_wizard.json'),L(131,'hat/magic/wizard/belt/adult/{a}.png','yellow','headwear/hats/magic/hat_magic_wizard_belt.json'),sash('yellow')]
-weapondefs={'sword':['weapons/sword/weapon_sword_arming.json','weapons/shields/heater/shield_heater_revised_wood.json','weapons/shields/heater/shield_heater_revised_trim.json'],'bow':['weapons/ranged/bow/weapon_ranged_bow_normal.json','weapons/ranged/bow/weapon_ranged_bow_arrow.json','torso/backpack/quiver.json'],'wand':['weapons/magic/weapon_magic_wand.json']}
+weapondefs={'sword':['weapons/sword/weapon_sword_arming.json','weapons/shields/heater/shield_heater_wood.json','weapons/shields/heater/shield_heater_trim.json'],'bow':['weapons/ranged/bow/weapon_ranged_bow_normal.json','weapons/ranged/bow/weapon_ranged_bow_arrow.json','torso/backpack/quiver.json'],'wand':['weapons/magic/weapon_magic_wand.json']}
 # One starter silhouette per weapon; six official cloth palettes, skin remains independent.
 colorways = {
  'sand': ('tan','white'), 'forest': ('forest','green'), 'blue': ('navy','blue'),
@@ -95,11 +95,12 @@ def weapons(w,a):
  if w=='sword':
   if a in ['walk','combat_idle']:paths=[(9,f'weapon/sword/arming/universal/bg/{a}/steel.png'),(140,f'weapon/sword/arming/universal/fg/{a}/steel.png')]
   else:paths=[(8,f'weapon/sword/arming/attack_{a}/bg/steel.png'),(150 if a in SWORD_COMBO else 140,f'weapon/sword/arming/attack_{a}/fg/steel.png')]
-  # Revised heater layers follow the off hand in every native source frame.
-  # Classic slash has no rear shield layer; all other poses provide both sides.
+  # The original heater matches the classic male WALK/SLASH off hand. The
+  # revised family's side WALK/SLASH grips instead overlap the sword hand.
+  # Revised cuts and combat poses are shared by both official heater families.
   for z,kind,side in [(2,'wood','bg'),(6,'trim','bg'),(110,'wood','fg'),(115,'trim','fg')]:
-   if a=='slash' and side=='bg':continue
-   paths.append((z,f'shield/heater/revised/{kind}/{side}/{a}.png'))
+   if a in ['walk','slash'] and side=='bg':continue
+   paths.append((z,f'shield/heater/original/{kind}/{side}/{a}.png'))
  elif w=='bow':
   if a=='walk':paths=[(-1,'weapon/ranged/bow/normal/walk/background/light.png'),(140,'weapon/ranged/bow/normal/walk/foreground/light.png'),(0,'quiver/walk/quiver.png')]
   else:paths=[(-1,'weapon/ranged/bow/normal/universal/background/shoot/light.png'),(140,'weapon/ranged/bow/normal/universal/foreground/shoot/light.png'),(141,'weapon/ranged/bow/arrow/shoot/arrow.png'),(0,'quiver/shoot/quiver.png')]
@@ -157,7 +158,8 @@ for (w,id),ls in recipes.items():
    for z,p,m,c,d in ls:meta['layers'].append({'z':z,'source':p,'material':m,'palette':c,'definition':d})
  if w=='wand':meta['notes'].append('Wand has native slash only. WALK uses the official standing wand with a 0–1px gait-compatible translation; no custom weapon pixels drawn.')
  if w=='sword':
-  note='Native revised wooden heater shield with metal trim uses its matching moving foreground/background layers in WALK, SLASH, HALFSLASH and BACKSLASH. BLOCK uses original combat_idle pose 0 for all layers. No held shield frames during attacks. Unsupported classic leather belt omitted from every sword pose.'
+  meta['handedness']={'shieldFamily':'heater/original','transform':'none: original native pixels and direction rows, no mirroring, translation or frozen frames','classicPoseFix':'Original WALK/SLASH shield cells grip the classic male off hand; revised side-facing cells overlap the sword hand.','revisedCuts':'Original and revised HALFSLASH/BACKSLASH/combat shield cells are byte-identical; distinct wrists verified from exposed native hand pixels.','exampleGripPixels':{'walk-east-0':{'shieldHand':[26,47],'swordHand':[37,43]},'halfslash-east-3':{'shieldHand':[50,37],'swordHand':[59,43]},'halfslash-west-3':{'shieldHand':[13,37],'swordHand':[4,43]},'combat_idle-east-0':{'shieldHand':[42,40],'swordHand':[30,44]}}}
+  note='Native ORIGINAL wooden heater shield with metal trim matches the classic male off hand in WALK/SLASH; native HALFSLASH/BACKSLASH/combat poses are identical in the original/revised families. BLOCK uses original combat_idle pose 0 for all layers. No mirrored, translated or held shield cells during attacks. Distinct source hand pixels verified. Unsupported classic leather belt omitted from every sword pose.'
   if note not in meta['notes']:meta['notes'].append(note)
  (dest/'manifest.json').write_text(json.dumps(meta,ensure_ascii=False,indent=2));outputmeta[f'{w}/{id}']=meta
  print('READY',w,id,flush=True)
@@ -171,7 +173,7 @@ for p,d in sorted(allcredits.items()):
  lines.append('DEFINITION: '+p)
  for c in d.get('credits',[]):lines+=['Asset: '+c.get('file',''),'Authors: '+', '.join(c.get('authors',[])),'Licenses: '+', '.join(c.get('licenses',[])),'Sources: '+', '.join(c.get('urls',[])),'']
 animation_definition=ROOT/'definitions/sources/custom-animations.ts';animation_definition.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(source('sources/custom-animations.ts'),animation_definition)
-combo_credit='SWORD COMBO ANIMATIONS — '+REV+'\nNative halfslash_128: 6 frames; native backslash_128: 13 frames. Matching original body, human head, shirt, pants, boots and steel arming-sword layers, with original oversized128 tiles. Revised wooden heater shield and metal trim follow the original off-hand animation in every attack and walk frame. Block uses the matching original combat_idle pose 0. Unsupported classic belt omitted consistently. Official body and cloth recolors only. No frames reversed, no new weapon pixels drawn. Per-component authors and OGA-BY3.0 / CC-BY-SA3.0 options above apply; source paths and hashes are recorded in each outfit-color manifest.\n'
+combo_credit='SWORD COMBO ANIMATIONS — '+REV+'\nNative halfslash_128: 6 frames; native backslash_128: 13 frames. Matching original body, human head, shirt, pants, boots and steel arming-sword layers, with original oversized128 tiles. ORIGINAL heater wood/trim sources are used consistently: their classic male WALK/SLASH off-hand grip differs from the revised family; HALFSLASH/BACKSLASH/combat frames are shared unchanged. Sword and shield attach to distinct exposed native hand pixels. Block uses the matching original combat_idle pose 0. Unsupported classic belt omitted consistently. Official body and cloth recolors only. No shield cells frozen, mirrored, translated or redrawn; no frames reversed. Per-component authors and OGA-BY3.0 / CC-BY-SA3.0 options above apply; source paths and hashes are recorded in each outfit-color manifest.\n'
 (ROOT/'CREDITS.txt').write_text('\n'.join(lines)+'\n'+combo_credit)
 (ROOT/'manifest.json').write_text(json.dumps(outputmeta,ensure_ascii=False,indent=2))
 if SWORD_ONLY:

@@ -142,7 +142,7 @@
     $('#battle-state').textContent = !ready ? assetError ? 'Ошибка загрузки' : 'Загрузка боя' : state.phase === 'victory' ? 'Победа · 3/3' : state.phase === 'defeat' ? 'Поражение' : auto ? moving ? 'Подход к цели' : 'Тестовый бой' : 'Пауза';
   }
   function syncPause() {
-    if (ready && auto && !moving && !document.hidden && !dialog.open) battle.resume(); else battle.pause();
+    if (ready && auto && !document.hidden && !dialog.open) battle.resume(); else battle.pause();
     lastFrameTime = null; updateControls();
   }
   autoButton.addEventListener('click', () => {
@@ -308,6 +308,15 @@
     $('.stage-progress').setAttribute('aria-label',`Побеждено ${state.defeatedCount} из 3 врагов`);
     renderEffects(state);
   }
+  function attackAvailability(state) {
+    const heroSize=actors.hero.element.offsetWidth;
+    const inReach=(id,x)=>Math.abs(x-heroX)<=heroSize*.23+actors[id].element.offsetWidth*.34+.01;
+    const target=state.targetId;
+    return {
+      heroCanAttack:Boolean(target && (ranged || inReach(target,target==='orc'?orcX:actors[target].element.offsetLeft))),
+      orcCanAttack:state.enemies.some(enemy=>enemy.id==='orc'&&enemy.hp>0) && inReach('orc',orcX)
+    };
+  }
   function tick(timestamp) {
     if (lastFrameTime === null) lastFrameTime = timestamp;
     const dt = Math.min(.1,Math.max(0,(timestamp-lastFrameTime)/1000)); lastFrameTime = timestamp;
@@ -316,11 +325,14 @@
       if (!['victory','defeat'].includes(before.phase)) {
         activeTime += dt;
         const wasMoving = moving;
+        const beforeRange=attackAvailability(before);
         const walkTime = updateMovement(dt,before);
-        if (moving) battle.pause();
-        else { battle.resume(); handleEvents(battle.advance(Math.max(0,dt-walkTime))); }
+        battle.resume();
+        // Movement only holds the melee fighters' own cooldowns. Enemy arrows
+        // and spells, and a ranged hero, continue during the entire approach.
+        if (walkTime>0) handleEvents(battle.advance(walkTime,beforeRange));
+        if (dt>walkTime) handleEvents(battle.advance(dt-walkTime,attackAvailability(battle.getState())));
         updateMovement(0,battle.getState());
-        if (moving) battle.pause();
         if (moving !== wasMoving) updateControls();
       }
     }

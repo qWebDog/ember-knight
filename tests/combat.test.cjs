@@ -202,3 +202,100 @@ test('long-lived sword reservations across heavy animations also preserve chunk 
   assert.deepEqual(stepped.state,whole.state);assert.deepEqual(irregular.state,whole.state);
   assert.deepEqual(stepped.advance(2),whole.advance(2), 'pending counter reservations remain the same beyond the compared interval');
 });
+
+test('ranged enemies shoot while hero and orc are out of melee range, without banking melee attacks', () => {
+  const battle=createBattle();
+  const approach=battle.advance(4,{heroCanAttack:false,orcCanAttack:false});
+  assert.deepEqual(approach.filter(event=>event.type==='attack').map(event=>[event.sourceId,event.at]),[['archer',3.1],['mage',3.8]]);
+  assert.equal(battle.state.phase,'running');assert.equal(battle.state.elapsed,4);
+  assert.equal(battle.state.hero.hp,183);assert.equal(battle.state.enemies[0].hp,100);
+  assert.deepEqual(battle.advance(1.19),[],'remaining melee cooldowns start from contact rather than firing a backlog');
+  const first=battle.advance(.01);
+  assert.deepEqual(first.map(event=>[event.sourceId,event.at]),[['hero',5.2]]);
+  const next=battle.advance(1.2).filter(event=>event.type==='attack');
+  assert.deepEqual(next.filter(event=>event.at===6.4).map(event=>event.sourceId),['hero','orc']);
+});
+
+test('range gates freeze only the selected actor and retain partially spent cooldowns and ties', () => {
+  const battle=createBattle();battle.advance(1.7);
+  const held=battle.advance(2,{heroCanAttack:false,orcCanAttack:false});
+  assert.deepEqual(held.filter(event=>event.type==='attack').map(event=>[event.sourceId,event.at]),[['archer',3.1]]);
+  const released=battle.advance(.7);
+  assert.deepEqual(released.filter(event=>event.at===4.4).map(event=>event.sourceId),['hero','orc']);
+  const heroOnly=createBattle();
+  const events=heroOnly.advance(4,{orcCanAttack:false});
+  assert.deepEqual(events.filter(event=>event.sourceId==='hero').map(event=>event.at),[1.2,2.4,3.6]);
+  assert.ok(!events.some(event=>event.sourceId==='orc'));
+  assert.equal(heroOnly.state.hero.hp,183);
+  assert.equal(heroOnly.state.enemies[0].hp,73);
+});
+
+test('range gating holds existing sword counters and counters created during the same gated advance', () => {
+  const existing=createBattle({heroWeapon:'sword',heroMaxHp:1000});existing.advance(4.9);
+  const approach=existing.advance(2,{heroCanAttack:false,orcCanAttack:false});
+  assert.ok(!approach.some(event=>event.sourceId==='hero'||event.sourceId==='orc'));
+  const resumed=existing.advance(.31);
+  assert.deepEqual(resumed.filter(event=>event.counter).map(event=>[event.targetId,event.at]),[['orc',7.21]]);
+  const created=createBattle({heroWeapon:'sword',heroMaxHp:1000});
+  const held=created.advance(5,{heroCanAttack:false});
+  assert.ok(held.some(event=>event.type==='block'&&event.at===4.8));
+  assert.ok(!held.some(event=>event.sourceId==='hero'));
+  const moreHeld=created.advance(1,{heroCanAttack:false,orcCanAttack:false});
+  assert.ok(!moreHeld.some(event=>event.counter));
+  const counter=created.advance(.3).find(event=>event.counter);
+  assert.ok(counter,'a newly queued held counter resumes instead of being lost or firing out of range');
+  assert.equal(counter.at,6.3);assert.equal(counter.targetId,'orc');
+});
+
+test('real pause still freezes the entire encounter and restart clears all gated cooldown shifts', () => {
+  const battle=createBattle();battle.advance(4,{heroCanAttack:false,orcCanAttack:false});
+  const paused=battle.pause();assert.deepEqual(battle.advance(100,{heroCanAttack:true}),[]);assert.deepEqual(battle.state,paused);
+  battle.resume();const first=battle.advance(1.2).find(event=>event.sourceId==='hero');
+  assert.equal(first.at,5.2);
+  battle.restart();
+  assert.equal(battle.state.elapsed,0);assert.equal(battle.state.hero.hp,200);
+  const original=battle.advance(1.2);assert.equal(original[0].sourceId,'hero');assert.equal(original[0].at,1.2);
+});
+
+test('ranged damage can end the fight during approach and no gated attacker acts after terminal death', () => {
+  const battle=createBattle({heroMaxHp:5});
+  const events=battle.advance(20,{heroCanAttack:false,orcCanAttack:false});
+  assert.equal(battle.state.phase,'defeat');assert.equal(battle.state.elapsed,3.1);assert.equal(battle.state.hero.hp,0);
+  assert.deepEqual(events.filter(event=>event.type==='attack').map(event=>event.sourceId),['archer']);
+  assert.equal(events.at(-1).type,'end');assert.deepEqual(battle.advance(100),[]);
+});
+
+test('changing range availability is invariant to frame chunk size, including held sword counter reservations', () => {
+  const schedule=[
+    [.7,{heroCanAttack:false,orcCanAttack:false}],
+    [4.4,{heroCanAttack:false,orcCanAttack:true}],
+    [.11,{heroCanAttack:true,orcCanAttack:false}],
+    [.6,{heroCanAttack:true,orcCanAttack:true}],
+    [3.17,{heroCanAttack:false,orcCanAttack:false}],
+    [1.09,{heroCanAttack:true,orcCanAttack:false}],
+    [4.33,{heroCanAttack:false,orcCanAttack:true}],
+    [40,{heroCanAttack:true,orcCanAttack:true}]
+  ];
+  function run(options,pattern){
+    const battle=createBattle(options),events=[];let index=0;
+    for(const [seconds,gates] of schedule){
+      if(!pattern){events.push(...battle.advance(seconds,gates));continue;}
+      let remaining=Math.round(seconds*1000000);
+      while(remaining>0){const ticks=Math.min(remaining,pattern[index++%pattern.length]);events.push(...battle.advance(ticks/1000000,gates));remaining-=ticks;}
+    }
+    return {battle,events};
+  }
+  for(const options of [{heroMaxHp:1000},{heroWeapon:'sword',heroDamage:8.75,heroMaxHp:1000}]){
+    const whole=run(options),small=run(options,[100000]),irregular=run(options,[37000,63000]);
+    assert.deepEqual(small.events,whole.events);assert.deepEqual(irregular.events,whole.events);
+    assert.deepEqual(small.battle.state,whole.battle.state);assert.deepEqual(irregular.battle.state,whole.battle.state);
+    assert.deepEqual(small.battle.advance(2),whole.battle.advance(2));
+  }
+});
+
+test('range availability defaults remain compatible and only explicit false disables an actor', () => {
+  const expected=createBattle().advance(6);
+  for(const availability of [undefined,null,{}, {heroCanAttack:true,orcCanAttack:true},{heroCanAttack:0,orcCanAttack:'false'}]){
+    const battle=createBattle();assert.deepEqual(battle.advance(6,availability),expected);
+  }
+});

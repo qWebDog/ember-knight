@@ -77,13 +77,27 @@
       pendingCounters.push({targetId, at:Math.round(candidate)});
       pendingCounters.sort((a,b) => a.at - b.at);
     }
-    function advance(seconds) {
+    function advance(seconds, availability = {}) {
       const events = [];
       if (phase !== 'running' || !Number.isFinite(seconds) || seconds <= 0) return events;
+      const heroCanAttack = availability?.heroCanAttack !== false;
+      const orcCanAttack = availability?.orcCanAttack !== false;
       const delta = seconds * TICKS + remainder;
       const ticks = Math.min(Number.MAX_SAFE_INTEGER - elapsed, Math.round(delta));
       remainder = Number.isFinite(delta) ? delta - ticks : 0;
       const until = elapsed + ticks;
+      function advanceClock(time) {
+        const passed = time - elapsed;
+        // Range gates freeze only that actor's remaining cooldown. Ranged enemies
+        // and the battle clock keep advancing, including between new counter events.
+        if (!heroCanAttack) {
+          nextHero += passed;
+          heroBusyUntil += passed;
+          pendingCounters.forEach(counter => { counter.at += passed; });
+        }
+        if (!orcCanAttack) nextEnemies[0] += passed;
+        elapsed = time;
+      }
       function hit(sourceId, target, damage, projectile, metadata) {
         target.hp = Math.max(0, target.hp - damage);
         events.push({type:'attack', sourceId, targetId:target.id, damage, hp:target.hp, at:elapsed / TICKS, projectile, ...metadata});
@@ -98,15 +112,15 @@
         events.push({type:'end', result, reward, at:elapsed / TICKS});
       }
       while (phase === 'running') {
-        let next = nextHero;
-        if (pendingCounters.length) next = Math.min(next, pendingCounters[0].at);
+        let next = heroCanAttack ? nextHero : Infinity;
+        if (heroCanAttack && pendingCounters.length) next = Math.min(next, pendingCounters[0].at);
         enemies.forEach((enemy, index) => {
-          if (enemy.hp > 0) next = Math.min(next, nextEnemies[index]);
+          if (enemy.hp > 0 && (enemy.id !== 'orc' || orcCanAttack)) next = Math.min(next, nextEnemies[index]);
         });
         if (next > until) break;
-        elapsed = next;
+        advanceClock(next);
         // Tie policy: regular hero attack, queued counters, then living enemies in order.
-        if (nextHero === next) {
+        if (heroCanAttack && nextHero === next) {
           const target = enemies.find(enemy => enemy.hp > 0);
           const step = sword ? swordSteps[comboIndex] : null;
           const damage = config.damage * (step?.heavy ? 1.5 : 1);
@@ -119,7 +133,7 @@
           } else nextHero += HERO_INTERVAL;
           if (enemies.every(enemy => enemy.hp === 0)) { end('victory'); break; }
         }
-        while (pendingCounters.length && pendingCounters[0].at === next) {
+        while (heroCanAttack && pendingCounters.length && pendingCounters[0].at === next) {
           const counter = pendingCounters.shift();
           const target = enemies.find(enemy => enemy.id === counter.targetId && enemy.hp > 0);
           if (!target || hero.hp <= 0) continue;
@@ -130,7 +144,7 @@
         if (phase !== 'running') break;
         for (let index = 0; index < enemies.length; index++) {
           const enemy = enemies[index];
-          if (enemy.hp <= 0 || nextEnemies[index] !== next) continue;
+          if (enemy.hp <= 0 || nextEnemies[index] !== next || (enemy.id === 'orc' && !orcCanAttack)) continue;
           let damage = enemy.damage, blocked = false;
           if (sword && enemy.projectile === 'melee' && ++meleeHits % 2 === 0) {
             const blockedDamage = damage * .5;
@@ -143,7 +157,7 @@
           if (blocked) reserveCounter(enemy.id);
         }
       }
-      if (phase === 'running') elapsed = until;
+      if (phase === 'running') advanceClock(until);
       return events;
     }
     restart();

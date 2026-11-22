@@ -137,15 +137,15 @@ Authors: Johannes Sjölund (wulax), Pierre Vigier (pvigier)
 Licenses: OGA-BY 3.0+, GPL 3.0, CC-BY 4.0
 Sources: https://opengameart.org/content/lpc-medieval-fantasy-character-sprites, https://opengameart.org/content/lpc-walk-animations-for-bows
 
-DEFINITION: sheet_definitions/weapons/shields/heater/shield_heater_revised_trim.json
-Asset: shield/heater/revised/trim
-Authors: bluecarrot16, Sander Frenken (castelonia), ElizaWy, JaidynReiman
+DEFINITION: sheet_definitions/weapons/shields/heater/shield_heater_trim.json
+Asset: shield/heater/original/trim
+Authors: bluecarrot16, Sander Frenken (castelonia), ElizaWy
 Licenses: OGA-BY 3.0
 Sources: https://opengameart.org/content/lpc-shields
 
-DEFINITION: sheet_definitions/weapons/shields/heater/shield_heater_revised_wood.json
-Asset: shield/heater/revised/wood
-Authors: bluecarrot16, Sander Frenken (castelonia), ElizaWy, JaidynReiman
+DEFINITION: sheet_definitions/weapons/shields/heater/shield_heater_wood.json
+Asset: shield/heater/original/wood
+Authors: bluecarrot16, Sander Frenken (castelonia), ElizaWy
 Licenses: OGA-BY 3.0
 Sources: https://opengameart.org/content/lpc-shields
 
@@ -156,4 +156,4 @@ Licenses: OGA-BY 3.0
 Sources: https://github.com/ElizaWy/LPC/tree/main/Characters/Props/Sword%2001%20-%20Arming%20Sword, https://opengameart.org/content/lpc-expanded-sit-run-jump-more
 
 SWORD COMBO ANIMATIONS — 86a3719ee4a7e2e9fb27c7c152e29a741d3e930a
-Native halfslash_128: 6 frames; native backslash_128: 13 frames. Matching original body, human head, shirt, pants, boots and steel arming-sword layers, with original oversized128 tiles. Revised wooden heater shield and metal trim follow the original off-hand animation in every attack and walk frame. Block uses the matching original combat_idle pose 0. Unsupported classic belt omitted consistently. Official body and cloth recolors only. No frames reversed, no new weapon pixels drawn. Per-component authors and OGA-BY3.0 / CC-BY-SA3.0 options above apply; source paths and hashes are recorded in each outfit-color manifest.
+Native halfslash_128: 6 frames; native backslash_128: 13 frames. Matching original body, human head, shirt, pants, boots and steel arming-sword layers, with original oversized128 tiles. ORIGINAL heater wood/trim sources are used consistently: their classic male WALK/SLASH off-hand grip differs from the revised family; HALFSLASH/BACKSLASH/combat frames are shared unchanged. Sword and shield attach to distinct exposed native hand pixels. Block uses the matching original combat_idle pose 0. Unsupported classic belt omitted consistently. Official body and cloth recolors only. No shield cells frozen, mirrored, translated or redrawn; no frames reversed. Per-component authors and OGA-BY3.0 / CC-BY-SA3.0 options above apply; source paths and hashes are recorded in each outfit-color manifest.

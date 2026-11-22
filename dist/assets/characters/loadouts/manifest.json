@@ -43,7 +43,7 @@
       }
     ],
     "notes": [
-      "Native revised wooden heater shield with metal trim uses its matching moving foreground/background layers in WALK, SLASH, HALFSLASH and BACKSLASH. BLOCK uses original combat_idle pose 0 for all layers. No held shield frames during attacks. Unsupported classic leather belt omitted from every sword pose."
+      "Native ORIGINAL wooden heater shield with metal trim matches the classic male off hand in WALK/SLASH; native HALFSLASH/BACKSLASH/combat poses are identical in the original/revised families. BLOCK uses original combat_idle pose 0 for all layers. No mirrored, translated or held shield cells during attacks. Distinct source hand pixels verified. Unsupported classic leather belt omitted from every sword pose."
     ],
     "walk": {
       "file": "{skin}-walk.png",
@@ -59,22 +59,6 @@
       "animation": "walk",
       "animationDefinition": "definitions/sources/custom-animations.ts",
       "layers": [
-        {
-          "z": 2,
-          "source": "spritesheets/shield/heater/revised/wood/bg/walk.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/wood/bg/walk.png",
-          "sourceTile": 64,
-          "frameMode": "native",
-          "sha256": "e734677f5cd6945972dd6615595da8bcbe21a7e2d2670ef006880c46b55e2384"
-        },
-        {
-          "z": 6,
-          "source": "spritesheets/shield/heater/revised/trim/bg/walk.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/trim/bg/walk.png",
-          "sourceTile": 64,
-          "frameMode": "native",
-          "sha256": "608a687f14e76b93159a76b4f772ab67d656613c0ed6564f273a25168378188f"
-        },
         {
           "z": 9,
           "source": "spritesheets/weapon/sword/arming/universal/bg/walk/steel.png",
@@ -125,19 +109,19 @@
         },
         {
           "z": 110,
-          "source": "spritesheets/shield/heater/revised/wood/fg/walk.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/wood/fg/walk.png",
+          "source": "spritesheets/shield/heater/original/wood/fg/walk.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/wood/fg/walk.png",
           "sourceTile": 64,
           "frameMode": "native",
-          "sha256": "821dd9694e1c744fabdf4887f7f5389c5f3946c7b9c142470b207373e16aa198"
+          "sha256": "2ccafa786109a483924e56434f4b56be2bb1822bb7ea84ac79db659db1a8ef47"
         },
         {
           "z": 115,
-          "source": "spritesheets/shield/heater/revised/trim/fg/walk.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/trim/fg/walk.png",
+          "source": "spritesheets/shield/heater/original/trim/fg/walk.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/trim/fg/walk.png",
           "sourceTile": 64,
           "frameMode": "native",
-          "sha256": "0dd1fc904b86326e4a0fe5d287b0c4cb1da38bb0bd0b5503b7d60728ce34fa41"
+          "sha256": "611389741a4c40fc6056c992095174a6db6439d0aa26e4cc80dbe43b6cadca5a"
         },
         {
           "z": 140,
@@ -213,19 +197,19 @@
         },
         {
           "z": 110,
-          "source": "spritesheets/shield/heater/revised/wood/fg/slash.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/wood/fg/slash.png",
+          "source": "spritesheets/shield/heater/original/wood/fg/slash.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/wood/fg/slash.png",
           "sourceTile": 64,
           "frameMode": "native",
-          "sha256": "46648c34b4d52c51f017899a84fbad5918f6f3910bfc799a0a9cff077ab695c9"
+          "sha256": "4e9f338f06425a5c0a43f2841950887b8f91fdc93c18a00282bf55a7282258a0"
         },
         {
           "z": 115,
-          "source": "spritesheets/shield/heater/revised/trim/fg/slash.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/trim/fg/slash.png",
+          "source": "spritesheets/shield/heater/original/trim/fg/slash.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/trim/fg/slash.png",
           "sourceTile": 64,
           "frameMode": "native",
-          "sha256": "caec42127e016bb8cfc333911d727426a289b085d2a03f1d96cbeef7ea4bbcba"
+          "sha256": "a6821beb9dbda394cc2ba7e6082a282f0ab79dca705168c3c13025c7022c1e87"
         },
         {
           "z": 140,
@@ -253,16 +237,16 @@
       "layers": [
         {
           "z": 2,
-          "source": "spritesheets/shield/heater/revised/wood/bg/halfslash.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/wood/bg/halfslash.png",
+          "source": "spritesheets/shield/heater/original/wood/bg/halfslash.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/wood/bg/halfslash.png",
           "sourceTile": 64,
           "frameMode": "native",
           "sha256": "20b73b766b7b4786ce88097a9613705c516d504180382dd06dd5297d079fabda"
         },
         {
           "z": 6,
-          "source": "spritesheets/shield/heater/revised/trim/bg/halfslash.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/trim/bg/halfslash.png",
+          "source": "spritesheets/shield/heater/original/trim/bg/halfslash.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/trim/bg/halfslash.png",
           "sourceTile": 64,
           "frameMode": "native",
           "sha256": "8feebf18448f3be15fea8a3afceb5c7db1856f2afc68824f5970ff439670fa29"
@@ -317,16 +301,16 @@
         },
         {
           "z": 110,
-          "source": "spritesheets/shield/heater/revised/wood/fg/halfslash.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/wood/fg/halfslash.png",
+          "source": "spritesheets/shield/heater/original/wood/fg/halfslash.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/wood/fg/halfslash.png",
           "sourceTile": 64,
           "frameMode": "native",
           "sha256": "37b55f18c99b45076e4df9c639647b7330490cfef383ef84c98dbd3faa786d23"
         },
         {
           "z": 115,
-          "source": "spritesheets/shield/heater/revised/trim/fg/halfslash.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/trim/fg/halfslash.png",
+          "source": "spritesheets/shield/heater/original/trim/fg/halfslash.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/trim/fg/halfslash.png",
           "sourceTile": 64,
           "frameMode": "native",
           "sha256": "f067ef034a4f2f226bec995436ff3f9633b0999d1b450b25e6014f367cf4af78"
@@ -357,16 +341,16 @@
       "layers": [
         {
           "z": 2,
-          "source": "spritesheets/shield/heater/revised/wood/bg/backslash.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/wood/bg/backslash.png",
+          "source": "spritesheets/shield/heater/original/wood/bg/backslash.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/wood/bg/backslash.png",
           "sourceTile": 64,
           "frameMode": "native",
           "sha256": "a3fff467c4a75c083f1ae6f7cfb5bd89c9f734da3a0100b0d39f549e2b20c647"
         },
         {
           "z": 6,
-          "source": "spritesheets/shield/heater/revised/trim/bg/backslash.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/trim/bg/backslash.png",
+          "source": "spritesheets/shield/heater/original/trim/bg/backslash.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/trim/bg/backslash.png",
           "sourceTile": 64,
           "frameMode": "native",
           "sha256": "350fc35f2b1d9ed049469a89121b94cca4b37fa044603fbc19d96387fe2fcbfc"
@@ -421,16 +405,16 @@
         },
         {
           "z": 110,
-          "source": "spritesheets/shield/heater/revised/wood/fg/backslash.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/wood/fg/backslash.png",
+          "source": "spritesheets/shield/heater/original/wood/fg/backslash.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/wood/fg/backslash.png",
           "sourceTile": 64,
           "frameMode": "native",
           "sha256": "b4bb320be93100d3b01352aeb68f488e997ccf59dd7e76d9053787ec398ebd8a"
         },
         {
           "z": 115,
-          "source": "spritesheets/shield/heater/revised/trim/fg/backslash.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/trim/fg/backslash.png",
+          "source": "spritesheets/shield/heater/original/trim/fg/backslash.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/trim/fg/backslash.png",
           "sourceTile": 64,
           "frameMode": "native",
           "sha256": "6229b80f178e72b30967036454ac915ee77a8561e516fc0a061a59737f0d862d"
@@ -461,16 +445,16 @@
       "layers": [
         {
           "z": 2,
-          "source": "spritesheets/shield/heater/revised/wood/bg/combat_idle.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/wood/bg/combat_idle.png",
+          "source": "spritesheets/shield/heater/original/wood/bg/combat_idle.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/wood/bg/combat_idle.png",
           "sourceTile": 64,
           "frameMode": "native pose 0",
           "sha256": "241345577a8ad4ce4e2ebd9f6d15508ee3bf442b22124391ac9fe5e8dcecc425"
         },
         {
           "z": 6,
-          "source": "spritesheets/shield/heater/revised/trim/bg/combat_idle.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/trim/bg/combat_idle.png",
+          "source": "spritesheets/shield/heater/original/trim/bg/combat_idle.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/trim/bg/combat_idle.png",
           "sourceTile": 64,
           "frameMode": "native pose 0",
           "sha256": "bfd8586a35c411718c2143234f92b3950bf6d93baed245664e01582b7e86d0f1"
@@ -525,16 +509,16 @@
         },
         {
           "z": 110,
-          "source": "spritesheets/shield/heater/revised/wood/fg/combat_idle.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/wood/fg/combat_idle.png",
+          "source": "spritesheets/shield/heater/original/wood/fg/combat_idle.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/wood/fg/combat_idle.png",
           "sourceTile": 64,
           "frameMode": "native pose 0",
           "sha256": "165497516fd4731f1dde1fa77fc6acbb09db83fbc43af1b8f8c6cc530a8cd403"
         },
         {
           "z": 115,
-          "source": "spritesheets/shield/heater/revised/trim/fg/combat_idle.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/trim/fg/combat_idle.png",
+          "source": "spritesheets/shield/heater/original/trim/fg/combat_idle.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/trim/fg/combat_idle.png",
           "sourceTile": 64,
           "frameMode": "native pose 0",
           "sha256": "fe65684be9ed25ea3974cbbbc7c94512ea0504a018d551e56219df5142ac0ff1"
@@ -548,6 +532,54 @@
           "sha256": "ec3b241d5507829521f0fa5c42d97f613a3dc98022bc4ca5d9a9c71080bfd6eb"
         }
       ]
+    },
+    "handedness": {
+      "shieldFamily": "heater/original",
+      "transform": "none: original native pixels and direction rows, no mirroring, translation or frozen frames",
+      "classicPoseFix": "Original WALK/SLASH shield cells grip the classic male off hand; revised side-facing cells overlap the sword hand.",
+      "revisedCuts": "Original and revised HALFSLASH/BACKSLASH/combat shield cells are byte-identical; distinct wrists verified from exposed native hand pixels.",
+      "exampleGripPixels": {
+        "walk-east-0": {
+          "shieldHand": [
+            26,
+            47
+          ],
+          "swordHand": [
+            37,
+            43
+          ]
+        },
+        "halfslash-east-3": {
+          "shieldHand": [
+            50,
+            37
+          ],
+          "swordHand": [
+            59,
+            43
+          ]
+        },
+        "halfslash-west-3": {
+          "shieldHand": [
+            13,
+            37
+          ],
+          "swordHand": [
+            4,
+            43
+          ]
+        },
+        "combat_idle-east-0": {
+          "shieldHand": [
+            42,
+            40
+          ],
+          "swordHand": [
+            30,
+            44
+          ]
+        }
+      }
     }
   },
   "sword/militia/forest": {
@@ -594,7 +626,7 @@
       }
     ],
     "notes": [
-      "Native revised wooden heater shield with metal trim uses its matching moving foreground/background layers in WALK, SLASH, HALFSLASH and BACKSLASH. BLOCK uses original combat_idle pose 0 for all layers. No held shield frames during attacks. Unsupported classic leather belt omitted from every sword pose."
+      "Native ORIGINAL wooden heater shield with metal trim matches the classic male off hand in WALK/SLASH; native HALFSLASH/BACKSLASH/combat poses are identical in the original/revised families. BLOCK uses original combat_idle pose 0 for all layers. No mirrored, translated or held shield cells during attacks. Distinct source hand pixels verified. Unsupported classic leather belt omitted from every sword pose."
     ],
     "walk": {
       "file": "{skin}-walk.png",
@@ -610,22 +642,6 @@
       "animation": "walk",
       "animationDefinition": "definitions/sources/custom-animations.ts",
       "layers": [
-        {
-          "z": 2,
-          "source": "spritesheets/shield/heater/revised/wood/bg/walk.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/wood/bg/walk.png",
-          "sourceTile": 64,
-          "frameMode": "native",
-          "sha256": "e734677f5cd6945972dd6615595da8bcbe21a7e2d2670ef006880c46b55e2384"
-        },
-        {
-          "z": 6,
-          "source": "spritesheets/shield/heater/revised/trim/bg/walk.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/trim/bg/walk.png",
-          "sourceTile": 64,
-          "frameMode": "native",
-          "sha256": "608a687f14e76b93159a76b4f772ab67d656613c0ed6564f273a25168378188f"
-        },
         {
           "z": 9,
           "source": "spritesheets/weapon/sword/arming/universal/bg/walk/steel.png",
@@ -676,19 +692,19 @@
         },
         {
           "z": 110,
-          "source": "spritesheets/shield/heater/revised/wood/fg/walk.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/wood/fg/walk.png",
+          "source": "spritesheets/shield/heater/original/wood/fg/walk.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/wood/fg/walk.png",
           "sourceTile": 64,
           "frameMode": "native",
-          "sha256": "821dd9694e1c744fabdf4887f7f5389c5f3946c7b9c142470b207373e16aa198"
+          "sha256": "2ccafa786109a483924e56434f4b56be2bb1822bb7ea84ac79db659db1a8ef47"
         },
         {
           "z": 115,
-          "source": "spritesheets/shield/heater/revised/trim/fg/walk.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/trim/fg/walk.png",
+          "source": "spritesheets/shield/heater/original/trim/fg/walk.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/trim/fg/walk.png",
           "sourceTile": 64,
           "frameMode": "native",
-          "sha256": "0dd1fc904b86326e4a0fe5d287b0c4cb1da38bb0bd0b5503b7d60728ce34fa41"
+          "sha256": "611389741a4c40fc6056c992095174a6db6439d0aa26e4cc80dbe43b6cadca5a"
         },
         {
           "z": 140,
@@ -764,19 +780,19 @@
         },
         {
           "z": 110,
-          "source": "spritesheets/shield/heater/revised/wood/fg/slash.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/wood/fg/slash.png",
+          "source": "spritesheets/shield/heater/original/wood/fg/slash.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/wood/fg/slash.png",
           "sourceTile": 64,
           "frameMode": "native",
-          "sha256": "46648c34b4d52c51f017899a84fbad5918f6f3910bfc799a0a9cff077ab695c9"
+          "sha256": "4e9f338f06425a5c0a43f2841950887b8f91fdc93c18a00282bf55a7282258a0"
         },
         {
           "z": 115,
-          "source": "spritesheets/shield/heater/revised/trim/fg/slash.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/trim/fg/slash.png",
+          "source": "spritesheets/shield/heater/original/trim/fg/slash.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/trim/fg/slash.png",
           "sourceTile": 64,
           "frameMode": "native",
-          "sha256": "caec42127e016bb8cfc333911d727426a289b085d2a03f1d96cbeef7ea4bbcba"
+          "sha256": "a6821beb9dbda394cc2ba7e6082a282f0ab79dca705168c3c13025c7022c1e87"
         },
         {
           "z": 140,
@@ -804,16 +820,16 @@
       "layers": [
         {
           "z": 2,
-          "source": "spritesheets/shield/heater/revised/wood/bg/halfslash.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/wood/bg/halfslash.png",
+          "source": "spritesheets/shield/heater/original/wood/bg/halfslash.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/wood/bg/halfslash.png",
           "sourceTile": 64,
           "frameMode": "native",
           "sha256": "20b73b766b7b4786ce88097a9613705c516d504180382dd06dd5297d079fabda"
         },
         {
           "z": 6,
-          "source": "spritesheets/shield/heater/revised/trim/bg/halfslash.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/trim/bg/halfslash.png",
+          "source": "spritesheets/shield/heater/original/trim/bg/halfslash.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/trim/bg/halfslash.png",
           "sourceTile": 64,
           "frameMode": "native",
           "sha256": "8feebf18448f3be15fea8a3afceb5c7db1856f2afc68824f5970ff439670fa29"
@@ -868,16 +884,16 @@
         },
         {
           "z": 110,
-          "source": "spritesheets/shield/heater/revised/wood/fg/halfslash.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/wood/fg/halfslash.png",
+          "source": "spritesheets/shield/heater/original/wood/fg/halfslash.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/wood/fg/halfslash.png",
           "sourceTile": 64,
           "frameMode": "native",
           "sha256": "37b55f18c99b45076e4df9c639647b7330490cfef383ef84c98dbd3faa786d23"
         },
         {
           "z": 115,
-          "source": "spritesheets/shield/heater/revised/trim/fg/halfslash.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/trim/fg/halfslash.png",
+          "source": "spritesheets/shield/heater/original/trim/fg/halfslash.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/trim/fg/halfslash.png",
           "sourceTile": 64,
           "frameMode": "native",
           "sha256": "f067ef034a4f2f226bec995436ff3f9633b0999d1b450b25e6014f367cf4af78"
@@ -908,16 +924,16 @@
       "layers": [
         {
           "z": 2,
-          "source": "spritesheets/shield/heater/revised/wood/bg/backslash.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/wood/bg/backslash.png",
+          "source": "spritesheets/shield/heater/original/wood/bg/backslash.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/wood/bg/backslash.png",
           "sourceTile": 64,
           "frameMode": "native",
           "sha256": "a3fff467c4a75c083f1ae6f7cfb5bd89c9f734da3a0100b0d39f549e2b20c647"
         },
         {
           "z": 6,
-          "source": "spritesheets/shield/heater/revised/trim/bg/backslash.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/trim/bg/backslash.png",
+          "source": "spritesheets/shield/heater/original/trim/bg/backslash.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/trim/bg/backslash.png",
           "sourceTile": 64,
           "frameMode": "native",
           "sha256": "350fc35f2b1d9ed049469a89121b94cca4b37fa044603fbc19d96387fe2fcbfc"
@@ -972,16 +988,16 @@
         },
         {
           "z": 110,
-          "source": "spritesheets/shield/heater/revised/wood/fg/backslash.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/wood/fg/backslash.png",
+          "source": "spritesheets/shield/heater/original/wood/fg/backslash.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/wood/fg/backslash.png",
           "sourceTile": 64,
           "frameMode": "native",
           "sha256": "b4bb320be93100d3b01352aeb68f488e997ccf59dd7e76d9053787ec398ebd8a"
         },
         {
           "z": 115,
-          "source": "spritesheets/shield/heater/revised/trim/fg/backslash.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/trim/fg/backslash.png",
+          "source": "spritesheets/shield/heater/original/trim/fg/backslash.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/trim/fg/backslash.png",
           "sourceTile": 64,
           "frameMode": "native",
           "sha256": "6229b80f178e72b30967036454ac915ee77a8561e516fc0a061a59737f0d862d"
@@ -1012,16 +1028,16 @@
       "layers": [
         {
           "z": 2,
-          "source": "spritesheets/shield/heater/revised/wood/bg/combat_idle.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/wood/bg/combat_idle.png",
+          "source": "spritesheets/shield/heater/original/wood/bg/combat_idle.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/wood/bg/combat_idle.png",
           "sourceTile": 64,
           "frameMode": "native pose 0",
           "sha256": "241345577a8ad4ce4e2ebd9f6d15508ee3bf442b22124391ac9fe5e8dcecc425"
         },
         {
           "z": 6,
-          "source": "spritesheets/shield/heater/revised/trim/bg/combat_idle.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/trim/bg/combat_idle.png",
+          "source": "spritesheets/shield/heater/original/trim/bg/combat_idle.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/trim/bg/combat_idle.png",
           "sourceTile": 64,
           "frameMode": "native pose 0",
           "sha256": "bfd8586a35c411718c2143234f92b3950bf6d93baed245664e01582b7e86d0f1"
@@ -1076,16 +1092,16 @@
         },
         {
           "z": 110,
-          "source": "spritesheets/shield/heater/revised/wood/fg/combat_idle.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/wood/fg/combat_idle.png",
+          "source": "spritesheets/shield/heater/original/wood/fg/combat_idle.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/wood/fg/combat_idle.png",
           "sourceTile": 64,
           "frameMode": "native pose 0",
           "sha256": "165497516fd4731f1dde1fa77fc6acbb09db83fbc43af1b8f8c6cc530a8cd403"
         },
         {
           "z": 115,
-          "source": "spritesheets/shield/heater/revised/trim/fg/combat_idle.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/trim/fg/combat_idle.png",
+          "source": "spritesheets/shield/heater/original/trim/fg/combat_idle.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/trim/fg/combat_idle.png",
           "sourceTile": 64,
           "frameMode": "native pose 0",
           "sha256": "fe65684be9ed25ea3974cbbbc7c94512ea0504a018d551e56219df5142ac0ff1"
@@ -1099,6 +1115,54 @@
           "sha256": "ec3b241d5507829521f0fa5c42d97f613a3dc98022bc4ca5d9a9c71080bfd6eb"
         }
       ]
+    },
+    "handedness": {
+      "shieldFamily": "heater/original",
+      "transform": "none: original native pixels and direction rows, no mirroring, translation or frozen frames",
+      "classicPoseFix": "Original WALK/SLASH shield cells grip the classic male off hand; revised side-facing cells overlap the sword hand.",
+      "revisedCuts": "Original and revised HALFSLASH/BACKSLASH/combat shield cells are byte-identical; distinct wrists verified from exposed native hand pixels.",
+      "exampleGripPixels": {
+        "walk-east-0": {
+          "shieldHand": [
+            26,
+            47
+          ],
+          "swordHand": [
+            37,
+            43
+          ]
+        },
+        "halfslash-east-3": {
+          "shieldHand": [
+            50,
+            37
+          ],
+          "swordHand": [
+            59,
+            43
+          ]
+        },
+        "halfslash-west-3": {
+          "shieldHand": [
+            13,
+            37
+          ],
+          "swordHand": [
+            4,
+            43
+          ]
+        },
+        "combat_idle-east-0": {
+          "shieldHand": [
+            42,
+            40
+          ],
+          "swordHand": [
+            30,
+            44
+          ]
+        }
+      }
     }
   },
   "sword/militia/blue": {
@@ -1145,7 +1209,7 @@
       }
     ],
     "notes": [
-      "Native revised wooden heater shield with metal trim uses its matching moving foreground/background layers in WALK, SLASH, HALFSLASH and BACKSLASH. BLOCK uses original combat_idle pose 0 for all layers. No held shield frames during attacks. Unsupported classic leather belt omitted from every sword pose."
+      "Native ORIGINAL wooden heater shield with metal trim matches the classic male off hand in WALK/SLASH; native HALFSLASH/BACKSLASH/combat poses are identical in the original/revised families. BLOCK uses original combat_idle pose 0 for all layers. No mirrored, translated or held shield cells during attacks. Distinct source hand pixels verified. Unsupported classic leather belt omitted from every sword pose."
     ],
     "walk": {
       "file": "{skin}-walk.png",
@@ -1161,22 +1225,6 @@
       "animation": "walk",
       "animationDefinition": "definitions/sources/custom-animations.ts",
       "layers": [
-        {
-          "z": 2,
-          "source": "spritesheets/shield/heater/revised/wood/bg/walk.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/wood/bg/walk.png",
-          "sourceTile": 64,
-          "frameMode": "native",
-          "sha256": "e734677f5cd6945972dd6615595da8bcbe21a7e2d2670ef006880c46b55e2384"
-        },
-        {
-          "z": 6,
-          "source": "spritesheets/shield/heater/revised/trim/bg/walk.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/trim/bg/walk.png",
-          "sourceTile": 64,
-          "frameMode": "native",
-          "sha256": "608a687f14e76b93159a76b4f772ab67d656613c0ed6564f273a25168378188f"
-        },
         {
           "z": 9,
           "source": "spritesheets/weapon/sword/arming/universal/bg/walk/steel.png",
@@ -1227,19 +1275,19 @@
         },
         {
           "z": 110,
-          "source": "spritesheets/shield/heater/revised/wood/fg/walk.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/wood/fg/walk.png",
+          "source": "spritesheets/shield/heater/original/wood/fg/walk.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/wood/fg/walk.png",
           "sourceTile": 64,
           "frameMode": "native",
-          "sha256": "821dd9694e1c744fabdf4887f7f5389c5f3946c7b9c142470b207373e16aa198"
+          "sha256": "2ccafa786109a483924e56434f4b56be2bb1822bb7ea84ac79db659db1a8ef47"
         },
         {
           "z": 115,
-          "source": "spritesheets/shield/heater/revised/trim/fg/walk.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/trim/fg/walk.png",
+          "source": "spritesheets/shield/heater/original/trim/fg/walk.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/trim/fg/walk.png",
           "sourceTile": 64,
           "frameMode": "native",
-          "sha256": "0dd1fc904b86326e4a0fe5d287b0c4cb1da38bb0bd0b5503b7d60728ce34fa41"
+          "sha256": "611389741a4c40fc6056c992095174a6db6439d0aa26e4cc80dbe43b6cadca5a"
         },
         {
           "z": 140,
@@ -1315,19 +1363,19 @@
         },
         {
           "z": 110,
-          "source": "spritesheets/shield/heater/revised/wood/fg/slash.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/wood/fg/slash.png",
+          "source": "spritesheets/shield/heater/original/wood/fg/slash.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/wood/fg/slash.png",
           "sourceTile": 64,
           "frameMode": "native",
-          "sha256": "46648c34b4d52c51f017899a84fbad5918f6f3910bfc799a0a9cff077ab695c9"
+          "sha256": "4e9f338f06425a5c0a43f2841950887b8f91fdc93c18a00282bf55a7282258a0"
         },
         {
           "z": 115,
-          "source": "spritesheets/shield/heater/revised/trim/fg/slash.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/trim/fg/slash.png",
+          "source": "spritesheets/shield/heater/original/trim/fg/slash.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/trim/fg/slash.png",
           "sourceTile": 64,
           "frameMode": "native",
-          "sha256": "caec42127e016bb8cfc333911d727426a289b085d2a03f1d96cbeef7ea4bbcba"
+          "sha256": "a6821beb9dbda394cc2ba7e6082a282f0ab79dca705168c3c13025c7022c1e87"
         },
         {
           "z": 140,
@@ -1355,16 +1403,16 @@
       "layers": [
         {
           "z": 2,
-          "source": "spritesheets/shield/heater/revised/wood/bg/halfslash.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/wood/bg/halfslash.png",
+          "source": "spritesheets/shield/heater/original/wood/bg/halfslash.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/wood/bg/halfslash.png",
           "sourceTile": 64,
           "frameMode": "native",
           "sha256": "20b73b766b7b4786ce88097a9613705c516d504180382dd06dd5297d079fabda"
         },
         {
           "z": 6,
-          "source": "spritesheets/shield/heater/revised/trim/bg/halfslash.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/trim/bg/halfslash.png",
+          "source": "spritesheets/shield/heater/original/trim/bg/halfslash.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/trim/bg/halfslash.png",
           "sourceTile": 64,
           "frameMode": "native",
           "sha256": "8feebf18448f3be15fea8a3afceb5c7db1856f2afc68824f5970ff439670fa29"
@@ -1419,16 +1467,16 @@
         },
         {
           "z": 110,
-          "source": "spritesheets/shield/heater/revised/wood/fg/halfslash.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/wood/fg/halfslash.png",
+          "source": "spritesheets/shield/heater/original/wood/fg/halfslash.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/wood/fg/halfslash.png",
           "sourceTile": 64,
           "frameMode": "native",
           "sha256": "37b55f18c99b45076e4df9c639647b7330490cfef383ef84c98dbd3faa786d23"
         },
         {
           "z": 115,
-          "source": "spritesheets/shield/heater/revised/trim/fg/halfslash.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/trim/fg/halfslash.png",
+          "source": "spritesheets/shield/heater/original/trim/fg/halfslash.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/trim/fg/halfslash.png",
           "sourceTile": 64,
           "frameMode": "native",
           "sha256": "f067ef034a4f2f226bec995436ff3f9633b0999d1b450b25e6014f367cf4af78"
@@ -1459,16 +1507,16 @@
       "layers": [
         {
           "z": 2,
-          "source": "spritesheets/shield/heater/revised/wood/bg/backslash.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/wood/bg/backslash.png",
+          "source": "spritesheets/shield/heater/original/wood/bg/backslash.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/wood/bg/backslash.png",
           "sourceTile": 64,
           "frameMode": "native",
           "sha256": "a3fff467c4a75c083f1ae6f7cfb5bd89c9f734da3a0100b0d39f549e2b20c647"
         },
         {
           "z": 6,
-          "source": "spritesheets/shield/heater/revised/trim/bg/backslash.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/trim/bg/backslash.png",
+          "source": "spritesheets/shield/heater/original/trim/bg/backslash.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/trim/bg/backslash.png",
           "sourceTile": 64,
           "frameMode": "native",
           "sha256": "350fc35f2b1d9ed049469a89121b94cca4b37fa044603fbc19d96387fe2fcbfc"
@@ -1523,16 +1571,16 @@
         },
         {
           "z": 110,
-          "source": "spritesheets/shield/heater/revised/wood/fg/backslash.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/wood/fg/backslash.png",
+          "source": "spritesheets/shield/heater/original/wood/fg/backslash.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/wood/fg/backslash.png",
           "sourceTile": 64,
           "frameMode": "native",
           "sha256": "b4bb320be93100d3b01352aeb68f488e997ccf59dd7e76d9053787ec398ebd8a"
         },
         {
           "z": 115,
-          "source": "spritesheets/shield/heater/revised/trim/fg/backslash.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/trim/fg/backslash.png",
+          "source": "spritesheets/shield/heater/original/trim/fg/backslash.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/trim/fg/backslash.png",
           "sourceTile": 64,
           "frameMode": "native",
           "sha256": "6229b80f178e72b30967036454ac915ee77a8561e516fc0a061a59737f0d862d"
@@ -1563,16 +1611,16 @@
       "layers": [
         {
           "z": 2,
-          "source": "spritesheets/shield/heater/revised/wood/bg/combat_idle.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/wood/bg/combat_idle.png",
+          "source": "spritesheets/shield/heater/original/wood/bg/combat_idle.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/wood/bg/combat_idle.png",
           "sourceTile": 64,
           "frameMode": "native pose 0",
           "sha256": "241345577a8ad4ce4e2ebd9f6d15508ee3bf442b22124391ac9fe5e8dcecc425"
         },
         {
           "z": 6,
-          "source": "spritesheets/shield/heater/revised/trim/bg/combat_idle.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/trim/bg/combat_idle.png",
+          "source": "spritesheets/shield/heater/original/trim/bg/combat_idle.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/trim/bg/combat_idle.png",
           "sourceTile": 64,
           "frameMode": "native pose 0",
           "sha256": "bfd8586a35c411718c2143234f92b3950bf6d93baed245664e01582b7e86d0f1"
@@ -1627,16 +1675,16 @@
         },
         {
           "z": 110,
-          "source": "spritesheets/shield/heater/revised/wood/fg/combat_idle.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/wood/fg/combat_idle.png",
+          "source": "spritesheets/shield/heater/original/wood/fg/combat_idle.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/wood/fg/combat_idle.png",
           "sourceTile": 64,
           "frameMode": "native pose 0",
           "sha256": "165497516fd4731f1dde1fa77fc6acbb09db83fbc43af1b8f8c6cc530a8cd403"
         },
         {
           "z": 115,
-          "source": "spritesheets/shield/heater/revised/trim/fg/combat_idle.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/trim/fg/combat_idle.png",
+          "source": "spritesheets/shield/heater/original/trim/fg/combat_idle.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/trim/fg/combat_idle.png",
           "sourceTile": 64,
           "frameMode": "native pose 0",
           "sha256": "fe65684be9ed25ea3974cbbbc7c94512ea0504a018d551e56219df5142ac0ff1"
@@ -1650,6 +1698,54 @@
           "sha256": "ec3b241d5507829521f0fa5c42d97f613a3dc98022bc4ca5d9a9c71080bfd6eb"
         }
       ]
+    },
+    "handedness": {
+      "shieldFamily": "heater/original",
+      "transform": "none: original native pixels and direction rows, no mirroring, translation or frozen frames",
+      "classicPoseFix": "Original WALK/SLASH shield cells grip the classic male off hand; revised side-facing cells overlap the sword hand.",
+      "revisedCuts": "Original and revised HALFSLASH/BACKSLASH/combat shield cells are byte-identical; distinct wrists verified from exposed native hand pixels.",
+      "exampleGripPixels": {
+        "walk-east-0": {
+          "shieldHand": [
+            26,
+            47
+          ],
+          "swordHand": [
+            37,
+            43
+          ]
+        },
+        "halfslash-east-3": {
+          "shieldHand": [
+            50,
+            37
+          ],
+          "swordHand": [
+            59,
+            43
+          ]
+        },
+        "halfslash-west-3": {
+          "shieldHand": [
+            13,
+            37
+          ],
+          "swordHand": [
+            4,
+            43
+          ]
+        },
+        "combat_idle-east-0": {
+          "shieldHand": [
+            42,
+            40
+          ],
+          "swordHand": [
+            30,
+            44
+          ]
+        }
+      }
     }
   },
   "sword/militia/red": {
@@ -1696,7 +1792,7 @@
       }
     ],
     "notes": [
-      "Native revised wooden heater shield with metal trim uses its matching moving foreground/background layers in WALK, SLASH, HALFSLASH and BACKSLASH. BLOCK uses original combat_idle pose 0 for all layers. No held shield frames during attacks. Unsupported classic leather belt omitted from every sword pose."
+      "Native ORIGINAL wooden heater shield with metal trim matches the classic male off hand in WALK/SLASH; native HALFSLASH/BACKSLASH/combat poses are identical in the original/revised families. BLOCK uses original combat_idle pose 0 for all layers. No mirrored, translated or held shield cells during attacks. Distinct source hand pixels verified. Unsupported classic leather belt omitted from every sword pose."
     ],
     "walk": {
       "file": "{skin}-walk.png",
@@ -1712,22 +1808,6 @@
       "animation": "walk",
       "animationDefinition": "definitions/sources/custom-animations.ts",
       "layers": [
-        {
-          "z": 2,
-          "source": "spritesheets/shield/heater/revised/wood/bg/walk.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/wood/bg/walk.png",
-          "sourceTile": 64,
-          "frameMode": "native",
-          "sha256": "e734677f5cd6945972dd6615595da8bcbe21a7e2d2670ef006880c46b55e2384"
-        },
-        {
-          "z": 6,
-          "source": "spritesheets/shield/heater/revised/trim/bg/walk.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/trim/bg/walk.png",
-          "sourceTile": 64,
-          "frameMode": "native",
-          "sha256": "608a687f14e76b93159a76b4f772ab67d656613c0ed6564f273a25168378188f"
-        },
         {
           "z": 9,
           "source": "spritesheets/weapon/sword/arming/universal/bg/walk/steel.png",
@@ -1778,19 +1858,19 @@
         },
         {
           "z": 110,
-          "source": "spritesheets/shield/heater/revised/wood/fg/walk.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/wood/fg/walk.png",
+          "source": "spritesheets/shield/heater/original/wood/fg/walk.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/wood/fg/walk.png",
           "sourceTile": 64,
           "frameMode": "native",
-          "sha256": "821dd9694e1c744fabdf4887f7f5389c5f3946c7b9c142470b207373e16aa198"
+          "sha256": "2ccafa786109a483924e56434f4b56be2bb1822bb7ea84ac79db659db1a8ef47"
         },
         {
           "z": 115,
-          "source": "spritesheets/shield/heater/revised/trim/fg/walk.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/trim/fg/walk.png",
+          "source": "spritesheets/shield/heater/original/trim/fg/walk.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/trim/fg/walk.png",
           "sourceTile": 64,
           "frameMode": "native",
-          "sha256": "0dd1fc904b86326e4a0fe5d287b0c4cb1da38bb0bd0b5503b7d60728ce34fa41"
+          "sha256": "611389741a4c40fc6056c992095174a6db6439d0aa26e4cc80dbe43b6cadca5a"
         },
         {
           "z": 140,
@@ -1866,19 +1946,19 @@
         },
         {
           "z": 110,
-          "source": "spritesheets/shield/heater/revised/wood/fg/slash.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/wood/fg/slash.png",
+          "source": "spritesheets/shield/heater/original/wood/fg/slash.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/wood/fg/slash.png",
           "sourceTile": 64,
           "frameMode": "native",
-          "sha256": "46648c34b4d52c51f017899a84fbad5918f6f3910bfc799a0a9cff077ab695c9"
+          "sha256": "4e9f338f06425a5c0a43f2841950887b8f91fdc93c18a00282bf55a7282258a0"
         },
         {
           "z": 115,
-          "source": "spritesheets/shield/heater/revised/trim/fg/slash.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/trim/fg/slash.png",
+          "source": "spritesheets/shield/heater/original/trim/fg/slash.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/trim/fg/slash.png",
           "sourceTile": 64,
           "frameMode": "native",
-          "sha256": "caec42127e016bb8cfc333911d727426a289b085d2a03f1d96cbeef7ea4bbcba"
+          "sha256": "a6821beb9dbda394cc2ba7e6082a282f0ab79dca705168c3c13025c7022c1e87"
         },
         {
           "z": 140,
@@ -1906,16 +1986,16 @@
       "layers": [
         {
           "z": 2,
-          "source": "spritesheets/shield/heater/revised/wood/bg/halfslash.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/wood/bg/halfslash.png",
+          "source": "spritesheets/shield/heater/original/wood/bg/halfslash.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/wood/bg/halfslash.png",
           "sourceTile": 64,
           "frameMode": "native",
           "sha256": "20b73b766b7b4786ce88097a9613705c516d504180382dd06dd5297d079fabda"
         },
         {
           "z": 6,
-          "source": "spritesheets/shield/heater/revised/trim/bg/halfslash.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/trim/bg/halfslash.png",
+          "source": "spritesheets/shield/heater/original/trim/bg/halfslash.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/trim/bg/halfslash.png",
           "sourceTile": 64,
           "frameMode": "native",
           "sha256": "8feebf18448f3be15fea8a3afceb5c7db1856f2afc68824f5970ff439670fa29"
@@ -1970,16 +2050,16 @@
         },
         {
           "z": 110,
-          "source": "spritesheets/shield/heater/revised/wood/fg/halfslash.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/wood/fg/halfslash.png",
+          "source": "spritesheets/shield/heater/original/wood/fg/halfslash.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/wood/fg/halfslash.png",
           "sourceTile": 64,
           "frameMode": "native",
           "sha256": "37b55f18c99b45076e4df9c639647b7330490cfef383ef84c98dbd3faa786d23"
         },
         {
           "z": 115,
-          "source": "spritesheets/shield/heater/revised/trim/fg/halfslash.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/trim/fg/halfslash.png",
+          "source": "spritesheets/shield/heater/original/trim/fg/halfslash.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/trim/fg/halfslash.png",
           "sourceTile": 64,
           "frameMode": "native",
           "sha256": "f067ef034a4f2f226bec995436ff3f9633b0999d1b450b25e6014f367cf4af78"
@@ -2010,16 +2090,16 @@
       "layers": [
         {
           "z": 2,
-          "source": "spritesheets/shield/heater/revised/wood/bg/backslash.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/wood/bg/backslash.png",
+          "source": "spritesheets/shield/heater/original/wood/bg/backslash.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/wood/bg/backslash.png",
           "sourceTile": 64,
           "frameMode": "native",
           "sha256": "a3fff467c4a75c083f1ae6f7cfb5bd89c9f734da3a0100b0d39f549e2b20c647"
         },
         {
           "z": 6,
-          "source": "spritesheets/shield/heater/revised/trim/bg/backslash.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/trim/bg/backslash.png",
+          "source": "spritesheets/shield/heater/original/trim/bg/backslash.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/trim/bg/backslash.png",
           "sourceTile": 64,
           "frameMode": "native",
           "sha256": "350fc35f2b1d9ed049469a89121b94cca4b37fa044603fbc19d96387fe2fcbfc"
@@ -2074,16 +2154,16 @@
         },
         {
           "z": 110,
-          "source": "spritesheets/shield/heater/revised/wood/fg/backslash.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/wood/fg/backslash.png",
+          "source": "spritesheets/shield/heater/original/wood/fg/backslash.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/wood/fg/backslash.png",
           "sourceTile": 64,
           "frameMode": "native",
           "sha256": "b4bb320be93100d3b01352aeb68f488e997ccf59dd7e76d9053787ec398ebd8a"
         },
         {
           "z": 115,
-          "source": "spritesheets/shield/heater/revised/trim/fg/backslash.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/trim/fg/backslash.png",
+          "source": "spritesheets/shield/heater/original/trim/fg/backslash.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/trim/fg/backslash.png",
           "sourceTile": 64,
           "frameMode": "native",
           "sha256": "6229b80f178e72b30967036454ac915ee77a8561e516fc0a061a59737f0d862d"
@@ -2114,16 +2194,16 @@
       "layers": [
         {
           "z": 2,
-          "source": "spritesheets/shield/heater/revised/wood/bg/combat_idle.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/wood/bg/combat_idle.png",
+          "source": "spritesheets/shield/heater/original/wood/bg/combat_idle.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/wood/bg/combat_idle.png",
           "sourceTile": 64,
           "frameMode": "native pose 0",
           "sha256": "241345577a8ad4ce4e2ebd9f6d15508ee3bf442b22124391ac9fe5e8dcecc425"
         },
         {
           "z": 6,
-          "source": "spritesheets/shield/heater/revised/trim/bg/combat_idle.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/trim/bg/combat_idle.png",
+          "source": "spritesheets/shield/heater/original/trim/bg/combat_idle.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/trim/bg/combat_idle.png",
           "sourceTile": 64,
           "frameMode": "native pose 0",
           "sha256": "bfd8586a35c411718c2143234f92b3950bf6d93baed245664e01582b7e86d0f1"
@@ -2178,16 +2258,16 @@
         },
         {
           "z": 110,
-          "source": "spritesheets/shield/heater/revised/wood/fg/combat_idle.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/wood/fg/combat_idle.png",
+          "source": "spritesheets/shield/heater/original/wood/fg/combat_idle.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/wood/fg/combat_idle.png",
           "sourceTile": 64,
           "frameMode": "native pose 0",
           "sha256": "165497516fd4731f1dde1fa77fc6acbb09db83fbc43af1b8f8c6cc530a8cd403"
         },
         {
           "z": 115,
-          "source": "spritesheets/shield/heater/revised/trim/fg/combat_idle.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/trim/fg/combat_idle.png",
+          "source": "spritesheets/shield/heater/original/trim/fg/combat_idle.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/trim/fg/combat_idle.png",
           "sourceTile": 64,
           "frameMode": "native pose 0",
           "sha256": "fe65684be9ed25ea3974cbbbc7c94512ea0504a018d551e56219df5142ac0ff1"
@@ -2201,6 +2281,54 @@
           "sha256": "ec3b241d5507829521f0fa5c42d97f613a3dc98022bc4ca5d9a9c71080bfd6eb"
         }
       ]
+    },
+    "handedness": {
+      "shieldFamily": "heater/original",
+      "transform": "none: original native pixels and direction rows, no mirroring, translation or frozen frames",
+      "classicPoseFix": "Original WALK/SLASH shield cells grip the classic male off hand; revised side-facing cells overlap the sword hand.",
+      "revisedCuts": "Original and revised HALFSLASH/BACKSLASH/combat shield cells are byte-identical; distinct wrists verified from exposed native hand pixels.",
+      "exampleGripPixels": {
+        "walk-east-0": {
+          "shieldHand": [
+            26,
+            47
+          ],
+          "swordHand": [
+            37,
+            43
+          ]
+        },
+        "halfslash-east-3": {
+          "shieldHand": [
+            50,
+            37
+          ],
+          "swordHand": [
+            59,
+            43
+          ]
+        },
+        "halfslash-west-3": {
+          "shieldHand": [
+            13,
+            37
+          ],
+          "swordHand": [
+            4,
+            43
+          ]
+        },
+        "combat_idle-east-0": {
+          "shieldHand": [
+            42,
+            40
+          ],
+          "swordHand": [
+            30,
+            44
+          ]
+        }
+      }
     }
   },
   "sword/militia/purple": {
@@ -2247,7 +2375,7 @@
       }
     ],
     "notes": [
-      "Native revised wooden heater shield with metal trim uses its matching moving foreground/background layers in WALK, SLASH, HALFSLASH and BACKSLASH. BLOCK uses original combat_idle pose 0 for all layers. No held shield frames during attacks. Unsupported classic leather belt omitted from every sword pose."
+      "Native ORIGINAL wooden heater shield with metal trim matches the classic male off hand in WALK/SLASH; native HALFSLASH/BACKSLASH/combat poses are identical in the original/revised families. BLOCK uses original combat_idle pose 0 for all layers. No mirrored, translated or held shield cells during attacks. Distinct source hand pixels verified. Unsupported classic leather belt omitted from every sword pose."
     ],
     "walk": {
       "file": "{skin}-walk.png",
@@ -2263,22 +2391,6 @@
       "animation": "walk",
       "animationDefinition": "definitions/sources/custom-animations.ts",
       "layers": [
-        {
-          "z": 2,
-          "source": "spritesheets/shield/heater/revised/wood/bg/walk.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/wood/bg/walk.png",
-          "sourceTile": 64,
-          "frameMode": "native",
-          "sha256": "e734677f5cd6945972dd6615595da8bcbe21a7e2d2670ef006880c46b55e2384"
-        },
-        {
-          "z": 6,
-          "source": "spritesheets/shield/heater/revised/trim/bg/walk.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/trim/bg/walk.png",
-          "sourceTile": 64,
-          "frameMode": "native",
-          "sha256": "608a687f14e76b93159a76b4f772ab67d656613c0ed6564f273a25168378188f"
-        },
         {
           "z": 9,
           "source": "spritesheets/weapon/sword/arming/universal/bg/walk/steel.png",
@@ -2329,19 +2441,19 @@
         },
         {
           "z": 110,
-          "source": "spritesheets/shield/heater/revised/wood/fg/walk.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/wood/fg/walk.png",
+          "source": "spritesheets/shield/heater/original/wood/fg/walk.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/wood/fg/walk.png",
           "sourceTile": 64,
           "frameMode": "native",
-          "sha256": "821dd9694e1c744fabdf4887f7f5389c5f3946c7b9c142470b207373e16aa198"
+          "sha256": "2ccafa786109a483924e56434f4b56be2bb1822bb7ea84ac79db659db1a8ef47"
         },
         {
           "z": 115,
-          "source": "spritesheets/shield/heater/revised/trim/fg/walk.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/trim/fg/walk.png",
+          "source": "spritesheets/shield/heater/original/trim/fg/walk.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/trim/fg/walk.png",
           "sourceTile": 64,
           "frameMode": "native",
-          "sha256": "0dd1fc904b86326e4a0fe5d287b0c4cb1da38bb0bd0b5503b7d60728ce34fa41"
+          "sha256": "611389741a4c40fc6056c992095174a6db6439d0aa26e4cc80dbe43b6cadca5a"
         },
         {
           "z": 140,
@@ -2417,19 +2529,19 @@
         },
         {
           "z": 110,
-          "source": "spritesheets/shield/heater/revised/wood/fg/slash.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/wood/fg/slash.png",
+          "source": "spritesheets/shield/heater/original/wood/fg/slash.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/wood/fg/slash.png",
           "sourceTile": 64,
           "frameMode": "native",
-          "sha256": "46648c34b4d52c51f017899a84fbad5918f6f3910bfc799a0a9cff077ab695c9"
+          "sha256": "4e9f338f06425a5c0a43f2841950887b8f91fdc93c18a00282bf55a7282258a0"
         },
         {
           "z": 115,
-          "source": "spritesheets/shield/heater/revised/trim/fg/slash.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/trim/fg/slash.png",
+          "source": "spritesheets/shield/heater/original/trim/fg/slash.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/trim/fg/slash.png",
           "sourceTile": 64,
           "frameMode": "native",
-          "sha256": "caec42127e016bb8cfc333911d727426a289b085d2a03f1d96cbeef7ea4bbcba"
+          "sha256": "a6821beb9dbda394cc2ba7e6082a282f0ab79dca705168c3c13025c7022c1e87"
         },
         {
           "z": 140,
@@ -2457,16 +2569,16 @@
       "layers": [
         {
           "z": 2,
-          "source": "spritesheets/shield/heater/revised/wood/bg/halfslash.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/wood/bg/halfslash.png",
+          "source": "spritesheets/shield/heater/original/wood/bg/halfslash.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/wood/bg/halfslash.png",
           "sourceTile": 64,
           "frameMode": "native",
           "sha256": "20b73b766b7b4786ce88097a9613705c516d504180382dd06dd5297d079fabda"
         },
         {
           "z": 6,
-          "source": "spritesheets/shield/heater/revised/trim/bg/halfslash.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/trim/bg/halfslash.png",
+          "source": "spritesheets/shield/heater/original/trim/bg/halfslash.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/trim/bg/halfslash.png",
           "sourceTile": 64,
           "frameMode": "native",
           "sha256": "8feebf18448f3be15fea8a3afceb5c7db1856f2afc68824f5970ff439670fa29"
@@ -2521,16 +2633,16 @@
         },
         {
           "z": 110,
-          "source": "spritesheets/shield/heater/revised/wood/fg/halfslash.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/wood/fg/halfslash.png",
+          "source": "spritesheets/shield/heater/original/wood/fg/halfslash.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/wood/fg/halfslash.png",
           "sourceTile": 64,
           "frameMode": "native",
           "sha256": "37b55f18c99b45076e4df9c639647b7330490cfef383ef84c98dbd3faa786d23"
         },
         {
           "z": 115,
-          "source": "spritesheets/shield/heater/revised/trim/fg/halfslash.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/trim/fg/halfslash.png",
+          "source": "spritesheets/shield/heater/original/trim/fg/halfslash.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/trim/fg/halfslash.png",
           "sourceTile": 64,
           "frameMode": "native",
           "sha256": "f067ef034a4f2f226bec995436ff3f9633b0999d1b450b25e6014f367cf4af78"
@@ -2561,16 +2673,16 @@
       "layers": [
         {
           "z": 2,
-          "source": "spritesheets/shield/heater/revised/wood/bg/backslash.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/wood/bg/backslash.png",
+          "source": "spritesheets/shield/heater/original/wood/bg/backslash.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/wood/bg/backslash.png",
           "sourceTile": 64,
           "frameMode": "native",
           "sha256": "a3fff467c4a75c083f1ae6f7cfb5bd89c9f734da3a0100b0d39f549e2b20c647"
         },
         {
           "z": 6,
-          "source": "spritesheets/shield/heater/revised/trim/bg/backslash.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/trim/bg/backslash.png",
+          "source": "spritesheets/shield/heater/original/trim/bg/backslash.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/trim/bg/backslash.png",
           "sourceTile": 64,
           "frameMode": "native",
           "sha256": "350fc35f2b1d9ed049469a89121b94cca4b37fa044603fbc19d96387fe2fcbfc"
@@ -2625,16 +2737,16 @@
         },
         {
           "z": 110,
-          "source": "spritesheets/shield/heater/revised/wood/fg/backslash.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/wood/fg/backslash.png",
+          "source": "spritesheets/shield/heater/original/wood/fg/backslash.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/wood/fg/backslash.png",
           "sourceTile": 64,
           "frameMode": "native",
           "sha256": "b4bb320be93100d3b01352aeb68f488e997ccf59dd7e76d9053787ec398ebd8a"
         },
         {
           "z": 115,
-          "source": "spritesheets/shield/heater/revised/trim/fg/backslash.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/trim/fg/backslash.png",
+          "source": "spritesheets/shield/heater/original/trim/fg/backslash.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/trim/fg/backslash.png",
           "sourceTile": 64,
           "frameMode": "native",
           "sha256": "6229b80f178e72b30967036454ac915ee77a8561e516fc0a061a59737f0d862d"
@@ -2665,16 +2777,16 @@
       "layers": [
         {
           "z": 2,
-          "source": "spritesheets/shield/heater/revised/wood/bg/combat_idle.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/wood/bg/combat_idle.png",
+          "source": "spritesheets/shield/heater/original/wood/bg/combat_idle.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/wood/bg/combat_idle.png",
           "sourceTile": 64,
           "frameMode": "native pose 0",
           "sha256": "241345577a8ad4ce4e2ebd9f6d15508ee3bf442b22124391ac9fe5e8dcecc425"
         },
         {
           "z": 6,
-          "source": "spritesheets/shield/heater/revised/trim/bg/combat_idle.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/trim/bg/combat_idle.png",
+          "source": "spritesheets/shield/heater/original/trim/bg/combat_idle.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/trim/bg/combat_idle.png",
           "sourceTile": 64,
           "frameMode": "native pose 0",
           "sha256": "bfd8586a35c411718c2143234f92b3950bf6d93baed245664e01582b7e86d0f1"
@@ -2729,16 +2841,16 @@
         },
         {
           "z": 110,
-          "source": "spritesheets/shield/heater/revised/wood/fg/combat_idle.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/wood/fg/combat_idle.png",
+          "source": "spritesheets/shield/heater/original/wood/fg/combat_idle.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/wood/fg/combat_idle.png",
           "sourceTile": 64,
           "frameMode": "native pose 0",
           "sha256": "165497516fd4731f1dde1fa77fc6acbb09db83fbc43af1b8f8c6cc530a8cd403"
         },
         {
           "z": 115,
-          "source": "spritesheets/shield/heater/revised/trim/fg/combat_idle.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/trim/fg/combat_idle.png",
+          "source": "spritesheets/shield/heater/original/trim/fg/combat_idle.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/trim/fg/combat_idle.png",
           "sourceTile": 64,
           "frameMode": "native pose 0",
           "sha256": "fe65684be9ed25ea3974cbbbc7c94512ea0504a018d551e56219df5142ac0ff1"
@@ -2752,6 +2864,54 @@
           "sha256": "ec3b241d5507829521f0fa5c42d97f613a3dc98022bc4ca5d9a9c71080bfd6eb"
         }
       ]
+    },
+    "handedness": {
+      "shieldFamily": "heater/original",
+      "transform": "none: original native pixels and direction rows, no mirroring, translation or frozen frames",
+      "classicPoseFix": "Original WALK/SLASH shield cells grip the classic male off hand; revised side-facing cells overlap the sword hand.",
+      "revisedCuts": "Original and revised HALFSLASH/BACKSLASH/combat shield cells are byte-identical; distinct wrists verified from exposed native hand pixels.",
+      "exampleGripPixels": {
+        "walk-east-0": {
+          "shieldHand": [
+            26,
+            47
+          ],
+          "swordHand": [
+            37,
+            43
+          ]
+        },
+        "halfslash-east-3": {
+          "shieldHand": [
+            50,
+            37
+          ],
+          "swordHand": [
+            59,
+            43
+          ]
+        },
+        "halfslash-west-3": {
+          "shieldHand": [
+            13,
+            37
+          ],
+          "swordHand": [
+            4,
+            43
+          ]
+        },
+        "combat_idle-east-0": {
+          "shieldHand": [
+            42,
+            40
+          ],
+          "swordHand": [
+            30,
+            44
+          ]
+        }
+      }
     }
   },
   "sword/militia/gray": {
@@ -2798,7 +2958,7 @@
       }
     ],
     "notes": [
-      "Native revised wooden heater shield with metal trim uses its matching moving foreground/background layers in WALK, SLASH, HALFSLASH and BACKSLASH. BLOCK uses original combat_idle pose 0 for all layers. No held shield frames during attacks. Unsupported classic leather belt omitted from every sword pose."
+      "Native ORIGINAL wooden heater shield with metal trim matches the classic male off hand in WALK/SLASH; native HALFSLASH/BACKSLASH/combat poses are identical in the original/revised families. BLOCK uses original combat_idle pose 0 for all layers. No mirrored, translated or held shield cells during attacks. Distinct source hand pixels verified. Unsupported classic leather belt omitted from every sword pose."
     ],
     "walk": {
       "file": "{skin}-walk.png",
@@ -2814,22 +2974,6 @@
       "animation": "walk",
       "animationDefinition": "definitions/sources/custom-animations.ts",
       "layers": [
-        {
-          "z": 2,
-          "source": "spritesheets/shield/heater/revised/wood/bg/walk.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/wood/bg/walk.png",
-          "sourceTile": 64,
-          "frameMode": "native",
-          "sha256": "e734677f5cd6945972dd6615595da8bcbe21a7e2d2670ef006880c46b55e2384"
-        },
-        {
-          "z": 6,
-          "source": "spritesheets/shield/heater/revised/trim/bg/walk.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/trim/bg/walk.png",
-          "sourceTile": 64,
-          "frameMode": "native",
-          "sha256": "608a687f14e76b93159a76b4f772ab67d656613c0ed6564f273a25168378188f"
-        },
         {
           "z": 9,
           "source": "spritesheets/weapon/sword/arming/universal/bg/walk/steel.png",
@@ -2880,19 +3024,19 @@
         },
         {
           "z": 110,
-          "source": "spritesheets/shield/heater/revised/wood/fg/walk.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/wood/fg/walk.png",
+          "source": "spritesheets/shield/heater/original/wood/fg/walk.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/wood/fg/walk.png",
           "sourceTile": 64,
           "frameMode": "native",
-          "sha256": "821dd9694e1c744fabdf4887f7f5389c5f3946c7b9c142470b207373e16aa198"
+          "sha256": "2ccafa786109a483924e56434f4b56be2bb1822bb7ea84ac79db659db1a8ef47"
         },
         {
           "z": 115,
-          "source": "spritesheets/shield/heater/revised/trim/fg/walk.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/trim/fg/walk.png",
+          "source": "spritesheets/shield/heater/original/trim/fg/walk.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/trim/fg/walk.png",
           "sourceTile": 64,
           "frameMode": "native",
-          "sha256": "0dd1fc904b86326e4a0fe5d287b0c4cb1da38bb0bd0b5503b7d60728ce34fa41"
+          "sha256": "611389741a4c40fc6056c992095174a6db6439d0aa26e4cc80dbe43b6cadca5a"
         },
         {
           "z": 140,
@@ -2968,19 +3112,19 @@
         },
         {
           "z": 110,
-          "source": "spritesheets/shield/heater/revised/wood/fg/slash.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/wood/fg/slash.png",
+          "source": "spritesheets/shield/heater/original/wood/fg/slash.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/wood/fg/slash.png",
           "sourceTile": 64,
           "frameMode": "native",
-          "sha256": "46648c34b4d52c51f017899a84fbad5918f6f3910bfc799a0a9cff077ab695c9"
+          "sha256": "4e9f338f06425a5c0a43f2841950887b8f91fdc93c18a00282bf55a7282258a0"
         },
         {
           "z": 115,
-          "source": "spritesheets/shield/heater/revised/trim/fg/slash.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/trim/fg/slash.png",
+          "source": "spritesheets/shield/heater/original/trim/fg/slash.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/trim/fg/slash.png",
           "sourceTile": 64,
           "frameMode": "native",
-          "sha256": "caec42127e016bb8cfc333911d727426a289b085d2a03f1d96cbeef7ea4bbcba"
+          "sha256": "a6821beb9dbda394cc2ba7e6082a282f0ab79dca705168c3c13025c7022c1e87"
         },
         {
           "z": 140,
@@ -3008,16 +3152,16 @@
       "layers": [
         {
           "z": 2,
-          "source": "spritesheets/shield/heater/revised/wood/bg/halfslash.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/wood/bg/halfslash.png",
+          "source": "spritesheets/shield/heater/original/wood/bg/halfslash.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/wood/bg/halfslash.png",
           "sourceTile": 64,
           "frameMode": "native",
           "sha256": "20b73b766b7b4786ce88097a9613705c516d504180382dd06dd5297d079fabda"
         },
         {
           "z": 6,
-          "source": "spritesheets/shield/heater/revised/trim/bg/halfslash.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/trim/bg/halfslash.png",
+          "source": "spritesheets/shield/heater/original/trim/bg/halfslash.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/trim/bg/halfslash.png",
           "sourceTile": 64,
           "frameMode": "native",
           "sha256": "8feebf18448f3be15fea8a3afceb5c7db1856f2afc68824f5970ff439670fa29"
@@ -3072,16 +3216,16 @@
         },
         {
           "z": 110,
-          "source": "spritesheets/shield/heater/revised/wood/fg/halfslash.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/wood/fg/halfslash.png",
+          "source": "spritesheets/shield/heater/original/wood/fg/halfslash.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/wood/fg/halfslash.png",
           "sourceTile": 64,
           "frameMode": "native",
           "sha256": "37b55f18c99b45076e4df9c639647b7330490cfef383ef84c98dbd3faa786d23"
         },
         {
           "z": 115,
-          "source": "spritesheets/shield/heater/revised/trim/fg/halfslash.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/trim/fg/halfslash.png",
+          "source": "spritesheets/shield/heater/original/trim/fg/halfslash.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/trim/fg/halfslash.png",
           "sourceTile": 64,
           "frameMode": "native",
           "sha256": "f067ef034a4f2f226bec995436ff3f9633b0999d1b450b25e6014f367cf4af78"
@@ -3112,16 +3256,16 @@
       "layers": [
         {
           "z": 2,
-          "source": "spritesheets/shield/heater/revised/wood/bg/backslash.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/wood/bg/backslash.png",
+          "source": "spritesheets/shield/heater/original/wood/bg/backslash.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/wood/bg/backslash.png",
           "sourceTile": 64,
           "frameMode": "native",
           "sha256": "a3fff467c4a75c083f1ae6f7cfb5bd89c9f734da3a0100b0d39f549e2b20c647"
         },
         {
           "z": 6,
-          "source": "spritesheets/shield/heater/revised/trim/bg/backslash.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/trim/bg/backslash.png",
+          "source": "spritesheets/shield/heater/original/trim/bg/backslash.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/trim/bg/backslash.png",
           "sourceTile": 64,
           "frameMode": "native",
           "sha256": "350fc35f2b1d9ed049469a89121b94cca4b37fa044603fbc19d96387fe2fcbfc"
@@ -3176,16 +3320,16 @@
         },
         {
           "z": 110,
-          "source": "spritesheets/shield/heater/revised/wood/fg/backslash.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/wood/fg/backslash.png",
+          "source": "spritesheets/shield/heater/original/wood/fg/backslash.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/wood/fg/backslash.png",
           "sourceTile": 64,
           "frameMode": "native",
           "sha256": "b4bb320be93100d3b01352aeb68f488e997ccf59dd7e76d9053787ec398ebd8a"
         },
         {
           "z": 115,
-          "source": "spritesheets/shield/heater/revised/trim/fg/backslash.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/trim/fg/backslash.png",
+          "source": "spritesheets/shield/heater/original/trim/fg/backslash.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/trim/fg/backslash.png",
           "sourceTile": 64,
           "frameMode": "native",
           "sha256": "6229b80f178e72b30967036454ac915ee77a8561e516fc0a061a59737f0d862d"
@@ -3216,16 +3360,16 @@
       "layers": [
         {
           "z": 2,
-          "source": "spritesheets/shield/heater/revised/wood/bg/combat_idle.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/wood/bg/combat_idle.png",
+          "source": "spritesheets/shield/heater/original/wood/bg/combat_idle.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/wood/bg/combat_idle.png",
           "sourceTile": 64,
           "frameMode": "native pose 0",
           "sha256": "241345577a8ad4ce4e2ebd9f6d15508ee3bf442b22124391ac9fe5e8dcecc425"
         },
         {
           "z": 6,
-          "source": "spritesheets/shield/heater/revised/trim/bg/combat_idle.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/trim/bg/combat_idle.png",
+          "source": "spritesheets/shield/heater/original/trim/bg/combat_idle.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/trim/bg/combat_idle.png",
           "sourceTile": 64,
           "frameMode": "native pose 0",
           "sha256": "bfd8586a35c411718c2143234f92b3950bf6d93baed245664e01582b7e86d0f1"
@@ -3280,16 +3424,16 @@
         },
         {
           "z": 110,
-          "source": "spritesheets/shield/heater/revised/wood/fg/combat_idle.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/wood/fg/combat_idle.png",
+          "source": "spritesheets/shield/heater/original/wood/fg/combat_idle.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/wood/fg/combat_idle.png",
           "sourceTile": 64,
           "frameMode": "native pose 0",
           "sha256": "165497516fd4731f1dde1fa77fc6acbb09db83fbc43af1b8f8c6cc530a8cd403"
         },
         {
           "z": 115,
-          "source": "spritesheets/shield/heater/revised/trim/fg/combat_idle.png",
-          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/trim/fg/combat_idle.png",
+          "source": "spritesheets/shield/heater/original/trim/fg/combat_idle.png",
+          "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/original/trim/fg/combat_idle.png",
           "sourceTile": 64,
           "frameMode": "native pose 0",
           "sha256": "fe65684be9ed25ea3974cbbbc7c94512ea0504a018d551e56219df5142ac0ff1"
@@ -3303,6 +3447,54 @@
           "sha256": "ec3b241d5507829521f0fa5c42d97f613a3dc98022bc4ca5d9a9c71080bfd6eb"
         }
       ]
+    },
+    "handedness": {
+      "shieldFamily": "heater/original",
+      "transform": "none: original native pixels and direction rows, no mirroring, translation or frozen frames",
+      "classicPoseFix": "Original WALK/SLASH shield cells grip the classic male off hand; revised side-facing cells overlap the sword hand.",
+      "revisedCuts": "Original and revised HALFSLASH/BACKSLASH/combat shield cells are byte-identical; distinct wrists verified from exposed native hand pixels.",
+      "exampleGripPixels": {
+        "walk-east-0": {
+          "shieldHand": [
+            26,
+            47
+          ],
+          "swordHand": [
+            37,
+            43
+          ]
+        },
+        "halfslash-east-3": {
+          "shieldHand": [
+            50,
+            37
+          ],
+          "swordHand": [
+            59,
+            43
+          ]
+        },
+        "halfslash-west-3": {
+          "shieldHand": [
+            13,
+            37
+          ],
+          "swordHand": [
+            4,
+            43
+          ]
+        },
+        "combat_idle-east-0": {
+          "shieldHand": [
+            42,
+            40
+          ],
+          "swordHand": [
+            30,
+            44
+          ]
+        }
+      }
     }
   },
   "bow/wanderer/sand": {

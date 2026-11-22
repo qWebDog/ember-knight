@@ -107,9 +107,9 @@ test('sword guard is an LPC pose and shields use native moving layers in every a
     const manifest=JSON.parse(fs.readFileSync(path.join(folder,'manifest.json'),'utf8'));
     for(const animation of ['walk','attack','halfslash','backslash']){
       const shield=manifest[animation].layers.filter(layer=>layer.source.includes('/shield/'));
-      assert.equal(shield.length,animation==='attack'?2:4);
+      assert.equal(shield.length,['walk','attack'].includes(animation)?2:4);
       for(const layer of shield){
-        assert.ok(layer.source.includes('/shield/heater/revised/'));
+        assert.ok(layer.source.includes('/shield/heater/original/'),'the original walk/slash family holds the shield on the offhand');
         assert.equal(layer.frameMode,'native','attack frames must never hold a standing shield');
         assert.ok(layer.source.endsWith(`/${animation==='attack'?'slash':animation}.png`));
       }
@@ -117,6 +117,7 @@ test('sword guard is an LPC pose and shields use native moving layers in every a
     }
     assert.equal(manifest.block.animation,'combat_idle');
     assert.ok(manifest.block.layers.every(layer=>layer.source.includes('/combat_idle')));
+    assert.ok(manifest.block.layers.filter(layer=>layer.source.includes('/shield/')).every(layer=>layer.source.includes('/shield/heater/original/')));
     for(const skin of skins){
       const png=fs.readFileSync(path.join(dist,catalogue.path(choice,skin,'block')));
       assert.deepEqual([png.readUInt32BE(16),png.readUInt32BE(20)],[64,256]);

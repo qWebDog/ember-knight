@@ -12,7 +12,7 @@ const combatSource = fs.readFileSync(path.join(dist, 'combat.js'), 'utf8');
 
 // The real game controller and combat engine run together. Only browser surfaces,
 // image decoding and the animation clock are replaced; no combat logic is mocked.
-function createHarness({skin = 'bronze', preference, search = '', weapon, outfit, outfitColor, reducedMotion = false} = {}) {
+function createHarness({skin = 'bronze', preference, search = '', weapon, outfit, outfitColor, reducedMotion = false, fieldWidth = 800} = {}) {
   const storage = new Map([['ember.character.v1', JSON.stringify({version:1, skin, name:'Тестовый герой', level:1,weapon,outfit,outfitColor})]]);
   if (preference) storage.set('ember.combat.auto.v1', preference);
   const nodes = new Map(), pendingImages = [], loadedPaths = [], raf = [], resizeCallbacks = [], events = [];
@@ -28,7 +28,7 @@ function createHarness({skin = 'bronze', preference, search = '', weapon, outfit
         if (name === 'motion') this.motionHistory.push(value);
         target[name] = value; return true;
       }});
-      this.clientWidth = 800; this.offsetWidth = 64; this.offsetLeft = 0;
+      this.clientWidth = fieldWidth; this.offsetWidth = 64; this.offsetLeft = 0;
       this.classList = {toggle:(name, enabled) => {
         if (enabled === undefined) enabled = !this.classes.has(name);
         if (enabled) this.classes.add(name); else this.classes.delete(name);
@@ -77,7 +77,7 @@ function createHarness({skin = 'bronze', preference, search = '', weapon, outfit
   for (const [index, id] of ['hero','orc','archer','mage'].entries()) {
     assert.ok(html.includes(`data-fighter="${id}"`));
     const actor = node(`[data-fighter="${id}"]`);
-    actor.actor = id; actor.offsetLeft = 160 + index * 140;
+    actor.actor = id; actor.offsetLeft = (160 + index * 140) * fieldWidth / 800;
   }
   node('#battle-result').hidden = true;
   const waves = [node('wave:0'),node('wave:1'),node('wave:2')];
@@ -106,7 +106,7 @@ function createHarness({skin = 'bronze', preference, search = '', weapon, outfit
     get src() { return this.path; }
   }
   const window = {
-    innerWidth:800, innerHeight:800, location:{search},
+    innerWidth:fieldWidth, innerHeight:800, location:{search},
     matchMedia:() => ({matches:reducedMotion}), addEventListener() {},
     requestAnimationFrame:callback => raf.push(callback)
   };
@@ -121,8 +121,8 @@ function createHarness({skin = 'bronze', preference, search = '', weapon, outfit
   window.EmberCombat.createBattle = options => {
     battle = createBattle(options);
     const advance = battle.advance;
-    battle.advance = seconds => {
-      const emitted = advance(seconds);
+    battle.advance = (seconds, availability) => {
+      const emitted = advance(seconds, availability);
       events.push(...JSON.parse(JSON.stringify(emitted)));
       return emitted;
     };
@@ -157,6 +157,10 @@ function createHarness({skin = 'bronze', preference, search = '', weapon, outfit
   function state() { return JSON.parse(JSON.stringify(battle.getState())); }
   function heroX() { return Number.parseFloat(node('[data-fighter="hero"]').style.left); }
   function orcX() { return Number.parseFloat(node('[data-fighter="orc"]').style.left); }
+  function inMeleeRange() {
+    const separation=node('[data-fighter="hero"]').offsetWidth*.23+node('[data-fighter="orc"]').offsetWidth*.34;
+    return Math.abs(orcX()-heroX()) <= separation+.01;
+  }
   function visualState() {
     return {state:state(), x:heroX(), orcX:orcX(), draws:node('#player-sprite').draws.length, lastDraw:node('#player-sprite').draws.at(-1), orcDraws:node('#enemy-orc').draws.length,lastOrcDraw:node('#enemy-orc').draws.at(-1)};
   }
@@ -168,7 +172,7 @@ function createHarness({skin = 'bronze', preference, search = '', weapon, outfit
     if(modelSize)for(const id of ['hero','orc','archer','mage'])node(`[data-fighter="${id}"]`).offsetWidth=modelSize;
     resizeCallbacks.forEach(callback => callback());
   }
-  return {node, storage, loadedPaths, document, state, events, loadNextImage, loadAllImages, runFor, runUntil, frame, heroX, orcX, visualState, resizeField};
+  return {node, storage, loadedPaths, document, state, events, loadNextImage, loadAllImages, runFor, runUntil, frame, heroX, orcX, inMeleeRange, visualState, resizeField};
 }
 
 test('controller waits for assets, walks into range before damage, and uses selected skin and correct LPC rows', async () => {
@@ -180,7 +184,7 @@ test('controller waits for assets, walks into range before damage, and uses sele
   await ui.loadNextImage();
   assert.equal(ui.state().phase, 'paused', 'idle alone cannot start the battle');
   await ui.loadAllImages();
-  assert.equal(ui.state().phase, 'paused', 'combat waits while the hero approaches');
+  assert.equal(ui.state().phase, 'running', 'ranged attacks stay active while melee fighters approach');
   assert.equal(ui.node('#auto-button').disabled, false);
   assert.ok(ui.loadedPaths.includes('assets/characters/combat/bronze-walk.png'));
   assert.ok(ui.loadedPaths.includes('assets/characters/combat/bronze-attack.png'));
@@ -190,7 +194,7 @@ test('controller waits for assets, walks into range before damage, and uses sele
   const initialOrcX=ui.orcX();
   ui.runFor(.8);
   assert.ok(ui.orcX()<initialOrcX,'the melee enemy also walks toward the hero');
-  assert.equal(ui.state().elapsed, 0);
+  assert.ok(ui.state().elapsed > 0, 'the world clock advances during approach');
   assert.equal(ui.state().hero.hp, 200);
   assert.equal(ui.state().enemies[0].hp, 100, 'neither side attacks from a distance during approach');
   const walking = ui.node('#player-sprite').draws.filter(draw => draw.src.endsWith('bronze-walk.png'));
@@ -236,8 +240,9 @@ test('victory pays once, freezes finished combat, and replay restores all fighte
   const wallSeconds = ui.runUntil(() => ui.state().phase === 'victory');
   const victory = ui.state();
   assert.equal(victory.phase, 'victory');
-  assert.equal(victory.elapsed, 27.6, 'walking does not consume the combat engine attack timers');
-  assert.ok(wallSeconds > victory.elapsed && wallSeconds < 40, 'wall duration includes all three approaches');
+  assert.ok(victory.elapsed > 27.6 && victory.elapsed < 40, 'world time includes approaches while only melee cooldowns freeze');
+  assert.ok(Math.abs(wallSeconds-victory.elapsed)<.2, 'world time follows visible unpaused time');
+  assert.ok(victory.hero.hp > 0 && victory.hero.hp < 58, 'incoming ranged attacks continue during retargeting');
   assert.equal(victory.defeatedCount, 3);
   assert.equal(ui.node('#result-title').textContent, 'Победа!');
   assert.equal(ui.node('#battle-result').hidden, false);
@@ -248,7 +253,7 @@ test('victory pays once, freezes finished combat, and replay restores all fighte
   assert.equal(ui.storage.get('ember.test.gold.v1'), '25');
   ui.node('#replay-button').click();
   const reset = ui.state();
-  assert.equal(reset.phase, 'paused'); assert.equal(reset.elapsed, 0);
+  assert.equal(reset.phase, 'running'); assert.equal(reset.elapsed, 0);
   assert.equal(reset.hero.hp, 200); assert.deepEqual(reset.enemies.map(enemy => enemy.hp), [100,60,65]);
   assert.equal(ui.node('#battle-result').hidden, true);
   assert.equal(ui.node('#hero-vital').textContent, '200 / 200 HP');
@@ -335,7 +340,7 @@ test('both melee fighters close the gap without crossing; dead orc stays put and
  const ui=createHarness();await ui.loadAllImages();const startH=ui.heroX(),startO=ui.orcX();
  ui.runFor(.5);assert.ok(ui.heroX()>startH);assert.ok(ui.orcX()<startO);
  assert.ok(Math.abs((ui.heroX()-startH)-(startO-ui.orcX()))<1e-8,'equal-sized units meet half way');
- ui.runUntil(()=>ui.state().phase==='running');
+ ui.runUntil(()=>ui.inMeleeRange());
  assert.ok(Math.abs(ui.orcX()-ui.heroX()-64*.57)<.01,'actors stop at melee range');
  ui.runUntil(()=>ui.state().enemies[0].hp===0);const deadX=ui.orcX();
  ui.runFor(3);assert.equal(ui.orcX(),deadX);
@@ -346,15 +351,17 @@ test('both melee fighters close the gap without crossing; dead orc stays put and
 test('orc approaches a stationary bow or wand user, with no melee damage before contact',async()=>{
  for(const [weapon,outfit]of [['bow','wanderer'],['wand','acolyte']]){
   const ui=createHarness({weapon,outfit});await ui.loadAllImages();const h=ui.heroX(),o=ui.orcX();ui.runFor(.8);
-  assert.equal(ui.heroX(),h);assert.ok(ui.orcX()<o);assert.equal(ui.state().elapsed,0);assert.equal(ui.state().hero.hp,200);
+  assert.equal(ui.heroX(),h);assert.ok(ui.orcX()<o);assert.ok(ui.state().elapsed>0);assert.equal(ui.state().hero.hp,200);
   assert.equal(ui.node('[data-fighter="orc"]').dataset.motion,'walk');assert.equal(ui.node('[data-fighter="hero"]').dataset.motion,'idle');
-  ui.runUntil(()=>ui.state().phase==='running');assert.ok(Math.abs(ui.orcX()-ui.heroX()-64*.57)<.01);
+  ui.runUntil(()=>ui.inMeleeRange());assert.ok(Math.abs(ui.orcX()-ui.heroX()-64*.57)<.01);
+  assert.ok(ui.events.some(event=>event.type==='attack' && event.sourceId==='hero'),'a ranged hero attacks during the orc approach');
+  assert.ok(!ui.events.some(event=>event.type==='attack' && event.sourceId==='orc'),'orc cannot hit before its in-range cooldown elapses');
   ui.runUntil(()=>ui.state().phase==='victory');assert.equal(ui.state().hero.hp,58);assert.equal(ui.storage.get('ember.test.gold.v1'),'25');
  }
 });
 
 test('paused viewport changes rescale both melee fighters once and preserve contact with a new model size',async()=>{
- const ui=createHarness();await ui.loadAllImages();ui.runUntil(()=>ui.state().phase==='running');ui.node('#auto-button').click();
+ const ui=createHarness();await ui.loadAllImages();ui.runUntil(()=>ui.inMeleeRange());ui.node('#auto-button').click();
  const h=ui.heroX(),o=ui.orcX(),middle=(h+o)/2,elapsed=ui.state().elapsed;
  ui.resizeField(1000,50);assert.ok(Math.abs((ui.heroX()+ui.orcX())/2-middle*1.25)<1e-8);assert.ok(Math.abs(ui.orcX()-ui.heroX()-50*.57)<.01);
  const h2=ui.heroX(),o2=ui.orcX();ui.frame(0);assert.equal(ui.heroX(),h2);assert.equal(ui.orcX(),o2);assert.equal(ui.state().elapsed,elapsed);
@@ -390,12 +397,16 @@ test('shield block and fast counter use separate feedback; pause freezes them an
   const ui = createHarness({weapon:'sword',outfit:'militia',outfitColor:'sand'});
   await ui.loadAllImages();
   const hero = ui.node('[data-fighter="hero"]');
-  ui.runUntil(() => ui.state().elapsed >= 4.7);
-  const hpBeforeBlock = ui.state().hero.hp;
-  ui.runUntil(() => ui.events.some(event => event.type==='block'));
+  let hpBeforeBlock=ui.state().hero.hp, eventCountBeforeBlock=ui.events.length;
+  ui.runUntil(() => {
+    if(ui.events.some(event=>event.type==='block'))return true;
+    hpBeforeBlock=ui.state().hero.hp;eventCountBeforeBlock=ui.events.length;return false;
+  });
   const block = ui.events.find(event => event.type==='block');
   assert.equal(block.targetId,'hero'); assert.equal(block.blockedDamage,3);
-  assert.equal(ui.state().hero.hp,hpBeforeBlock-3,'the shield absorbs half of the six-damage melee hit');
+  const incoming=ui.events.slice(eventCountBeforeBlock).filter(event=>event.type==='attack'&&event.targetId==='hero');
+  assert.equal(incoming.find(event=>event.sourceId===block.sourceId).damage,3,'the shield absorbs half of the six-damage melee hit');
+  assert.equal(ui.state().hero.hp,hpBeforeBlock-incoming.reduce((sum,event)=>sum+event.damage,0));
   assert.equal(ui.node('healthbar:hero:fill').style.width, `${ui.state().hero.hp/ui.state().hero.maxHp*100}%`);
   assert.equal(hero.classes.has('is-blocking'),true);
   assert.equal(hero.dataset.motion,'block','a block uses the original guarded body-and-shield pose');
@@ -440,7 +451,7 @@ test('bow and wand retain their own attacks and never load or render sword combo
   }
 });
 
-test('reduced motion suppresses sword animation and block effects while preserving every combat event', async () => {
+test('reduced motion suppresses sword animation and block effects while combat still resolves with valid rewards', async () => {
   const options={weapon:'sword',outfit:'militia',outfitColor:'forest'};
   const normal=createHarness(options), reduced=createHarness({...options,reducedMotion:true});
   await normal.loadAllImages(); await reduced.loadAllImages();
@@ -451,7 +462,53 @@ test('reduced motion suppresses sword animation and block effects while preservi
   assert.equal(reduced.node('.battlefield').children.length,0);
   assert.ok(reduced.node('#player-sprite').draws.every(draw=>draw.src.endsWith('-walk.png')),'reduced-motion hero holds the equipped idle pose');
   normal.runUntil(()=>normal.state().phase==='victory',60); reduced.runUntil(()=>reduced.state().phase==='victory',60);
-  assert.deepEqual(reduced.events,normal.events);
-  assert.deepEqual(reduced.state(),normal.state());
+  for(const ui of [normal,reduced]){
+    assert.equal(ui.state().defeatedCount,3);assert.equal(ui.state().reward,25);
+    assert.ok(ui.state().hero.hp>0&&ui.state().hero.hp<=ui.state().hero.maxHp);
+    assert.equal(ui.events.filter(event=>event.type==='end').length,1);
+    assert.ok(ui.events.some(event=>event.type==='block'));
+    assert.ok(ui.events.some(event=>event.type==='attack'&&event.counter));
+  }
+  assert.ok(normal.state().elapsed>reduced.state().elapsed,'instant reduced-motion positioning removes travel time');
+  assert.ok(normal.state().hero.hp<=reduced.state().hero.hp,'extra travel can expose the normal hero to more ranged fire');
   assert.equal(reduced.storage.get('ember.test.gold.v1'),'25');
+});
+
+test('archer and mage attack throughout a long initial approach while both melee attacks remain out of range',async()=>{
+  const ui=createHarness({fieldWidth:3200});await ui.loadAllImages();
+  assert.equal(ui.state().phase,'running');assert.equal(ui.inMeleeRange(),false);
+  ui.runUntil(()=>ui.events.some(event=>event.type==='attack'&&event.sourceId==='archer'),5);
+  assert.ok(ui.node('.battlefield').children.some(element=>element.className.includes('projectile arrow')));
+  assert.equal(ui.node('[data-fighter="archer"]').dataset.motion,'attack');
+  assert.ok(ui.node('#enemy-archer').draws.at(-1).src.endsWith('skeleton-shoot.png'));
+  ui.runUntil(()=>ui.events.some(event=>event.type==='attack'&&event.sourceId==='mage'),2);
+  assert.ok(ui.node('.battlefield').children.some(element=>element.className.includes('projectile magic')));
+  assert.equal(ui.node('[data-fighter="mage"]').dataset.motion,'attack');
+  assert.ok(ui.node('#enemy-mage').draws.at(-1).src.endsWith('mage-spellcast.png'));
+  assert.equal(ui.inMeleeRange(),false,'the approach lasts longer than both ranged attack timers');
+  assert.ok(ui.state().elapsed>=3.8);assert.equal(ui.state().hero.hp,183);
+  assert.equal(ui.state().enemies[0].hp,100);
+  assert.ok(!ui.events.some(event=>event.type==='attack'&&['hero','orc'].includes(event.sourceId)),'neither melee fighter attacks from a distance');
+  assert.equal(ui.node('[data-fighter="hero"]').dataset.motion,'walk');
+  assert.equal(ui.node('[data-fighter="orc"]').dataset.motion,'walk');
+  ui.runUntil(()=>ui.inMeleeRange(),5);const contactTime=ui.state().elapsed;
+  ui.runUntil(()=>ui.events.some(event=>event.type==='attack'&&event.sourceId==='hero'),2);
+  const first=ui.events.find(event=>event.type==='attack'&&event.sourceId==='hero');
+  assert.ok(first.at>contactTime,'the melee cooldown resumes after reaching contact');
+});
+
+test('ranged fire and damage continue while the hero walks to the next target after the orc dies',async()=>{
+  const ui=createHarness();await ui.loadAllImages();
+  ui.runUntil(()=>ui.state().enemies[0].hp===0);
+  const start=ui.events.length,hp=ui.state().hero.hp,heroX=ui.heroX(),corpseX=ui.orcX();
+  assert.equal(ui.state().targetId,'archer');assert.equal(ui.state().phase,'running');
+  ui.runUntil(()=>['archer','mage'].every(id=>ui.events.slice(start).some(event=>event.type==='attack'&&event.sourceId===id)),6);
+  assert.ok(ui.heroX()>heroX);assert.equal(ui.orcX(),corpseX);
+  assert.ok(ui.state().hero.hp<hp);
+  assert.ok(ui.node('[data-fighter="hero"]').motionHistory.includes('walk'));
+  const target=ui.node('[data-fighter="archer"]');
+  assert.ok(target.offsetLeft-ui.heroX()>64*.23+target.offsetWidth*.34,'ranged enemies attacked before the next melee contact');
+  assert.ok(!ui.events.slice(start).some(event=>event.type==='attack'&&event.sourceId==='hero'));
+  ui.runUntil(()=>ui.state().phase==='victory');
+  assert.equal(ui.storage.get('ember.test.gold.v1'),'25');
 });
