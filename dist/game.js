@@ -17,6 +17,7 @@
   } catch {}
   if (new URLSearchParams(window.location.search).get('battle') === 'test') auto = true;
   const loadouts = window.EmberLoadouts;
+  const arrowSprite = 'assets/projectiles/arrow.png';
   const loadout = loadouts?.selection(character) || null;
   const starterWeapon = loadout ? loadouts.weapon(loadout.weapon) : null;
   const starterOutfit = loadout ? loadouts.outfit(loadout.weapon,loadout.outfit) : null;
@@ -114,7 +115,10 @@
         }
       }));
       actors.orc.images.walk = { ...actors.orc.images.idle,still:undefined };
-      const orcAttack = await loadImage('assets/enemies/lpc/orc-attack.png').catch(() => null);
+      const [orcAttack] = await Promise.all([
+        loadImage('assets/enemies/lpc/orc-attack.png').catch(() => null),
+        loadImage(arrowSprite)
+      ]);
       actors.orc.images.attack = orcAttack ? {image:orcAttack,frames:6,row:1,tile:128,origin:32} : { ...actors.orc.images.idle,frames:1 };
       const face = $('#avatar').getContext('2d'); face.imageSmoothingEnabled = false;
       const avatarTile=loadout?starterWeapon.walk.tile:64, avatarOrigin=loadout?starterWeapon.walk.origin:0;
@@ -154,7 +158,11 @@
   document.addEventListener('visibilitychange', syncPause);
   function addEffect(type, sourceId, targetId, text, at) {
     if (reducedMotion.matches) return;
-    const element = document.createElement('span');
+    const element = document.createElement(type === 'arrow' ? 'img' : 'span');
+    if (type === 'arrow') {
+      element.src = arrowSprite; element.alt = ''; element.draggable = false;
+      element.width = 192; element.height = 30;
+    }
     const floating = ['damage','heavy','counter','block'].includes(type);
     element.className = floating ? `damage-number ${type}-number ${targetId === 'hero' && type !== 'block' ? 'enemy-damage' : ''}` : `projectile ${type}`;
     element.setAttribute('aria-hidden','true'); if (text) element.textContent = text;
@@ -295,7 +303,10 @@
         effect.element.style.left = `${tx}px`; effect.element.style.top = `${ty-p*22}px`; effect.element.style.opacity = String(1-p);
       } else {
         const sx=source.left+source.width*(effect.sourceId==='hero'?.7:.3)-field.left, sy=source.top+source.height*.45-field.top;
-        if(effect.type==='arrow')effect.element.style.transform=`translate(-50%,-50%) rotate(${tx>=sx?180:0}deg)`;
+        if(effect.type==='arrow'){
+          const angle=Math.atan2(ty-sy,tx-sx)*180/Math.PI+180;
+          effect.element.style.transform=`translate(-50%,-50%) rotate(${angle}deg)`;
+        }
         effect.element.style.left = `${sx+(tx-sx)*p}px`; effect.element.style.top = `${sy+(ty-sy)*p}px`;
       }
     }

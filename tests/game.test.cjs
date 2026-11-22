@@ -478,7 +478,11 @@ test('archer and mage attack throughout a long initial approach while both melee
   const ui=createHarness({fieldWidth:3200});await ui.loadAllImages();
   assert.equal(ui.state().phase,'running');assert.equal(ui.inMeleeRange(),false);
   ui.runUntil(()=>ui.events.some(event=>event.type==='attack'&&event.sourceId==='archer'),5);
-  assert.ok(ui.node('.battlefield').children.some(element=>element.className.includes('projectile arrow')));
+  const arrow=ui.node('.battlefield').children.find(element=>element.className.includes('projectile arrow'));
+  assert.ok(arrow);
+  assert.equal(arrow.src,'assets/projectiles/arrow.png','the archer uses the supplied arrow artwork');
+  assert.equal(arrow.alt,'');
+  assert.match(arrow.style.transform,/rotate\(-?[\d.]+deg\)/);
   assert.equal(ui.node('[data-fighter="archer"]').dataset.motion,'attack');
   assert.ok(ui.node('#enemy-archer').draws.at(-1).src.endsWith('skeleton-shoot.png'));
   ui.runUntil(()=>ui.events.some(event=>event.type==='attack'&&event.sourceId==='mage'),2);
