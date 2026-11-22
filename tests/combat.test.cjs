@@ -6,7 +6,7 @@ const {createBattle:createDefaultBattle} = require('../dist/combat.js');
 // Focused mechanic regressions retain the original three-enemy party as a
 // test-local encounter fixture, retaining its original archer cadence. Production default-wave behavior is tested below.
 const focusedEncounter = [{id:'orc',type:'orc'},{id:'archer',type:'archer'},{id:'mage',type:'mage'}];
-function encounterFixture(waves,{slowFlight=false,legacyArcher=true}={}) {
+function encounterFixture(waves,{slowFlight=false,legacyArcher=true,closeInterval}={}) {
   const fs=require('node:fs'),vm=require('node:vm');
   let source=fs.readFileSync(require.resolve('../dist/combat.js'),'utf8');
   const declaration=/  const waveTemplates = \[\n[\s\S]*?\n  \];/;
@@ -14,6 +14,7 @@ function encounterFixture(waves,{slowFlight=false,legacyArcher=true}={}) {
   source=source.replace(declaration,'  const waveTemplates = '+JSON.stringify(waves)+';');
   if(legacyArcher){const anchor="archer:{name:'Скелет-лучник',maxHp:60,damage:7,interval:1.8,armor:0,projectile:'arrow'}";assert.ok(source.includes(anchor));source=source.replace(anchor,anchor.replace('interval:1.8','interval:3.1'));}
   if(slowFlight){const anchor='flightDuration:.48';assert.ok(source.includes(anchor));source=source.replace(anchor,'flightDuration:2.4');}
+  if(closeInterval!==undefined){const anchor='const CLOSE_MAGIC_INTERVAL = .8 * TICKS;';assert.ok(source.includes(anchor));source=source.replace(anchor,'const CLOSE_MAGIC_INTERVAL = '+closeInterval+' * TICKS;');}
   const context={module:{exports:{}}};vm.runInNewContext(source,context,{filename:'combat-encounter-fixture.js'});
   const create=context.module.exports.createBattle;
   // Return ordinary host objects so assertions compare data, not VM prototypes.
@@ -114,7 +115,7 @@ test('oversized, fixed-step and irregular-step advances produce identical events
 
 
 test('starter weapons keep their projectile and reward, with magic damage delayed until impact',()=>{
- for(const projectile of ['arrow','magic','melee']){const b=createBattle({heroProjectile:projectile});const events=b.advance(100);assert.ok(events.filter(e=>e.sourceId==='hero').every(e=>e.projectile===projectile));assert.equal(b.state.hero.hp,projectile==='magic'?52:58);assert.equal(b.state.elapsed,projectile==='magic'?28.5:27.6);assert.equal(b.state.phase,'victory');assert.equal(b.state.reward,15);}
+ for(const projectile of ['arrow','magic','melee']){const b=createBattle({heroProjectile:projectile});const events=b.advance(100);assert.ok(events.filter(e=>e.sourceId==='hero'&&['attack','cast'].includes(e.type)&&!e.dot).every(e=>e.projectile===projectile));assert.equal(b.state.hero.hp,projectile==='magic'?68:58);assert.equal(b.state.elapsed,projectile==='magic'?24.9:27.6);assert.equal(b.state.phase,'victory');assert.equal(b.state.reward,15);}
 });
 
 test('sword opts into a deterministic three-hit combo with a heavier third hit before armor', () => {
@@ -199,7 +200,7 @@ test('unarmed and non-magic ranged weapons keep the old timeline and never gain 
   const reference=createBattle();reference.advance(100);
   for(const options of [{},{heroWeapon:'bow',heroProjectile:'arrow'},{heroWeapon:'wand',heroProjectile:'magic'},{heroWeapon:'sword',heroProjectile:'arrow'}]){
     const battle=createBattle(options),events=battle.advance(100);
-    if(options.heroProjectile==='magic'){assert.equal(battle.state.phase,'victory');assert.equal(battle.state.elapsed,28.5);assert.equal(battle.state.hero.hp,52);}else assert.deepEqual(battle.state,reference.state);
+    if(options.heroProjectile==='magic'){assert.equal(battle.state.phase,'victory');assert.equal(battle.state.elapsed,24.9);assert.equal(battle.state.hero.hp,68);}else assert.deepEqual(battle.state,reference.state);
     assert.ok(!events.some(event=>event.type==='block'||event.counter||event.variant||event.heavy));
     assert.equal(events.find(event=>event.sourceId==='hero').at,1.2);
   }
@@ -607,7 +608,7 @@ test('close-range fire and ice use the same faster launch, flight and cast caden
     assert.deepEqual(nearEvents.filter(event=>event.impact&&event.sourceId==='hero').map(event=>event.at),[1.5,2.3,3.1,3.9]);
     assert.deepEqual(farEvents.filter(event=>event.type==='cast'&&event.sourceId==='hero').map(event=>event.at),[1.2,2.4,3.6]);
     assert.ok(farEvents.filter(event=>event.type==='cast').every(event=>event.appearDuration===.42&&event.flightDuration===.48&&event.animationDuration===.66&&event.castInterval===1.2));
-    assert.equal(near.state.enemies[0].hp,56);assert.equal(far.state.enemies[0].hp,58);
+    assert.equal(near.state.enemies[0].hp,magic==='fire'?50:56);assert.equal(far.state.enemies[0].hp,magic==='fire'?54:58);
   }
 });
 
@@ -672,5 +673,156 @@ test('piecewise close-range magic tempo stays deterministic across frames, readi
     assert.deepEqual(small.events,whole.events);assert.deepEqual(irregular.events,whole.events);
     assert.deepEqual(small.battle.state,whole.battle.state);assert.deepEqual(irregular.battle.state,whole.battle.state);
     assert.equal(whole.battle.state.phase,'victory');assert.equal(whole.battle.state.reward,20);assert.equal(whole.battle.state.completedWaves,3);
+  }
+});
+
+test('elemental statuses are applied only by a living-target hero impact, never a launch, lethal hit or NPC shadow', () => {
+  const {statusTiming}=require('../dist/combat.js');
+  assert.deepEqual(statusTiming,{duration:.5,burnTickInterval:.25,burnDamage:1});assert.ok(Object.isFrozen(statusTiming));
+  for(const [magic,type] of [['fire','burn'],['ice','freeze']]){
+    const battle=createDefaultBattle({heroProjectile:'magic',heroMagic:magic});
+    assert.equal(battle.state.enemies[0].status,null);
+    const launch=battle.advance(1.2);assert.ok(!launch.some(event=>event.type==='status'));assert.equal(battle.state.enemies[0].status,null);
+    const events=battle.advance(.9),status=events.find(event=>event.type==='status');
+    assert.deepEqual(status,{type:'status',status:type,sourceId:'hero',targetId:'archer1',at:2.1,duration:.5,endsAt:2.6});
+    assert.deepEqual(battle.state.enemies[0].status,{type,startedAt:2.1,endsAt:2.6});
+    const lethal=createDefaultBattle({heroProjectile:'magic',heroMagic:magic,heroDamage:500});
+    const killed=lethal.advance(2.1);assert.ok(!killed.some(event=>event.type==='status'));assert.equal(lethal.state.enemies[0].status,null);
+  }
+  const npc=createBattle({heroDamage:1,heroMaxHp:1000}),events=npc.advance(5);
+  assert.ok(events.some(event=>event.type==='attack'&&event.magic==='shadow'));
+  assert.ok(!events.some(event=>event.type==='status'));assert.ok(npc.state.enemies.every(enemy=>enemy.status===null));
+});
+
+test('burn preserves the normal hit and deals exactly two unarmored one-damage ticks before expiry', () => {
+  const createFixture=encounterFixture([[{id:'orc',type:'orc'}]]);
+  const battle=createFixture({heroProjectile:'magic',heroMagic:'fire'});
+  const events=battle.advance(2.1),impact=events.find(event=>event.impact);
+  assert.equal(impact.damage,9);assert.equal(impact.hp,91);
+  assert.deepEqual(battle.state.enemies[0].status,{type:'burn',startedAt:2.1,endsAt:2.6});
+  const ticks=battle.advance(.5,{heroCanAttack:false,orcCanAttack:false}).filter(event=>event.dot);
+  assert.deepEqual(ticks.map(event=>[event.at,event.damage,event.hp,event.projectile,event.magic]),[[2.35,1,90,'burn','fire'],[2.6,1,89,'burn','fire']]);
+  assert.ok(ticks.every(event=>event.sourceId==='hero'&&event.targetId==='orc'&&!event.impact&&!event.animationDuration));
+  assert.equal(battle.state.enemies[0].status,null);
+  assert.ok(!battle.advance(.2,{heroCanAttack:false,orcCanAttack:false}).some(event=>event.dot));
+});
+
+test('a burn kill grants five gold once and clears its effect, queued spell and wave before the next spawn', () => {
+  const battle=createDefaultBattle({heroProjectile:'magic',heroMagic:'fire',heroDamage:58});
+  const events=battle.advance(2.6),death=events.find(event=>event.type==='death');
+  assert.ok(events.some(event=>event.dot&&event.at===2.6&&event.hp===0));
+  assert.deepEqual(death,{type:'death',id:'archer1',unitType:'archer',reward:5,totalReward:5,at:2.6});
+  assert.equal(events.filter(event=>event.type==='death').length,1);assert.equal(battle.state.reward,5);assert.equal(battle.state.phase,'intermission');
+  assert.equal(battle.state.enemies[0].status,null);assert.equal(battle.state.totalDefeated,1);
+  const spawn=battle.advance(.7);assert.deepEqual(spawn.map(event=>event.type),['wave']);assert.equal(spawn[0].at,3.3);
+  assert.ok(battle.state.enemies.every(enemy=>enemy.hp===60&&enemy.status===null));
+  const rest=battle.advance(100);assert.equal(battle.state.reward,20);assert.equal(battle.state.phase,'victory');
+  assert.ok(!rest.some(event=>event.targetId==='archer1'));assert.equal(rest.filter(event=>event.type==='end').length,1);
+  assert.equal(rest.find(event=>event.type==='end').reward,0);
+});
+
+test('freeze safely copies its status, pauses the remaining enemy cooldown and survives a real pause', () => {
+  const battle=createDefaultBattle({heroProjectile:'magic',heroMagic:'ice',heroDamage:1,heroMaxHp:1000});
+  battle.advance(2.1);const snapshot=battle.state;
+  assert.deepEqual(snapshot.enemies[0].status,{type:'freeze',startedAt:2.1,endsAt:2.6});
+  snapshot.enemies[0].status.endsAt=999;snapshot.enemies[0].status.type='burn';
+  assert.deepEqual(battle.state.enemies[0].status,{type:'freeze',startedAt:2.1,endsAt:2.6});
+  const paused=battle.pause();assert.deepEqual(battle.advance(100),[]);assert.deepEqual(battle.state,paused);
+  battle.resume();
+  const thaw=battle.advance(.5,{heroCanAttack:false});assert.ok(!thaw.some(event=>event.sourceId==='archer1'));
+  assert.equal(battle.state.enemies[0].status,null);
+  const later=battle.advance(1.5,{heroCanAttack:false});
+  assert.deepEqual(later.filter(event=>event.type==='attack'&&event.sourceId==='archer1').map(event=>event.at),[4.1]);
+  assert.equal(battle.state.hero.hp,986,'only the attacks at 1.8 and 4.1 have landed');
+});
+
+test('ice suppresses a ready attack at impact and permits one attack exactly at thaw, without a backlog', () => {
+  const createFixture=encounterFixture([[{id:'archer',type:'archer',interval:1.5}]],{legacyArcher:false});
+  const battle=createFixture({heroProjectile:'magic',heroMagic:'ice',heroDamage:1,heroMaxHp:1000});
+  const impact=battle.advance(1.5,{heroCloseRange:true});
+  assert.ok(impact.some(event=>event.type==='status'&&event.status==='freeze'));
+  assert.ok(!impact.some(event=>event.type==='attack'&&event.sourceId==='archer'));
+  const thaw=battle.advance(.5,{heroCanAttack:false,heroCloseRange:true});
+  assert.deepEqual(thaw.filter(event=>event.type==='attack'&&event.sourceId==='archer').map(event=>event.at),[2]);
+  assert.equal(battle.state.enemies[0].status,null);
+  assert.ok(!battle.advance(.2,{heroCanAttack:false}).some(event=>event.sourceId==='archer'));
+});
+
+test('refreshing freeze extends to the latest impact rather than stacking half-second copies', () => {
+  const createFixture=encounterFixture([[{id:'archer',type:'archer'}]],{legacyArcher:false,closeInterval:.25});
+  const battle=createFixture({heroProjectile:'magic',heroMagic:'ice',heroDamage:1,heroMaxHp:1000});
+  battle.advance(1.45,{heroCloseRange:true});
+  const both=battle.advance(.3,{heroCanAttack:false,heroCloseRange:true});
+  assert.deepEqual(both.filter(event=>event.type==='status').map(event=>[event.at,event.endsAt]),[[1.5,2],[1.75,2.25]]);
+  assert.deepEqual(battle.state.enemies[0].status,{type:'freeze',startedAt:1.75,endsAt:2.25});
+  const throughThaw=battle.advance(.5,{heroCanAttack:false});
+  assert.ok(!throughThaw.some(event=>event.sourceId==='archer'));assert.equal(battle.state.enemies[0].status,null);
+  const resumed=battle.advance(.3,{heroCanAttack:false});
+  assert.deepEqual(resumed.filter(event=>event.type==='attack'&&event.sourceId==='archer').map(event=>event.at),[2.55]);
+});
+
+test('a burn tick tied with reapplication happens before refresh, with one ticking effect instead of stacked copies', () => {
+  const createFixture=encounterFixture([[{id:'archer',type:'archer'}]],{legacyArcher:false,closeInterval:.25});
+  const battle=createFixture({heroProjectile:'magic',heroMagic:'fire',heroDamage:1,heroMaxHp:1000});
+  battle.advance(1.45,{heroCloseRange:true});
+  const both=battle.advance(.3,{heroCanAttack:false,heroCloseRange:true});
+  const tied=both.filter(event=>event.at===1.75);
+  assert.deepEqual(tied.map(event=>event.type==='attack'&&event.dot?'dot':event.type==='attack'&&event.impact?'impact':event.type),['dot','impact','status']);
+  assert.deepEqual(battle.state.enemies[0].status,{type:'burn',startedAt:1.75,endsAt:2.25});
+  const tail=battle.advance(.75,{heroCanAttack:false});
+  const dots=[...both,...tail].filter(event=>event.dot);
+  assert.deepEqual(dots.map(event=>event.at),[1.75,2,2.25]);
+  assert.equal(battle.state.enemies[0].hp,55);assert.equal(battle.state.enemies[0].status,null);
+});
+
+test('out-of-range and frozen time hold an enemy cooldown once for their union rather than twice', () => {
+  const createFixture=encounterFixture([[{id:'orc',type:'orc'}]]);
+  const battle=createFixture({heroProjectile:'magic',heroMagic:'ice',heroDamage:1,heroMaxHp:1000});
+  battle.advance(1.2,{orcCanAttack:false,heroCloseRange:true});
+  const held=battle.advance(.8,{orcCanAttack:false,heroCanAttack:false,heroCloseRange:true});
+  assert.ok(held.some(event=>event.type==='status'&&event.status==='freeze'));assert.equal(battle.state.enemies[0].status,null);
+  const resumed=battle.advance(2.4,{heroCanAttack:false});
+  assert.deepEqual(resumed.filter(event=>event.type==='attack'&&event.sourceId==='orc').map(event=>event.at),[4.4]);
+});
+
+test('freezing a caster does not pause a shadow projectile that was already in flight', () => {
+  const createFixture=magicEncounterFixture({mageFirst:true});
+  const battle=createFixture({heroProjectile:'magic',heroMagic:'ice',heroDamage:1,heroMaxHp:1000});
+  const before=battle.advance(5.8),cast=before.find(event=>event.type==='cast'&&event.sourceId==='mage');
+  assert.ok(cast);assert.equal(cast.at,5.3);assert.equal(cast.impactAt,6.2);
+  assert.deepEqual(battle.state.enemies.find(enemy=>enemy.id==='mage').status,{type:'freeze',startedAt:5.7,endsAt:6.2});
+  const after=battle.advance(.4),impact=after.find(event=>event.type==='attack'&&event.castId===cast.castId);
+  assert.ok(impact);assert.equal(impact.at,6.2);assert.equal(impact.magic,'shadow');
+});
+
+test('restart and terminal defeat clear effects and prevent any remaining burn damage or delayed freeze cooldown', () => {
+  const burning=encounterFixture([[{id:'orc',type:'orc'}]])({heroProjectile:'magic',heroMagic:'fire',heroMaxHp:5});
+  const defeat=burning.advance(2.4);assert.equal(burning.state.phase,'defeat');assert.equal(burning.state.enemies[0].status,null);
+  assert.deepEqual(defeat.filter(event=>event.dot).map(event=>event.at),[2.35]);assert.deepEqual(burning.advance(100),[]);
+  const frozen=createDefaultBattle({heroProjectile:'magic',heroMagic:'ice',heroDamage:1,heroMaxHp:1000});
+  frozen.advance(2.1);assert.ok(frozen.state.enemies[0].status);
+  const reset=frozen.restart();assert.equal(reset.elapsed,0);assert.ok(reset.enemies.every(enemy=>enemy.status===null));
+  const fresh=frozen.advance(1.8,{heroCanAttack:false});
+  assert.deepEqual(fresh.filter(event=>event.type==='attack').map(event=>[event.sourceId,event.at]),[['archer1',1.8]]);
+});
+
+test('status ticks, refreshes, expiry and range-gated freezes remain deterministic across chunk sizes', () => {
+  const createFixture=encounterFixture([[{id:'archer',type:'archer'}],[{id:'orc',type:'orc'}]],{legacyArcher:false,closeInterval:.25});
+  const schedule=[[1.45,{heroCloseRange:true}],[.3,{heroCloseRange:true,heroCanAttack:false}],[.25,{heroCanAttack:false,orcCanAttack:false}],[1.17,{heroCloseRange:true}],[.63,{heroCanAttack:false}],[300,{}]];
+  function run(magic,pattern){
+    const battle=createFixture({heroProjectile:'magic',heroMagic:magic,heroDamage:3,heroMaxHp:1000}),events=[];let index=0;
+    for(const [seconds,gates] of schedule){
+      if(!pattern){events.push(...battle.advance(seconds,gates));continue;}
+      let remaining=Math.round(seconds*1000000);
+      while(remaining>0){const ticks=Math.min(remaining,pattern[index++%pattern.length]);events.push(...battle.advance(ticks/1000000,gates));remaining-=ticks;}
+    }
+    return {battle,events};
+  }
+  for(const magic of ['fire','ice']){
+    const whole=run(magic),small=run(magic,[100000]),irregular=run(magic,[37000,63000]);
+    assert.deepEqual(small.events,whole.events);assert.deepEqual(irregular.events,whole.events);
+    assert.deepEqual(small.battle.state,whole.battle.state);assert.deepEqual(irregular.battle.state,whole.battle.state);
+    assert.equal(whole.battle.state.phase,'victory');assert.equal(whole.battle.state.reward,10);
+    assert.ok(whole.battle.state.enemies.every(enemy=>enemy.status===null));
   }
 });

@@ -112,7 +112,7 @@ function createHarness({skin = 'bronze', preference, search = '', weapon, outfit
       this.path = value;
       const data = fs.readFileSync(path.join(dist, value));
       assert.equal(data.subarray(1,4).toString(), 'PNG');
-      this.width = data.readUInt32BE(16); this.height = data.readUInt32BE(20);
+      this.width = this.naturalWidth = data.readUInt32BE(16); this.height = this.naturalHeight = data.readUInt32BE(20);
       pendingImages.push(this); loadedPaths.push(value);
     }
     get src() { return this.path; }
@@ -183,6 +183,12 @@ function createHarness({skin = 'bronze', preference, search = '', weapon, outfit
   function spellState() {
     return spells().map(element=>({magic:element.dataset.magic,phase:element.dataset.phase,left:element.style.left,top:element.style.top,transform:element.style.transform,width:element.width,height:element.height,draws:element.draws.length,lastDraw:element.draws.at(-1)}));
   }
+  function statusCanvases(id) {
+    return (id?[id]:actorIds).flatMap(actorId=>node(`[data-fighter="${actorId}"]`).children.filter(element=>element.className==='status-effect'));
+  }
+  function statusState() {
+    return actorIds.flatMap(id=>statusCanvases(id).map(element=>({id,status:element.dataset.status,frame:element.dataset.frame,opacity:element.style.opacity,left:element.style.left,top:element.style.top,width:element.width,height:element.height,draws:element.draws.length,last:element.draws.at(-1)})));
+  }
   function visualState() {
     return {state:state(), x:heroX(), orcX:orcX(), draws:node('#player-sprite').draws.length, lastDraw:node('#player-sprite').draws.at(-1), orcDraws:node('#enemy-orc').draws.length,lastOrcDraw:node('#enemy-orc').draws.at(-1)};
   }
@@ -194,7 +200,7 @@ function createHarness({skin = 'bronze', preference, search = '', weapon, outfit
     if(modelSize)for(const id of actorIds)node(`[data-fighter="${id}"]`).offsetWidth=modelSize;
     resizeCallbacks.forEach(callback => callback());
   }
-  return {node, storage, loadedPaths, document, state, events, actorIds, enemyIds, restartStates, get runCount(){return restarts+1;}, loadNextImage, loadAllImages, runFor, runUntil, frame, heroX, orcX, inMeleeRange, spells, spellState, visualState, resizeField};
+  return {node, storage, loadedPaths, document, state, events, actorIds, enemyIds, restartStates, get runCount(){return restarts+1;}, loadNextImage, loadAllImages, runFor, runUntil, frame, heroX, orcX, inMeleeRange, spells, spellState, statusCanvases, statusState, visualState, resizeField};
 }
 function runFramesUntil(ui, condition, maxSeconds=5) {
   for(let count=0;!condition() && count<Math.ceil(maxSeconds*1000/16);count++)ui.frame(16);
@@ -215,7 +221,7 @@ function actorX(ui,id){return Number.parseFloat(ui.node(`[data-fighter="${id}"]`
 function inReach(ui,id){return Math.abs(actorX(ui,id)-ui.heroX())<=ui.node('[data-fighter="hero"]').offsetWidth*.23+ui.node(`[data-fighter="${id}"]`).offsetWidth*.34+.01;}
 function kills(ui){return ui.events.filter(event=>event.type==='death'&&event.id!=='hero');}
 function wallet(ui){return Number(ui.storage.get('ember.test.gold.v1')||0);}
-function fullSnapshot(ui){return {combat:ui.state(),spells:ui.spellState(),actors:ui.actorIds.map(id=>({id,x:actorX(ui,id),hidden:ui.node(`[data-fighter="${id}"]`).hidden,motion:ui.node(`[data-fighter="${id}"]`).dataset.motion,draws:ui.node(id==='hero'?'#player-sprite':`#enemy-${id}`).draws.length,last:ui.node(id==='hero'?'#player-sprite':`#enemy-${id}`).draws.at(-1)}))};}
+function fullSnapshot(ui){return {combat:ui.state(),spells:ui.spellState(),statuses:ui.statusState(),actors:ui.actorIds.map(id=>({id,x:actorX(ui,id),hidden:ui.node(`[data-fighter="${id}"]`).hidden,motion:ui.node(`[data-fighter="${id}"]`).dataset.motion,draws:ui.node(id==='hero'?'#player-sprite':`#enemy-${id}`).draws.length,last:ui.node(id==='hero'?'#player-sprite':`#enemy-${id}`).draws.at(-1)}))};}
 
 test('assets gate startup; the first wave shows one real LPC archer and the selected bare hero skin',async()=>{
  const ui=createHarness({skin:'bronze',preference:'off',search:'?battle=test'});
@@ -399,11 +405,11 @@ test('fire and ice use all eighteen animation cells and apply damage only at the
   const ui=createHarness({weapon:'wand',outfit:'acolyte',magic});await ui.loadAllImages();ui.runUntil(()=>ui.events.some(event=>event.type==='cast'));
   const cast=ui.events.find(event=>event.type==='cast'),spell=ui.spells()[0],hp=ui.state().enemies[0].hp;
   assert.equal(cast.sourceId,'hero');assert.equal(cast.targetId,'archer1');assert.equal(cast.magic,magic);assert.equal(spell.dataset.magic,magic);assert.equal(spell.dataset.phase,'appear');
-  assert.equal(ui.node('[data-fighter="hero"]').dataset.motion,'attack');assert.equal(hp,60);
-  runFramesUntil(ui,()=>spell.dataset.phase==='flight');runFramesUntil(ui,()=>ui.state().elapsed>=cast.at+.8);assert.equal(ui.state().enemies[0].hp,hp);
+  assert.equal(ui.node('[data-fighter="hero"]').dataset.motion,'attack');assert.equal(hp,60);assert.equal(currentStatus(ui,'archer1'),null);assert.equal(ui.statusCanvases().length,0);
+  runFramesUntil(ui,()=>spell.dataset.phase==='flight');runFramesUntil(ui,()=>ui.state().elapsed>=cast.at+.8);assert.equal(ui.state().enemies[0].hp,hp);assert.equal(currentStatus(ui,'archer1'),null,'a flying spell cannot apply its status before impact');
   runFramesUntil(ui,()=>ui.events.some(event=>event.type==='attack'&&event.castId===cast.castId));
   const hit=ui.events.find(event=>event.type==='attack'&&event.castId===cast.castId);assert.equal(hit.at,cast.impactAt);assert.equal(hit.impact,true);assert.ok(Math.abs(hit.at-cast.at-.9)<1e-6);
-  assert.equal(ui.state().enemies[0].hp,hp-hit.damage);assert.equal(spell.dataset.phase,'impact');assert.equal(ui.node('[data-fighter="hero"]').dataset.motion,'idle');
+  assert.equal(ui.state().enemies[0].hp,hp-hit.damage);assert.equal(currentStatus(ui,'archer1').type,magic==='fire'?'burn':'freeze');assert.equal(currentStatus(ui,'archer1').startedAt,hit.at);assert.equal(spell.dataset.phase,'impact');assert.equal(ui.node('[data-fighter="hero"]').dataset.motion,'idle');
   runFramesUntil(ui,()=>!ui.spells().includes(spell));assertSpellCells(spell,magic);
   const next=ui.spells().find(element=>element.dataset.source==='hero');assert.ok(next&&next!==spell);assert.equal(next.dataset.phase,'appear');
  }
@@ -501,4 +507,98 @@ test('far wand casts and the hero bow keep their original cadence, including bow
    assert.ok(Math.abs(shots[1].at-shots[0].at-1.2)<1e-6);assert.ok(shots.every(event=>event.projectile==='arrow'));
   }
  }
+});
+
+
+function currentStatus(ui,id){return ui.state().enemies.find(enemy=>enemy.id===id)?.status||null;}
+function assertIceOpacity(canvas){
+ assert.equal(canvas.dataset.status,'freeze');
+ const css=fs.readFileSync(path.join(dist,'game.css'),'utf8');
+ const rule=css.match(/\.fighter>canvas\.status-effect\[data-status="freeze"\]\{[^}]*opacity:\s*([.\d]+)/);
+ assert.equal(Number(canvas.style.opacity??rule?.[1]),.65,'the actual actor-local freeze canvas uses 65% opacity');
+}
+function assertStatusCells(canvas,status){
+ assert.equal(canvas.width,64);assert.equal(canvas.height,64);assert.equal(canvas.dataset.status,status);
+ const row=status==='burn'?0:1;
+ assert.ok(canvas.draws.length>0);
+ for(const draw of canvas.draws){assert.equal(draw.src,'assets/magic/status-effects.png');assert.deepEqual(draw.crop.slice(1),[row*362,362,362]);}
+ assert.deepEqual([...new Set(canvas.draws.map(draw=>draw.crop[0]/362))].sort((a,b)=>a-b),[0,1,2,3,4,5]);
+}
+
+test('burn is attached at the spell impact for half a second, ticks twice, and never recasts or creates burn projectiles',async()=>{
+ const ui=createHarness({weapon:'wand',outfit:'acolyte',magic:'fire'});await ui.loadAllImages();
+ assert.ok(ui.loadedPaths.includes('assets/magic/status-effects.png'));
+ ui.runUntil(()=>ui.events.some(event=>event.type==='cast'));
+ const cast=ui.events.find(event=>event.type==='cast');assert.equal(currentStatus(ui,'archer1'),null);assert.equal(ui.statusCanvases().length,0);
+ runFramesUntil(ui,()=>ui.state().elapsed>=cast.impactAt-.04);assert.equal(currentStatus(ui,'archer1'),null,'appearance and flight cannot burn the target');
+ runFramesUntil(ui,()=>currentStatus(ui,'archer1')?.type==='burn');
+ const status=currentStatus(ui,'archer1'),applied=ui.events.find(event=>event.type==='status'),overlay=ui.statusCanvases('archer1')[0];
+ assert.ok(overlay);assert.equal(status.startedAt,cast.impactAt);assert.equal(status.endsAt,status.startedAt+.5);
+ assert.deepEqual([applied.status,applied.sourceId,applied.targetId,applied.at,applied.duration,applied.endsAt],['burn','hero','archer1',cast.impactAt,.5,cast.impactAt+.5]);
+ assert.equal(ui.state().enemies[0].hp,48);assert.equal(overlay.dataset.status,'burn');
+ const attackDraws=ui.node('#player-sprite').draws.filter(draw=>draw.src.endsWith('-attack.png')).length;
+ runFramesUntil(ui,()=>ui.events.some(event=>event.dot));
+ const first=ui.events.find(event=>event.dot);assert.deepEqual([first.damage,first.projectile,first.magic,first.at],[1,'burn','fire',status.startedAt+.25]);
+ assert.equal(ui.events.filter(event=>event.type==='cast').length,1,'a burn tick must not become another cast');
+ assert.equal(ui.spells().length,1,'only the original spell exists before the regular second cast');
+ assert.equal(ui.node('#player-sprite').draws.filter(draw=>draw.src.endsWith('-attack.png')).length,attackDraws,'a burn tick must not restart a caster pose');
+ assert.equal(ui.node('[data-fighter="hero"]').dataset.motion,'idle');
+ runFramesUntil(ui,()=>!ui.statusCanvases().includes(overlay));
+ const ticks=ui.events.filter(event=>event.dot);assert.deepEqual(ticks.map(event=>[event.at,event.damage]),[[status.startedAt+.25,1],[status.startedAt+.5,1]]);
+ assert.equal(currentStatus(ui,'archer1'),null);assert.equal(ui.state().enemies[0].hp,46);assert.equal(ui.events.filter(event=>event.type==='cast').length,2);
+ assert.ok(ui.node('#player-sprite').draws.at(-1).crop[0]>=64,'the normal second cast keeps progressing through its pose rather than restarting at the DoT tick');
+ assert.equal(ui.node('.battlefield').children.some(element=>String(element.className).includes('projectile burn')),false);
+ assertStatusCells(overlay,'burn');
+});
+
+test('ice visibly holds the approaching orc position and exact LPC pose, including across pause, then walking resumes',async()=>{
+ const ui=createHarness({weapon:'wand',outfit:'acolyte',magic:'ice'});await ui.loadAllImages();ui.runUntil(()=>ui.state().waveIndex===2);
+ runFramesUntil(ui,()=>currentStatus(ui,'orc')?.type==='freeze',20);
+ const frozen=currentStatus(ui,'orc'),overlay=ui.statusCanvases('orc')[0],actor=ui.node('[data-fighter="orc"]'),canvas=ui.node('#enemy-orc');
+ assert.ok(overlay);assert.equal(ui.inMeleeRange(),false,'the first ice hit lands while the orc is still walking');
+ assert.equal(actor.classes.has('is-frozen'),true);assertIceOpacity(overlay);
+ const x=ui.orcX(),pose=canvas.draws.at(-1),count=canvas.draws.length,time=ui.state().elapsed;
+ ui.runFor(.3);assert.equal(ui.orcX(),x);assert.deepEqual(canvas.draws.at(-1),pose);assert.equal(canvas.draws.length,count);assert.ok(ui.state().elapsed>time);
+ assert.equal(currentStatus(ui,'orc').endsAt,frozen.endsAt);ui.node('#auto-button').click();
+ const beforeResize={orc:ui.orcX(),hero:ui.heroX()};ui.resizeField(1000);ui.frame(0);
+ assert.ok(Math.abs(ui.orcX()-beforeResize.orc*1.25)<1e-8,'paused resize scales an approaching frozen orc instead of snapping it to contact');
+ assert.ok(Math.abs(ui.heroX()-beforeResize.hero*1.25)<1e-8);assert.equal(ui.inMeleeRange(),false);
+ assert.deepEqual(canvas.draws.at(-1),pose,'resizing cannot advance the held LPC pose');
+ const thawX=ui.orcX(),held=fullSnapshot(ui);ui.runFor(3);assert.deepEqual(fullSnapshot(ui),held,'a paused frozen overlay and its remaining lifetime must not advance');
+ ui.node('#auto-button').click();runFramesUntil(ui,()=>!currentStatus(ui,'orc'),2);assert.equal(ui.statusCanvases('orc').length,0);assert.equal(actor.classes.has('is-frozen'),false);
+ ui.runFor(.1);assert.ok(ui.orcX()<thawX,'the orc resumes walking after thaw');assert.equal(actor.dataset.motion,'walk');
+ assertStatusCells(overlay,'freeze');
+});
+
+test('a frozen orc in melee contact cannot advance an attack pose or strike before the freeze expires',async()=>{
+ const ui=createHarness({weapon:'wand',outfit:'acolyte',magic:'ice'});await ui.loadAllImages();ui.runUntil(()=>ui.state().waveIndex===2);ui.runUntil(()=>ui.inMeleeRange());
+ const contact=ui.state().elapsed;
+ runFramesUntil(ui,()=>currentStatus(ui,'orc')?.type==='freeze'&&currentStatus(ui,'orc').startedAt>=contact-1e-6,6);
+ const status=currentStatus(ui,'orc'),canvas=ui.node('#enemy-orc'),x=ui.orcX(),pose=canvas.draws.at(-1),count=canvas.draws.length;
+ ui.runFor(.3);assert.equal(ui.orcX(),x);assert.deepEqual(canvas.draws.at(-1),pose);assert.equal(canvas.draws.length,count);
+ assert.ok(!ui.events.some(event=>event.type==='attack'&&event.sourceId==='orc'&&event.at>=status.startedAt&&event.at<status.endsAt));
+ ui.document.hidden=true;ui.document.dispatch('visibilitychange');const hidden=fullSnapshot(ui);ui.runFor(3);assert.deepEqual(fullSnapshot(ui),hidden);
+ ui.document.hidden=false;ui.document.dispatch('visibilitychange');runFramesUntil(ui,()=>!currentStatus(ui,'orc'),2);
+ assert.equal(ui.node('[data-fighter="orc"]').classes.has('is-frozen'),false);
+});
+
+test('a burn kill pays once and all status overlays and queued ticks clear across waves and an explicit restart',async()=>{
+ const ui=createHarness({weapon:'wand',outfit:'acolyte',magic:'fire',combatOptions:{heroDamage:59}});await ui.loadAllImages();
+ runFramesUntil(ui,()=>currentStatus(ui,'archer1')?.type==='burn');
+ runFramesUntil(ui,()=>ui.state().phase==='intermission');
+ const death=kills(ui)[0];assert.equal(death.id,'archer1');assert.equal(wallet(ui),5);assert.equal(currentStatus(ui,'archer1'),null);assert.equal(ui.statusCanvases().length,0);
+ ui.runFor(.4);assert.equal(wallet(ui),5);assert.equal(kills(ui).length,1,'the second scheduled burn tick cannot kill or reward the same enemy again');
+ ui.runUntil(()=>ui.state().waveIndex===1);assert.equal(ui.statusCanvases().length,0);assert.ok(ui.state().enemies.every(enemy=>!enemy.status));
+ runFramesUntil(ui,()=>ui.state().enemies.some(enemy=>enemy.status?.type==='burn'),6);assert.ok(ui.statusCanvases().length);
+ ui.node('#replay-button').click();assert.equal(ui.state().waveIndex,0);assert.equal(ui.statusCanvases().length,0);assert.ok(ui.state().enemies.every(enemy=>!enemy.status));
+ const gold=wallet(ui);ui.runFor(.2);assert.equal(ui.state().enemies[0].hp,60);assert.equal(wallet(ui),gold,'old burn timers cannot leak into the restarted encounter');
+});
+
+test('reduced motion keeps a static ice indicator for the same gameplay lifetime without animating the overlay',async()=>{
+ const ui=createHarness({weapon:'wand',outfit:'acolyte',magic:'ice',reducedMotion:true});await ui.loadAllImages();runFramesUntil(ui,()=>currentStatus(ui,'archer1')?.type==='freeze');
+ const status=currentStatus(ui,'archer1'),overlay=ui.statusCanvases('archer1')[0];assert.ok(overlay);assert.equal(overlay.dataset.frame,'2');assertIceOpacity(overlay);
+ const pose=overlay.draws.at(-1);assert.deepEqual(pose.crop,[2*362,362,362,362]);assert.equal(ui.spells().length,0);
+ ui.runFor(.3);assert.deepEqual(overlay.draws.at(-1),pose);assert.equal(overlay.dataset.frame,'2');assert.equal(currentStatus(ui,'archer1').endsAt,status.endsAt);
+ runFramesUntil(ui,()=>!currentStatus(ui,'archer1'),2);assert.equal(ui.statusCanvases().length,0);
+ ui.runUntil(()=>ui.state().phase==='victory');assert.equal(wallet(ui),20);assert.equal(ui.statusCanvases().length,0);assert.equal(ui.spells().length,0);
 });

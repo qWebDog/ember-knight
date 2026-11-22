@@ -42,10 +42,12 @@
   const actors = {};
   for (const id of ['hero',...Object.keys(enemyDefinitions)]) {
     const element = document.querySelector(`[data-fighter="${id}"]`);
-    actors[id] = {element, canvas:element.querySelector('canvas'), bar:element.querySelector('.healthbar'), images:{}, animation:null, hitAt:-10, blockAt:-10, lastKey:null,...enemyDefinitions[id],x:null,distance:0,direction:1,moving:false};
+    actors[id] = {element, canvas:element.querySelector('canvas'), bar:element.querySelector('.healthbar'), images:{}, animation:null, hitAt:-10, blockAt:-10, lastKey:null,statusCanvas:null,statusKey:null,frozenPose:null,poseAnimation:null,poseAge:100,...enemyDefinitions[id],x:null,distance:0,direction:1,moving:false};
   }
   const effects = [];
   const spellImages = {};
+  const pendingIceImpacts = new Map();
+  let statusImage = null;
   let heroX = null, fieldWidth = null, moving = false, heroMoving = false;
   let walkDistance = 0, walkDirection = 3, activeTime = 0;
   let pairContacted = false, previousSeparation = null, contactTarget = null, previousTargetSeparation = null;
@@ -124,11 +126,13 @@
       actors.archer2.images = {...actors.archer1.images};
       actors.archer3.images = {...actors.archer1.images};
       actors.orc.images.walk = { ...actors.orc.images.idle,still:undefined };
-      const [orcAttack] = await Promise.all([
+      const [orcAttack,statusAtlas] = await Promise.all([
         loadImage('assets/enemies/lpc/orc-attack.png').catch(() => null),
+        loadImage('assets/magic/status-effects.png'),
         loadImage(arrowSprite),
         ...['fire','ice','shadow'].map(async magic=>{spellImages[magic]=await loadImage(`assets/magic/${magic}.png`);})
       ]);
+      statusImage = statusAtlas;
       actors.orc.images.attack = orcAttack ? {image:orcAttack,frames:6,row:1,tile:128,origin:32} : { ...actors.orc.images.idle,frames:1 };
       const face = $('#avatar').getContext('2d'); face.imageSmoothingEnabled = false;
       const avatarTile=loadout?starterWeapon.walk.tile:64, avatarOrigin=loadout?starterWeapon.walk.origin:0;
@@ -199,20 +203,68 @@
   function removeEffects(keep) {
     for(let i=effects.length-1;i>=0;i--)if(!keep(effects[i])){effects[i].element.remove();effects.splice(i,1);}
   }
+  function clearStatus(actor) {
+    if(actor.statusCanvas)actor.statusCanvas.remove();
+    actor.statusCanvas=null;actor.statusKey=null;actor.frozenPose=null;
+    actor.element.classList.toggle('is-frozen',false);
+    actor.element.classList.toggle('is-burning',false);
+  }
+  function isFrozen(unit,state) {
+    return unit?.hp>0 && !['victory','defeat'].includes(state.phase) && unit.status?.type==='freeze' && unit.status.endsAt>state.elapsed+1e-7;
+  }
+  function syncFrozenPose(actor,unit,state) {
+    const frozen=isFrozen(unit,state);
+    if(frozen&&!actor.frozenPose){
+      actor.frozenPose={animation:actor.animation,age:actor.poseAnimation===actor.animation?actor.poseAge:actor.animation?Math.max(0,activeTime-actor.animation.at):100};
+    }else if(!frozen&&actor.frozenPose){
+      // Only resume the captured animation. An attack emitted exactly at thaw is new.
+      if(unit?.hp>0&&!['victory','defeat'].includes(state.phase)&&actor.animation&&actor.animation===actor.frozenPose.animation)actor.animation.at=activeTime-actor.frozenPose.age;
+      actor.frozenPose=null;
+    }
+    actor.element.classList.toggle('is-frozen',frozen);
+    return frozen;
+  }
+  function syncFrozenActors(state) {
+    for(const id of Object.keys(enemyDefinitions))syncFrozenPose(actors[id],state.enemies.find(unit=>unit.id===id),state);
+  }
+  function drawStatus(actor,unit,state) {
+    const status=unit?.status;
+    if(!statusImage||!unit||unit.hp<=0||['victory','defeat'].includes(state.phase)||!status||status.endsAt<=state.elapsed+1e-7){
+      if(actor.statusCanvas)actor.statusCanvas.remove();actor.statusCanvas=null;actor.statusKey=null;actor.element.classList.toggle('is-burning',false);return;
+    }
+    if(!actor.statusCanvas){
+      const canvas=document.createElement('canvas');canvas.width=64;canvas.height=64;canvas.className='status-effect';
+      canvas.setAttribute('aria-hidden','true');actor.element.appendChild(canvas);actor.statusCanvas=canvas;
+    }
+    const frame=reducedMotion.matches?2:Math.min(5,Math.max(0,Math.floor((state.elapsed-status.startedAt)/(status.endsAt-status.startedAt)*6+1e-7)));
+    const canvas=actor.statusCanvas,row=status.type==='freeze'?1:0,key=`${status.type}:${frame}`;
+    canvas.dataset.status=status.type;canvas.dataset.frame=String(frame);
+    canvas.style.opacity=status.type==='freeze'?'0.65':'1';
+    actor.element.classList.toggle('is-burning',status.type==='burn');
+    if(actor.statusKey!==key){
+      const width=(statusImage.naturalWidth||statusImage.width)/6,height=(statusImage.naturalHeight||statusImage.height)/2;
+      const ctx=canvas.getContext('2d');ctx.clearRect(0,0,64,64);ctx.imageSmoothingEnabled=false;
+      ctx.drawImage(statusImage,frame*width,row*height,width,height,0,0,64,64);actor.statusKey=key;
+    }
+  }
   function handleEvents(events) {
     for (const event of events) {
       if (event.type === 'cast') {
+        if(event.sourceId==='hero'&&event.magic==='ice')pendingIceImpacts.set(event.castId,{at:event.impactAt,targetId:event.targetId});
         actors[event.sourceId].animation={at:event.at,duration:event.animationDuration||.66};
         addSpell(event);
       } else if (event.type === 'attack') {
-        if (!event.impact) actors[event.sourceId].animation = {at:activeTime,duration:event.animationDuration || (event.projectile === 'arrow' ? .9 : .66),variant:event.variant,heavy:event.heavy,counter:event.counter};
+        if (!event.impact&&!event.dot) actors[event.sourceId].animation = {at:activeTime,duration:event.animationDuration || (event.projectile === 'arrow' ? .9 : .66),variant:event.variant,heavy:event.heavy,counter:event.counter};
         if (event.impact) {
+          pendingIceImpacts.delete(event.castId);
           const spell=effects.find(effect=>effect.type==='spell'&&effect.castId===event.castId);
           if(spell){spell.landed=true;spell.impactAt=event.at;spell.duration=event.at-spell.at+spell.impactDuration;}
         }
-        actors[event.targetId].hitAt = activeTime;
+        if(!event.dot)actors[event.targetId].hitAt = activeTime;
         addEffect(event.counter ? 'counter' : event.heavy ? 'heavy' : 'damage',event.sourceId,event.targetId,event.counter ? `Ответ −${event.damage}` : `−${event.damage}`,event.at);
-        if (event.projectile === 'arrow') addEffect('arrow',event.sourceId,event.targetId,null,event.at);
+        if (!event.dot&&event.projectile === 'arrow') addEffect('arrow',event.sourceId,event.targetId,null,event.at);
+      } else if(event.type==='status'){
+        syncFrozenActors(battle.getState());
       } else if (event.type === 'block') {
         actors.hero.blockAt = activeTime;
         // The real LPC guard pose interrupts the swing; the following counter
@@ -220,6 +272,8 @@
         actors.hero.animation = null;
         addEffect('block',event.sourceId,'hero','Блок',event.at);
       } else if (event.type === 'death') {
+        clearStatus(actors[event.id]);
+        for(const [id,impact]of pendingIceImpacts)if(impact.targetId===event.id)pendingIceImpacts.delete(id);
         removeEffects(effect=>effect.type!=='spell'||effect.targetId!==event.id||effect.landed);
         if(event.id!=='hero'&&event.reward>0&&!paidDeaths.has(event.id)){
           paidDeaths.add(event.id);wallet=Math.min(999999999,wallet+event.reward);updateWallet();
@@ -236,6 +290,7 @@
         $('#status').textContent=`Волна ${event.waveNumber} из ${event.waveCount}: ${event.enemies.length===2?'два лучника':event.enemies[0].type==='orc'?'орк':'один лучник'}.`;
         updateControls();
       } else if (event.type === 'end') {
+        pendingIceImpacts.clear();for(const actor of Object.values(actors))clearStatus(actor);
         restartRemaining=2;
         resultSummary=event.result==='victory'?`Все три волны пройдены. За бой: +${event.totalReward} монет.`:`Герой пал. За бой сохранено: +${event.totalReward} монет.`;
         $('#result-title').textContent = event.result === 'victory' ? 'Победа!' : 'Новый заход';
@@ -249,9 +304,10 @@
   }
   function drawActor(id, state) {
     const actor = actors[id], unit = id === 'hero' ? state.hero : state.enemies.find(enemy=>enemy.id===id);
-    if(!unit){actor.element.hidden=true;return;}
+    if(!unit){actor.element.hidden=true;clearStatus(actor);return;}
     actor.element.hidden=false;
     if (!actor.images.idle) return;
+    const frozen=syncFrozenPose(actor,unit,state);
     const age = actor.animation ? activeTime - actor.animation.at : 100;
     const ended = ['victory','defeat'].includes(state.phase);
     const distance = id === 'hero' ? walkDistance : actor.distance;
@@ -264,18 +320,21 @@
     const tile = descriptor.tile || 64, origin = descriptor.origin || 0;
     const cell = walking ? 1 + Math.floor((distance / .75 % 1) * 8) : attacking ? Math.min(descriptor.frames-1,Math.floor(age / actor.animation.duration * descriptor.frames)) : Number.isInteger(descriptor.still) ? descriptor.still : id === 'hero' && auto && unit.hp > 0 && !ended && !reducedMotion.matches ? Math.floor(activeTime / .65) % 2 : 0;
     const key = `${kind}-${descriptor.image.src}-${cell}-${row}-${tile}-${origin}`;
-    if (actor.lastKey !== key) {
+    if (!frozen&&actor.lastKey !== key) {
       actor.canvas.width = tile; actor.canvas.height = tile;
       const ctx = actor.canvas.getContext('2d'); ctx.clearRect(0,0,tile,tile); ctx.imageSmoothingEnabled = false;
       ctx.drawImage(descriptor.image,cell*tile,row*tile,tile,tile,0,0,tile,tile); actor.lastKey = key;
       actor.canvas.style.width = `${tile / 64 * 100}%`; actor.canvas.style.height = `${tile / 64 * 100}%`;
       actor.canvas.style.left = `${-origin / 64 * 100}%`; actor.canvas.style.top = `${-origin / 64 * 100}%`;
     }
-    actor.element.dataset.motion = kind;
-    actor.element.dataset.attack = attacking ? actor.animation.variant || 'basic' : '';
-    actor.element.dataset.counter = String(Boolean(attacking && actor.animation.counter));
-    actor.element.classList.toggle('is-heavy',Boolean(attacking && actor.animation.heavy));
-    actor.element.classList.toggle('is-blocking',Boolean(blocking));
+    if(!frozen){
+      actor.poseAge=age;actor.poseAnimation=actor.animation;
+      actor.element.dataset.motion = kind;
+      actor.element.dataset.attack = attacking ? actor.animation.variant || 'basic' : '';
+      actor.element.dataset.counter = String(Boolean(attacking && actor.animation.counter));
+      actor.element.classList.toggle('is-heavy',Boolean(attacking && actor.animation.heavy));
+      actor.element.classList.toggle('is-blocking',Boolean(blocking));
+    }
     actor.element.classList.toggle('is-defeated',unit.hp <= 0);
     actor.element.classList.toggle('is-target',id === state.targetId);
     actor.element.classList.toggle('is-hit',!ended && !reducedMotion.matches && activeTime - actor.hitAt < .16);
@@ -283,12 +342,15 @@
     actor.bar.setAttribute('aria-valuenow',unit.hp);
     actor.bar.setAttribute('aria-valuemax',unit.maxHp);
     actor.element.setAttribute('aria-label', `${unit.name}${id === 'hero' && loadout ? `, ${starterWeapon.name}, наряд ${starterOutfit.name}, ${loadouts.color(loadout.outfitColor).name}${heroMagic?`, магия ${loadouts.magic(heroMagic).name}`:''}` : ''}: ${unit.hp} из ${unit.maxHp} здоровья`);
+    drawStatus(actor,unit,state);
   }
   function prepareWave(state) {
     removeEffects(()=>false);
+    pendingIceImpacts.clear();
     heroX=null;fieldWidth=null;walkDistance=0;walkDirection=3;moving=heroMoving=false;
     pairContacted=false;previousSeparation=null;contactTarget=null;previousTargetSeparation=null;
     for(const actor of Object.values(actors)){
+      clearStatus(actor);actor.poseAnimation=null;actor.poseAge=100;
       actor.x=null;actor.distance=0;actor.moving=false;actor.direction=1;
       actor.animation=null;actor.hitAt=-10;actor.blockAt=-10;actor.lastKey=null;
     }
@@ -324,16 +386,16 @@
       }
       previousSeparation=separation;
       if(gap>.01){
-        const heroSpeed=ranged?0:heroSize*.85,enemySpeed=enemySize*.85,closingSpeed=heroSpeed+enemySpeed;
-        usedTime=reducedMotion.matches?0:Math.min(dt,gap/closingSpeed);
-        const time=reducedMotion.matches?gap/closingSpeed:usedTime;
+        const heroSpeed=ranged?0:heroSize*.85,enemySpeed=isFrozen(melee,state)?0:enemySize*.85,closingSpeed=heroSpeed+enemySpeed;
+        usedTime=reducedMotion.matches||!closingSpeed?0:Math.min(dt,gap/closingSpeed);
+        const time=reducedMotion.matches&&closingSpeed?gap/closingSpeed:usedTime;
         const heroStep=heroSpeed*time,enemyStep=enemySpeed*time;
         heroX+=heroStep;enemy.x-=enemyStep;
         if(!reducedMotion.matches){walkDistance+=heroStep/heroSize;enemy.distance+=enemyStep/enemySize;}
         walkDirection=3;enemy.direction=1;
-        moving=enemy.x-heroX-separation>.01;heroMoving=moving&&heroSpeed>0;enemy.moving=moving;
+        moving=enemy.x-heroX-separation>.01&&closingSpeed>0;heroMoving=moving&&heroSpeed>0;enemy.moving=moving&&enemySpeed>0;
       }
-      if(!moving)pairContacted=true;
+      if(enemy.x-heroX-separation<=.01)pairContacted=true;
     }else if(canMove&&state.targetId){
       if(ranged)heroX=home;
       else{
@@ -417,31 +479,50 @@
       orcCanAttack:state.enemies.some(enemy=>enemy.type==='orc'&&enemy.hp>0) && inReach('orc',actors.orc.x)
     };
   }
+  function advanceBattleFrame(dt) {
+    let remaining=dt;
+    while(remaining>1e-7){
+      const before=battle.getState();
+      if(['victory','defeat'].includes(before.phase))break;
+      let step=remaining;
+      // Cast events supply their engine-time impact boundary even with reduced motion.
+      // Status rendering itself always reads the enemy snapshot, never this schedule.
+      for(const [id,impact]of pendingIceImpacts){
+        if(impact.at<=before.elapsed+1e-7){pendingIceImpacts.delete(id);continue;}
+        step=Math.min(step,impact.at-before.elapsed);
+      }
+      for(const unit of before.enemies)if(isFrozen(unit,before))step=Math.min(step,unit.status.endsAt-before.elapsed);
+      step=Math.min(remaining,Math.max(1e-6,step));
+      activeTime+=step;
+      const wasMoving=moving;
+      if(before.phase==='intermission'){
+        handleEvents(battle.advance(step,{heroCanAttack:Boolean(ranged),orcCanAttack:false}));
+      }else{
+        const beforeRange=attackAvailability(before);
+        const walkTime=updateMovement(step,before);
+        battle.resume();
+        if(walkTime>0)handleEvents(battle.advance(walkTime,beforeRange));
+        if(step>walkTime)handleEvents(battle.advance(step-walkTime,attackAvailability(battle.getState())));
+      }
+      const after=battle.getState();
+      syncFrozenActors(after);updateMovement(0,after);
+      if(moving!==wasMoving||after.phase!==before.phase)updateControls();
+      remaining-=step;
+    }
+  }
   function tick(timestamp) {
     if(lastFrameTime===null)lastFrameTime=timestamp;
     const dt=Math.min(.1,Math.max(0,(timestamp-lastFrameTime)/1000));lastFrameTime=timestamp;
     if(ready&&auto&&!document.hidden&&!dialog.open){
       const before=battle.getState();
-      activeTime+=dt;
       if(['victory','defeat'].includes(before.phase)){
+        activeTime+=dt;
         if(restartRemaining!==null){
           restartRemaining=Math.max(0,restartRemaining-dt);
           if(restartRemaining<=1e-6)restartBattle(false);else updateCountdown();
         }
       }else{
-        const wasMoving=moving;
-        if(before.phase==='intermission'){
-          handleEvents(battle.advance(dt,{heroCanAttack:Boolean(ranged),orcCanAttack:false}));
-        }else{
-          const beforeRange=attackAvailability(before);
-          const walkTime=updateMovement(dt,before);
-          battle.resume();
-          if(walkTime>0)handleEvents(battle.advance(walkTime,beforeRange));
-          if(dt>walkTime)handleEvents(battle.advance(dt-walkTime,attackAvailability(battle.getState())));
-        }
-        const after=battle.getState();
-        updateMovement(0,after);
-        if(moving!==wasMoving||after.phase!==before.phase)updateControls();
+        advanceBattleFrame(dt);
       }
     }
     if(ready)render(battle.getState());

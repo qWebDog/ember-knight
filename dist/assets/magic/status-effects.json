@@ -1,0 +1,148 @@
+{
+  "file": "status-effects.png",
+  "width": 2172,
+  "height": 724,
+  "columns": 6,
+  "rows": 2,
+  "frameWidth": 362,
+  "frameHeight": 362,
+  "frames": 6,
+  "duration": 0.5,
+  "frameDuration": 0.08333333333333333,
+  "frameOrder": "left to right",
+  "loop": false,
+  "anchor": {
+    "x": 0.5,
+    "y": 0.94,
+    "basis": "approximate visual foot baseline"
+  },
+  "effects": {
+    "fire": {
+      "row": 0,
+      "frames": 6,
+      "duration": 0.5,
+      "loop": false
+    },
+    "ice": {
+      "row": 1,
+      "frames": 6,
+      "duration": 0.5,
+      "loop": false,
+      "recommendedCanvasOpacity": 0.65
+    }
+  },
+  "observedContentBounds": {
+    "alphaThreshold": 16,
+    "coordinates": "cell-local [left,top,right,bottom), no trimming applied",
+    "fire": [
+      [
+        96,
+        251,
+        259,
+        337
+      ],
+      [
+        63,
+        150,
+        295,
+        339
+      ],
+      [
+        34,
+        67,
+        320,
+        339
+      ],
+      [
+        41,
+        38,
+        312,
+        339
+      ],
+      [
+        58,
+        145,
+        288,
+        339
+      ],
+      [
+        105,
+        282,
+        264,
+        321
+      ]
+    ],
+    "ice": [
+      [
+        76,
+        263,
+        274,
+        330
+      ],
+      [
+        47,
+        149,
+        309,
+        335
+      ],
+      [
+        29,
+        42,
+        321,
+        336
+      ],
+      [
+        32,
+        44,
+        313,
+        335
+      ],
+      [
+        54,
+        121,
+        306,
+        330
+      ],
+      [
+        100,
+        263,
+        273,
+        321
+      ]
+    ]
+  },
+  "observedIceCenterSamples": [
+    {
+      "frame": 2,
+      "cellPixel": [
+        181,
+        181
+      ],
+      "rgba": [
+        145,
+        193,
+        208,
+        224
+      ]
+    },
+    {
+      "frame": 3,
+      "cellPixel": [
+        181,
+        181
+      ],
+      "rgba": [
+        82,
+        150,
+        172,
+        227
+      ]
+    }
+  ],
+  "provenance": {
+    "generator": "image_gen",
+    "sourceFile": "/workspace/generated_images/exec-f9d751ee-5737-4453-aef8-929658bb5b99.png",
+    "sha256": "1cd669ad9d54c5c79cbdde7696bc33df06315db495870476801b83bf2d8036ec",
+    "processing": "Copied byte-for-byte; no image crop, resize or pixel edit."
+  }
+}

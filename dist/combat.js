@@ -13,6 +13,9 @@
   const COUNTER_DURATION = .36 * TICKS;
   const INTERMISSION = .7 * TICKS;
   const KILL_REWARD = 5;
+  const statusTiming = Object.freeze({duration:.5,burnTickInterval:.25,burnDamage:1});
+  const STATUS_DURATION = Math.round(statusTiming.duration*TICKS);
+  const BURN_INTERVAL = Math.round(statusTiming.burnTickInterval*TICKS);
   const magicTiming = Object.freeze({appearDuration:.42,flightDuration:.48,impactDuration:.42});
   const closeMagicTiming = Object.freeze({appearDuration:.18,flightDuration:.12,impactDuration:.42});
   const swordSteps = [
@@ -50,7 +53,7 @@
       const waiting = phase === 'intermission' || (phase === 'paused' && pausedFrom === 'intermission');
       return {
         phase, elapsed:elapsed / TICKS, hero:{...hero},
-        enemies:enemies.map(enemy => ({...enemy,alive:enemy.hp > 0})),
+        enemies:enemies.map(enemy => ({...enemy,status:enemy.status ? {type:enemy.status.type,startedAt:enemy.status.startedAt/TICKS,endsAt:enemy.status.endsAt/TICKS} : null,alive:enemy.hp > 0})),
         targetId:target ? target.id : null,
         waveIndex,waveNumber:waveIndex+1,waveCount:waveTemplates.length,completedWaves,
         defeatedCount,totalDefeated:defeatedCount,totalEnemies,reward,
@@ -59,7 +62,7 @@
     }
     function spawnWave(index) {
       waveIndex = index; phase = 'running'; pausedFrom = null; nextWaveAt = null;
-      enemies = waveTemplates[index].map(unit => ({...archetypes[unit.type],...unit,hp:archetypes[unit.type].maxHp}));
+      enemies = waveTemplates[index].map(unit => ({...archetypes[unit.type],...unit,hp:archetypes[unit.type].maxHp,status:null}));
       comboIndex = 0; meleeHits = 0; heroBusyUntil = elapsed; pendingCounters = []; pendingImpacts = [];
       nextHero = elapsed + (sword ? swordSteps[0].interval : HERO_INTERVAL);
       nextEnemies = enemies.map(enemy => elapsed + Math.round(enemy.interval * TICKS));
@@ -102,6 +105,7 @@
       const ticks = Math.min(Number.MAX_SAFE_INTEGER-elapsed,Math.round(delta));
       remainder = Number.isFinite(delta) ? delta-ticks : 0;
       const until = elapsed + ticks;
+      function frozen(enemy) { return enemy.status?.type === 'freeze' && enemy.status.endsAt > elapsed; }
       function advanceClock(time) {
         const passed = time-elapsed;
         if (phase === 'running') {
@@ -109,7 +113,10 @@
             nextHero += passed; heroBusyUntil += passed;
             pendingCounters.forEach(counter => { counter.at += passed; });
           }
-          if (!orcCanAttack) enemies.forEach((enemy,index) => { if (enemy.type === 'orc') nextEnemies[index] += passed; });
+          enemies.forEach((enemy,index) => {
+            // Freeze and out-of-range time overlap: hold the timer once for their union.
+            if ((enemy.type === 'orc' && !orcCanAttack) || frozen(enemy)) nextEnemies[index] += passed;
+          });
         }
         elapsed = time;
       }
@@ -118,7 +125,7 @@
         events.push({type:'attack',sourceId,targetId:target.id,damage,hp:target.hp,at:elapsed/TICKS,projectile,...metadata});
         if (target.hp === 0) {
           const enemy = target.id !== 'hero';
-          if (enemy) { defeatedCount++; reward += KILL_REWARD; }
+          if (enemy) { defeatedCount++; reward += KILL_REWARD; target.status = null; }
           events.push({type:'death',id:target.id,unitType:target.type || 'hero',reward:enemy ? KILL_REWARD : 0,totalReward:reward,at:elapsed/TICKS});
           pendingCounters = pendingCounters.filter(counter => counter.targetId !== target.id);
           pendingImpacts = pendingImpacts.filter(impact => impact.targetId !== target.id);
@@ -126,15 +133,22 @@
       }
       function end(result) {
         phase = result; pausedFrom = null; pendingCounters = []; pendingImpacts = []; nextWaveAt = null;
+        enemies.forEach(enemy => { enemy.status = null; });
         // Rewards belong to individual deaths; terminal events never grant a second bonus.
         events.push({type:'end',result,reward:0,totalReward:reward,at:elapsed/TICKS});
       }
       function clearWave() {
         completedWaves++;
         pendingCounters = []; pendingImpacts = [];
+        enemies.forEach(enemy => { enemy.status = null; });
         events.push({type:'wave_clear',waveIndex,waveNumber:waveIndex+1,at:elapsed/TICKS});
         if (waveIndex === waveTemplates.length-1) end('victory');
         else { phase = 'intermission'; nextWaveAt = elapsed + INTERMISSION; }
+      }
+      function applyStatus(target,magic) {
+        const type = magic === 'fire' ? 'burn' : 'freeze';
+        target.status = {type,sourceId:'hero',startedAt:elapsed,endsAt:elapsed+STATUS_DURATION,nextTick:elapsed+BURN_INTERVAL};
+        events.push({type:'status',status:type,sourceId:'hero',targetId:target.id,at:elapsed/TICKS,duration:statusTiming.duration,endsAt:target.status.endsAt/TICKS});
       }
       function cast(sourceId,target,damage,magic) {
         const close = sourceId === 'hero' && availability?.heroCloseRange === true;
@@ -157,10 +171,17 @@
         let next = heroCanAttack ? nextHero : Infinity;
         if (heroCanAttack && pendingCounters.length) next = Math.min(next,pendingCounters[0].at);
         if (pendingImpacts.length) next = Math.min(next,pendingImpacts[0].at);
-        enemies.forEach((enemy,index) => { if (enemy.hp > 0 && (enemy.type !== 'orc' || orcCanAttack)) next = Math.min(next,nextEnemies[index]); });
+        enemies.forEach((enemy,index) => {
+          if (enemy.hp <= 0) return;
+          if ((enemy.type !== 'orc' || orcCanAttack) && !frozen(enemy)) next = Math.min(next,nextEnemies[index]);
+          if (enemy.status) {
+            next = Math.min(next,enemy.status.endsAt);
+            if (enemy.status.type === 'burn') next = Math.min(next,enemy.status.nextTick);
+          }
+        });
         if (next > until) break;
         advanceClock(next);
-        // Ties: regular hero action, counters, impacts (hero first), then living enemies.
+        // Ties: hero action, counters, existing status ticks/expiry, impacts, then enemies.
         if (heroCanAttack && nextHero === next) {
           const target = enemies.find(enemy => enemy.hp > 0),step = sword ? swordSteps[comboIndex] : null;
           const damage = config.damage * (step?.heavy ? 1.5 : 1);
@@ -181,17 +202,31 @@
           if (enemies.every(enemy => enemy.hp === 0)) { clearWave(); break; }
         }
         if (phase !== 'running') continue;
+        // Resolve the previous burn tick before a same-tick impact refreshes it;
+        // the second tick also lands before the effect expires at exactly .5 s.
+        for (const enemy of enemies) {
+          const status = enemy.status;
+          if (!status || enemy.hp <= 0) continue;
+          if (status.type === 'burn' && status.nextTick === next) {
+            hit(status.sourceId,enemy,statusTiming.burnDamage,'burn',{magic:'fire',dot:true});
+            if (enemy.status === status) status.nextTick += BURN_INTERVAL;
+            if (enemies.every(unit => unit.hp === 0)) { clearWave(); break; }
+          }
+          if (enemy.status && enemy.status.endsAt <= next) enemy.status = null;
+        }
+        if (phase !== 'running') continue;
         while (pendingImpacts.length && pendingImpacts[0].at === next) {
           const impact = pendingImpacts.shift(),target = impact.targetId === 'hero' ? hero : enemies.find(enemy => enemy.id === impact.targetId);
           if (!target || target.hp <= 0) continue;
           hit(impact.sourceId,target,impact.damage,'magic',{magic:impact.magic,impact:true,castAt:impact.castAt,castId:impact.castId});
+          if (impact.sourceId === 'hero' && target.id !== 'hero' && target.hp > 0 && ['fire','ice'].includes(impact.magic)) applyStatus(target,impact.magic);
           if (hero.hp === 0) { end('defeat'); break; }
           if (enemies.every(enemy => enemy.hp === 0)) { clearWave(); break; }
         }
         if (phase !== 'running') continue;
         for (let index=0;index<enemies.length;index++) {
           const enemy = enemies[index];
-          if (enemy.hp <= 0 || nextEnemies[index] !== next || (enemy.type === 'orc' && !orcCanAttack)) continue;
+          if (enemy.hp <= 0 || nextEnemies[index] !== next || (enemy.type === 'orc' && !orcCanAttack) || frozen(enemy)) continue;
           let damage = enemy.damage,blocked = false;
           if (sword && enemy.projectile === 'melee' && ++meleeHits % 2 === 0) {
             const blockedDamage = damage*.5; damage -= blockedDamage; blocked = true;
@@ -210,5 +245,5 @@
     restart();
     return {getState,advance,pause,resume,restart,get state(){return getState();}};
   }
-  return {createBattle,magicTiming,closeMagicTiming};
+  return {createBattle,magicTiming,closeMagicTiming,statusTiming};
 });
