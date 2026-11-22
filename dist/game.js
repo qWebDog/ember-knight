@@ -202,7 +202,7 @@
   function handleEvents(events) {
     for (const event of events) {
       if (event.type === 'cast') {
-        actors[event.sourceId].animation={at:event.at,duration:.66};
+        actors[event.sourceId].animation={at:event.at,duration:event.animationDuration||.66};
         addSpell(event);
       } else if (event.type === 'attack') {
         if (!event.impact) actors[event.sourceId].animation = {at:activeTime,duration:event.animationDuration || (event.projectile === 'arrow' ? .9 : .66),variant:event.variant,heavy:event.heavy,counter:event.counter};
@@ -413,6 +413,7 @@
     const target=state.targetId;
     return {
       heroCanAttack:Boolean(target && (ranged || inReach(target,actors[target].x))),
+      heroCloseRange:Boolean(target && inReach(target,actors[target].x)),
       orcCanAttack:state.enemies.some(enemy=>enemy.type==='orc'&&enemy.hp>0) && inReach('orc',actors.orc.x)
     };
   }

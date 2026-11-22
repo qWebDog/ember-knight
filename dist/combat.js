@@ -8,12 +8,13 @@
   'use strict';
   const TICKS = 1000000;
   const HERO_INTERVAL = 1.2 * TICKS;
+  const CLOSE_MAGIC_INTERVAL = .8 * TICKS;
   const COUNTER_DELAY = .3 * TICKS;
   const COUNTER_DURATION = .36 * TICKS;
   const INTERMISSION = .7 * TICKS;
   const KILL_REWARD = 5;
   const magicTiming = Object.freeze({appearDuration:.42,flightDuration:.48,impactDuration:.42});
-  const MAGIC_DELAY = Math.round((magicTiming.appearDuration + magicTiming.flightDuration) * TICKS);
+  const closeMagicTiming = Object.freeze({appearDuration:.18,flightDuration:.12,impactDuration:.42});
   const swordSteps = [
     {variant:'halfslash', interval:1.05 * TICKS, animationDuration:.56, heavy:false},
     {variant:'slash', interval:1.2 * TICKS, animationDuration:.66, heavy:false},
@@ -21,7 +22,7 @@
   ];
   const archetypes = {
     orc:{name:'Орк-щитоносец',maxHp:100,damage:6,interval:2.4,armor:3,projectile:'melee'},
-    archer:{name:'Скелет-лучник',maxHp:60,damage:7,interval:3.1,armor:0,projectile:'arrow'},
+    archer:{name:'Скелет-лучник',maxHp:60,damage:7,interval:1.8,armor:0,projectile:'arrow'},
     mage:{name:'Могильный колдун',maxHp:65,damage:10,interval:3.8,armor:0,projectile:'magic'}
   };
   const waveTemplates = [
@@ -136,10 +137,15 @@
         else { phase = 'intermission'; nextWaveAt = elapsed + INTERMISSION; }
       }
       function cast(sourceId,target,damage,magic) {
-        const castAt = elapsed/TICKS,impactTick = elapsed+MAGIC_DELAY,castId = `${sourceId}:${elapsed}`;
-        events.push({type:'cast',sourceId,targetId:target.id,projectile:'magic',magic,at:castAt,...magicTiming,impactAt:impactTick/TICKS,castId});
+        const close = sourceId === 'hero' && availability?.heroCloseRange === true;
+        const timing = close ? closeMagicTiming : magicTiming;
+        const interval = sourceId === 'hero' ? close ? CLOSE_MAGIC_INTERVAL : HERO_INTERVAL : Math.round(enemies.find(enemy=>enemy.id===sourceId).interval*TICKS);
+        const delay = Math.round((timing.appearDuration+timing.flightDuration)*TICKS);
+        const castAt = elapsed/TICKS,impactTick = elapsed+delay,castId = `${sourceId}:${elapsed}`;
+        events.push({type:'cast',sourceId,targetId:target.id,projectile:'magic',magic,at:castAt,...timing,impactAt:impactTick/TICKS,castId,animationDuration:close ? .36 : .66,castInterval:interval/TICKS});
         pendingImpacts.push({sourceId,targetId:target.id,damage,magic,at:impactTick,castAt,castId});
         pendingImpacts.sort((a,b) => a.at-b.at || Number(b.sourceId==='hero')-Number(a.sourceId==='hero'));
+        return interval;
       }
       while (phase === 'running' || phase === 'intermission') {
         if (phase === 'intermission') {
@@ -159,12 +165,12 @@
           const target = enemies.find(enemy => enemy.hp > 0),step = sword ? swordSteps[comboIndex] : null;
           const damage = config.damage * (step?.heavy ? 1.5 : 1);
           const metadata = step ? {variant:step.variant,comboStep:comboIndex+1,heavy:step.heavy,animationDuration:step.animationDuration,counter:false} : undefined;
-          if (config.projectile === 'magic') cast('hero',target,Math.max(1,damage-target.armor),config.magic);
-          else hit('hero',target,Math.max(1,damage-target.armor),config.projectile,metadata);
+          const interval = config.projectile === 'magic' ? cast('hero',target,Math.max(1,damage-target.armor),config.magic) : HERO_INTERVAL;
+          if (config.projectile !== 'magic') hit('hero',target,Math.max(1,damage-target.armor),config.projectile,metadata);
           if (sword) {
             heroBusyUntil = elapsed + step.animationDuration*TICKS;
             comboIndex = (comboIndex+1) % swordSteps.length; nextHero += swordSteps[comboIndex].interval;
-          } else nextHero += HERO_INTERVAL;
+          } else nextHero += interval;
           if (enemies.every(enemy => enemy.hp === 0)) { clearWave(); continue; }
         }
         while (heroCanAttack && pendingCounters.length && pendingCounters[0].at === next) {
@@ -192,7 +198,7 @@
             events.push({type:'block',sourceId:enemy.id,targetId:'hero',blockedDamage,at:elapsed/TICKS});
           }
           if (enemy.projectile === 'magic') cast(enemy.id,hero,damage,'shadow');
-          else hit(enemy.id,hero,damage,enemy.projectile);
+          else hit(enemy.id,hero,damage,enemy.projectile,enemy.type === 'archer' ? {animationDuration:.6} : undefined);
           nextEnemies[index] += Math.round(enemy.interval*TICKS);
           if (hero.hp === 0) { end('defeat'); break; }
           if (blocked) reserveCounter(enemy.id);
@@ -204,5 +210,5 @@
     restart();
     return {getState,advance,pause,resume,restart,get state(){return getState();}};
   }
-  return {createBattle,magicTiming};
+  return {createBattle,magicTiming,closeMagicTiming};
 });

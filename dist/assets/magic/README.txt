@@ -7,3 +7,6 @@ Row 2: impact, six frames over 0.42 seconds.
 All source sprites face left. The renderer rotates them around the leading core.
 Fire and ice are player choices. Shadow belongs to the NPC mage.
 These effects are separate from Universal LPC character assets.
+
+At melee contact, player fire/ice use 0.18s appearance +0.12s flight +0.42s impact; casts repeat every0.8s.
+Distant player magic remains 0.42s +0.48s +0.42s, every1.2s. Flight timing is locked at cast time.

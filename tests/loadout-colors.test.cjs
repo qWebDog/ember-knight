@@ -151,6 +151,9 @@ test('player magic is fire or ice, legacy mages default to fire, and shadow belo
   const timing=require('../dist/combat.js').magicTiming;
   const manifest=JSON.parse(fs.readFileSync(path.join(dist,'assets/magic/manifest.json'),'utf8'));
   assert.deepEqual(manifest.states.map(state=>state.duration),[timing.appearDuration,timing.flightDuration,timing.impactDuration]);
+  const closeTiming=require('../dist/combat.js').closeMagicTiming;
+  assert.deepEqual(manifest.closeRange.states.map(state=>state.duration),[closeTiming.appearDuration,closeTiming.flightDuration,closeTiming.impactDuration]);
+  assert.equal(manifest.closeRange.castInterval,.8);
   for(const magic of ['fire','ice','shadow']){
     const png=fs.readFileSync(path.join(dist,`assets/magic/${magic}.png`));
     assert.deepEqual(png.subarray(0,8),signature);

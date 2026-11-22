@@ -41,5 +41,33 @@
       "player": false,
       "npc": "mage"
     }
+  },
+  "closeRange": {
+    "playerOnly": true,
+    "castInterval": 0.8,
+    "castAnimationDuration": 0.36,
+    "states": [
+      {
+        "id": "appear",
+        "row": 0,
+        "frames": 6,
+        "duration": 0.18,
+        "loop": false
+      },
+      {
+        "id": "flight",
+        "row": 1,
+        "frames": 6,
+        "duration": 0.12,
+        "loop": true
+      },
+      {
+        "id": "impact",
+        "row": 2,
+        "frames": 6,
+        "duration": 0.42,
+        "loop": false
+      }
+    ]
   }
 }
