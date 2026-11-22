@@ -138,3 +138,26 @@ test('invalid selections, skins and animations cannot construct arbitrary asset 
   for (const animation of ['../walk','__proto__','attack.png',null]) assert.throws(() => catalogue.path(valid,'light',animation), /Invalid starter appearance/);
   assert.equal(catalogue.path({...valid,outfitColor:'../../secret'},'light'), catalogue.path(valid,'light'));
 });
+
+test('player magic is fire or ice, legacy mages default to fire, and shadow belongs only to the NPC',()=>{
+  assert.deepEqual(catalogue.magicOptions.map(option=>option.id),['fire','ice']);
+  assert.equal(catalogue.magic('shadow'),null);
+  for(const magic of [undefined,null,'shadow','../ice','']){
+    const saved=Object.freeze({weapon:'wand',outfit:'acolyte',magic});
+    assert.equal(catalogue.magicSelection(saved),'fire');
+  }
+  assert.equal(catalogue.magicSelection({weapon:'wand',outfit:'apprentice',magic:'ice'}),'ice');
+  for(const weapon of ['sword','bow'])assert.equal(catalogue.magicSelection({weapon,outfit:catalogue.weapon(weapon).outfits[0].id,magic:'ice'}),null);
+  const timing=require('../dist/combat.js').magicTiming;
+  const manifest=JSON.parse(fs.readFileSync(path.join(dist,'assets/magic/manifest.json'),'utf8'));
+  assert.deepEqual(manifest.states.map(state=>state.duration),[timing.appearDuration,timing.flightDuration,timing.impactDuration]);
+  for(const magic of ['fire','ice','shadow']){
+    const png=fs.readFileSync(path.join(dist,`assets/magic/${magic}.png`));
+    assert.deepEqual(png.subarray(0,8),signature);
+    assert.deepEqual([png.readUInt32BE(16),png.readUInt32BE(20)],[384,192]);
+  }
+  for(const option of catalogue.magicOptions){
+    const png=fs.readFileSync(path.join(dist,option.image));
+    assert.deepEqual([png.readUInt32BE(16),png.readUInt32BE(20)],[64,64]);
+  }
+});

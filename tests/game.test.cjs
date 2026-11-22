@@ -12,8 +12,8 @@ const combatSource = fs.readFileSync(path.join(dist, 'combat.js'), 'utf8');
 
 // The real game controller and combat engine run together. Only browser surfaces,
 // image decoding and the animation clock are replaced; no combat logic is mocked.
-function createHarness({skin = 'bronze', preference, search = '', weapon, outfit, outfitColor, reducedMotion = false, fieldWidth = 800} = {}) {
-  const storage = new Map([['ember.character.v1', JSON.stringify({version:1, skin, name:'Тестовый герой', level:1,weapon,outfit,outfitColor})]]);
+function createHarness({skin = 'bronze', preference, search = '', weapon, outfit, outfitColor, magic, reducedMotion = false, fieldWidth = 800} = {}) {
+  const storage = new Map([['ember.character.v1', JSON.stringify({version:1, skin, name:'Тестовый герой', level:1,weapon,outfit,outfitColor,magic})]]);
   if (preference) storage.set('ember.combat.auto.v1', preference);
   const nodes = new Map(), pendingImages = [], loadedPaths = [], raf = [], resizeCallbacks = [], events = [];
   let battle, now = 0;
@@ -161,6 +161,12 @@ function createHarness({skin = 'bronze', preference, search = '', weapon, outfit
     const separation=node('[data-fighter="hero"]').offsetWidth*.23+node('[data-fighter="orc"]').offsetWidth*.34;
     return Math.abs(orcX()-heroX()) <= separation+.01;
   }
+  function spells() {
+    return node('.battlefield').children.filter(element=>String(element.className).includes('spell-projectile'));
+  }
+  function spellState() {
+    return spells().map(element=>({magic:element.dataset.magic,phase:element.dataset.phase,left:element.style.left,top:element.style.top,transform:element.style.transform,width:element.width,height:element.height,draws:element.draws.length,lastDraw:element.draws.at(-1)}));
+  }
   function visualState() {
     return {state:state(), x:heroX(), orcX:orcX(), draws:node('#player-sprite').draws.length, lastDraw:node('#player-sprite').draws.at(-1), orcDraws:node('#enemy-orc').draws.length,lastOrcDraw:node('#enemy-orc').draws.at(-1)};
   }
@@ -172,7 +178,19 @@ function createHarness({skin = 'bronze', preference, search = '', weapon, outfit
     if(modelSize)for(const id of ['hero','orc','archer','mage'])node(`[data-fighter="${id}"]`).offsetWidth=modelSize;
     resizeCallbacks.forEach(callback => callback());
   }
-  return {node, storage, loadedPaths, document, state, events, loadNextImage, loadAllImages, runFor, runUntil, frame, heroX, orcX, inMeleeRange, visualState, resizeField};
+  return {node, storage, loadedPaths, document, state, events, loadNextImage, loadAllImages, runFor, runUntil, frame, heroX, orcX, inMeleeRange, spells, spellState, visualState, resizeField};
+}
+function runFramesUntil(ui, condition, maxSeconds=5) {
+  for(let count=0;!condition() && count<Math.ceil(maxSeconds*1000/16);count++)ui.frame(16);
+  assert.ok(condition(),`animation condition not reached within ${maxSeconds}s`);
+}
+function assertSpellCells(spell,magic) {
+  assert.equal(spell.width,64);assert.equal(spell.height,64);
+  for(const row of [0,1,2]){
+    const draws=spell.draws.filter(draw=>draw.crop[1]===row*64);
+    assert.deepEqual([...new Set(draws.map(draw=>draw.crop[0]/64))].sort((a,b)=>a-b),[0,1,2,3,4,5]);
+    assert.ok(draws.every(draw=>draw.src===`assets/magic/${magic}.png` && draw.crop[2]===64 && draw.crop[3]===64));
+  }
 }
 
 test('controller waits for assets, walks into range before damage, and uses selected skin and correct LPC rows', async () => {
@@ -446,7 +464,7 @@ test('bow and wand retain their own attacks and never load or render sword combo
     assert.ok(!ui.loadedPaths.some(file=>file.endsWith('-halfslash.png') || file.endsWith('-backslash.png') || file.endsWith('-block.png')));
     assert.ok(ui.events.filter(event=>event.type==='attack' && event.sourceId==='hero').every(event=>event.projectile===projectile && !event.counter && !event.heavy && !['halfslash','slash','backslash'].includes(event.variant)));
     assert.ok(!ui.events.some(event=>event.type==='block'));
-    assert.equal(ui.state().elapsed,27.6); assert.equal(ui.state().hero.hp,58);
+    assert.equal(ui.state().elapsed,weapon==='wand'?28.5:27.6); assert.equal(ui.state().hero.hp,58);
     assert.equal(ui.storage.get('ember.test.gold.v1'),'25');
   }
 });
@@ -485,12 +503,21 @@ test('archer and mage attack throughout a long initial approach while both melee
   assert.match(arrow.style.transform,/rotate\(-?[\d.]+deg\)/);
   assert.equal(ui.node('[data-fighter="archer"]').dataset.motion,'attack');
   assert.ok(ui.node('#enemy-archer').draws.at(-1).src.endsWith('skeleton-shoot.png'));
-  ui.runUntil(()=>ui.events.some(event=>event.type==='attack'&&event.sourceId==='mage'),2);
-  assert.ok(ui.node('.battlefield').children.some(element=>element.className.includes('projectile magic')));
+  ui.runUntil(()=>ui.events.some(event=>event.type==='cast'&&event.sourceId==='mage'),2);
+  const cast=ui.events.find(event=>event.type==='cast'&&event.sourceId==='mage');
+  const shadow=ui.spells().find(element=>element.dataset.source==='mage');
+  assert.equal(cast.magic,'shadow');assert.equal(shadow.dataset.magic,'shadow');assert.equal(shadow.dataset.phase,'appear');
   assert.equal(ui.node('[data-fighter="mage"]').dataset.motion,'attack');
   assert.ok(ui.node('#enemy-mage').draws.at(-1).src.endsWith('mage-spellcast.png'));
   assert.equal(ui.inMeleeRange(),false,'the approach lasts longer than both ranged attack timers');
-  assert.ok(ui.state().elapsed>=3.8);assert.equal(ui.state().hero.hp,183);
+  assert.ok(ui.state().elapsed>=3.8);assert.equal(ui.state().hero.hp,193,'spell launch itself cannot damage the hero');
+  runFramesUntil(ui,()=>ui.events.some(event=>event.type==='attack'&&event.castId===cast.castId));
+  const impact=ui.events.find(event=>event.type==='attack'&&event.castId===cast.castId);
+  assert.equal(impact.impact,true);assert.equal(impact.magic,'shadow');assert.equal(impact.at,cast.impactAt);
+  assert.equal(shadow.dataset.phase,'impact');assert.equal(ui.state().hero.hp,183);
+  assert.equal(ui.node('[data-fighter="mage"]').dataset.motion,'idle','impact must not restart the casting pose');
+  runFramesUntil(ui,()=>!ui.spells().includes(shadow));assertSpellCells(shadow,'shadow');
+  assert.equal(ui.inMeleeRange(),false);
   assert.equal(ui.state().enemies[0].hp,100);
   assert.ok(!ui.events.some(event=>event.type==='attack'&&['hero','orc'].includes(event.sourceId)),'neither melee fighter attacks from a distance');
   assert.equal(ui.node('[data-fighter="hero"]').dataset.motion,'walk');
@@ -506,7 +533,7 @@ test('ranged fire and damage continue while the hero walks to the next target af
   ui.runUntil(()=>ui.state().enemies[0].hp===0);
   const start=ui.events.length,hp=ui.state().hero.hp,heroX=ui.heroX(),corpseX=ui.orcX();
   assert.equal(ui.state().targetId,'archer');assert.equal(ui.state().phase,'running');
-  ui.runUntil(()=>['archer','mage'].every(id=>ui.events.slice(start).some(event=>event.type==='attack'&&event.sourceId===id)),6);
+  ui.runUntil(()=>ui.events.slice(start).some(event=>event.type==='attack'&&event.sourceId==='archer') && ui.events.slice(start).some(event=>event.type==='cast'&&event.sourceId==='mage'),6);
   assert.ok(ui.heroX()>heroX);assert.equal(ui.orcX(),corpseX);
   assert.ok(ui.state().hero.hp<hp);
   assert.ok(ui.node('[data-fighter="hero"]').motionHistory.includes('walk'));
@@ -515,4 +542,92 @@ test('ranged fire and damage continue while the hero walks to the next target af
   assert.ok(!ui.events.slice(start).some(event=>event.type==='attack'&&event.sourceId==='hero'));
   ui.runUntil(()=>ui.state().phase==='victory');
   assert.equal(ui.storage.get('ember.test.gold.v1'),'25');
+});
+
+test('saved fire and ice wand spells draw all 18 cells, and deal damage only on the matching impact',async()=>{
+  for(const magic of ['fire','ice']){
+    const ui=createHarness({weapon:'wand',outfit:'acolyte',outfitColor:'blue',magic});await ui.loadAllImages();
+    for(const type of ['fire','ice','shadow'])assert.ok(ui.loadedPaths.includes(`assets/magic/${type}.png`));
+    ui.runUntil(()=>ui.events.some(event=>event.type==='cast'&&event.sourceId==='hero'));
+    const cast=ui.events.find(event=>event.type==='cast'&&event.sourceId==='hero');
+    const spell=ui.spells().find(element=>element.dataset.source==='hero');
+    assert.equal(cast.magic,magic);assert.equal(spell.dataset.magic,magic);assert.equal(spell.dataset.target,'orc');
+    assert.equal(spell.dataset.phase,'appear');assert.deepEqual(spell.draws.at(-1).crop,[0,0,64,64]);
+    assert.equal(ui.node('[data-fighter="hero"]').dataset.motion,'attack','the hand animation begins on cast');
+    assert.equal(ui.state().enemies[0].hp,100);
+    runFramesUntil(ui,()=>spell.dataset.phase==='flight');
+    assert.equal(spell.draws.at(-1).crop[1],64);
+    runFramesUntil(ui,()=>ui.state().elapsed>=cast.at+.8);
+    assert.equal(ui.state().enemies[0].hp,100,'a spell still in flight cannot apply early damage');
+    assert.equal(ui.node('[data-fighter="hero"]').dataset.motion,'idle','the casting pose can finish before impact');
+    runFramesUntil(ui,()=>ui.events.some(event=>event.type==='attack'&&event.castId===cast.castId));
+    const impact=ui.events.find(event=>event.type==='attack'&&event.castId===cast.castId);
+    assert.equal(impact.magic,magic);assert.equal(impact.impact,true);assert.equal(impact.at,cast.impactAt);
+    assert.ok(Math.abs(impact.at-cast.at-.9)<1e-6);
+    assert.equal(ui.state().enemies[0].hp,91);assert.equal(spell.dataset.phase,'impact');
+    assert.equal(ui.node('[data-fighter="hero"]').dataset.motion,'idle','damage does not cast the spell a second time');
+    runFramesUntil(ui,()=>!ui.spells().includes(spell));assertSpellCells(spell,magic);
+    const next=ui.spells().find(element=>element.dataset.source==='hero');
+    assert.ok(next && next!==spell,'a second cast can coexist with the first spell impact');
+    assert.equal(next.dataset.phase,'appear','the previous impact cannot mark the next cast as landed');
+  }
+});
+
+test('auto, dialog and visibility freeze the actual appearance, flight and impact canvases',async()=>{
+  const ui=createHarness({weapon:'wand',outfit:'acolyte',magic:'ice'});await ui.loadAllImages();
+  ui.runUntil(()=>ui.spells().some(element=>element.dataset.source==='hero'));
+  const spell=ui.spells().find(element=>element.dataset.source==='hero');
+  const snapshot=()=>({combat:ui.state(),spells:ui.spellState()});
+  assert.equal(spell.dataset.phase,'appear');ui.node('#auto-button').click();
+  const appearance=snapshot();ui.runFor(2);assert.deepEqual(snapshot(),appearance);
+  ui.node('#auto-button').click();runFramesUntil(ui,()=>spell.dataset.phase==='flight');
+  ui.node('#profile-button').click();const flight=snapshot();ui.runFor(2);assert.deepEqual(snapshot(),flight);
+  ui.node('#game-dialog').close();runFramesUntil(ui,()=>spell.dataset.phase==='impact');
+  ui.document.hidden=true;ui.document.dispatch('visibilitychange');
+  const impact=snapshot();ui.runFor(2);assert.deepEqual(snapshot(),impact);
+  ui.document.hidden=false;ui.document.dispatch('visibilitychange');
+  runFramesUntil(ui,()=>!ui.spells().includes(spell));
+  assertSpellCells(spell,'ice');
+});
+
+test('the winning magic impact finishes after victory without more damage, and replay removes pending visual effects',async()=>{
+  const ui=createHarness({weapon:'wand',outfit:'acolyte',magic:'ice'});await ui.loadAllImages();
+  runFramesUntil(ui,()=>ui.state().phase==='victory',60);
+  const victory=ui.state(),eventCount=ui.events.length;
+  const landed=ui.spells();assert.ok(landed.length>0);
+  assert.ok(landed.every(element=>element.dataset.phase==='impact'),'terminal combat keeps landed impacts only');
+  ui.node('#profile-button').click();const held=ui.spellState();ui.runFor(1);assert.deepEqual(ui.spellState(),held);
+  ui.node('#game-dialog').close();runFramesUntil(ui,()=>ui.spells().length===0,1);
+  for(const spell of landed){
+    const frames=spell.draws.filter(draw=>draw.crop[1]===128).map(draw=>draw.crop[0]/64);
+    assert.deepEqual([...new Set(frames)].sort((a,b)=>a-b),[0,1,2,3,4,5]);
+  }
+  assert.deepEqual(ui.state(),victory);assert.equal(ui.events.length,eventCount);assert.equal(ui.storage.get('ember.test.gold.v1'),'25');
+  ui.node('#replay-button').click();runFramesUntil(ui,()=>ui.state().phase==='victory',60);
+  assert.ok(ui.spells().length>0);ui.node('#replay-button').click();
+  assert.equal(ui.spells().length,0);assert.equal(ui.state().elapsed,0);assert.equal(ui.state().hero.hp,200);
+  assert.equal(ui.storage.get('ember.test.gold.v1'),'50','each victory pays once despite its remaining impact frames');
+});
+
+test('old, invalid and shadow hero magic default to fire while the NPC mage always casts shadow',async()=>{
+  for(const magic of [undefined,'invalid','shadow']){
+    const ui=createHarness({weapon:'wand',outfit:'acolyte',magic});await ui.loadAllImages();
+    ui.runUntil(()=>ui.events.some(event=>event.type==='cast'&&event.sourceId==='mage'));
+    assert.ok(ui.events.filter(event=>event.type==='cast'&&event.sourceId==='hero').every(event=>event.magic==='fire'));
+    assert.ok(ui.events.filter(event=>event.type==='cast'&&event.sourceId==='mage').every(event=>event.magic==='shadow'));
+    assert.equal(ui.spells().find(element=>element.dataset.source==='mage').dataset.magic,'shadow');
+    assert.equal(JSON.parse(ui.storage.get('ember.character.v1')).magic,magic,'display normalization does not rewrite the saved hero');
+  }
+});
+
+test('reduced motion skips all spell canvases but keeps casting delays, impacts and rewards',async()=>{
+  const ui=createHarness({weapon:'wand',outfit:'acolyte',magic:'ice',reducedMotion:true});await ui.loadAllImages();
+  ui.runUntil(()=>ui.events.some(event=>event.type==='cast'&&event.sourceId==='hero'));
+  const cast=ui.events.find(event=>event.type==='cast'&&event.sourceId==='hero');
+  assert.equal(ui.spells().length,0);assert.equal(ui.state().enemies[0].hp,100);
+  ui.runUntil(()=>ui.events.some(event=>event.type==='attack'&&event.castId===cast.castId));
+  assert.equal(ui.events.find(event=>event.type==='attack'&&event.castId===cast.castId).at,cast.impactAt);
+  assert.equal(ui.state().enemies[0].hp,91);assert.equal(ui.node('.battlefield').children.length,0);
+  ui.runUntil(()=>ui.state().phase==='victory',60);
+  assert.equal(ui.spells().length,0);assert.equal(ui.state().reward,25);assert.equal(ui.storage.get('ember.test.gold.v1'),'25');
 });

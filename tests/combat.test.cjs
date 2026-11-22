@@ -92,8 +92,8 @@ test('oversized, fixed-step and irregular-step advances produce identical events
 });
 
 
-test('starter ranged weapons emit their own projectile while preserving battle balance',()=>{
- for(const projectile of ['arrow','magic','melee']){const b=createBattle({heroProjectile:projectile});const events=b.advance(100);assert.ok(events.filter(e=>e.sourceId==='hero').every(e=>e.projectile===projectile));assert.equal(b.state.hero.hp,58);assert.equal(b.state.phase,'victory');}
+test('starter weapons keep their projectile and reward, with magic damage delayed until impact',()=>{
+ for(const projectile of ['arrow','magic','melee']){const b=createBattle({heroProjectile:projectile});const events=b.advance(100);assert.ok(events.filter(e=>e.sourceId==='hero').every(e=>e.projectile===projectile));assert.equal(b.state.hero.hp,projectile==='magic'?52:58);assert.equal(b.state.elapsed,projectile==='magic'?28.5:27.6);assert.equal(b.state.phase,'victory');assert.equal(b.state.reward,25);}
 });
 
 test('sword opts into a deterministic three-hit combo with a heavier third hit before armor', () => {
@@ -174,11 +174,11 @@ test('sword terminal state pays once and its block/counter timeline is independe
   assert.deepEqual(whole.advance(100),[]); assert.deepEqual(whole.state,finished);
 });
 
-test('unarmed and ranged weapons keep the old timeline and never gain shield or sword combo metadata', () => {
+test('unarmed and non-magic ranged weapons keep the old timeline and never gain shield or sword combo metadata', () => {
   const reference=createBattle();reference.advance(100);
   for(const options of [{},{heroWeapon:'bow',heroProjectile:'arrow'},{heroWeapon:'wand',heroProjectile:'magic'},{heroWeapon:'sword',heroProjectile:'arrow'}]){
     const battle=createBattle(options),events=battle.advance(100);
-    assert.deepEqual(battle.state,reference.state);
+    if(options.heroProjectile==='magic'){assert.equal(battle.state.phase,'victory');assert.equal(battle.state.elapsed,28.5);assert.equal(battle.state.hero.hp,52);}else assert.deepEqual(battle.state,reference.state);
     assert.ok(!events.some(event=>event.type==='block'||event.counter||event.variant||event.heavy));
     assert.equal(events.find(event=>event.sourceId==='hero').at,1.2);
   }
@@ -206,10 +206,13 @@ test('long-lived sword reservations across heavy animations also preserve chunk 
 test('ranged enemies shoot while hero and orc are out of melee range, without banking melee attacks', () => {
   const battle=createBattle();
   const approach=battle.advance(4,{heroCanAttack:false,orcCanAttack:false});
-  assert.deepEqual(approach.filter(event=>event.type==='attack').map(event=>[event.sourceId,event.at]),[['archer',3.1],['mage',3.8]]);
+  assert.deepEqual(approach.filter(event=>event.type==='attack').map(event=>[event.sourceId,event.at]),[['archer',3.1]]);
+  assert.ok(approach.some(event=>event.type==='cast'&&event.sourceId==='mage'&&event.at===3.8&&event.impactAt===4.7));
   assert.equal(battle.state.phase,'running');assert.equal(battle.state.elapsed,4);
-  assert.equal(battle.state.hero.hp,183);assert.equal(battle.state.enemies[0].hp,100);
-  assert.deepEqual(battle.advance(1.19),[],'remaining melee cooldowns start from contact rather than firing a backlog');
+  assert.equal(battle.state.hero.hp,193);assert.equal(battle.state.enemies[0].hp,100);
+  const travelling=battle.advance(1.19);
+  assert.ok(!travelling.some(event=>event.sourceId==='hero'||event.sourceId==='orc'),'remaining melee cooldowns start from contact rather than firing a backlog');
+  assert.ok(travelling.some(event=>event.type==='attack'&&event.sourceId==='mage'&&event.at===4.7));
   const first=battle.advance(.01);
   assert.deepEqual(first.map(event=>[event.sourceId,event.at]),[['hero',5.2]]);
   const next=battle.advance(1.2).filter(event=>event.type==='attack');
@@ -226,7 +229,7 @@ test('range gates freeze only the selected actor and retain partially spent cool
   const events=heroOnly.advance(4,{orcCanAttack:false});
   assert.deepEqual(events.filter(event=>event.sourceId==='hero').map(event=>event.at),[1.2,2.4,3.6]);
   assert.ok(!events.some(event=>event.sourceId==='orc'));
-  assert.equal(heroOnly.state.hero.hp,183);
+  assert.equal(heroOnly.state.hero.hp,193,'the shadow spell is still travelling at four seconds');
   assert.equal(heroOnly.state.enemies[0].hp,73);
 });
 
@@ -297,5 +300,138 @@ test('range availability defaults remain compatible and only explicit false disa
   const expected=createBattle().advance(6);
   for(const availability of [undefined,null,{}, {heroCanAttack:true,orcCanAttack:true},{heroCanAttack:0,orcCanAttack:'false'}]){
     const battle=createBattle();assert.deepEqual(battle.advance(6,availability),expected);
+  }
+});
+
+test('hero fire and ice cast through appear and flight before applying one matching impact', () => {
+  for (const magic of ['fire','ice']) {
+    const battle=createBattle({heroProjectile:'magic',heroMagic:magic});
+    const launch=battle.advance(1.2);
+    const cast=launch.find(event=>event.type==='cast'&&event.sourceId==='hero');
+    assert.ok(cast);assert.equal(cast.magic,magic);assert.equal(cast.targetId,'orc');
+    assert.deepEqual([cast.at,cast.appearDuration,cast.flightDuration,cast.impactDuration,cast.impactAt],[1.2,.42,.48,.42,2.1]);
+    assert.equal(battle.state.enemies[0].hp,100,'launch has no damage');
+    assert.deepEqual(battle.advance(.899999),[]);assert.equal(battle.state.enemies[0].hp,100);
+    const impact=battle.advance(.000001).find(event=>event.type==='attack');
+    assert.ok(impact);assert.equal(impact.at,2.1);assert.equal(impact.hp,91);assert.equal(impact.magic,magic);assert.equal(impact.impact,true);
+    assert.equal(impact.castAt,cast.at);assert.equal(impact.castId,cast.castId);assert.equal(impact.projectile,'magic');
+    assert.equal(battle.state.enemies[0].hp,91);
+  }
+});
+
+test('NPC mage always launches shadow and cannot damage before its impact phase', () => {
+  const battle=createBattle({heroMagic:'ice'});
+  const launch=battle.advance(3.8), cast=launch.find(event=>event.type==='cast'&&event.sourceId==='mage');
+  assert.ok(cast);assert.equal(cast.magic,'shadow');assert.equal(cast.at,3.8);assert.equal(cast.impactAt,4.7);
+  assert.equal(battle.state.hero.hp,187,'only the orc and archer have damaged the hero');
+  assert.ok(!launch.some(event=>event.type==='attack'&&event.sourceId==='mage'));
+  assert.deepEqual(battle.advance(.899999),[]);assert.equal(battle.state.hero.hp,187);
+  const impact=battle.advance(.000001).find(event=>event.type==='attack');
+  assert.equal(impact.sourceId,'mage');assert.equal(impact.magic,'shadow');assert.equal(impact.impact,true);assert.equal(impact.at,4.7);assert.equal(impact.hp,177);
+});
+
+test('player magic accepts only fire or ice and uses immutable shared timing values', () => {
+  const {magicTiming}=require('../dist/combat.js');
+  assert.deepEqual(magicTiming,{appearDuration:.42,flightDuration:.48,impactDuration:.42});
+  assert.ok(Object.isFrozen(magicTiming));
+  for(const invalid of [undefined,'shadow','arcane','../fire',null]){
+    const battle=createBattle({heroProjectile:'magic',heroMagic:invalid});
+    const cast=battle.advance(1.2).find(event=>event.type==='cast');assert.equal(cast.magic,'fire');
+  }
+});
+
+test('in-flight magic advances independently of range readiness, while real pause and restart freeze or clear it', () => {
+  const battle=createBattle({heroProjectile:'magic',heroMagic:'ice'});
+  battle.advance(1.2);const paused=battle.pause();
+  assert.deepEqual(battle.advance(100,{heroCanAttack:true}),[]);assert.deepEqual(battle.state,paused);
+  battle.resume();
+  const impact=battle.advance(.9,{heroCanAttack:false,orcCanAttack:false}).find(event=>event.type==='attack');
+  assert.equal(impact.at,2.1);assert.equal(impact.magic,'ice');assert.equal(battle.state.enemies[0].hp,91);
+  const restarted=createBattle({heroProjectile:'magic',heroMagic:'fire'});restarted.advance(1.2);restarted.restart();
+  assert.deepEqual(restarted.advance(.9),[]);assert.equal(restarted.state.enemies[0].hp,100);
+  const fresh=restarted.advance(.3);assert.equal(fresh.filter(event=>event.type==='cast').length,1);
+  const freshImpact=restarted.advance(.9).filter(event=>event.type==='attack');assert.equal(freshImpact.length,1);assert.equal(freshImpact[0].at,2.1);
+});
+
+// Test-only encounter fixtures vary data, not combat logic or application API.
+// The shipped encounter targets its only mage last, and .9 s flight is shorter
+// than hero cadence, so two general queue branches are otherwise unreachable.
+function magicEncounterFixture({mageFirst=false,slowFlight=false}={}) {
+  const fs=require('node:fs'),vm=require('node:vm');
+  let source=fs.readFileSync(require.resolve('../dist/combat.js'),'utf8');
+  if(mageFirst){
+    const anchor='  function positive(value, fallback) {';assert.ok(source.includes(anchor));
+    source=source.replace(anchor,"  templates.sort((a,b)=>Number(b.id==='mage')-Number(a.id==='mage'));\n"+anchor);
+  }
+  if(slowFlight){const anchor='flightDuration:.48';assert.ok(source.includes(anchor));source=source.replace(anchor,'flightDuration:2.4');}
+  const context={module:{exports:{}}};vm.runInNewContext(source,context,{filename:'combat-data-fixture.js'});
+  return context.module.exports.createBattle;
+}
+
+test('a shadow already launched still impacts after the mage dies while other enemies remain alive', () => {
+  const createFixture=magicEncounterFixture({mageFirst:true});
+  const battle=createFixture({heroWeapon:'sword',heroDamage:15});
+  const events=JSON.parse(JSON.stringify(battle.advance(4.7)));
+  const cast=events.find(event=>event.type==='cast'&&event.sourceId==='mage');
+  const death=events.find(event=>event.type==='death'&&event.id==='mage');
+  const impact=events.find(event=>event.type==='attack'&&event.sourceId==='mage'&&event.impact);
+  assert.equal(cast.at,3.8);assert.equal(death.at,4.65);assert.equal(impact.at,4.7);assert.equal(impact.magic,'shadow');
+  assert.equal(impact.castId,cast.castId);assert.equal(battle.state.phase,'running');
+  assert.ok(battle.state.enemies.some(enemy=>enemy.id!=='mage'&&enemy.hp>0));
+});
+
+test('multiple queued spells aimed at a dead target are discarded without duplicate deaths or rewards', () => {
+  const createFixture=magicEncounterFixture({slowFlight:true});
+  const battle=createFixture({heroProjectile:'magic',heroMagic:'fire',heroDamage:200});
+  const events=JSON.parse(JSON.stringify(battle.advance(100)));
+  assert.ok(events.filter(event=>event.type==='cast'&&event.sourceId==='hero'&&event.targetId==='orc').length>=3);
+  assert.equal(events.filter(event=>event.type==='attack'&&event.sourceId==='hero'&&event.targetId==='orc').length,1);
+  assert.equal(events.filter(event=>event.type==='death'&&event.id==='orc').length,1);
+  assert.equal(events.filter(event=>event.type==='end').length,1);assert.equal(battle.state.reward,25);
+  assert.deepEqual(JSON.parse(JSON.stringify(battle.advance(100))),[]);
+});
+
+test('terminal victory and defeat clear outstanding spells before they can apply late damage', () => {
+  const victory=createBattle({heroWeapon:'sword',heroDamage:70});
+  const won=victory.advance(100), shadow=won.find(event=>event.type==='cast'&&event.sourceId==='mage');
+  assert.ok(shadow);assert.equal(shadow.impactAt,4.7);assert.equal(victory.state.elapsed,4.65);assert.equal(victory.state.phase,'victory');
+  assert.ok(!won.some(event=>event.type==='attack'&&event.castId===shadow.castId));
+  assert.deepEqual(victory.advance(100),[]);assert.equal(victory.state.reward,25);
+  const defeat=createBattle({heroProjectile:'magic',heroDamage:500,heroMaxHp:1});
+  const lost=defeat.advance(100), late=lost.find(event=>event.type==='cast'&&event.sourceId==='hero'&&event.targetId==='archer');
+  assert.ok(late);assert.equal(late.impactAt,3.3);assert.equal(defeat.state.elapsed,3.1);assert.equal(defeat.state.phase,'defeat');
+  assert.ok(!lost.some(event=>event.type==='attack'&&event.castId===late.castId));assert.deepEqual(defeat.advance(100),[]);
+});
+
+test('simultaneous magic impacts retain hero priority and launch cadence stays independent of flight', () => {
+  const battle=createBattle({heroProjectile:'magic',heroMagic:'ice',heroDamage:1,heroMaxHp:10000});
+  const events=battle.advance(23.7);
+  const heroCasts=events.filter(event=>event.type==='cast'&&event.sourceId==='hero');
+  assert.deepEqual(heroCasts.slice(0,4).map(event=>event.at),[1.2,2.4,3.6,4.8]);
+  assert.deepEqual(events.filter(event=>event.type==='attack'&&event.impact&&event.at===23.7).map(event=>event.sourceId),['hero','mage']);
+});
+
+test('magic launch, impact and range-gated flight queues are invariant to elapsed chunk size', () => {
+  const schedule=[
+    [1.2,{heroCanAttack:true,orcCanAttack:false}],
+    [2.83,{heroCanAttack:false,orcCanAttack:false}],
+    [4.57,{heroCanAttack:true,orcCanAttack:true}],
+    [.73,{heroCanAttack:false,orcCanAttack:true}],
+    [100,{}]
+  ];
+  function run(magic,pattern){
+    const battle=createBattle({heroProjectile:'magic',heroMagic:magic,heroMaxHp:1000}),events=[];let index=0;
+    for(const [seconds,gates] of schedule){
+      if(!pattern){events.push(...battle.advance(seconds,gates));continue;}
+      let remaining=Math.round(seconds*1000000);
+      while(remaining>0){const ticks=Math.min(remaining,pattern[index++%pattern.length]);events.push(...battle.advance(ticks/1000000,gates));remaining-=ticks;}
+    }
+    return {battle,events};
+  }
+  for(const magic of ['fire','ice']){
+    const whole=run(magic),small=run(magic,[100000]),irregular=run(magic,[37000,63000]);
+    assert.deepEqual(small.events,whole.events);assert.deepEqual(irregular.events,whole.events);
+    assert.deepEqual(small.battle.state,whole.battle.state);assert.deepEqual(irregular.battle.state,whole.battle.state);
+    assert.equal(whole.battle.state.phase,'victory');
   }
 });

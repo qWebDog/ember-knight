@@ -21,6 +21,7 @@
   const loadout = loadouts?.selection(character) || null;
   const starterWeapon = loadout ? loadouts.weapon(loadout.weapon) : null;
   const starterOutfit = loadout ? loadouts.outfit(loadout.weapon,loadout.outfit) : null;
+  const heroMagic = loadouts?.magicSelection(character);
   const ranged = starterWeapon && starterWeapon.projectile !== 'melee';
   const skin = character?.skin || 'light';
   const name = typeof character?.name === 'string' && character.name.trim() ? character.name.slice(0,24) : 'Странник';
@@ -28,7 +29,7 @@
   $('#player-name').textContent = name;
   $('.fighter-name').textContent = name;
   $('#level-badge').textContent = level;
-  const battle = window.EmberCombat.createBattle({heroName:name,heroProjectile:starterWeapon?.projectile,heroWeapon:starterWeapon?.id});
+  const battle = window.EmberCombat.createBattle({heroName:name,heroProjectile:starterWeapon?.projectile,heroWeapon:starterWeapon?.id,heroMagic});
   battle.pause();
   let ready = false, assetError = false, rewardPaid = false, lastFrameTime = null;
   const actors = {};
@@ -37,6 +38,7 @@
     actors[id] = {element, canvas:element.querySelector('canvas'), bar:element.querySelector('.healthbar'), images:{}, animation:null, hitAt:-10, blockAt:-10, lastKey:null};
   }
   const effects = [];
+  const spellImages = {};
   const orcSpawnRatio = battlefield.clientWidth ? actors.orc.element.offsetLeft / battlefield.clientWidth : .6;
   let heroX = null, orcX = null, fieldWidth = null, moving = false, heroMoving = false, orcMoving = false;
   let walkDistance = 0, orcWalkDistance = 0, walkDirection = 3, orcWalkDirection = 1, activeTime = 0;
@@ -117,7 +119,8 @@
       actors.orc.images.walk = { ...actors.orc.images.idle,still:undefined };
       const [orcAttack] = await Promise.all([
         loadImage('assets/enemies/lpc/orc-attack.png').catch(() => null),
-        loadImage(arrowSprite)
+        loadImage(arrowSprite),
+        ...['fire','ice','shadow'].map(async magic=>{spellImages[magic]=await loadImage(`assets/magic/${magic}.png`);})
       ]);
       actors.orc.images.attack = orcAttack ? {image:orcAttack,frames:6,row:1,tile:128,origin:32} : { ...actors.orc.images.idle,frames:1 };
       const face = $('#avatar').getContext('2d'); face.imageSmoothingEnabled = false;
@@ -168,13 +171,35 @@
     element.setAttribute('aria-hidden','true'); if (text) element.textContent = text;
     battlefield.appendChild(element); effects.push({element,type,floating,sourceId,targetId,at:activeTime,duration:floating ? .85 : .38});
   }
+  function addSpell(event) {
+    if (reducedMotion.matches) return;
+    const magic=event.sourceId==='hero'?(event.magic==='ice'?'ice':'fire'):'shadow';
+    const element=document.createElement('canvas');
+    element.width=64; element.height=64; element.className='spell-projectile';
+    element.dataset.magic=magic; element.dataset.source=event.sourceId; element.dataset.target=event.targetId;
+    element.setAttribute('aria-hidden','true'); battlefield.appendChild(element);
+    effects.push({element,type:'spell',sourceId:event.sourceId,targetId:event.targetId,magic,image:spellImages[magic],
+      castId:event.castId,at:event.at,impactAt:event.impactAt,appearDuration:event.appearDuration,
+      flightDuration:event.flightDuration,impactDuration:event.impactDuration,
+      duration:event.appearDuration+event.flightDuration+event.impactDuration,landed:false,lastKey:null,angle:null});
+  }
+  function removeEffects(keep) {
+    for(let i=effects.length-1;i>=0;i--)if(!keep(effects[i])){effects[i].element.remove();effects.splice(i,1);}
+  }
   function handleEvents(events) {
     for (const event of events) {
-      if (event.type === 'attack') {
-        actors[event.sourceId].animation = {at:activeTime,duration:event.animationDuration || (event.sourceId === 'archer' || (event.sourceId === 'hero' && starterWeapon?.id === 'bow') ? .9 : .66),variant:event.variant,heavy:event.heavy,counter:event.counter};
+      if (event.type === 'cast') {
+        actors[event.sourceId].animation={at:event.at,duration:.66};
+        addSpell(event);
+      } else if (event.type === 'attack') {
+        if (!event.impact) actors[event.sourceId].animation = {at:activeTime,duration:event.animationDuration || (event.sourceId === 'archer' || (event.sourceId === 'hero' && starterWeapon?.id === 'bow') ? .9 : .66),variant:event.variant,heavy:event.heavy,counter:event.counter};
+        if (event.impact) {
+          const spell=effects.find(effect=>effect.type==='spell'&&effect.castId===event.castId);
+          if(spell){spell.landed=true;spell.impactAt=event.at;spell.duration=event.at-spell.at+spell.impactDuration;}
+        }
         actors[event.targetId].hitAt = activeTime;
         addEffect(event.counter ? 'counter' : event.heavy ? 'heavy' : 'damage',event.sourceId,event.targetId,event.counter ? `Ответ −${event.damage}` : `−${event.damage}`,event.at);
-        if (event.projectile !== 'melee') addEffect(event.projectile,event.sourceId,event.targetId,null,event.at);
+        if (event.projectile === 'arrow') addEffect('arrow',event.sourceId,event.targetId,null,event.at);
       } else if (event.type === 'block') {
         actors.hero.blockAt = activeTime;
         // The real LPC guard pose interrupts the swing; the following counter
@@ -182,6 +207,7 @@
         actors.hero.animation = null;
         addEffect('block',event.sourceId,'hero','Блок',event.at);
       } else if (event.type === 'death') {
+        removeEffects(effect=>effect.type!=='spell'||effect.targetId!==event.id||effect.landed);
         $('#status').textContent = event.id === 'hero' ? 'Герой пал' : `${battle.getState().enemies.find(enemy=>enemy.id===event.id).name} побеждён`;
       } else if (event.type === 'end') {
         if (event.result === 'victory' && !rewardPaid) {
@@ -193,7 +219,9 @@
         $('#replay-button').textContent = 'Снова в бой'; resultPanel.hidden = false;
         $('#status').textContent = event.result === 'victory' ? `Победа. Получено ${event.reward} золота.` : 'Поражение. Можно повторить бой.';
         try { telegram?.HapticFeedback?.notificationOccurred(event.result === 'victory' ? 'success' : 'warning'); } catch {}
-        effects.splice(0).forEach(effect => effect.element.remove());
+        // Let the already landed winning/losing impact finish its six frames.
+        // In-flight spells are cancelled with the terminal combat queue.
+        removeEffects(effect=>effect.type==='spell'&&effect.landed);
         updateControls();
       }
     }
@@ -231,7 +259,7 @@
     actor.bar.querySelector('i').style.width = `${unit.hp / unit.maxHp * 100}%`;
     actor.bar.setAttribute('aria-valuenow',unit.hp);
     actor.bar.setAttribute('aria-valuemax',unit.maxHp);
-    actor.element.setAttribute('aria-label', `${unit.name}${id === 'hero' && loadout ? `, ${starterWeapon.name}, наряд ${starterOutfit.name}, ${loadouts.color(loadout.outfitColor).name}` : ''}: ${unit.hp} из ${unit.maxHp} здоровья`);
+    actor.element.setAttribute('aria-label', `${unit.name}${id === 'hero' && loadout ? `, ${starterWeapon.name}, наряд ${starterOutfit.name}, ${loadouts.color(loadout.outfitColor).name}${heroMagic?`, магия ${loadouts.magic(heroMagic).name}`:''}` : ''}: ${unit.hp} из ${unit.maxHp} здоровья`);
   }
   // Resolve the two melee fighters from the same positions so they meet without crossing.
   // Walking phase uses actual distance; ranged fighters keep their starting positions.
@@ -296,10 +324,30 @@
     const field = battlefield.getBoundingClientRect();
     for (let i=effects.length-1;i>=0;i--) {
       const effect = effects[i], age = activeTime - effect.at;
-      if (age >= effect.duration || reducedMotion.matches) { effect.element.remove(); effects.splice(i,1); continue; }
+      if (age+1e-6 >= effect.duration || reducedMotion.matches) { effect.element.remove(); effects.splice(i,1); continue; }
       const target = actors[effect.targetId].element.getBoundingClientRect(), source = actors[effect.sourceId].element.getBoundingClientRect();
       const p = Math.max(0,age/effect.duration), tx=target.left+target.width/2-field.left, ty=target.top+target.height*.4-field.top;
-      if (effect.floating) {
+      if (effect.type === 'spell') {
+        const phase=effect.landed?'impact':age+1e-6<effect.appearDuration?'appear':'flight';
+        const row=phase==='appear'?0:phase==='flight'?1:2;
+        const phaseAge=Math.max(0,phase==='appear'?age:phase==='flight'?age-effect.appearDuration:activeTime-effect.impactAt);
+        const phaseDuration=phase==='appear'?effect.appearDuration:phase==='flight'?effect.flightDuration:effect.impactDuration;
+        const cell=phase==='flight'?Math.floor((phaseAge+1e-6)/(phaseDuration/6))%6:Math.min(5,Math.floor((phaseAge+1e-6)/(phaseDuration/6)));
+        const sx=source.left+source.width*(effect.sourceId==='hero'?.88:.28)-field.left;
+        const sy=source.top+source.height*(effect.sourceId==='hero'?.67:.53)-field.top;
+        const hitY=target.top+target.height*.55-field.top;
+        const progress=phase==='appear'?0:phase==='impact'?1:Math.min(1,phaseAge/effect.flightDuration);
+        if(phase!=='impact'||effect.angle===null)effect.angle=Math.atan2(hitY-sy,tx-sx)*180/Math.PI+180;
+        effect.element.style.left=`${sx+(tx-sx)*progress}px`;
+        effect.element.style.top=`${sy+(hitY-sy)*progress}px`;
+        effect.element.style.transform=`translate(-25%,-50%) rotate(${effect.angle}deg)`;
+        effect.element.dataset.phase=phase;
+        const key=`${row}:${cell}`;
+        if(effect.lastKey!==key){
+          const ctx=effect.element.getContext('2d');ctx.clearRect(0,0,64,64);ctx.imageSmoothingEnabled=false;
+          ctx.drawImage(effect.image,cell*64,row*64,64,64,0,0,64,64);effect.lastKey=key;
+        }
+      } else if (effect.floating) {
         effect.element.style.left = `${tx}px`; effect.element.style.top = `${ty-p*22}px`; effect.element.style.opacity = String(1-p);
       } else {
         const sx=source.left+source.width*(effect.sourceId==='hero'?.7:.3)-field.left, sy=source.top+source.height*.45-field.top;
@@ -345,7 +393,7 @@
         if (dt>walkTime) handleEvents(battle.advance(dt-walkTime,attackAvailability(battle.getState())));
         updateMovement(0,battle.getState());
         if (moving !== wasMoving) updateControls();
-      }
+      } else if(effects.some(effect=>effect.type==='spell'&&effect.landed)) activeTime+=dt;
     }
 
     if (ready) render(battle.getState());
@@ -374,7 +422,7 @@
     $('#sprite-credits').hidden=!profile;
     if (!dialog.open) dialog.showModal(); syncPause();
   }
-  $('#profile-button').addEventListener('click', () => openInfo('ТВОЙ ГЕРОЙ',name,`Уровень ${level} · Сила 12 · ${skinNames[skinIds.indexOf(skin)]} оттенок кожи. ${loadout ? `${starterWeapon.name} · наряд «${starterOutfit.name}», ${loadouts.color(loadout.outfitColor).name.toLowerCase()} цвет.` : 'Без класса, брони и оружия.'} В тестовом бою: 200 здоровья.`,true));
+  $('#profile-button').addEventListener('click', () => openInfo('ТВОЙ ГЕРОЙ',name,`Уровень ${level} · Сила 12 · ${skinNames[skinIds.indexOf(skin)]} оттенок кожи. ${loadout ? `${starterWeapon.name} · наряд «${starterOutfit.name}», ${loadouts.color(loadout.outfitColor).name.toLowerCase()} цвет.${heroMagic?` Магия: ${loadouts.magic(heroMagic).name}.`:''}` : 'Без класса, брони и оружия.'} В тестовом бою: 200 здоровья.`,true));
   document.querySelectorAll('[data-info]').forEach(button=>button.addEventListener('click',()=>openInfo(...information[button.dataset.info]())));
   dialog.querySelectorAll('.dialog-close,.dialog-action').forEach(button=>button.addEventListener('click',()=>dialog.close()));
   dialog.addEventListener('close',syncPause);

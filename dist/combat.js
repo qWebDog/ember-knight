@@ -10,6 +10,8 @@
   const HERO_INTERVAL = 1.2 * TICKS;
   const COUNTER_DELAY = .3 * TICKS;
   const COUNTER_DURATION = .36 * TICKS;
+  const magicTiming = Object.freeze({appearDuration:.42,flightDuration:.48,impactDuration:.42});
+  const MAGIC_DELAY = Math.round((magicTiming.appearDuration + magicTiming.flightDuration) * TICKS);
   const swordSteps = [
     {variant:'halfslash', interval:1.05 * TICKS, animationDuration:.56, heavy:false},
     {variant:'slash', interval:1.2 * TICKS, animationDuration:.66, heavy:false},
@@ -27,12 +29,13 @@
     const config = {
       name:typeof options.heroName === 'string' && options.heroName.trim() ? options.heroName.trim() : 'Странник',
       maxHp:positive(options.heroMaxHp, 200), damage:positive(options.heroDamage, 12),
-      projectile:['melee','arrow','magic'].includes(options.heroProjectile) ? options.heroProjectile : 'melee'
+      projectile:['melee','arrow','magic'].includes(options.heroProjectile) ? options.heroProjectile : 'melee',
+      magic:['fire','ice'].includes(options.heroMagic) ? options.heroMagic : 'fire'
     };
     // A contradictory ranged projectile never enables shield mechanics.
     const sword = options.heroWeapon === 'sword' && config.projectile === 'melee';
     let phase, elapsed, remainder, hero, enemies, nextHero, nextEnemies, reward;
-    let comboIndex, meleeHits, heroBusyUntil, pendingCounters;
+    let comboIndex, meleeHits, heroBusyUntil, pendingCounters, pendingImpacts;
     function getState() {
       const target = enemies.find(enemy => enemy.hp > 0);
       return {
@@ -46,7 +49,7 @@
       phase = 'running'; elapsed = 0; remainder = 0; reward = 0;
       hero = {id:'hero', name:config.name, hp:config.maxHp, maxHp:config.maxHp, damage:config.damage};
       enemies = templates.map(enemy => ({...enemy, hp:enemy.maxHp}));
-      comboIndex = 0; meleeHits = 0; heroBusyUntil = 0; pendingCounters = [];
+      comboIndex = 0; meleeHits = 0; heroBusyUntil = 0; pendingCounters = []; pendingImpacts = [];
       nextHero = sword ? swordSteps[0].interval : HERO_INTERVAL;
       nextEnemies = enemies.map(enemy => Math.round(enemy.interval * TICKS));
       return getState();
@@ -95,7 +98,7 @@
           heroBusyUntil += passed;
           pendingCounters.forEach(counter => { counter.at += passed; });
         }
-        if (!orcCanAttack) nextEnemies[0] += passed;
+        if (!orcCanAttack) enemies.forEach((enemy,index) => { if (enemy.id === 'orc') nextEnemies[index] += passed; });
         elapsed = time;
       }
       function hit(sourceId, target, damage, projectile, metadata) {
@@ -104,28 +107,41 @@
         if (target.hp === 0) {
           events.push({type:'death', id:target.id, at:elapsed / TICKS});
           pendingCounters = pendingCounters.filter(counter => counter.targetId !== target.id);
+          pendingImpacts = pendingImpacts.filter(impact => impact.targetId !== target.id);
         }
       }
       function end(result) {
-        phase = result; pendingCounters = [];
+        phase = result; pendingCounters = []; pendingImpacts = [];
         reward = result === 'victory' ? 25 : 0;
         events.push({type:'end', result, reward, at:elapsed / TICKS});
+      }
+      function cast(sourceId,target,damage,magic) {
+        const castAt = elapsed / TICKS;
+        const impactTick = elapsed + MAGIC_DELAY;
+        const castId = `${sourceId}:${elapsed}`;
+        events.push({type:'cast',sourceId,targetId:target.id,projectile:'magic',magic,at:castAt,...magicTiming,impactAt:impactTick / TICKS,castId});
+        pendingImpacts.push({sourceId,targetId:target.id,damage,magic,at:impactTick,castAt,castId});
+        // Hero-origin impacts win ties against enemy-origin impacts; launch order
+        // remains stable for multiple shots from the same side.
+        pendingImpacts.sort((a,b) => a.at-b.at || Number(b.sourceId==='hero')-Number(a.sourceId==='hero'));
       }
       while (phase === 'running') {
         let next = heroCanAttack ? nextHero : Infinity;
         if (heroCanAttack && pendingCounters.length) next = Math.min(next, pendingCounters[0].at);
+        if (pendingImpacts.length) next = Math.min(next,pendingImpacts[0].at);
         enemies.forEach((enemy, index) => {
           if (enemy.hp > 0 && (enemy.id !== 'orc' || orcCanAttack)) next = Math.min(next, nextEnemies[index]);
         });
         if (next > until) break;
         advanceClock(next);
-        // Tie policy: regular hero attack, queued counters, then living enemies in order.
+        // Tie policy: regular hero action, counters, magic impacts (hero first), then living enemies.
         if (heroCanAttack && nextHero === next) {
           const target = enemies.find(enemy => enemy.hp > 0);
           const step = sword ? swordSteps[comboIndex] : null;
           const damage = config.damage * (step?.heavy ? 1.5 : 1);
           const metadata = step ? {variant:step.variant, comboStep:comboIndex + 1, heavy:step.heavy, animationDuration:step.animationDuration, counter:false} : undefined;
-          hit('hero', target, Math.max(1, damage - target.armor), config.projectile, metadata);
+          if (config.projectile === 'magic') cast('hero',target,Math.max(1,damage-target.armor),config.magic);
+          else hit('hero', target, Math.max(1, damage - target.armor), config.projectile, metadata);
           if (sword) {
             heroBusyUntil = elapsed + step.animationDuration * TICKS;
             comboIndex = (comboIndex + 1) % swordSteps.length;
@@ -142,6 +158,16 @@
           if (enemies.every(enemy => enemy.hp === 0)) { end('victory'); break; }
         }
         if (phase !== 'running') break;
+        while (pendingImpacts.length && pendingImpacts[0].at === next) {
+          const impact = pendingImpacts.shift();
+          const target = impact.targetId === 'hero' ? hero : enemies.find(enemy => enemy.id === impact.targetId);
+          if (!target || target.hp <= 0) continue;
+          // A launched spell is independent of its caster's life and range readiness.
+          hit(impact.sourceId,target,impact.damage,'magic',{magic:impact.magic,impact:true,castAt:impact.castAt,castId:impact.castId});
+          if (hero.hp === 0) { end('defeat'); break; }
+          if (enemies.every(enemy => enemy.hp === 0)) { end('victory'); break; }
+        }
+        if (phase !== 'running') break;
         for (let index = 0; index < enemies.length; index++) {
           const enemy = enemies[index];
           if (enemy.hp <= 0 || nextEnemies[index] !== next || (enemy.id === 'orc' && !orcCanAttack)) continue;
@@ -151,7 +177,8 @@
             damage -= blockedDamage; blocked = true;
             events.push({type:'block',sourceId:enemy.id,targetId:'hero',blockedDamage,at:elapsed / TICKS});
           }
-          hit(enemy.id, hero, damage, enemy.projectile);
+          if (enemy.projectile === 'magic') cast(enemy.id,hero,damage,'shadow');
+          else hit(enemy.id, hero, damage, enemy.projectile);
           nextEnemies[index] += Math.round(enemy.interval * TICKS);
           if (hero.hp === 0) { end('defeat'); break; }
           if (blocked) reserveCounter(enemy.id);
@@ -163,5 +190,5 @@
     restart();
     return {getState, advance, pause, resume, restart, get state() { return getState(); }};
   }
-  return {createBattle};
+  return {createBattle,magicTiming};
 });

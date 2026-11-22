@@ -1,0 +1,45 @@
+{
+  "frameWidth": 64,
+  "frameHeight": 64,
+  "columns": 6,
+  "rows": 3,
+  "direction": "left",
+  "states": [
+    {
+      "id": "appear",
+      "row": 0,
+      "frames": 6,
+      "duration": 0.42,
+      "loop": false
+    },
+    {
+      "id": "flight",
+      "row": 1,
+      "frames": 6,
+      "duration": 0.48,
+      "loop": true
+    },
+    {
+      "id": "impact",
+      "row": 2,
+      "frames": 6,
+      "duration": 0.42,
+      "loop": false
+    }
+  ],
+  "sprites": {
+    "fire": {
+      "file": "fire.png",
+      "player": true
+    },
+    "ice": {
+      "file": "ice.png",
+      "player": true
+    },
+    "shadow": {
+      "file": "shadow.png",
+      "player": false,
+      "npc": "mage"
+    }
+  }
+}

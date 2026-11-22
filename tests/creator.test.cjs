@@ -18,6 +18,7 @@ function harness({saved=null,blocked=false}={}){
  const groups={
   '.skin-option':[...html.matchAll(/data-skin="([^"]+)"/g)].map(([,id])=>{let n=node('skin:'+id);n.dataset.skin=id;return n}),
   '[data-weapon]':['sword','bow','wand'].map(id=>{let n=node('weapon:'+id);n.dataset.weapon=id;return n}),
+  '[data-magic]':['fire','ice'].map(id=>{let n=node('magic:'+id);n.dataset.magic=id;return n}),
   '[data-outfit-color]':['sand','forest','blue','red','purple','gray'].map(id=>{let n=node('color:'+id);n.dataset.outfitColor=id;return n}),
   '[data-go-step]':[0,1,2].map(i=>{let n=node('progress:'+i);n.dataset.goStep=String(i);return n}),
   '[data-step]':[0,1,2].map(i=>{let n=node('panel:'+i);n.dataset.step=String(i);return n}),
@@ -48,7 +49,7 @@ test('all eighteen weapon and clothing-color choices preview, rotate and retain 
  const sets={sword:'militia',bow:'wanderer',wand:'acolyte'};
  for(const [weapon,outfit]of Object.entries(sets))for(const color of ['sand','forest','blue','red','purple','gray']){
   const ui=harness();await ui.load();ui.node('skin:black').click();await ui.load();ui.node('#create-button').click();await ui.load();
-  ui.node('weapon:'+weapon).click();await ui.load();ui.node('#create-button').click();await ui.load();ui.node('color:'+color).click();await ui.load();
+  ui.node('weapon:'+weapon).click();await ui.load();if(weapon==='wand')ui.node('magic:fire').click();ui.node('#create-button').click();await ui.load();ui.node('color:'+color).click();await ui.load();
   ui.node('#scene').dispatch('keydown',{key:'ArrowRight'});
   const draw=ui.node('#hero').draws.at(-1);assert.ok(draw.src.endsWith(`${weapon}/${outfit}/${color}/black-walk.png`));assert.equal(draw.crop[1],weapon==='bow'?384:192);
   ui.node('#create-button').click();const saved=JSON.parse(ui.storage.get('ember.character.v1'));assert.deepEqual([saved.weapon,saved.outfit,saved.outfitColor,saved.skin],[weapon,outfit,color,'black']);
@@ -102,4 +103,50 @@ test('all six saved skin IDs restore their kit intact and migrate skin only when
   assert.deepEqual([saved.skin,saved.name,saved.level,saved.class,saved.weapon,saved.outfit,saved.outfitColor,saved.createdAt],[canonical,original.name,9,'knight',weapon,outfit,'gray','original-date']);
   assert.deepEqual(saved.equipment,original.equipment,'skin migration must retain the chosen equipment');
  }
+});
+
+
+test('a new wand user must explicitly choose fire or ice before leaving the weapon step',async()=>{
+ const ui=harness();await ui.load();ui.node('#create-button').click();await ui.load();
+ ui.node('weapon:wand').click();await ui.load();
+ assert.equal(ui.node('#magic-school').hidden,false);
+ assert.equal(ui.node('#create-button').disabled,true);
+ assert.equal(ui.node('magic:fire').attrs['aria-checked'],'false');
+ assert.equal(ui.node('magic:ice').attrs['aria-checked'],'false');
+ assert.equal(ui.node('magic:fire').tabIndex,0,'unselected radio group remains keyboard reachable');
+ assert.equal(ui.node('magic:ice').tabIndex,-1);
+ ui.node('#create-button').click();assert.equal(ui.node('#step-title').textContent,'Начальное оружие');
+ ui.node('magic:fire').click();assert.equal(ui.node('#create-button').disabled,false);assert.match(ui.node('#preview-summary').textContent,/Огонь/);
+ ui.node('#create-button').click();await ui.load();ui.node('#create-button').click();
+ const saved=JSON.parse(ui.storage.get('ember.character.v1'));assert.equal(saved.magic,'fire');assert.match(ui.node('#saved-loadout').textContent,/Огонь/);
+});
+
+test('ice selection supports keyboard input, survives weapon switching and saves only on a wand',async()=>{
+ const ui=harness();await ui.load();ui.node('#create-button').click();await ui.load();ui.node('weapon:wand').click();await ui.load();
+ ui.node('magic:fire').dispatch('keydown',{key:'ArrowRight'});
+ assert.equal(ui.node('magic:ice').attrs['aria-checked'],'true');assert.match(ui.node('#magic-choice-name').textContent,/Ледяное/);
+ ui.node('weapon:bow').click();await ui.load();assert.equal(ui.node('#magic-school').hidden,true);assert.equal(ui.node('#create-button').disabled,false);
+ ui.node('weapon:wand').click();await ui.load();assert.equal(ui.node('magic:ice').attrs['aria-checked'],'true');
+ ui.node('#create-button').click();await ui.load();ui.node('#create-button').click();
+ assert.equal(JSON.parse(ui.storage.get('ember.character.v1')).magic,'ice');assert.match(ui.node('#saved-loadout').textContent,/Лёд/);
+ const sword=harness({saved:JSON.parse(ui.storage.get('ember.character.v1'))});await sword.load();sword.node('#create-button').click();await sword.load();sword.node('weapon:sword').click();await sword.load();sword.node('#create-button').click();await sword.load();sword.node('#create-button').click();
+ assert.ok(!Object.hasOwn(JSON.parse(sword.storage.get('ember.character.v1')),'magic'),'a non-mage record must not retain a stale spell school');
+});
+
+test('legacy wand defaults to fire, valid ice restores, and NPC shadow never becomes a player choice',async()=>{
+ for(const [original,expected]of [[undefined,'fire'],['shadow','fire'],['wrong','fire'],['fire','fire'],['ice','ice']]){
+  const saved={version:1,skin:'brown',weapon:'wand',outfit:'acolyte',outfitColor:'purple',name:'Маг',magic:original};
+  const ui=harness({saved});await ui.load();assert.deepEqual(JSON.parse(ui.storage.get('ember.character.v1')),JSON.parse(JSON.stringify(saved)),'opening creator does not eagerly write defaults');
+  ui.node('#create-button').click();await ui.load();assert.equal(ui.node('magic:'+expected).attrs['aria-checked'],'true');assert.equal(ui.node('#create-button').disabled,false);
+  ui.node('#create-button').click();await ui.load();ui.node('#create-button').click();assert.equal(JSON.parse(ui.storage.get('ember.character.v1')).magic,expected);
+ }
+ assert.deepEqual([...html.matchAll(/data-magic="([^"]+)"/g)].map(([,id])=>id),['fire','ice']);assert.ok(!html.includes('data-magic="shadow"'));
+});
+
+test('progress navigation cannot bypass a missing required magic selection',async()=>{
+ const ui=harness();await ui.load();ui.node('#create-button').click();await ui.load();ui.node('#create-button').click();await ui.load();
+ ui.node('#back-button').click();await ui.load();ui.node('weapon:wand').click();await ui.load();
+ assert.equal(ui.node('progress:2').disabled,true);ui.node('progress:2').click();assert.equal(ui.node('#step-title').textContent,'Начальное оружие');
+ ui.node('magic:ice').click();assert.equal(ui.node('progress:2').disabled,false);ui.node('progress:2').click();await ui.load();assert.equal(ui.node('#step-title').textContent,'Цвет наряда');
+ ui.node('#create-button').click();assert.equal(JSON.parse(ui.storage.get('ember.character.v1')).magic,'ice');
 });
