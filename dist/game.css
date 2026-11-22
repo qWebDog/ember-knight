@@ -40,7 +40,7 @@ dialog{width:min(380px,calc(100% - 32px));max-height:calc(var(--app-height) - 32
 .enemy .fighter-shadow{bottom:0}
 .player .healthbar,.enemy .enemy-health{top:8%;height:4px;padding:0;left:24%;right:24%}
 .enemy-one .enemy-health{top:20%}
-/* Wave actors share one ground line; only the controller's active wave is shown. */
+/* Only the controller's active wave is shown; depth rows are projected below. */
 .fighter[hidden]{display:none!important}
 .wave-archer{transform:translateX(-50%);bottom:19px;z-index:2}
 .wave-archer[data-fighter="archer1"]{left:62%}
@@ -57,3 +57,11 @@ dialog{width:min(380px,calc(100% - 32px));max-height:calc(var(--app-height) - 32
 /* Status artwork uses its own actor-local plane, above the body and below HP. */
 .fighter>canvas.status-effect{position:absolute;left:50%;top:-8.405%;width:112%;height:112%;transform:translateX(-50%);transform-origin:50% 50%;z-index:1;pointer-events:none;image-rendering:pixelated;filter:none!important;animation:none!important}
 .fighter>canvas.status-effect[data-status="freeze"]{opacity:.65}
+
+/* Five depth rows share the existing road; the middle row stays fixed. */
+.battlefield{--road-ground:36px}
+.battlefield .fighter{bottom:calc(var(--road-ground) - var(--lane-offset,0px))}
+.projectile{z-index:600}
+.spell-projectile{z-index:601}
+.damage-number{z-index:602}
+@media(orientation:landscape) and (max-height:600px){.battlefield{--road-ground:26px}}

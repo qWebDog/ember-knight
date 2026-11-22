@@ -34,20 +34,22 @@
   let ready = false, assetError = false, lastFrameTime = null, restartRemaining = null, resultSummary = '';
   const paidDeaths = new Set();
   const enemyDefinitions = {
-    archer1:{type:'archer',spawn:.62,label:'Лучник'},
-    archer2:{type:'archer',spawn:.61,label:'Лучник I'},
-    archer3:{type:'archer',spawn:.80,label:'Лучник II'},
-    orc:{type:'orc',spawn:.65,label:'Орк'}
+    archer1:{type:'archer',spawn:.62,label:'Лучник',defaultLane:2},
+    archer2:{type:'archer',spawn:.61,label:'Лучник I',defaultLane:1},
+    archer3:{type:'archer',spawn:.80,label:'Лучник II',defaultLane:5},
+    orc:{type:'orc',spawn:.65,label:'Орк',defaultLane:4}
   };
   const actors = {};
   for (const id of ['hero',...Object.keys(enemyDefinitions)]) {
     const element = document.querySelector(`[data-fighter="${id}"]`);
-    actors[id] = {element, canvas:element.querySelector('canvas'), bar:element.querySelector('.healthbar'), images:{}, animation:null, hitAt:-10, blockAt:-10, lastKey:null,statusCanvas:null,statusKey:null,frozenPose:null,poseAnimation:null,poseAge:100,...enemyDefinitions[id],x:null,distance:0,direction:1,moving:false};
+    actors[id] = {element, canvas:element.querySelector('canvas'), bar:element.querySelector('.healthbar'), images:{}, animation:null, hitAt:-10, blockAt:-10, lastKey:null,statusCanvas:null,statusKey:null,frozenPose:null,poseAnimation:null,poseAge:100,defaultLane:3,...enemyDefinitions[id],depth:enemyDefinitions[id]?.defaultLane||3,x:null,distance:0,direction:1,moving:false};
   }
   const effects = [];
   const spellImages = {};
   const pendingIceImpacts = new Map();
   let statusImage = null;
+  let laneStep = 0;
+  arena.dataset.lanes='5';battlefield.dataset.lanes='5';
   let heroX = null, fieldWidth = null, moving = false, heroMoving = false;
   let walkDistance = 0, walkDirection = 3, activeTime = 0;
   let pairContacted = false, previousSeparation = null, contactTarget = null, previousTargetSeparation = null;
@@ -61,15 +63,29 @@
   window.visualViewport?.addEventListener('resize', syncViewport);
   telegram?.onEvent?.('viewportChanged', syncViewport);
   syncViewport();
+  function projectFormation() {
+    battlefield.dataset.laneStep=String(laneStep);
+    battlefield.style.setProperty('--lane-step',`${laneStep}px`);
+    for(const actor of Object.values(actors)){
+      actor.depth=Math.max(1,Math.min(5,actor.depth));
+      actor.element.dataset.defaultLane=String(actor.defaultLane);
+      actor.element.dataset.depth=String(actor.depth);
+      actor.element.dataset.lane=String(Math.round(actor.depth));
+      actor.element.style.setProperty('--lane-offset',`${(actor.depth-3)*laneStep}px`);
+      actor.element.style.zIndex=String(Math.round(100+(actor.depth-1)*100));
+    }
+  }
   function alignTerrain() {
     const bounds = arena.getBoundingClientRect(), fighter = actors.hero.element.getBoundingClientRect();
-    const feet = fighter.bottom - bounds.top - fighter.height * 2 / 64;
+    // Measure the fixed middle of the road, cancelling the hero's current row.
+    const feet = fighter.bottom - bounds.top - fighter.height * 2 / 64 - (actors.hero.depth-3)*laneStep;
     // Keep feet on the selected forest's road while covering any viewport.
     const sceneSize = 1254, roadY = 1028;
     const scale = Math.max(bounds.width / sceneSize, feet / roadY, (bounds.height - feet) / (sceneSize - roadY));
     const art = $('.battle-landscape');
     art.style.backgroundSize = `${sceneSize * scale}px ${sceneSize * scale}px`;
     art.style.backgroundPosition = `center ${feet - roadY * scale}px`;
+    laneStep=Math.min(12,actors.hero.element.offsetWidth*.18,35*scale);
     updateMovement(0,battle.getState());
   }
   new ResizeObserver(alignTerrain).observe(arena);
@@ -354,6 +370,7 @@
     for(const actor of Object.values(actors)){
       clearStatus(actor);actor.poseAnimation=null;actor.poseAge=100;
       actor.x=null;actor.distance=0;actor.moving=false;actor.direction=1;
+      actor.depth=actor.defaultLane;
       actor.animation=null;actor.hitAt=-10;actor.blockAt=-10;actor.lastKey=null;
     }
     updateMovement(0,state);
@@ -392,12 +409,24 @@
         usedTime=reducedMotion.matches||!closingSpeed?0:Math.min(dt,gap/closingSpeed);
         const time=reducedMotion.matches&&closingSpeed?gap/closingSpeed:usedTime;
         const heroStep=heroSpeed*time,enemyStep=enemySpeed*time;
+        const heroDepth=actors.hero.depth,enemyDepth=enemy.depth;
+        const fraction=Math.min(1,(heroStep+enemyStep)/gap);
+        if(ranged){
+          if(enemyStep>0)enemy.depth+=(actors.hero.depth-enemy.depth)*fraction;
+        }else if(heroStep>0)actors.hero.depth+=(enemy.depth-actors.hero.depth)*fraction;
         heroX+=heroStep;enemy.x-=enemyStep;
-        if(!reducedMotion.matches){walkDistance+=heroStep/heroSize;enemy.distance+=enemyStep/enemySize;}
+        if(!reducedMotion.matches){
+          walkDistance+=Math.hypot(heroStep,(actors.hero.depth-heroDepth)*laneStep)/heroSize;
+          enemy.distance+=Math.hypot(enemyStep,(enemy.depth-enemyDepth)*laneStep)/enemySize;
+        }
         walkDirection=3;enemy.direction=1;
         moving=enemy.x-heroX-separation>.01&&closingSpeed>0;heroMoving=moving&&heroSpeed>0;enemy.moving=moving&&enemySpeed>0;
       }
-      if(enemy.x-heroX-separation<=.01)pairContacted=true;
+      if(enemy.x-heroX-separation<=.01){
+        if(ranged){if(!isFrozen(melee,state))enemy.depth=actors.hero.depth;}
+        else actors.hero.depth=enemy.depth;
+        pairContacted=Math.abs(enemy.depth-actors.hero.depth)<=1e-4;
+      }
     }else if(canMove&&state.targetId){
       if(ranged)heroX=home;
       else{
@@ -411,16 +440,19 @@
           walkDirection=gap>=0?3:1;
           const speed=heroSize*.85;
           const distance=reducedMotion.matches?Math.abs(gap):Math.min(Math.abs(gap),speed*dt);
+          const depth=actors.hero.depth;
+          actors.hero.depth+=(target.depth-actors.hero.depth)*Math.min(1,distance/Math.abs(gap));
           heroX+=Math.sign(gap)*distance;
-          if(!reducedMotion.matches)walkDistance+=distance/heroSize;
+          if(!reducedMotion.matches)walkDistance+=Math.hypot(distance,(actors.hero.depth-depth)*laneStep)/heroSize;
           usedTime=reducedMotion.matches?0:distance/speed;
           moving=heroMoving=!reducedMotion.matches&&Math.abs(goal-heroX)>.01;
         }
-        if(!moving)contactTarget=state.targetId;
+        if(!moving){actors.hero.depth=target.depth;contactTarget=state.targetId;}
       }
     }
     actors.hero.element.style.left=`${heroX}px`;
     for(const id of Object.keys(enemyDefinitions))actors[id].element.style.left=`${actors[id].x}px`;
+    projectFormation();
     return usedTime;
   }
   function renderEffects(state) {
@@ -473,7 +505,7 @@
   }
   function attackAvailability(state) {
     const heroSize=actors.hero.element.offsetWidth;
-    const inReach=(id,x)=>Math.abs(x-heroX)<=heroSize*.23+actors[id].element.offsetWidth*.34+.01;
+    const inReach=(id,x)=>Math.abs(x-heroX)<=heroSize*.23+actors[id].element.offsetWidth*.34+.01&&Math.abs(actors[id].depth-actors.hero.depth)<=1e-4;
     const target=state.targetId;
     return {
       heroCanAttack:Boolean(target && (ranged || inReach(target,actors[target].x))),

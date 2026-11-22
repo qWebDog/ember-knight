@@ -12,7 +12,7 @@ const combatSource = fs.readFileSync(path.join(dist, 'combat.js'), 'utf8');
 
 // The real game controller and combat engine run together. Only browser surfaces,
 // image decoding and the animation clock are replaced; no combat logic is mocked.
-function createHarness({skin = 'bronze', preference, search = '', weapon, outfit, outfitColor, magic, reducedMotion = false, fieldWidth = 800, combatOptions = {}} = {}) {
+function createHarness({skin = 'bronze', preference, search = '', weapon, outfit, outfitColor, magic, reducedMotion = false, fieldWidth = 800, modelSize = 64, arenaHeight = 400, fieldHeight = 180, fieldBottomGap = 62, roadGround = 36, viewportHeight = 800, combatOptions = {}} = {}) {
   const storage = new Map([['ember.character.v1', JSON.stringify({version:1, skin, name:'Тестовый герой', level:1,weapon,outfit,outfitColor,magic})]]);
   if (preference) storage.set('ember.combat.auto.v1', preference);
   const nodes = new Map(), pendingImages = [], loadedPaths = [], raf = [], resizeCallbacks = [], events = [];
@@ -32,7 +32,7 @@ function createHarness({skin = 'bronze', preference, search = '', weapon, outfit
         if (name === 'motion') this.motionHistory.push(value);
         target[name] = value; return true;
       }});
-      this.clientWidth = fieldWidth; this.offsetWidth = 64; this.offsetLeft = 0;
+      this.clientWidth = fieldWidth; this.clientHeight = selector==='.battlefield'?fieldHeight:arenaHeight; this.offsetWidth = modelSize; this.offsetLeft = 0;
       this.classList = {toggle:(name, enabled) => {
         if (enabled === undefined) enabled = !this.classes.has(name);
         if (enabled) this.classes.add(name); else this.classes.delete(name);
@@ -66,9 +66,16 @@ function createHarness({skin = 'bronze', preference, search = '', weapon, outfit
       }};
     }
     getBoundingClientRect() {
-      const left = Number.parseFloat(this.style.left) || this.offsetLeft;
-      if (this.actor) return {left, right:left+this.offsetWidth, top:204, bottom:268, width:this.offsetWidth, height:64};
-      return {left:0, right:this.clientWidth, top:0, bottom:400, width:this.clientWidth, height:400};
+      const parsed = Number.parseFloat(this.style.left),centerX = Number.isFinite(parsed)?parsed:this.offsetLeft;
+      if (this.actor) {
+        const width=this.offsetWidth,field=node('.battlefield').getBoundingClientRect();
+        const ground=Number.parseFloat(node('.battlefield').style['--road-ground'])||roadGround;
+        const depthOffset=Number.parseFloat(this.style['--lane-offset'])||0;
+        const bottom=field.bottom-ground+depthOffset,left=centerX-width/2;
+        return {left,right:left+width,top:bottom-width,bottom,width,height:width};
+      }
+      if(this.selector==='.battlefield')return {left:0,right:this.clientWidth,top:arenaHeight-fieldBottomGap-fieldHeight,bottom:arenaHeight-fieldBottomGap,width:this.clientWidth,height:fieldHeight};
+      return {left:0,right:this.clientWidth,top:0,bottom:arenaHeight,width:this.clientWidth,height:arenaHeight};
     }
     appendChild(child) { this.children.push(child); child.parent = this; }
     remove() { if (this.parent) this.parent.children = this.parent.children.filter(child => child !== this); }
@@ -90,6 +97,7 @@ function createHarness({skin = 'bronze', preference, search = '', weapon, outfit
     for(const name of (tag.match(/class="([^"]*)"/)?.[1]||'').split(/\s+/))if(name)actor.classes.add(name);
   }
   node('#battle-result').hidden = true;
+  node('.battlefield').style.setProperty('--road-ground',`${roadGround}px`);
   const waves = [node('wave:0'),node('wave:1'),node('wave:2')];
   const infoButtons = ['gold','crystals','rewards','map','fist','dash','fire'].map(id => {
     assert.ok(html.includes(`data-info="${id}"`));
@@ -118,12 +126,13 @@ function createHarness({skin = 'bronze', preference, search = '', weapon, outfit
     get src() { return this.path; }
   }
   const window = {
-    innerWidth:fieldWidth, innerHeight:800, location:{search},
+    innerWidth:fieldWidth, innerHeight:viewportHeight, location:{search},
     matchMedia:() => ({matches:reducedMotion}), addEventListener() {},
     requestAnimationFrame:callback => raf.push(callback)
   };
   const context = vm.createContext({
     window, document, Image:ImageStub, URLSearchParams,
+    getComputedStyle:element=>({getPropertyValue:name=>element.style[name]??(name==='--road-ground'?`${roadGround}px`:'')}),
     ResizeObserver:class {constructor(callback) {this.callback = callback;} observe() {resizeCallbacks.push(this.callback); this.callback();}},
     localStorage:{getItem:key => storage.get(key) ?? null, setItem:(key,value) => storage.set(key,String(value))}
   });
@@ -175,8 +184,10 @@ function createHarness({skin = 'bronze', preference, search = '', weapon, outfit
   function orcX() { return Number.parseFloat(node('[data-fighter="orc"]').style.left); }
   function inMeleeRange() {
     const separation=node('[data-fighter="hero"]').offsetWidth*.23+node('[data-fighter="orc"]').offsetWidth*.34;
-    return Math.abs(orcX()-heroX()) <= separation+.01;
+    return Math.abs(orcX()-heroX()) <= separation+.01&&Math.abs(footY('orc')-footY('hero'))<=.01;
   }
+  function footY(id) {const rect=node(`[data-fighter="${id}"]`).getBoundingClientRect();return rect.bottom-rect.height*2/64;}
+  function depth(id) {return Number(node(`[data-fighter="${id}"]`).dataset.depth);}
   function spells() {
     return node('.battlefield').children.filter(element=>String(element.className).includes('spell-projectile'));
   }
@@ -192,15 +203,21 @@ function createHarness({skin = 'bronze', preference, search = '', weapon, outfit
   function visualState() {
     return {state:state(), x:heroX(), orcX:orcX(), draws:node('#player-sprite').draws.length, lastDraw:node('#player-sprite').draws.at(-1), orcDraws:node('#enemy-orc').draws.length,lastOrcDraw:node('#enemy-orc').draws.at(-1)};
   }
-  function resizeField(width,modelSize) {
+  function resizeField(width,nextModelSize,view={}) {
     const ratio = width/node('.battlefield').clientWidth;
     node('.battlefield').clientWidth = width; node('.adventure').clientWidth = width;
     window.innerWidth = width;
+    if(view.arenaHeight!==undefined)arenaHeight=view.arenaHeight;
+    if(view.fieldHeight!==undefined)fieldHeight=view.fieldHeight;
+    if(view.fieldBottomGap!==undefined)fieldBottomGap=view.fieldBottomGap;
+    if(view.viewportHeight!==undefined)window.innerHeight=view.viewportHeight;
+    if(view.roadGround!==undefined){roadGround=view.roadGround;node('.battlefield').style.setProperty('--road-ground',`${roadGround}px`);}
+    node('.adventure').clientHeight=arenaHeight;node('.battlefield').clientHeight=fieldHeight;
     for (const id of enemyIds) node(`[data-fighter="${id}"]`).offsetLeft *= ratio;
-    if(modelSize)for(const id of actorIds)node(`[data-fighter="${id}"]`).offsetWidth=modelSize;
+    if(nextModelSize)for(const id of actorIds)node(`[data-fighter="${id}"]`).offsetWidth=nextModelSize;
     resizeCallbacks.forEach(callback => callback());
   }
-  return {node, storage, loadedPaths, document, state, events, actorIds, enemyIds, restartStates, get runCount(){return restarts+1;}, loadNextImage, loadAllImages, runFor, runUntil, frame, heroX, orcX, inMeleeRange, spells, spellState, statusCanvases, statusState, visualState, resizeField};
+  return {node, storage, loadedPaths, document, state, events, actorIds, enemyIds, restartStates, get runCount(){return restarts+1;}, loadNextImage, loadAllImages, runFor, runUntil, frame, heroX, orcX, footY, depth, inMeleeRange, spells, spellState, statusCanvases, statusState, visualState, resizeField};
 }
 function runFramesUntil(ui, condition, maxSeconds=5) {
   for(let count=0;!condition() && count<Math.ceil(maxSeconds*1000/16);count++)ui.frame(16);
@@ -218,10 +235,10 @@ function assertSpellCells(spell,magic) {
 
 function visibleEnemies(ui){return ui.enemyIds.filter(id=>!ui.node(`[data-fighter="${id}"]`).hidden);}
 function actorX(ui,id){return Number.parseFloat(ui.node(`[data-fighter="${id}"]`).style.left);}
-function inReach(ui,id){return Math.abs(actorX(ui,id)-ui.heroX())<=ui.node('[data-fighter="hero"]').offsetWidth*.23+ui.node(`[data-fighter="${id}"]`).offsetWidth*.34+.01;}
+function inReach(ui,id){return Math.abs(actorX(ui,id)-ui.heroX())<=ui.node('[data-fighter="hero"]').offsetWidth*.23+ui.node(`[data-fighter="${id}"]`).offsetWidth*.34+.01&&Math.abs(ui.footY(id)-ui.footY('hero'))<=.01;}
 function kills(ui){return ui.events.filter(event=>event.type==='death'&&event.id!=='hero');}
 function wallet(ui){return Number(ui.storage.get('ember.test.gold.v1')||0);}
-function fullSnapshot(ui){return {combat:ui.state(),spells:ui.spellState(),statuses:ui.statusState(),actors:ui.actorIds.map(id=>({id,x:actorX(ui,id),hidden:ui.node(`[data-fighter="${id}"]`).hidden,motion:ui.node(`[data-fighter="${id}"]`).dataset.motion,draws:ui.node(id==='hero'?'#player-sprite':`#enemy-${id}`).draws.length,last:ui.node(id==='hero'?'#player-sprite':`#enemy-${id}`).draws.at(-1)}))};}
+function fullSnapshot(ui){return {combat:ui.state(),spells:ui.spellState(),statuses:ui.statusState(),actors:ui.actorIds.map(id=>({id,x:actorX(ui,id),depth:ui.depth(id),footY:ui.footY(id),lane:ui.node(`[data-fighter="${id}"]`).dataset.lane,z:ui.node(`[data-fighter="${id}"]`).style.zIndex,hidden:ui.node(`[data-fighter="${id}"]`).hidden,motion:ui.node(`[data-fighter="${id}"]`).dataset.motion,draws:ui.node(id==='hero'?'#player-sprite':`#enemy-${id}`).draws.length,last:ui.node(id==='hero'?'#player-sprite':`#enemy-${id}`).draws.at(-1)}))};}
 
 test('assets gate startup; the first wave shows one real LPC archer and the selected bare hero skin',async()=>{
  const ui=createHarness({skin:'bronze',preference:'off',search:'?battle=test'});
@@ -601,4 +618,100 @@ test('reduced motion keeps a static ice indicator for the same gameplay lifetime
  ui.runFor(.3);assert.deepEqual(overlay.draws.at(-1),pose);assert.equal(overlay.dataset.frame,'2');assert.equal(currentStatus(ui,'archer1').endsAt,status.endsAt);
  runFramesUntil(ui,()=>!currentStatus(ui,'archer1'),2);assert.equal(ui.statusCanvases().length,0);
  ui.runUntil(()=>ui.state().phase==='victory');assert.equal(wallet(ui),20);assert.equal(ui.statusCanvases().length,0);assert.equal(ui.spells().length,0);
+});
+
+
+// The road's approved 1254-pixel artwork has a conservative usable inner band
+// from source Y=958 to1098. Project physical feet through the actual background
+// transform rather than duplicating the controller's lane-step formula.
+function roadProjection(ui){
+ const art=ui.node('.battle-landscape'),size=Number.parseFloat(art.style.backgroundSize),top=Number.parseFloat(art.style.backgroundPosition.split(' ')[1]);
+ const png=fs.readFileSync(path.join(dist,'assets/battlefield-forest.png')),sourceWidth=png.readUInt32BE(16);
+ return {scale:size/sourceWidth,top};
+}
+function sourceFoot(ui,id){const {scale,top}=roadProjection(ui);return (ui.footY(id)-top)/scale;}
+function roadCenterSource(ui){const {scale,top}=roadProjection(ui),offset=Number.parseFloat(ui.node('[data-fighter="hero"]').style['--lane-offset'])||0;return (ui.footY('hero')-offset-top)/scale;}
+function almost(actual,expected,tolerance=1e-6,message='values are equal'){assert.ok(Math.abs(actual-expected)<=tolerance,`${message}: ${actual} vs${expected}`);}
+function actorRowSnapshot(ui){return ui.actorIds.map(id=>({id,depth:ui.depth(id),lane:ui.node(`[data-fighter="${id}"]`).dataset.lane,foot:ui.footY(id),offset:ui.node(`[data-fighter="${id}"]`).style['--lane-offset'],z:ui.node(`[data-fighter="${id}"]`).style.zIndex}));}
+
+test('five configured depth lanes are ordered, distinct and remain inside the approved road at phone, laptop and landscape sizes',async()=>{
+ const cases=[
+  {fieldWidth:320,viewportHeight:568,arenaHeight:295.36,fieldHeight:101.4944,fieldBottomGap:58,roadGround:36,modelSize:49},
+  {fieldWidth:390,viewportHeight:844,arenaHeight:438.88,fieldHeight:180.384,fieldBottomGap:61,roadGround:36,modelSize:59},
+  {fieldWidth:1180,viewportHeight:900,arenaHeight:468,fieldHeight:200.08,fieldBottomGap:62,roadGround:36,modelSize:74},
+  {fieldWidth:667,viewportHeight:375,arenaHeight:195,fieldHeight:98.25,fieldBottomGap:48,roadGround:26,modelSize:44}
+ ];
+ const expected={hero:3,archer1:2,archer2:1,archer3:5,orc:4};
+ for(const view of cases){
+  const ui=createHarness({...view,preference:'off',weapon:'bow',outfit:'wanderer'});await ui.loadAllImages();
+  assert.equal(ui.node('.adventure').dataset.lanes,'5');assert.equal(ui.node('.battlefield').dataset.lanes,'5');
+  assert.ok(Number(ui.node('.battlefield').dataset.laneStep)>0);
+  for(const [id,lane]of Object.entries(expected)){
+   assert.equal(Number(ui.node(`[data-fighter="${id}"]`).dataset.defaultLane),lane);assert.equal(ui.depth(id),lane);
+   const foot=sourceFoot(ui,id);assert.ok(foot>=958-1e-6&&foot<=1098+1e-6,`${id} must stand inside the real road (${foot})`);
+  }
+  const ordered=ui.actorIds.slice().sort((a,b)=>ui.depth(a)-ui.depth(b)),feet=ordered.map(id=>ui.footY(id));
+  assert.equal(new Set(feet).size,5);for(let index=1;index<feet.length;index++)assert.ok(feet[index]>feet[index-1]);
+  assert.ok(feet.at(-1)-feet[0]<=48+1e-6);almost(roadCenterSource(ui),1028,1e-6,'the forest road center must remain fixed');
+  const z=ordered.map(id=>Number(ui.node(`[data-fighter="${id}"]`).style.zIndex));for(let index=1;index<z.length;index++)assert.ok(z[index]>z[index-1],'front fighters sort above the back row');
+ }
+ const css=fs.readFileSync(path.join(dist,'game.css'),'utf8');
+ for(const selector of['projectile','spell-projectile','damage-number']){
+  const rules=[...css.matchAll(new RegExp(`\\.${selector}\\{[^}]*z-index:([0-9]+)`,'g'))];
+  assert.ok(Number(rules.at(-1)?.[1])>500,`${selector} remains visible above every fighter depth`);
+ }
+});
+
+test('melee walking changes depth towards the current enemy and every strike reaches the same physical road row',async()=>{
+ const ui=createHarness({weapon:'sword',outfit:'militia'});await ui.loadAllImages();assert.equal(ui.depth('hero'),3);assert.equal(ui.depth('archer1'),2);
+ ui.runFor(.4);assert.ok(ui.depth('hero')<3&&ui.depth('hero')>=2);assert.equal(ui.node('[data-fighter="hero"]').dataset.motion,'walk');
+ ui.runUntil(()=>ui.events.some(event=>event.type==='attack'&&event.sourceId==='hero'&&event.targetId==='archer1'));
+ assert.ok(inReach(ui,'archer1'));almost(ui.footY('hero'),ui.footY('archer1'),.01);assert.equal(ui.depth('hero'),2);
+ ui.runUntil(()=>ui.state().waveIndex===1);assert.equal(ui.depth('hero'),3);assert.equal(ui.depth('archer2'),1);assert.equal(ui.depth('archer3'),5);
+ ui.runUntil(()=>ui.events.some(event=>event.type==='attack'&&event.sourceId==='hero'&&event.targetId==='archer2'));almost(ui.footY('hero'),ui.footY('archer2'),.01);assert.equal(ui.depth('hero'),1);
+ ui.runUntil(()=>ui.events.some(event=>event.type==='attack'&&event.sourceId==='hero'&&event.targetId==='archer3'));almost(ui.footY('hero'),ui.footY('archer3'),.01);assert.equal(ui.depth('hero'),5);
+ ui.runUntil(()=>ui.state().waveIndex===2);assert.equal(ui.depth('hero'),3);assert.equal(ui.depth('orc'),4);
+ ui.runUntil(()=>ui.events.some(event=>event.type==='attack'&&event.sourceId==='orc'));assert.ok(ui.inMeleeRange());assert.equal(ui.depth('hero'),4);assert.equal(ui.depth('orc'),4);almost(ui.footY('hero'),ui.footY('orc'),.01);
+});
+
+function assertActualSpellRay(ui,spell){
+ const source=ui.node('[data-fighter="hero"]').getBoundingClientRect(),target=ui.node(`[data-fighter="${spell.dataset.target}"]`).getBoundingClientRect(),field=ui.node('.battlefield').getBoundingClientRect();
+ const sx=source.left+source.width*.88-field.left,sy=source.top+source.height*.67-field.top,tx=target.left+target.width/2-field.left,ty=target.top+target.height*.55-field.top;
+ const angle=Number(spell.style.transform.match(/rotate\(([-.0-9]+)deg\)/)[1]);
+ almost(angle,Math.atan2(ty-sy,tx-sx)*180/Math.PI+180,1e-8,'the projectile aims at the target on its actual road row');
+ const x=Number.parseFloat(spell.style.left),y=Number.parseFloat(spell.style.top),fraction=(x-sx)/(tx-sx);
+ assert.ok(fraction>=-1e-6&&fraction<=1+1e-6);almost(y,sy+(ty-sy)*fraction,1e-6,'the visible projectile is on the source-to-target ray');
+ return angle;
+}
+
+test('ranged spells use off-row target coordinates and keep aiming correctly after a paused responsive resize',async()=>{
+ const ui=createHarness({weapon:'wand',outfit:'acolyte',magic:'fire'});await ui.loadAllImages();ui.runUntil(()=>ui.spells().length>0);
+ const spell=ui.spells()[0];runFramesUntil(ui,()=>spell.dataset.phase==='flight');
+ assert.equal(ui.depth('hero'),3);assert.equal(ui.depth('archer1'),2);assert.ok(ui.footY('archer1')<ui.footY('hero'));
+ const angle=assertActualSpellRay(ui,spell);ui.node('#auto-button').click();const elapsed=ui.state().elapsed;
+ ui.resizeField(1000,44);ui.frame(0);const resizedAngle=assertActualSpellRay(ui,spell);assert.ok(Math.abs(resizedAngle-angle)>.1);assert.equal(ui.state().elapsed,elapsed);assert.equal(spell.dataset.phase,'flight');
+ assert.equal(ui.depth('hero'),3);assert.equal(ui.depth('archer1'),2);almost(roadCenterSource(ui),1028);
+ ui.node('#auto-button').click();ui.runUntil(()=>ui.state().waveIndex===2);const startDepth=ui.depth('orc'),home=ui.heroX();assert.equal(startDepth,4);
+ ui.runFor(.4);assert.equal(ui.heroX(),home);assert.equal(ui.depth('hero'),3);assert.ok(ui.depth('orc')<4&&ui.depth('orc')>3);assert.equal(ui.node('[data-fighter="orc"]').dataset.motion,'walk');
+ ui.runUntil(()=>ui.inMeleeRange());almost(ui.footY('hero'),ui.footY('orc'),.01);assert.equal(ui.depth('orc'),3);
+});
+
+test('freezing holds both orc road coordinates and pose; a paused resize reprojects depth without turning it into contact',async()=>{
+ const ui=createHarness({weapon:'wand',outfit:'acolyte',magic:'ice'});await ui.loadAllImages();ui.runUntil(()=>ui.state().waveIndex===2);runFramesUntil(ui,()=>currentStatus(ui,'orc')?.type==='freeze',20);
+ assert.equal(ui.inMeleeRange(),false);const orc=ui.node('[data-fighter="orc"]'),canvas=ui.node('#enemy-orc'),atFreeze={x:ui.orcX(),depth:ui.depth('orc'),foot:ui.footY('orc'),pose:canvas.draws.at(-1)};
+ assert.ok(atFreeze.depth>3&&atFreeze.depth<4);ui.runFor(.3);assert.equal(ui.orcX(),atFreeze.x);assert.equal(ui.depth('orc'),atFreeze.depth);assert.equal(ui.footY('orc'),atFreeze.foot);assert.deepEqual(canvas.draws.at(-1),atFreeze.pose);
+ ui.node('#auto-button').click();const oldOffset=Number.parseFloat(orc.style['--lane-offset']);ui.resizeField(667,44,{arenaHeight:195,fieldHeight:98.25,fieldBottomGap:48,roadGround:26,viewportHeight:375});ui.frame(0);
+ assert.equal(ui.depth('orc'),atFreeze.depth);assert.ok(Math.abs(Number.parseFloat(orc.style['--lane-offset'])-oldOffset)>.01);assert.equal(ui.inMeleeRange(),false);assert.deepEqual(canvas.draws.at(-1),atFreeze.pose);almost(roadCenterSource(ui),1028,1e-6);
+ const held=fullSnapshot(ui);ui.runFor(2);assert.deepEqual(fullSnapshot(ui),held);
+ ui.node('#auto-button').click();runFramesUntil(ui,()=>!currentStatus(ui,'orc'),2);ui.runFor(.1);assert.ok(ui.orcX()<atFreeze.x*667/800);assert.ok(ui.depth('orc')<atFreeze.depth);assert.ok(ui.footY('orc')<held.actors.find(actor=>actor.id==='orc').footY);
+});
+
+test('pause, wave spawn and replay preserve or reset formation without drifting the road or adding a fake walking frame',async()=>{
+ const ui=createHarness({weapon:'sword',outfit:'militia'});await ui.loadAllImages();ui.runFor(.4);assert.ok(ui.depth('hero')>2&&ui.depth('hero')<3);
+ ui.node('#auto-button').click();const phase=ui.node('#player-sprite').draws.at(-1),count=ui.node('#player-sprite').draws.length,depth=ui.depth('hero');
+ ui.resizeField(390,59,{arenaHeight:438.88,fieldHeight:180.384,fieldBottomGap:61,roadGround:36,viewportHeight:844});ui.frame(0);
+ assert.equal(ui.depth('hero'),depth);assert.deepEqual(ui.node('#player-sprite').draws.at(-1),phase);assert.equal(ui.node('#player-sprite').draws.length,count);almost(roadCenterSource(ui),1028,1e-6);
+ const held=fullSnapshot(ui);ui.runFor(2);assert.deepEqual(fullSnapshot(ui),held);
+ ui.node('#auto-button').click();ui.runUntil(()=>ui.state().waveIndex===1);assert.equal(ui.depth('hero'),3);assert.equal(ui.depth('archer2'),1);assert.equal(ui.depth('archer3'),5);assert.ok(Number(ui.node('[data-fighter="archer3"]').style.zIndex)>Number(ui.node('[data-fighter="archer2"]').style.zIndex));
+ ui.runUntil(()=>ui.state().phase==='victory');ui.node('#replay-button').click();assert.equal(ui.depth('hero'),3);assert.equal(ui.depth('archer1'),2);assert.equal(ui.depth('orc'),4);assert.equal(ui.node('[data-fighter="hero"]').dataset.motion,'idle');almost(roadCenterSource(ui),1028,1e-6);
 });
