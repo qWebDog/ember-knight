@@ -27,10 +27,9 @@ dialog{width:min(380px,calc(100% - 32px));max-height:calc(var(--app-height) - 32
 .sprite-credits{display:block;font-size:11px;color:#a2b38c;margin-top:16px}.sprite-credits[hidden]{display:none}
 /* Combo feedback stays inside the existing battlefield and never shifts a model. */
 .damage-number.heavy-number{color:#ffe48c;font-size:18px;text-shadow:0 2px 0 #132117,0 0 8px #e3ab4b66}
-.damage-number.counter-number,.damage-number.block-number{color:#bde5df;font-size:12px}
+.damage-number.counter-number,.damage-number.block-number{color:#e8dbc1;font-size:12px}
 .damage-number.block-number{margin-left:-19px;margin-top:-13px}
 .fighter.is-heavy canvas{filter:drop-shadow(0 0 2px #e7c78480)}
-.fighter.is-blocking:before{content:"";position:absolute;left:54%;top:32%;width:17%;height:27%;border:2px solid #c4ece5;border-radius:40% 40% 48% 48%;box-shadow:0 0 7px #bde5df66;z-index:4;pointer-events:none}
 /* Keep the stage indicator clear of the hero as he advances through the enemy line. */
 @media(orientation:landscape) and (max-height:600px){.stage-heading{top:8px}.stage-heading>p{display:none}}
 @media(orientation:portrait) and (max-height:700px){.stage-heading{top:68px}}

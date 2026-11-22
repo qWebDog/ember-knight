@@ -39,17 +39,10 @@
       "material": "cloth",
       "palette": "maroon",
       "definition": "sheet_definitions/torso/shirts/longsleeve/torso_clothes_longsleeve.json"
-    },
-    {
-      "z": 70,
-      "source": "spritesheets/torso/waist/belt_leather/male/{a}/brown.png",
-      "material": "cloth",
-      "palette": null,
-      "definition": "sheet_definitions/torso/waist/belt_leather.json"
     }
   ],
   "notes": [
-    "Native halfslash_128 (6 frames) and backslash_128 (13 frames) use matching official body/head/shirt/pants/boots and arming-sword layers. The classic round shield and leather belt have no revised native source, so their original slash standing frame 0 is held throughout these two animations."
+    "Native revised wooden heater shield with metal trim uses its matching moving foreground/background layers in WALK, SLASH, HALFSLASH and BACKSLASH. BLOCK uses original combat_idle pose 0 for all layers. No held shield frames during attacks. Unsupported classic leather belt omitted from every sword pose."
   ],
   "walk": {
     "file": "{skin}-walk.png",
@@ -61,6 +54,98 @@
       "west",
       "south",
       "east"
+    ],
+    "animation": "walk",
+    "animationDefinition": "definitions/sources/custom-animations.ts",
+    "layers": [
+      {
+        "z": 2,
+        "source": "spritesheets/shield/heater/revised/wood/bg/walk.png",
+        "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/wood/bg/walk.png",
+        "sourceTile": 64,
+        "frameMode": "native",
+        "sha256": "e734677f5cd6945972dd6615595da8bcbe21a7e2d2670ef006880c46b55e2384"
+      },
+      {
+        "z": 6,
+        "source": "spritesheets/shield/heater/revised/trim/bg/walk.png",
+        "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/trim/bg/walk.png",
+        "sourceTile": 64,
+        "frameMode": "native",
+        "sha256": "608a687f14e76b93159a76b4f772ab67d656613c0ed6564f273a25168378188f"
+      },
+      {
+        "z": 9,
+        "source": "spritesheets/weapon/sword/arming/universal/bg/walk/steel.png",
+        "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/weapon/sword/arming/universal/bg/walk/steel.png",
+        "sourceTile": 64,
+        "frameMode": "native",
+        "sha256": "71257c6808917c0d4887f446d4d2db6e82b16cc7de8a24c88986ca9bc633d589"
+      },
+      {
+        "z": 10,
+        "source": "spritesheets/body/bodies/male/walk.png",
+        "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/body/bodies/male/walk.png",
+        "sourceTile": 64,
+        "frameMode": "native",
+        "sha256": "1e0e8f0c11ba5f4f7b3d4439fc416802b4227da2fe146c13de3de254d9f87f77"
+      },
+      {
+        "z": 20,
+        "source": "spritesheets/legs/pants/male/walk.png",
+        "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/legs/pants/male/walk.png",
+        "sourceTile": 64,
+        "frameMode": "native",
+        "sha256": "2de5a3247743ffa37febdf3464cc0a83e79f64d1028aed410832ee29bea850b6"
+      },
+      {
+        "z": 25,
+        "source": "spritesheets/feet/boots/basic/male/walk.png",
+        "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/feet/boots/basic/male/walk.png",
+        "sourceTile": 64,
+        "frameMode": "native",
+        "sha256": "13521e96fe8c6033c54622a8137cc1a05964a9db3bd1f5a115028951e5cecf18"
+      },
+      {
+        "z": 35,
+        "source": "spritesheets/torso/clothes/longsleeve/longsleeve/male/walk.png",
+        "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/torso/clothes/longsleeve/longsleeve/male/walk.png",
+        "sourceTile": 64,
+        "frameMode": "native",
+        "sha256": "8b1c79d535d7a233371c9398ca51b196aa8fdf06117bd0eafd7fbcbf438d711b"
+      },
+      {
+        "z": 100,
+        "source": "spritesheets/head/heads/human/male/walk.png",
+        "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/head/heads/human/male/walk.png",
+        "sourceTile": 64,
+        "frameMode": "native",
+        "sha256": "7e863954dc8c3c748d0727415c39888106bdd3779beb2e3b18011a3a9ef3e53c"
+      },
+      {
+        "z": 110,
+        "source": "spritesheets/shield/heater/revised/wood/fg/walk.png",
+        "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/wood/fg/walk.png",
+        "sourceTile": 64,
+        "frameMode": "native",
+        "sha256": "821dd9694e1c744fabdf4887f7f5389c5f3946c7b9c142470b207373e16aa198"
+      },
+      {
+        "z": 115,
+        "source": "spritesheets/shield/heater/revised/trim/fg/walk.png",
+        "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/trim/fg/walk.png",
+        "sourceTile": 64,
+        "frameMode": "native",
+        "sha256": "0dd1fc904b86326e4a0fe5d287b0c4cb1da38bb0bd0b5503b7d60728ce34fa41"
+      },
+      {
+        "z": 140,
+        "source": "spritesheets/weapon/sword/arming/universal/fg/walk/steel.png",
+        "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/weapon/sword/arming/universal/fg/walk/steel.png",
+        "sourceTile": 64,
+        "frameMode": "native",
+        "sha256": "d1ce1d2499af5ab8f07610881b9a4a49c88537525456991f76a3bce1841d3ac0"
+      }
     ]
   },
   "attack": {
@@ -73,6 +158,82 @@
       "west",
       "south",
       "east"
+    ],
+    "animation": "slash_128",
+    "animationDefinition": "definitions/sources/custom-animations.ts",
+    "layers": [
+      {
+        "z": 8,
+        "source": "spritesheets/weapon/sword/arming/attack_slash/bg/steel.png",
+        "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/weapon/sword/arming/attack_slash/bg/steel.png",
+        "sourceTile": 128,
+        "frameMode": "native",
+        "sha256": "51ceabbb583527f2c3b310ff34d4abc0db35c9cf75a34b8c9855be0890386f22"
+      },
+      {
+        "z": 10,
+        "source": "spritesheets/body/bodies/male/slash.png",
+        "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/body/bodies/male/slash.png",
+        "sourceTile": 64,
+        "frameMode": "native",
+        "sha256": "662e208502b0f060041cd3e8c65b6445117f174e9435b68e619b874e36b0069d"
+      },
+      {
+        "z": 20,
+        "source": "spritesheets/legs/pants/male/slash.png",
+        "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/legs/pants/male/slash.png",
+        "sourceTile": 64,
+        "frameMode": "native",
+        "sha256": "0c324cb85970493872400e1e161ef8a246fda5013967253b6933cea909674c9a"
+      },
+      {
+        "z": 25,
+        "source": "spritesheets/feet/boots/basic/male/slash.png",
+        "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/feet/boots/basic/male/slash.png",
+        "sourceTile": 64,
+        "frameMode": "native",
+        "sha256": "ac90bfe3e272ac6c404c43f249006421e823a44ae747efc9ac01a53ad06abeef"
+      },
+      {
+        "z": 35,
+        "source": "spritesheets/torso/clothes/longsleeve/longsleeve/male/slash.png",
+        "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/torso/clothes/longsleeve/longsleeve/male/slash.png",
+        "sourceTile": 64,
+        "frameMode": "native",
+        "sha256": "2a2a872196d4636f00bdda8ef642a2acac0c463f1b29c228f97696d3ffff08e3"
+      },
+      {
+        "z": 100,
+        "source": "spritesheets/head/heads/human/male/slash.png",
+        "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/head/heads/human/male/slash.png",
+        "sourceTile": 64,
+        "frameMode": "native",
+        "sha256": "cf804e711fe210351eccd474297c25dbc99ddbf64cf5384b129d044fb93f6fc4"
+      },
+      {
+        "z": 110,
+        "source": "spritesheets/shield/heater/revised/wood/fg/slash.png",
+        "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/wood/fg/slash.png",
+        "sourceTile": 64,
+        "frameMode": "native",
+        "sha256": "46648c34b4d52c51f017899a84fbad5918f6f3910bfc799a0a9cff077ab695c9"
+      },
+      {
+        "z": 115,
+        "source": "spritesheets/shield/heater/revised/trim/fg/slash.png",
+        "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/trim/fg/slash.png",
+        "sourceTile": 64,
+        "frameMode": "native",
+        "sha256": "caec42127e016bb8cfc333911d727426a289b085d2a03f1d96cbeef7ea4bbcba"
+      },
+      {
+        "z": 140,
+        "source": "spritesheets/weapon/sword/arming/attack_slash/fg/steel.png",
+        "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/weapon/sword/arming/attack_slash/fg/steel.png",
+        "sourceTile": 128,
+        "frameMode": "native",
+        "sha256": "7f9dc95ee8c48284384510e191c51a02fe6325f7c9d37c2933aa0ff22d40bec2"
+      }
     ]
   },
   "halfslash": {
@@ -89,6 +250,22 @@
     "animation": "halfslash_128",
     "animationDefinition": "definitions/sources/custom-animations.ts",
     "layers": [
+      {
+        "z": 2,
+        "source": "spritesheets/shield/heater/revised/wood/bg/halfslash.png",
+        "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/wood/bg/halfslash.png",
+        "sourceTile": 64,
+        "frameMode": "native",
+        "sha256": "20b73b766b7b4786ce88097a9613705c516d504180382dd06dd5297d079fabda"
+      },
+      {
+        "z": 6,
+        "source": "spritesheets/shield/heater/revised/trim/bg/halfslash.png",
+        "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/trim/bg/halfslash.png",
+        "sourceTile": 64,
+        "frameMode": "native",
+        "sha256": "8feebf18448f3be15fea8a3afceb5c7db1856f2afc68824f5970ff439670fa29"
+      },
       {
         "z": 8,
         "source": "spritesheets/weapon/sword/arming/attack_halfslash/bg/steel.png",
@@ -130,14 +307,6 @@
         "sha256": "29598e6c589cd50d5f6cc808b5497cb5815736060ed583556abd35770d29075c"
       },
       {
-        "z": 70,
-        "source": "spritesheets/torso/waist/belt_leather/male/slash/brown.png",
-        "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/torso/waist/belt_leather/male/slash/brown.png",
-        "sourceTile": 64,
-        "frameMode": "standing frame 0",
-        "sha256": "322945095ebaaaa1205dfaa5a321fc2ebee4f49590d80453b6439519433d6c2a"
-      },
-      {
         "z": 100,
         "source": "spritesheets/head/heads/human/male/halfslash.png",
         "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/head/heads/human/male/halfslash.png",
@@ -147,11 +316,19 @@
       },
       {
         "z": 110,
-        "source": "spritesheets/shield/round/slash/brown.png",
-        "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/round/slash/brown.png",
+        "source": "spritesheets/shield/heater/revised/wood/fg/halfslash.png",
+        "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/wood/fg/halfslash.png",
         "sourceTile": 64,
-        "frameMode": "standing frame 0",
-        "sha256": "a489dbc8632ea4a55a7c12445e1e449c7bc499cd257ec5fb43f2be313fe737fe"
+        "frameMode": "native",
+        "sha256": "37b55f18c99b45076e4df9c639647b7330490cfef383ef84c98dbd3faa786d23"
+      },
+      {
+        "z": 115,
+        "source": "spritesheets/shield/heater/revised/trim/fg/halfslash.png",
+        "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/trim/fg/halfslash.png",
+        "sourceTile": 64,
+        "frameMode": "native",
+        "sha256": "f067ef034a4f2f226bec995436ff3f9633b0999d1b450b25e6014f367cf4af78"
       },
       {
         "z": 150,
@@ -177,6 +354,22 @@
     "animation": "backslash_128",
     "animationDefinition": "definitions/sources/custom-animations.ts",
     "layers": [
+      {
+        "z": 2,
+        "source": "spritesheets/shield/heater/revised/wood/bg/backslash.png",
+        "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/wood/bg/backslash.png",
+        "sourceTile": 64,
+        "frameMode": "native",
+        "sha256": "a3fff467c4a75c083f1ae6f7cfb5bd89c9f734da3a0100b0d39f549e2b20c647"
+      },
+      {
+        "z": 6,
+        "source": "spritesheets/shield/heater/revised/trim/bg/backslash.png",
+        "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/trim/bg/backslash.png",
+        "sourceTile": 64,
+        "frameMode": "native",
+        "sha256": "350fc35f2b1d9ed049469a89121b94cca4b37fa044603fbc19d96387fe2fcbfc"
+      },
       {
         "z": 8,
         "source": "spritesheets/weapon/sword/arming/attack_backslash/bg/steel.png",
@@ -218,14 +411,6 @@
         "sha256": "4ce70704baa9b7c5f5726770e92a6ee9345443d69154bdf909f41cba1893a6da"
       },
       {
-        "z": 70,
-        "source": "spritesheets/torso/waist/belt_leather/male/slash/brown.png",
-        "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/torso/waist/belt_leather/male/slash/brown.png",
-        "sourceTile": 64,
-        "frameMode": "standing frame 0",
-        "sha256": "322945095ebaaaa1205dfaa5a321fc2ebee4f49590d80453b6439519433d6c2a"
-      },
-      {
         "z": 100,
         "source": "spritesheets/head/heads/human/male/backslash.png",
         "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/head/heads/human/male/backslash.png",
@@ -235,11 +420,19 @@
       },
       {
         "z": 110,
-        "source": "spritesheets/shield/round/slash/brown.png",
-        "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/round/slash/brown.png",
+        "source": "spritesheets/shield/heater/revised/wood/fg/backslash.png",
+        "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/wood/fg/backslash.png",
         "sourceTile": 64,
-        "frameMode": "standing frame 0",
-        "sha256": "a489dbc8632ea4a55a7c12445e1e449c7bc499cd257ec5fb43f2be313fe737fe"
+        "frameMode": "native",
+        "sha256": "b4bb320be93100d3b01352aeb68f488e997ccf59dd7e76d9053787ec398ebd8a"
+      },
+      {
+        "z": 115,
+        "source": "spritesheets/shield/heater/revised/trim/fg/backslash.png",
+        "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/trim/fg/backslash.png",
+        "sourceTile": 64,
+        "frameMode": "native",
+        "sha256": "6229b80f178e72b30967036454ac915ee77a8561e516fc0a061a59737f0d862d"
       },
       {
         "z": 150,
@@ -248,6 +441,110 @@
         "sourceTile": 128,
         "frameMode": "native",
         "sha256": "35710708e027fac5e0fa9e2f775d0670f7eda5478c1bb25d0d959c5a0e75780a"
+      }
+    ]
+  },
+  "block": {
+    "file": "{skin}-block.png",
+    "tile": 64,
+    "origin": 0,
+    "frames": 1,
+    "rows": [
+      "north",
+      "west",
+      "south",
+      "east"
+    ],
+    "animation": "combat_idle",
+    "animationDefinition": "definitions/sources/custom-animations.ts",
+    "layers": [
+      {
+        "z": 2,
+        "source": "spritesheets/shield/heater/revised/wood/bg/combat_idle.png",
+        "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/wood/bg/combat_idle.png",
+        "sourceTile": 64,
+        "frameMode": "native pose 0",
+        "sha256": "241345577a8ad4ce4e2ebd9f6d15508ee3bf442b22124391ac9fe5e8dcecc425"
+      },
+      {
+        "z": 6,
+        "source": "spritesheets/shield/heater/revised/trim/bg/combat_idle.png",
+        "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/trim/bg/combat_idle.png",
+        "sourceTile": 64,
+        "frameMode": "native pose 0",
+        "sha256": "bfd8586a35c411718c2143234f92b3950bf6d93baed245664e01582b7e86d0f1"
+      },
+      {
+        "z": 9,
+        "source": "spritesheets/weapon/sword/arming/universal/bg/combat_idle/steel.png",
+        "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/weapon/sword/arming/universal/bg/combat_idle/steel.png",
+        "sourceTile": 64,
+        "frameMode": "native pose 0",
+        "sha256": "8b80ae98d0cfeefeabbd63b05a969d2dd73c13406bf8a1e242c34889f125da7b"
+      },
+      {
+        "z": 10,
+        "source": "spritesheets/body/bodies/male/combat_idle.png",
+        "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/body/bodies/male/combat_idle.png",
+        "sourceTile": 64,
+        "frameMode": "native pose 0",
+        "sha256": "b81626c7e1d4fb479fd53687ca0a0fb94d7600a6a46a1287d46a72ed75fb8e00"
+      },
+      {
+        "z": 20,
+        "source": "spritesheets/legs/pants/male/combat_idle.png",
+        "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/legs/pants/male/combat_idle.png",
+        "sourceTile": 64,
+        "frameMode": "native pose 0",
+        "sha256": "278f64746b93f3932f7a2eb62c9a7dec8923c8bf3f9e52523be8323b9451609f"
+      },
+      {
+        "z": 25,
+        "source": "spritesheets/feet/boots/basic/male/combat_idle.png",
+        "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/feet/boots/basic/male/combat_idle.png",
+        "sourceTile": 64,
+        "frameMode": "native pose 0",
+        "sha256": "5da9793752bfd2c66ef7510970fdf690c3989d6226e0c299d74525a21335a2f1"
+      },
+      {
+        "z": 35,
+        "source": "spritesheets/torso/clothes/longsleeve/longsleeve/male/combat_idle.png",
+        "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/torso/clothes/longsleeve/longsleeve/male/combat_idle.png",
+        "sourceTile": 64,
+        "frameMode": "native pose 0",
+        "sha256": "e03735af121fbd355168738705e7a06220559115b0746db2067eeda8af75da30"
+      },
+      {
+        "z": 100,
+        "source": "spritesheets/head/heads/human/male/combat_idle.png",
+        "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/head/heads/human/male/combat_idle.png",
+        "sourceTile": 64,
+        "frameMode": "native pose 0",
+        "sha256": "194eb08dd773a1424ed273df53553a601412ffdb942a274f7727f4be8459572c"
+      },
+      {
+        "z": 110,
+        "source": "spritesheets/shield/heater/revised/wood/fg/combat_idle.png",
+        "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/wood/fg/combat_idle.png",
+        "sourceTile": 64,
+        "frameMode": "native pose 0",
+        "sha256": "165497516fd4731f1dde1fa77fc6acbb09db83fbc43af1b8f8c6cc530a8cd403"
+      },
+      {
+        "z": 115,
+        "source": "spritesheets/shield/heater/revised/trim/fg/combat_idle.png",
+        "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/shield/heater/revised/trim/fg/combat_idle.png",
+        "sourceTile": 64,
+        "frameMode": "native pose 0",
+        "sha256": "fe65684be9ed25ea3974cbbbc7c94512ea0504a018d551e56219df5142ac0ff1"
+      },
+      {
+        "z": 140,
+        "source": "spritesheets/weapon/sword/arming/universal/fg/combat_idle/steel.png",
+        "sourceURL": "https://raw.githubusercontent.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/86a3719ee4a7e2e9fb27c7c152e29a741d3e930a/spritesheets/weapon/sword/arming/universal/fg/combat_idle/steel.png",
+        "sourceTile": 64,
+        "frameMode": "native pose 0",
+        "sha256": "ec3b241d5507829521f0fa5c42d97f613a3dc98022bc4ca5d9a9c71080bfd6eb"
       }
     ]
   }

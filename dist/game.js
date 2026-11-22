@@ -87,6 +87,10 @@
           }));
           actors.hero.images.attacks = Object.fromEntries(variants);
         }
+        if (starterWeapon.block) {
+          const block = await loadImage(loadouts.path(loadout,skin,'block'));
+          actors.hero.images.block = {image:block,row:3,still:0,...starterWeapon.block};
+        }
       } else {
         idle = await loadImage(`assets/characters/${skin}.png`).catch(() => loadImage('assets/characters/light.png'));
         actors.hero.images.idle = {image:idle,frames:2,row:3};
@@ -165,6 +169,9 @@
         if (event.projectile !== 'melee') addEffect(event.projectile,event.sourceId,event.targetId,null,event.at);
       } else if (event.type === 'block') {
         actors.hero.blockAt = activeTime;
+        // The real LPC guard pose interrupts the swing; the following counter
+        // starts its own animation instead of resuming a stale attack frame.
+        actors.hero.animation = null;
         addEffect('block',event.sourceId,'hero','Блок',event.at);
       } else if (event.type === 'death') {
         $('#status').textContent = event.id === 'hero' ? 'Герой пал' : `${battle.getState().enemies.find(enemy=>enemy.id===event.id).name} побеждён`;
@@ -190,8 +197,9 @@
     const ended = ['victory','defeat'].includes(state.phase);
     const distance = id === 'orc' ? orcWalkDistance : walkDistance;
     const walking = ((id === 'hero' && heroMoving) || (id === 'orc' && orcMoving)) && distance > 0 && unit.hp > 0 && !ended && !reducedMotion.matches && actor.images.walk?.frames > 1;
-    const attacking = !walking && !ended && age >= 0 && age < (actor.animation?.duration || 0) && unit.hp > 0 && !reducedMotion.matches;
-    const kind = walking ? 'walk' : attacking ? 'attack' : 'idle';
+    const blocking = !walking && !ended && unit.hp > 0 && !reducedMotion.matches && actor.images.block && activeTime - actor.blockAt < .28;
+    const attacking = !walking && !blocking && !ended && age >= 0 && age < (actor.animation?.duration || 0) && unit.hp > 0 && !reducedMotion.matches;
+    const kind = walking ? 'walk' : blocking ? 'block' : attacking ? 'attack' : 'idle';
     const descriptor = attacking && actor.images.attacks?.[actor.animation.variant] || actor.images[kind];
     const row = walking ? id === 'orc' ? orcWalkDirection : walkDirection : descriptor.row;
     const tile = descriptor.tile || 64, origin = descriptor.origin || 0;
@@ -208,7 +216,7 @@
     actor.element.dataset.attack = attacking ? actor.animation.variant || 'basic' : '';
     actor.element.dataset.counter = String(Boolean(attacking && actor.animation.counter));
     actor.element.classList.toggle('is-heavy',Boolean(attacking && actor.animation.heavy));
-    actor.element.classList.toggle('is-blocking',!ended && !reducedMotion.matches && activeTime - actor.blockAt < .28);
+    actor.element.classList.toggle('is-blocking',Boolean(blocking));
     actor.element.classList.toggle('is-defeated',unit.hp <= 0);
     actor.element.classList.toggle('is-target',id === state.targetId);
     actor.element.classList.toggle('is-hit',!ended && !reducedMotion.matches && activeTime - actor.hitAt < .16);

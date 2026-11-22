@@ -113,12 +113,6 @@ Authors: bluecarrot16, ElizaWy, Stephen Challener (Redshrike), Johannes Sjölund
 Licenses: CC-BY-SA 3.0, GPL 3.0
 Sources: https://opengameart.org/content/lpc-7-womens-shirts, http://opengameart.org/content/lpc-clothing-updates, https://opengameart.org/content/lpc-revised-character-basics, https://github.com/ElizaWy/LPC/tree/main/Characters/Clothing, https://opengameart.org/content/lpc-expanded-sit-run-jump-more, https://opengameart.org/content/lpc-expanded-simple-shirts
 
-DEFINITION: sheet_definitions/torso/waist/belt_leather.json
-Asset: torso/waist/belt_leather
-Authors: bluecarrot16, Johannes Sjölund (wulax), Matthew Krohn (makrohn)
-Licenses: OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0
-Sources: https://opengameart.org/content/lpc-combat-armor-for-women, https://opengameart.org/content/lpc-pirates
-
 DEFINITION: sheet_definitions/torso/waist/belt_sash.json
 Asset: torso/waist/sash
 Authors: bluecarrot16, Nila122
@@ -143,11 +137,17 @@ Authors: Johannes Sjölund (wulax), Pierre Vigier (pvigier)
 Licenses: OGA-BY 3.0+, GPL 3.0, CC-BY 4.0
 Sources: https://opengameart.org/content/lpc-medieval-fantasy-character-sprites, https://opengameart.org/content/lpc-walk-animations-for-bows
 
-DEFINITION: sheet_definitions/weapons/shields/shield_round.json
-Asset: shield/round
-Authors: Johannes Sjölund (wulax), Michael Whitlock (bigbeargames), DarkwallLKE, Tuomo Untinen (reemax)
-Licenses: OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0
-Sources: https://opengameart.org/content/lpc-medieval-fantasy-character-sprites, https://opengameart.org/content/lpc-shields-pack
+DEFINITION: sheet_definitions/weapons/shields/heater/shield_heater_revised_trim.json
+Asset: shield/heater/revised/trim
+Authors: bluecarrot16, Sander Frenken (castelonia), ElizaWy, JaidynReiman
+Licenses: OGA-BY 3.0
+Sources: https://opengameart.org/content/lpc-shields
+
+DEFINITION: sheet_definitions/weapons/shields/heater/shield_heater_revised_wood.json
+Asset: shield/heater/revised/wood
+Authors: bluecarrot16, Sander Frenken (castelonia), ElizaWy, JaidynReiman
+Licenses: OGA-BY 3.0
+Sources: https://opengameart.org/content/lpc-shields
 
 DEFINITION: sheet_definitions/weapons/sword/weapon_sword_arming.json
 Asset: weapon/sword/arming
@@ -156,4 +156,4 @@ Licenses: OGA-BY 3.0
 Sources: https://github.com/ElizaWy/LPC/tree/main/Characters/Props/Sword%2001%20-%20Arming%20Sword, https://opengameart.org/content/lpc-expanded-sit-run-jump-more
 
 SWORD COMBO ANIMATIONS — 86a3719ee4a7e2e9fb27c7c152e29a741d3e930a
-Native halfslash_128: 6 frames; native backslash_128: 13 frames. Matching original body, human head, shirt, pants, boots and steel arming-sword layers, with original oversized128 tiles. Original round-shield and leather-belt slash standing frame0 retained because these classic accessories have no revised animation. Official body and cloth recolors only. No frames reversed, no new weapon pixels drawn. Existing per-component authors and OGA-BY3.0 / CC-BY-SA3.0 options above apply; source paths and hashes are recorded in each outfit-color manifest.
+Native halfslash_128: 6 frames; native backslash_128: 13 frames. Matching original body, human head, shirt, pants, boots and steel arming-sword layers, with original oversized128 tiles. Revised wooden heater shield and metal trim follow the original off-hand animation in every attack and walk frame. Block uses the matching original combat_idle pose 0. Unsupported classic belt omitted consistently. Official body and cloth recolors only. No frames reversed, no new weapon pixels drawn. Per-component authors and OGA-BY3.0 / CC-BY-SA3.0 options above apply; source paths and hashes are recorded in each outfit-color manifest.

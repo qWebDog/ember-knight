@@ -398,7 +398,13 @@ test('shield block and fast counter use separate feedback; pause freezes them an
   assert.equal(ui.state().hero.hp,hpBeforeBlock-3,'the shield absorbs half of the six-damage melee hit');
   assert.equal(ui.node('healthbar:hero:fill').style.width, `${ui.state().hero.hp/ui.state().hero.maxHp*100}%`);
   assert.equal(hero.classes.has('is-blocking'),true);
-  assert.equal(hero.dataset.attack,'halfslash','block feedback does not replace the in-progress regular swing');
+  assert.equal(hero.dataset.motion,'block','a block uses the original guarded body-and-shield pose');
+  assert.equal(hero.dataset.attack,'','the interrupted swing cannot leak through the guard pose');
+  const guard=ui.node('#player-sprite').draws.at(-1);
+  assert.ok(guard.src.endsWith('/sand/bronze-block.png'));
+  assert.deepEqual(guard.crop,[0,192,64,64]);
+  assert.equal(ui.node('#player-sprite').style.width,'100%');
+  assert.equal(ui.node('#player-sprite').style.left,'0%');
   assert.ok(ui.node('.battlefield').children.some(element => element.className.includes('block-number') && element.textContent==='Блок'));
   const visual = () => ({...ui.visualState(),attack:hero.dataset.attack,counter:hero.dataset.counter,heavy:hero.classes.has('is-heavy'),blocking:hero.classes.has('is-blocking'),effects:ui.node('.battlefield').children.map(element=>({className:element.className,text:element.textContent,left:element.style.left,top:element.style.top,opacity:element.style.opacity}))});
   ui.node('#auto-button').click(); const paused = visual(); ui.runFor(2); assert.deepEqual(visual(),paused);
@@ -426,7 +432,7 @@ test('bow and wand retain their own attacks and never load or render sword combo
   for (const [weapon,outfit,projectile] of [['bow','wanderer','arrow'],['wand','acolyte','magic']]) {
     const ui=createHarness({weapon,outfit,outfitColor:'blue'}); await ui.loadAllImages();
     ui.runUntil(()=>ui.state().phase==='victory',60);
-    assert.ok(!ui.loadedPaths.some(file=>file.endsWith('-halfslash.png') || file.endsWith('-backslash.png')));
+    assert.ok(!ui.loadedPaths.some(file=>file.endsWith('-halfslash.png') || file.endsWith('-backslash.png') || file.endsWith('-block.png')));
     assert.ok(ui.events.filter(event=>event.type==='attack' && event.sourceId==='hero').every(event=>event.projectile===projectile && !event.counter && !event.heavy && !['halfslash','slash','backslash'].includes(event.variant)));
     assert.ok(!ui.events.some(event=>event.type==='block'));
     assert.equal(ui.state().elapsed,27.6); assert.equal(ui.state().hero.hp,58);

@@ -98,6 +98,35 @@ test('every sword color and skin has native short and reverse attacks with the s
   }
 });
 
+test('sword guard is an LPC pose and shields use native moving layers in every attack', () => {
+  const sword=catalogue.weapon('sword');
+  assert.deepEqual(sword.block,{tile:64,origin:0,frames:1});
+  for(const color of catalogue.colors){
+    const choice={weapon:'sword',outfit:'militia',outfitColor:color.id};
+    const folder=path.join(dist,'assets/characters/loadouts/sword/militia',color.id);
+    const manifest=JSON.parse(fs.readFileSync(path.join(folder,'manifest.json'),'utf8'));
+    for(const animation of ['walk','attack','halfslash','backslash']){
+      const shield=manifest[animation].layers.filter(layer=>layer.source.includes('/shield/'));
+      assert.equal(shield.length,animation==='attack'?2:4);
+      for(const layer of shield){
+        assert.ok(layer.source.includes('/shield/heater/revised/'));
+        assert.equal(layer.frameMode,'native','attack frames must never hold a standing shield');
+        assert.ok(layer.source.endsWith(`/${animation==='attack'?'slash':animation}.png`));
+      }
+      assert.ok(!manifest[animation].layers.some(layer=>layer.frameMode.includes('standing')));
+    }
+    assert.equal(manifest.block.animation,'combat_idle');
+    assert.ok(manifest.block.layers.every(layer=>layer.source.includes('/combat_idle')));
+    for(const skin of skins){
+      const png=fs.readFileSync(path.join(dist,catalogue.path(choice,skin,'block')));
+      assert.deepEqual([png.readUInt32BE(16),png.readUInt32BE(20)],[64,256]);
+    }
+  }
+  for(const weapon of ['bow','wand'])assert.throws(()=>catalogue.path({weapon,outfit:catalogue.weapon(weapon).outfits[0].id},'light','block'),/Invalid starter appearance/);
+  const css=fs.readFileSync(path.join(dist,'game.css'),'utf8');
+  assert.doesNotMatch(css,/is-blocking\s*:{1,2}(?:before|after)/,'the shield must not be a CSS shape');
+});
+
 test('invalid selections, skins and animations cannot construct arbitrary asset paths', () => {
   const valid = {weapon:'bow',outfit:'wanderer',outfitColor:'forest'};
   for (const invalid of [null,{}, {weapon:'../../',outfit:'wanderer'}, {weapon:'bow',outfit:'../ranger'}, {weapon:'bow',outfit:'__proto__'}]) {

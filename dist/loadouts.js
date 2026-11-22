@@ -10,7 +10,7 @@
     {id:'gray',name:'Серый',swatch:'#8b8d96'}
   ];
   const weapons=[
-    {id:'sword',name:'Меч и щит',short:'Меч и щит',icon:'shield',description:'Надёжное начало для ближнего боя.',projectile:'melee',defaultColor:'sand',walk:{tile:64,origin:0,frames:9},attack:{tile:128,origin:32,frames:6},attacks:{halfslash:{tile:128,origin:32,frames:6},slash:{tile:128,origin:32,frames:6},backslash:{tile:128,origin:32,frames:13}},outfits:[{id:'militia',name:'Ополченец',description:'Льняная рубаха, простые штаны и кожаные сапоги.'}]},
+    {id:'sword',name:'Меч и щит',short:'Меч и щит',icon:'shield',description:'Надёжное начало для ближнего боя.',projectile:'melee',defaultColor:'sand',walk:{tile:64,origin:0,frames:9},attack:{tile:128,origin:32,frames:6},block:{tile:64,origin:0,frames:1},attacks:{halfslash:{tile:128,origin:32,frames:6},slash:{tile:128,origin:32,frames:6},backslash:{tile:128,origin:32,frames:13}},outfits:[{id:'militia',name:'Ополченец',description:'Льняная рубаха, простые штаны и кожаные сапоги.'}]},
     {id:'bow',name:'Лук',short:'Лук',icon:'bow',description:'Держи врага на расстоянии.',projectile:'arrow',defaultColor:'forest',walk:{tile:128,origin:32,frames:9},attack:{tile:64,origin:0,frames:13},outfits:[{id:'wanderer',name:'Странник',description:'Дорожный плащ с капюшоном, лёгкая рубаха и сапоги.'}]},
     {id:'wand',name:'Волшебная палочка',short:'Палочка',icon:'magic',description:'Первый шаг к тайнам магии.',projectile:'magic',defaultColor:'purple',walk:{tile:64,origin:0,frames:9},attack:{tile:64,origin:0,frames:6},outfits:[{id:'acolyte',name:'Послушник',description:'Капюшон, длинное одеяние и пояс.'}]}
   ];
@@ -25,7 +25,7 @@
   }
   function path(choice,skin,animation='walk'){
     const normalized=selection(choice);
-    if(!normalized||!['light','amber','olive','bronze','brown','black'].includes(skin)||!(['walk','attack','preview'].includes(animation)||(normalized.weapon==='sword'&&['halfslash','backslash'].includes(animation))))throw new Error('Invalid starter appearance');
+    if(!normalized||!['light','amber','olive','bronze','brown','black'].includes(skin)||!(['walk','attack','preview'].includes(animation)||(normalized.weapon==='sword'&&['halfslash','backslash','block'].includes(animation))))throw new Error('Invalid starter appearance');
     return `assets/characters/loadouts/${normalized.weapon}/${normalized.outfit}/${normalized.outfitColor}/${skin}-${animation}.png`;
   }
   return {weapons,colors,weapon,outfit,color,selection,path};
