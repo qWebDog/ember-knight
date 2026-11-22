@@ -64,10 +64,12 @@
   function alignTerrain() {
     const bounds = arena.getBoundingClientRect(), fighter = actors.hero.element.getBoundingClientRect();
     const feet = fighter.bottom - bounds.top - fighter.height * 2 / 64;
-    const scale = Math.max(bounds.width / 900, feet / 330, (bounds.height - feet) / 150);
+    // Keep feet on the selected forest's road while covering any viewport.
+    const sceneSize = 1254, roadY = 1028;
+    const scale = Math.max(bounds.width / sceneSize, feet / roadY, (bounds.height - feet) / (sceneSize - roadY));
     const art = $('.battle-landscape');
-    art.style.backgroundSize = `${900 * scale}px ${480 * scale}px`;
-    art.style.backgroundPosition = `center ${feet - 330 * scale}px`;
+    art.style.backgroundSize = `${sceneSize * scale}px ${sceneSize * scale}px`;
+    art.style.backgroundPosition = `center ${feet - roadY * scale}px`;
     updateMovement(0,battle.getState());
   }
   new ResizeObserver(alignTerrain).observe(arena);

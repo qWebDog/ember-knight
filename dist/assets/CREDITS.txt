@@ -491,3 +491,11 @@ Asset: weapon/sword/arming
 Authors: ElizaWy; walk and down by JaidynReiman
 Licenses: OGA-BY 3.0
 Sources: https://github.com/ElizaWy/LPC/tree/main/Characters/Props/Sword%2001%20-%20Arming%20Sword, https://opengameart.org/content/lpc-expanded-sit-run-jump-more
+
+
+MAIN BATTLE BACKGROUND — CARTOON FOREST
+File: battlefield-forest.png (1254 x 1254).
+Custom artwork generated with image_gen; selected cartoon variation 3.
+Copied without pixel edits from the approved image.
+Displayed at its original aspect ratio; responsive cropping and foot-aligned road use CSS.
+Separate from Universal LPC character artwork.
