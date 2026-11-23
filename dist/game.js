@@ -369,7 +369,7 @@
     element.className = floating ? `damage-number ${type}-number ${targetId === 'hero' && type !== 'block' ? 'enemy-damage' : ''}` : `projectile ${type}`;
     element.setAttribute('aria-hidden','true'); if (text) element.textContent = text;
     if(type==='arrow'){
-      element.hidden=true;
+      element.hidden=true;element.style.visibility='hidden';
       element.dataset.source=sourceId;
       element.dataset.target=targetId;
       element.dataset.releaseAt=String(at);
@@ -703,8 +703,8 @@
     for (let i=effects.length-1;i>=0;i--) {
       const effect = effects[i], age = activeTime - effect.at;
       if (age+1e-6 >= effect.duration || reducedMotion.matches) { effect.element.remove(); effects.splice(i,1); continue; }
-      if(effect.type==='arrow'&&age<0){effect.element.hidden=true;continue;}
-      if(effect.type==='arrow')effect.element.hidden=false;
+      if(effect.type==='arrow'&&age<0){effect.element.hidden=true;effect.element.style.visibility='hidden';continue;}
+      if(effect.type==='arrow'){effect.element.hidden=false;effect.element.style.visibility='visible';}
       const target = actors[effect.targetId].element.getBoundingClientRect(), source = actors[effect.sourceId].element.getBoundingClientRect();
       const p = Math.max(0,age/effect.duration), tx=target.left+target.width/2-field.left, ty=target.top+target.height*.4-field.top;
       if (effect.type === 'spell') {
