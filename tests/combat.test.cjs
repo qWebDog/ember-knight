@@ -25,6 +25,23 @@ function encounterFixture(waves,{slowFlight=false,legacyArcher=true,closeInterva
 }
 const createBattle=encounterFixture([focusedEncounter]);
 
+test('read-only bow schedule exposes exact hit ticks without changing damage or attack cadence',()=>{
+ const bow=createDefaultBattle({heroProjectile:'arrow',heroWeapon:'bow'});
+ const initial=bow.getArrowSchedule();
+ assert.deepEqual(initial.map(e=>[e.sourceId,e.targetId,e.at,e.animationDuration]),
+   [['hero','archer1',1.2,.9],['archer1','hero',1.8,.6]]);
+ assert.equal(bow.state.elapsed,0,'reading future bow shots cannot advance combat');
+ assert.equal(bow.advance(1.2).filter(e=>e.type==='attack'&&e.sourceId==='hero')[0].at,1.2);
+ assert.equal(bow.state.enemies[0].hp,48);
+ assert.deepEqual(bow.getArrowSchedule().map(e=>[e.sourceId,e.at]),
+   [['hero',2.4],['archer1',1.8]]);
+ bow.advance(.6);
+ assert.equal(bow.state.hero.hp,193);
+ assert.deepEqual(bow.getArrowSchedule().map(e=>[e.sourceId,e.at]),
+   [['hero',2.4],['archer1',3.6]]);
+ bow.pause();assert.equal(bow.getArrowSchedule()[0].at,2.4);
+ bow.restart();assert.equal(bow.getArrowSchedule()[0].at,1.2);
+});
 test('focused unarmed encounter retains its timing and grants five gold per kill with no terminal bonus', () => {
   const battle = createBattle();
   const events = battle.advance(100);
