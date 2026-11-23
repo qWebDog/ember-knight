@@ -1129,7 +1129,7 @@ test('automatic Mage combines fire and ice on one attack timer, including after 
  assert.deepEqual(casts.map(e=>e.magic),['fire','ice','fire','ice','fire']);
  assert.deepEqual(casts.map(e=>e.at),[1.2,2.4,3.6,4.8,6]);
  assert.ok(casts.every(e=>e.projectile==='magic'&&e.flightDuration===.48));
- for(const hit of events.filter(e=>e.type==='attack'&&e.sourceId==='hero'))
+ for(const hit of events.filter(e=>e.type==='attack'&&e.sourceId==='hero'&&e.castId))
    assert.equal(hit.magic,casts.find(c=>c.castId===hit.castId).magic);
  const before=battle.state.elapsed;
  battle.pause();assert.deepEqual(battle.advance(20),[]);

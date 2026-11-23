@@ -95,7 +95,9 @@ test('the panel stays in the lower viewport grid with compact portrait and lands
  const css=fs.readFileSync(path.join(dist,'skills.css'),'utf8'),gameCSS=fs.readFileSync(path.join(dist,'game.css'),'utf8'),base=css.match(/\.skills-panel\{([^}]*)\}/)?.[1]||'';
  assert.match(base,/min-height:0/);assert.match(base,/overflow:hidden/);assert.match(base,/grid-template-rows:[^;]*minmax\(0,1fr\)/);assert.match(gameCSS,/\.game-screen\{[^}]*grid-template-rows:52% minmax\(0,1fr\)/);assert.match(gameCSS,/html\{[^}]*overflow:hidden/);assert.match(gameCSS,/body\{[^}]*overflow:hidden/);
  assert.match(css,/@media\(max-width:700px\)/);assert.match(css,/@media\(orientation:portrait\) and \(max-height:700px\)/);assert.ok(/@media\(orientation:landscape\) and \(max-height:600px\)\{\s*\.skills-panel\{[^}]*grid-template-columns:minmax\(0,[\d.]+fr\) minmax\(0,[\d.]+fr\)/.test(css),'compact landscape must place the tree and detail in two flexible columns');assert.doesNotMatch(base,/overflow(?:-y)?:\s*(?:auto|scroll)/);const treeRules=[...css.matchAll(/\.skills-tree\{([^}]*)\}/g)].map(match=>match[1]).join(';');assert.match(treeRules,/overflow-y:auto/);assert.match(treeRules,/overflow-x:hidden/);assert.match(treeRules,/overscroll-behavior:contain/);
- for(const dependency of ['progression.js','skills-ui.js'])assert.ok(html.indexOf(`src="${dependency}?v=archer-tree-2"`)<html.indexOf('src="game.js?v=orc-left-profile-6"'),'the dependencies must load before the game mounts the panel');
+ for(const dependency of ['progression.js?v=archer-tree-2','skills-ui.js?v=mage-branches-1'])
+   assert.ok(html.indexOf(`src="${dependency}"`)<html.indexOf('src="game.js?v=mage-dual-1"'),
+     'the dependencies must load before the game mounts the panel');
 });
 
 test('Mage displays only Mage skills and its chosen branches can be bought independently',()=>{
@@ -118,7 +120,9 @@ test('Mage displays only Mage skills and its chosen branches can be bought indep
  assert.equal(ui.node('[data-skill-gold]').textContent,'30');
  assert.equal(ui.controller.select('power'),false);
  assert.equal(ui.root.querySelectorAll('[data-skill-future]').length,6);
- assert.match(ui.root.querySelectorAll('[data-skill-future]')[0].getAttribute('aria-label'),/Огненный шквал/);
+ assert.match(ui.root.querySelectorAll('[data-skill-future]')[0].getAttribute('aria-label'),/Сильный ожог/);
+ assert.deepEqual(ui.root.querySelectorAll('.skill-branch').map(node=>node.querySelector('h3').textContent),
+   ['Пиромантия','Аркана','Криомантия']);
  assert.equal(ui.root.querySelectorAll('[data-skill-tab]').length,4);
  assert.equal(ui.root.querySelectorAll('[data-skill-tab]').filter(node=>!node.disabled).length,2);
  const saved=JSON.parse(ui.storage.get('ember.progress.v1'));

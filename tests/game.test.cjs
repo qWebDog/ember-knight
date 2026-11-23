@@ -614,22 +614,32 @@ test('shield guard and counter work against the final orc, freeze on pause, and 
  assert.equal(hero.dataset.counter,'false');assert.equal(hero.dataset.attack,'');assert.equal(hero.classes.has('is-heavy'),false);assert.equal(hero.classes.has('is-blocking'),false);assert.equal(ui.node('.battlefield').children.length,0);
 });
 
-test('fire and ice both use all eighteen animation cells with matching impacts',async()=>{
- for(const magic of ['fire','ice']){
-  const ui=createHarness({weapon:'wand',outfit:'acolyte',magic:'ice'});await ui.loadAllImages();
-  ui.runUntil(()=>ui.events.some(event=>event.type==='cast'&&event.magic===magic));
-  const cast=ui.events.find(event=>event.type==='cast'&&event.magic===magic),
-    spell=ui.spells().find(element=>element.dataset.magic===magic),
-    hp=ui.state().enemies[0].hp;
-  assert.equal(cast.sourceId,'hero');assert.equal(cast.targetId,'archer1');assert.equal(cast.magic,magic);assert.equal(spell.dataset.magic,magic);assert.equal(spell.dataset.phase,'appear');
-  assert.equal(ui.node('[data-fighter="hero"]').dataset.motion,'attack');assert.equal(hp,60);assert.equal(currentStatus(ui,'archer1'),null);assert.equal(ui.statusCanvases().length,0);
-  runFramesUntil(ui,()=>spell.dataset.phase==='flight');runFramesUntil(ui,()=>ui.state().elapsed>=cast.at+.8);assert.equal(ui.state().enemies[0].hp,hp);assert.equal(currentStatus(ui,'archer1'),null,'a flying spell cannot apply its status before impact');
-  runFramesUntil(ui,()=>ui.events.some(event=>event.type==='attack'&&event.castId===cast.castId));
-  const hit=ui.events.find(event=>event.type==='attack'&&event.castId===cast.castId);assert.equal(hit.at,cast.impactAt);assert.equal(hit.impact,true);assert.ok(Math.abs(hit.at-cast.at-.9)<1e-6);
-  assert.equal(ui.state().enemies[0].hp,hp-hit.damage);assert.equal(currentStatus(ui,'archer1').type,magic==='fire'?'burn':'freeze');assert.equal(currentStatus(ui,'archer1').startedAt,hit.at);assert.equal(spell.dataset.phase,'impact');assert.equal(ui.node('[data-fighter="hero"]').dataset.motion,'idle');
-  runFramesUntil(ui,()=>!ui.spells().includes(spell));assertSpellCells(spell,magic);
-  const next=ui.spells().find(element=>element.dataset.source==='hero');assert.ok(next&&next!==spell);assert.equal(next.dataset.phase,'appear');
+test('a single Mage animates both fire and ice spells with independent impact timing',async()=>{
+ const ui=createHarness({weapon:'wand',outfit:'acolyte',magic:'ice'});
+ await ui.loadAllImages();
+ for(const [index,magic] of ['fire','ice'].entries()){
+  ui.runUntil(()=>ui.events.filter(e=>e.type==='cast'&&e.sourceId==='hero').length>index,8);
+  const cast=ui.events.filter(e=>e.type==='cast'&&e.sourceId==='hero')[index];
+  const spell=ui.spells().find(element=>element.dataset.magic===magic);
+  assert.ok(spell,magic+' must launch its own visible projectile');
+  assert.equal(cast.magic,magic);
+  assert.equal(cast.targetId,'archer1');
+  assert.equal(spell.dataset.phase,'appear');
+  assert.equal(cast.at,(index+1)*1.2);
+  assert.equal(cast.impactAt,cast.at+.9);
+  assert.equal(ui.node('[data-fighter="hero"]').dataset.motion,'attack');
+  runFramesUntil(ui,()=>spell.dataset.phase==='flight');
+  runFramesUntil(ui,()=>ui.events.some(e=>e.type==='attack'&&e.castId===cast.castId));
+  const hit=ui.events.find(e=>e.type==='attack'&&e.castId===cast.castId);
+  assert.equal(hit.magic,magic);
+  assert.equal(hit.at,cast.impactAt);
+  assert.equal(hit.projectile,'magic');
+  assert.equal(currentStatus(ui,'archer1').type,magic==='fire'?'burn':'freeze');
+  runFramesUntil(ui,()=>!ui.spells().includes(spell));
+  assertSpellCells(spell,magic);
  }
+ assert.equal(JSON.parse(ui.storage.get('ember.character.v1')).magic,'ice',
+   'the old saved school is not rewritten during battle');
 });
 
 test('auto, dialog and hidden states freeze actual appearance, flight and impact canvases',async()=>{
@@ -694,15 +704,15 @@ test('both wand schools accelerate only when the orc reaches them; queued far sp
   assert.ok(queuedFar,'a far spell was already launched before contact');
   runFramesUntil(ui,()=>ui.events.some(event=>event.type==='cast'&&event.targetId==='orc'&&event.appearDuration===.18),5);
   const close=ui.events.find(event=>event.type==='cast'&&event.targetId==='orc'&&event.appearDuration===.18),spell=ui.spells().at(-1);
-  assert.equal(close.magic,magic);assert.equal(close.flightDuration,.12);assert.equal(close.impactDuration,.42);assert.equal(close.castInterval,.8);
+  assert.ok(['fire','ice'].includes(close.magic));assert.equal(close.flightDuration,.12);assert.equal(close.impactDuration,.42);assert.equal(close.castInterval,.8);
   assert.ok(Math.abs(close.impactAt-close.at-.3)<1e-6);assert.ok(close.animationDuration<.66);
-  assert.equal(spell.dataset.magic,magic);assert.equal(spell.dataset.phase,'appear');
+  assert.equal(spell.dataset.magic,close.magic);assert.equal(spell.dataset.phase,'appear');
   runFramesUntil(ui,()=>spell.dataset.phase==='flight');ui.node('#auto-button').click();const held=fullSnapshot(ui);ui.runFor(2);assert.deepEqual(fullSnapshot(ui),held);
   ui.node('#auto-button').click();runFramesUntil(ui,()=>ui.events.some(event=>event.type==='attack'&&event.castId===close.castId));
   assert.equal(ui.events.find(event=>event.type==='attack'&&event.castId===close.castId).at,close.impactAt);
   runFramesUntil(ui,()=>ui.state().elapsed>=close.at+.4);
   assert.equal(ui.node('[data-fighter="hero"]').dataset.motion,'idle','the close-range cast uses its shorter animation duration');
-  runFramesUntil(ui,()=>!ui.spells().includes(spell));assertSpellCells(spell,magic);
+  runFramesUntil(ui,()=>!ui.spells().includes(spell));assertSpellCells(spell,close.magic);
   runFramesUntil(ui,()=>ui.events.filter(event=>event.type==='cast'&&event.targetId==='orc'&&event.appearDuration===.18).length>=2);
   const closeCasts=ui.events.filter(event=>event.type==='cast'&&event.targetId==='orc'&&event.appearDuration===.18);
   assert.ok(Math.abs(closeCasts[1].at-closeCasts[0].at-.8)<1e-6);
@@ -904,7 +914,8 @@ function assertActualSpellRay(ui,spell){
 }
 
 test('ranged spells use off-row target coordinates and keep aiming correctly after a paused responsive resize',async()=>{
- const ui=createHarness({weapon:'wand',outfit:'acolyte',magic:'fire'});await ui.loadAllImages();ui.runUntil(()=>ui.spells().length>0);
+ const ui=createHarness({weapon:'wand',outfit:'acolyte',magic:'fire',
+   combatOptions:{heroDamage:1,heroMaxHp:1000}});await ui.loadAllImages();ui.runUntil(()=>ui.spells().length>0);
  const spell=ui.spells()[0];runFramesUntil(ui,()=>spell.dataset.phase==='flight');
  assert.equal(ui.depth('hero'),3);assert.equal(ui.depth('archer1'),2);assert.ok(ui.footY('archer1')<ui.footY('hero'));
  const angle=assertActualSpellRay(ui,spell);ui.node('#auto-button').click();const elapsed=ui.state().elapsed;
