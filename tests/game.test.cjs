@@ -267,6 +267,33 @@ test('Warrior, Archer and Mage walk in from the left screen edge before the figh
  }
 });
 
+test('all three waves repeat a calm left-edge walk before allowing any combat',async()=>{
+ for(const selection of [
+   {weapon:'sword',outfit:'militia'},
+   {weapon:'bow',outfit:'wanderer'},
+   {weapon:'wand',outfit:'acolyte',magic:'fire'}
+ ]){
+   const ui=createHarness(selection);await ui.loadAllImages();
+   const size=ui.node('[data-fighter="hero"]').offsetWidth,edge=-size/2,home=800*.18;
+   for(let wave=0;wave<3;wave++){
+     if(wave>0)ui.runUntil(()=>ui.state().waveIndex===wave);
+     const start=ui.heroX(),at=ui.state().elapsed;
+     const emitted=ui.events.length,health=ui.state().hero.hp;
+     assert.ok(start>=edge-1e-7&&start<edge+(home-edge)*.06,
+       'each wave starts with the hero by the left edge');
+     ui.runFor(.9);
+     assert.ok(ui.heroX()>start&&ui.heroX()<home,'walking should be visibly gradual');
+     assert.equal(ui.node('[data-fighter="hero"]').dataset.motion,'walk');
+     assert.equal(ui.state().elapsed,at,'no combat time during the entrance');
+     assert.equal(ui.events.length,emitted,'no attacks or casts occur while entering');
+     assert.equal(ui.state().hero.hp,health,'enemies cannot deal damage during entrance');
+     ui.runFor(1.8);
+     assert.ok(ui.heroX()>=home-1e-6,'character reaches the correct start point');
+     assert.ok(ui.state().elapsed>at,'battle resumes after the full walk');
+   }
+ }
+});
+
 test('the battle entrance pauses, survives a viewport resize and restarts at the left edge',async()=>{
  const ui=createHarness({weapon:'bow',outfit:'wanderer'});await ui.loadAllImages();
  ui.runFor(.2);
@@ -801,12 +828,13 @@ test('wave clear keeps the hero walking visibly on the same road row, then reset
  assert.equal(sceneSnapshot(ui).phase,'wave-in');assert.equal(sceneSnapshot(ui).opacity,1,'a fully black frame conceals the spawn reset');
  const spawned=ui.events.find(event=>event.type==='wave'&&event.waveIndex===1),age=ui.state().elapsed-spawned.at;
  assert.ok(age>=0&&age<=.016+1e-6,'only the remaining piece of the last RAF frame may advance the fresh wave');
- const home=800*.18,size=ui.node('[data-fighter="hero"]').offsetWidth,progress=size*.85*age;
- almost(ui.heroX(),home+progress,1e-6,'the covered new wave consumes exactly its post-spawn frame remainder');
- const targetX=actorX(ui,'archer2'),goal=targetX-size*.23-ui.node('[data-fighter="archer2"]').offsetWidth*.34;
- almost(ui.depth('hero'),3+(1-3)*progress/(goal-home),1e-6,'new movement begins at the reset depth behind the black frame');
+ const home=800*.18,size=ui.node('[data-fighter="hero"]').offsetWidth,start=-size/2;
+ assert.ok(ui.heroX()>=start-1e-6&&ui.heroX()<home,'the next wave starts another walk from the left edge');
+ assert.equal(ui.depth('hero'),3,'new-wave entrance keeps the initial road row');
+ assert.equal(ui.state().elapsed,spawned.at,'battle time is held during the next entrance');
  assert.equal(ui.state().hero.hp,hp);assert.equal(wallet(ui),5);
  ui.runFor(.2);assert.ok(sceneSnapshot(ui).opacity>0&&sceneSnapshot(ui).opacity<1);ui.runFor(.3);assertFadeCleared(ui);
+ assert.ok(ui.heroX()<home,'the slower entrance continues after the screen fade');
  const upperStart=html.indexOf('<section class="adventure"'),upperEnd=html.indexOf('</section>',upperStart)+10,upper=html.slice(upperStart,upperEnd);
  assert.ok(upper.includes('id="scene-fade"'));assert.equal((html.match(/id="scene-fade"/g)||[]).length,1);assert.ok(!html.slice(upperEnd).includes('id="scene-fade"'));
  const css=fs.readFileSync(path.join(dist,'game.css'),'utf8'),fadeRule=css.match(/\.scene-fade\{([^}]*)\}/)?.[1]||'';
