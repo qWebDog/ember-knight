@@ -66,10 +66,11 @@
     // instead of resampling a 64px tile into a destructive 32px bitmap.
     ctx.drawImage(previewImage,cell*tile,direction*tile,tile,tile,0,0,tile,tile);
     if(step>0&&weapon==='wand'){
-      // Exactly the same on-screen position and size as the prior 32px
-      // drawing at (16,27), but rendered from the full original 64px atlas.
+      // Keep full-resolution LPC pixels and the existing visual size.
+      // Anchor the smaller Mage canvas to the bottom of the stage so its
+      // feet stand on the same ground as the Warrior and Archer.
       canvas.style.width='50%';canvas.style.height='50%';
-      canvas.style.left='25%';canvas.style.top='42.1875%';
+      canvas.style.left='25%';canvas.style.top='50%';
     }else{
       canvas.style.width=`${tile/64*100}%`;canvas.style.height=`${tile/64*100}%`;
       canvas.style.left=`${-origin/64*100}%`;canvas.style.top=`${-origin/64*100}%`;
