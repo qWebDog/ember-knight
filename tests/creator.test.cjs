@@ -53,9 +53,14 @@ test('all hero classes use one fixed preview zoom, centered in the same stage',a
    assert.equal(canvas.height,128);
    assert.deepEqual([canvas.style.width,canvas.style.height,canvas.style.left,canvas.style.top],
      ['200%','200%','-50%','-50%']);
-   const frame=canvas.draws.at(-1),displayTile=klass==='wand'?52:expectedTile;
-   const dx=(128-displayTile)/2,dy=(128-expectedTile)/2+expectedTile-displayTile;
-   assert.deepEqual(frame.destination,[dx,dy,displayTile,displayTile]);
+   const frame=canvas.draws.at(-1);
+   const size={skin:64,sword:80,bow:160,wand:52}[klass];
+   const dx=(128-size)/2;
+   const origin=klass==='bow'?32:0;
+   const dy=klass==='skin'||klass==='wand'
+     ?(128-expectedTile)/2+expectedTile-size
+     :Math.round(89-(expectedTile-origin-8)*size/expectedTile);
+   assert.deepEqual(frame.destination,[dx,dy,size,size]);
    assert.equal(frame.crop[2],expectedTile);
    assert.equal(frame.crop[3],expectedTile);
  }
@@ -66,7 +71,7 @@ test('all hero classes use one fixed preview zoom, centered in the same stage',a
    assertViewport(tile,klass);
    assert.ok(canvas.draws.at(-1).src.includes('/'+klass+'/'));
  }
- assert.equal(html.includes('src="app.js?v=20261123-mage-size-2"'),true,
+ assert.equal(html.includes('src="app.js?v=20261123-hero-scale-3"'),true,
    'creator must bypass cached old preview renderer on iPhone');
 });
 test('all eighteen weapon and clothing-color choices preview, rotate and retain the independent skin',async()=>{
