@@ -68,7 +68,9 @@
   $('#player-name').textContent = name;
   $('.fighter-name').textContent = name;
   $('#level-badge').textContent = level;
+  const dragonBoss=Boolean(window.EmberDragon);
   const battle = window.EmberCombat.createBattle({heroName:name,heroProjectile:starterWeapon?.projectile,heroWeapon:starterWeapon?.id,heroMagic,
+    dragonBossEnabled:dragonBoss,
     companionEnabled:equipment?.classId==='bow'&&equipment.getState().companion==='wolf',
     ...progression.getStats()});
   battle.pause();
@@ -79,9 +81,11 @@
     archer1:{type:'archer',spawn:.62,label:'Лучник',defaultLane:2},
     archer2:{type:'archer',spawn:.61,label:'Лучник I',defaultLane:1},
     archer3:{type:'archer',spawn:.80,label:'Лучник II',defaultLane:5},
-    orc:{type:'orc',spawn:.65,label:'Орк',defaultLane:4}
+    orc:{type:'orc',spawn:.65,label:'Орк',defaultLane:4},
+    dragon:{type:'dragon',spawn:.76,label:'Красный дракон',defaultLane:3}
   };
   const actors = {};
+  let dragonSprites=null;
   for (const id of ['hero',...Object.keys(enemyDefinitions)]) {
     const element = document.querySelector(`[data-fighter="${id}"]`);
     actors[id] = {element, canvas:element.querySelector('canvas'), bar:element.querySelector('.healthbar'), images:{}, animation:null, hitAt:-10, blockAt:-10, lastKey:null,statusCanvas:null,statusKey:null,frozenPose:null,poseAnimation:null,poseAge:100,defaultLane:3,...enemyDefinitions[id],depth:enemyDefinitions[id]?.defaultLane||3,x:null,distance:0,direction:1,moving:false};
@@ -290,6 +294,8 @@
       actors.archer2.images = {...actors.archer1.images};
       actors.archer3.images = {...actors.archer1.images};
       actors.orc.images.walk = { ...actors.orc.images.idle,still:undefined };
+      // Red Dragon uses native 205×161 cells, not LPC 64×64 fighter cells.
+      if(dragonBoss)dragonSprites=await window.EmberDragon.load(loadImage);
       const [orcAttack,statusAtlas] = await Promise.all([
         loadImage('assets/enemies/lpc/orc-attack.png').catch(() => null),
         loadImage('assets/magic/status-effects.png'),
@@ -309,7 +315,9 @@
       ready = true;
       beginHeroEntrance();
       updateMovement(0,battle.getState());
-      $('#status').textContent = 'Бой готов: один лучник, два лучника, затем орк.';
+      $('#status').textContent = dragonBoss
+        ?'Бой готов: три волны и финальный красный дракон.'
+        :'Бой готов: один лучник, два лучника, затем орк.';
       render(battle.getState()); equipmentUI?.refreshPreview(); syncPause();
     } catch {
       assetError = true;
@@ -328,7 +336,7 @@
     autoButton.setAttribute('aria-pressed', String(auto));
     autoButton.setAttribute('aria-label', `${ended?'Автоповтор':'Автобой'} ${auto ? 'включён' : 'приостановлен'}`);
     $('#auto-label').textContent = auto ? 'ВКЛ' : 'ВЫКЛ';
-    $('#battle-state').textContent = !ready ? assetError ? 'Ошибка загрузки' : 'Загрузка боя' : !auto ? 'Пауза' : state.phase === 'victory' ? 'Победа · 3/3' : state.phase === 'defeat' ? 'Поражение' : state.phase==='intermission' ? 'Следующая волна…' : heroEntrance ? 'Выход на арену' : moving ? 'Подход к цели' : `Волна ${state.waveNumber}/${state.waveCount}`;
+    $('#battle-state').textContent = !ready ? assetError ? 'Ошибка загрузки' : 'Загрузка боя' : !auto ? 'Пауза' : state.phase === 'victory' ? `Победа · ${state.waveCount}/${state.waveCount}` : state.phase === 'defeat' ? 'Поражение' : state.phase==='intermission' ? 'Следующая волна…' : heroEntrance ? 'Выход на арену' : moving ? 'Подход к цели' : `Волна ${state.waveNumber}/${state.waveCount}`;
     if(ended) updateCountdown();
   }
   function updateCountdown() {
@@ -410,7 +418,8 @@
   }
   function addSpell(event) {
     if (reducedMotion.matches) return;
-    const magic=event.sourceId==='hero'?(event.magic==='ice'?'ice':'fire'):'shadow';
+    const magic=event.sourceId==='hero'?(event.magic==='ice'?'ice':'fire')
+      :event.sourceId==='dragon'?'fire':'shadow';
     const element=document.createElement('canvas');
     element.width=64; element.height=64; element.className='spell-projectile';
     element.dataset.magic=magic; element.dataset.source=event.sourceId; element.dataset.target=event.targetId;
@@ -524,7 +533,7 @@
         // The engine clock is held during the entrance, so the fade follows
         // the local entrance clock instead of relying on combat time.
         beginSceneTransition('wave-in',event.at);
-        $('#status').textContent=`Волна ${event.waveNumber} из ${event.waveCount}: ${event.enemies.length===2?'два лучника':event.enemies[0].type==='orc'?'орк':'один лучник'}.`;
+        $('#status').textContent=`Волна ${event.waveNumber} из ${event.waveCount}: ${event.enemies[0].type==='dragon'?'красный дракон':event.enemies.length===2?'два лучника':event.enemies[0].type==='orc'?'орк':'один лучник'}.`;
         updateControls();
       } else if (event.type === 'end') {
         pendingIceImpacts.clear();for(const actor of Object.values(actors))clearStatus(actor);
@@ -540,10 +549,39 @@
       }
     }
   }
+  function drawDragon(actor,unit,state){
+    if(!dragonSprites)return;
+    const age=actor.animation?activeTime-actor.animation.at:999;
+    const ended=state.phase==='defeat'||state.phase==='victory';
+    const hit=activeTime-actor.hitAt<.17;
+    const attack=!ended&&unit.hp>0&&age>=0&&age<(actor.animation?.duration||0);
+    const kind=hit?'hit':attack?'attack':unit.hp>0?'fly':'idle';
+    const frame=window.EmberDragon.frameAt(hit?activeTime-actor.hitAt:attack?age:activeTime,
+      kind,'left',reducedMotion.matches);
+    const key=`${frame.direction}:${frame.frame}:${kind}`;
+    if(actor.lastKey!==key){
+      const geometry=window.EmberDragon.sheet;
+      actor.canvas.width=geometry.frameWidth;actor.canvas.height=geometry.frameHeight;
+      const ctx=actor.canvas.getContext('2d');
+      window.EmberDragon.draw(ctx,dragonSprites,frame);
+      actor.lastKey=key;
+    }
+    actor.element.dataset.motion=kind;
+    actor.element.classList.toggle('is-defeated',unit.hp<=0);
+    actor.element.classList.toggle('is-target',unit.id===state.targetId);
+    actor.element.classList.toggle('is-hit',!ended&&hit);
+    actor.bar.querySelector('i').style.width=`${unit.hp/unit.maxHp*100}%`;
+    actor.bar.setAttribute('aria-valuenow',unit.hp);
+    actor.bar.setAttribute('aria-valuemax',unit.maxHp);
+    actor.element.setAttribute('aria-label',
+      `${unit.name}: ${unit.hp} из ${unit.maxHp} здоровья`);
+    drawStatus(actor,unit,state);
+  }
   function drawActor(id, state) {
     const actor = actors[id], unit = id === 'hero' ? state.hero : state.enemies.find(enemy=>enemy.id===id);
     if(!unit){actor.element.hidden=true;clearStatus(actor);return;}
     actor.element.hidden=false;
+    if(id==='dragon'){drawDragon(actor,unit,state);return;}
     if (!actor.images.idle) return;
     const frozen=syncFrozenPose(actor,unit,state);
     const age = actor.animation ? activeTime - actor.animation.at : 100;
