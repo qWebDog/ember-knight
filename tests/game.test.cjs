@@ -436,8 +436,9 @@ test('legacy wardrobe normalization preserves the saved skin and does not silent
 
 test('distant archers fire during a melee approach, without spawning the old mage or allowing attacks from afar',async()=>{
  const ui=createHarness({fieldWidth:3200});await ui.loadAllImages();
+ ui.runUntil(()=>ui.node('.battlefield').children.some(element=>element.className==='projectile arrow'&&!element.hidden),5);
+ assert.equal(ui.state().hero.hp,200,'the arrow has left the bow but has not yet landed');
  ui.runUntil(()=>ui.events.some(event=>event.type==='attack'&&event.sourceId==='archer1'),5);
- assert.ok(ui.node('.battlefield').children.some(element=>String(element.className).includes('projectile arrow')));
  assert.ok(ui.node('#enemy-archer1').draws.at(-1).src.endsWith('skeleton-shoot.png'));
  assert.equal(ui.node('[data-fighter="hero"]').dataset.motion,'walk');assert.equal(inReach(ui,'archer1'),false);
  assert.equal(ui.state().hero.hp,193);assert.equal(ui.state().enemies[0].hp,60);
@@ -553,11 +554,13 @@ test('reduced motion keeps the three-wave combat and rewards while suppressing a
 
 test('distant skeletons really shoot at 1.8 and 3.6 seconds with a shorter native shooting pose',async()=>{
  const ui=createHarness({fieldWidth:3200});await ui.loadAllImages();
+ ui.runUntil(()=>ui.node('.battlefield').children.some(element=>element.className==='projectile arrow'&&!element.hidden),6);
+ assert.equal(ui.state().hero.hp,200,'enemy bow release precedes the hit');
  ui.runUntil(()=>ui.events.some(event=>event.type==='attack'&&event.sourceId==='archer1'),6);
  const first=ui.events.find(event=>event.type==='attack'&&event.sourceId==='archer1');
  assert.equal(first.at,1.8);assert.equal(first.animationDuration,.6);
  assert.equal(ui.node('[data-fighter="archer1"]').dataset.motion,'attack');
- assert.ok(ui.node('.battlefield').children.some(element=>String(element.className).includes('projectile arrow')));
+ assert.ok(!ui.node('.battlefield').children.some(element=>element.className==='projectile arrow'&&!element.hidden), 'arrow reaches the hero on impact, not after damage');
  ui.runUntil(()=>ui.state().elapsed>=2.45,2);
  assert.equal(ui.node('[data-fighter="archer1"]').dataset.motion,'idle','the shortened shot pose is over before 2.5 seconds');
  ui.runUntil(()=>ui.events.filter(event=>event.type==='attack'&&event.sourceId==='archer1').length===2,2);
