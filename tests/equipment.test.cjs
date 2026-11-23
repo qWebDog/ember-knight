@@ -180,7 +180,7 @@ test('the game uses native LPC animation atlases, not synthetic equipment drawin
   assert.equal((html.match(/data-equipment-slot="(?:helmet|armor|weapon|shield|cape|boots)"/g)||[]).length,6);
   assert.match(game,/equipmentArt\.draw\(ctx,gearPose\)/);
   assert.match(game,/variant:attacking\?\(actor\.animation\?\.variant\|\|'slash'\)/);
-  assert.match(game,/equipmentArt\.prepareLook\(equipment\.getState\(\)\)/);
+  assert.match(game,/equipmentArt\.prepareLook\(equipment\.getState\(\),equipment\.getColors\(\)\)/);
   assert.doesNotMatch(renderer,/fillRect\(|lineTo\(/);
   assert.match(renderer,/ctx\.drawImage\(image,col\*frameSize,row\*frameSize/);
   assert.match(renderer,/if\(withArmor\)drawLayer\('shield',worn\.shield\)/);
