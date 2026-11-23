@@ -60,7 +60,18 @@
     const d=previewDescriptor,tile=d.tile||64,origin=d.origin||0,cell=step===0?frame:0;
     if(canvas.width!==tile){canvas.width=tile;canvas.height=tile;}
     const ctx=canvas.getContext('2d');ctx.clearRect(0,0,tile,tile);ctx.imageSmoothingEnabled=false;
-    ctx.drawImage(previewImage,cell*tile,direction*tile,tile,tile,0,0,tile,tile);
+    if(step>0&&weapon==='wand'){
+      // Compare the user's screenshots: Mage 175px tall, Warrior/Archer ~90px.
+      // Halve ONLY the Mage's artwork. Keep the original tile, CSS sizing,
+      // and all other classes unchanged. Source feet are near pixel 54.
+      const mageScale=.5,visibleTile=tile*mageScale;
+      const offsetX=(tile-visibleTile)/2;
+      const offsetY=Math.round((1-mageScale)*(tile-10));
+      ctx.drawImage(previewImage,cell*tile,direction*tile,tile,tile,
+        offsetX,offsetY,visibleTile,visibleTile);
+    }else{
+      ctx.drawImage(previewImage,cell*tile,direction*tile,tile,tile,0,0,tile,tile);
+    }
     canvas.style.width=`${tile/64*100}%`;canvas.style.height=`${tile/64*100}%`;canvas.style.left=`${-origin/64*100}%`;canvas.style.top=`${-origin/64*100}%`;
     const description=step===0?'без экипировки':`${catalogue.weapon(weapon).name}, наряд ${outfit().name}, ${catalogue.color(rememberedColors[weapon]).name}${magicChoice()?`, стихия ${magicChoice().name}`:''}`;
     canvas.setAttribute('aria-label',`Странник: ${description}. Цвет кожи: ${skins.find(s=>s.id===selected).label}. ${directionNames[direction]}.`);
