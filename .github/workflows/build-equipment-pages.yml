@@ -1,0 +1,56 @@
+name: Build and publish LPC equipment
+on:
+  push:
+    branches:
+      - feature/warrior-equipment-slots
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: ember-equipment-pages
+  cancel-in-progress: false
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout feature with publishing history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install native sprite builder
+        run: python -m pip install "Pillow>=11,<13"
+      - name: Smoke test full LPC compositing against original hero
+        run: python scripts/build-equipment-variants.py --quick
+      - name: Generate all sword and shield combinations
+        run: python scripts/build-equipment-variants.py
+      - name: Verify all game and equipment tests
+        env:
+          EMBER_SWORD_PACKS_BUILT: '1'
+        run: node --test tests/*.test.cjs
+      - name: Publish complete dist folder to gh-pages
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin gh-pages
+          git worktree add --detach "$RUNNER_TEMP/ember-pages" origin/gh-pages
+          rsync -a --delete --exclude='.git' --exclude='.nojekyll' dist/ "$RUNNER_TEMP/ember-pages/"
+          touch "$RUNNER_TEMP/ember-pages/.nojekyll"
+          cd "$RUNNER_TEMP/ember-pages"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No deployment changes"
+          else
+            git commit -m "Deploy pixel-perfect LPC sword and shield loadouts"
+            git push origin HEAD:gh-pages
+          fi
