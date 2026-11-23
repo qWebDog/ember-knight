@@ -24,6 +24,7 @@
   const starterWeapon = loadout ? loadouts.weapon(loadout.weapon) : null;
   const starterOutfit = loadout ? loadouts.outfit(loadout.weapon,loadout.outfit) : null;
   const heroMagic = loadouts?.magicSelection(character);
+  const equipment = window.EmberEquipment?.createStore({classId:starterWeapon?.id||'sword'});
   const ranged = starterWeapon && starterWeapon.projectile !== 'melee';
   const skin = character?.skin || 'light';
   const name = typeof character?.name === 'string' && character.name.trim() ? character.name.slice(0,24) : 'Странник';
@@ -126,6 +127,26 @@
     }
   });
   window.EmberSkillPanel?.mount({root:$('#skills-panel'),store:progression,heroLevel:level});
+  let equipmentUI=null;
+  const equipmentPanel=$('#equipment-panel'),skillsPanel=$('#skills-panel');
+  if(equipment&&window.EmberEquipmentUI&&equipmentPanel&&skillsPanel){
+    const showLowerPanel=mode=>{
+      const isGear=mode==='equipment';
+      equipmentPanel.hidden=!isGear;
+      skillsPanel.hidden=isGear;
+      if(isGear)equipmentUI?.refreshPreview();
+    };
+    equipmentUI=window.EmberEquipmentUI.mount({
+      root:equipmentPanel,store:equipment,
+      getSprite:()=>actors.hero.images.idle,
+      onEquip:()=>{
+        actors.hero.lastKey=null;
+        if(ready)render(battle.getState());
+      }
+    });
+    $('#open-equipment-tab')?.addEventListener('click',()=>showLowerPanel('equipment'));
+    $('#back-skills-tab')?.addEventListener('click',()=>showLowerPanel('skills'));
+  }
   function loadImage(path) {
     return new Promise((resolve,reject) => { const image = new Image(); image.onload = () => resolve(image); image.onerror = () => reject(new Error(path)); image.src = path; });
   }
@@ -189,7 +210,7 @@
       ready = true;
       updateMovement(0,battle.getState());
       $('#status').textContent = 'Бой готов: один лучник, два лучника, затем орк.';
-      render(battle.getState()); syncPause();
+      render(battle.getState()); equipmentUI?.refreshPreview(); syncPause();
     } catch {
       assetError = true;
       $('#result-title').textContent = 'Не удалось загрузить бой';
@@ -415,7 +436,12 @@
     if (!frozen&&actor.lastKey !== key) {
       actor.canvas.width = tile; actor.canvas.height = tile;
       const ctx = actor.canvas.getContext('2d'); ctx.clearRect(0,0,tile,tile); ctx.imageSmoothingEnabled = false;
-      ctx.drawImage(descriptor.image,cell*tile,row*tile,tile,tile,0,0,tile,tile); actor.lastKey = key;
+      const art=id==='hero'&&equipment?.enabled?window.EmberEquipmentArt:null;
+      const pose=art?{equipped:equipment.getState(),row,frame:cell,kind,tile,origin}:null;
+      if(art)art.drawBack(ctx,pose);
+      ctx.drawImage(descriptor.image,cell*tile,row*tile,tile,tile,0,0,tile,tile);
+      if(art)art.drawFront(ctx,pose);
+      actor.lastKey = key;
       actor.canvas.style.width = `${tile / 64 * 100}%`; actor.canvas.style.height = `${tile / 64 * 100}%`;
       actor.canvas.style.left = `${-origin / 64 * 100}%`; actor.canvas.style.top = `${-origin / 64 * 100}%`;
     }
