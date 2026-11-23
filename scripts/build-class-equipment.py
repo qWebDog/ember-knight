@@ -125,6 +125,13 @@ def armour_layer(kind,item,anim):
         return [layer(60,f'spritesheets/torso/armour/plate/male/{anim}.png')]
     return [layer(55,f'spritesheets/torso/clothes/vest/male/{anim}/blue.png')]
 
+def cape_layers(item,anim,colour):
+    if item=='none':return [],[]
+    if item not in ('tattered','solid'):raise ValueError('Unsupported LPC cape form')
+    main=COLORS[colour][0]
+    return ([layer(5,f'spritesheets/cape/{item}/bg/{anim}.png','cloth',main)],
+            [layer(85,f'spritesheets/cape/{item}/fg/{anim}.png','cloth',main)])
+
 def accessory_layer(kind,item,anim):
     if kind=='bow':
         path=f'spritesheets/quiver/{anim}/quiver.png'
@@ -156,10 +163,12 @@ def groups(kind,anim,skin,colour,look):
     helm=helmet_layer(kind,look['helmet'],anim,colour)
     # Separate intermediate compositing bands so layers can be swapped without
     # covering a shield, bow or wand with a later full-image overlay.
+    # Cape layers are stored independently so choosing a color/form never
+    # leaves the original cape painted underneath the new one.
     base={
-      'under':[x for x in body if x[0]<60],
-      'middle':[x for x in body if 60<=x[0]<100],
-      'head':[x for x in body if 100<=x[0]<130]
+      'under':[x for x in body if x[0]<60 and '/cape/' not in x[4]],
+      'middle':[x for x in body if 60<=x[0]<100 and '/cape/' not in x[4]],
+      'head':[x for x in body if 100<=x[0]<130 and '/cape/' not in x[4]]
     }
     return base,weapon_bg,accessory,armor,helm,weapon_fg
 
@@ -173,11 +182,20 @@ def save(image,location):
     image.save(location,optimize=True)
 
 def static_assets(kind,pose,anim,frames,tile,colour):
-    # Equipment layers reuse their native pixel geometry in every skin. Only
-    # the original hood is recolored to match the user's outfit palette.
+    # Original hats/garments and capes keep independent LPC pose atlases.
     for item in ('basic','iron','royal'):
         helmet=helmet_layer(kind,item,anim,colour)
         save(render(helmet,frames,tile),OUT/kind/'helmet'/item/colour/f'{pose}.png')
+    clothing=[layer for layer in outfit_layers(kind,anim,'light',colour)
+              if layer[0] in (22,35)]
+    save(render(clothing,frames,tile),
+         OUT/kind/'armor'/'basic'/colour/f'{pose}.png')
+    for item in ('tattered','solid'):
+        back,front=cape_layers(item,anim,colour)
+        save(render(back,frames,tile),
+             OUT/kind/'cape'/item/colour/f'{pose}-back.png')
+        save(render(front,frames,tile),
+             OUT/kind/'cape'/item/colour/f'{pose}-front.png')
 
 def shared_assets(kind,pose,anim,frames,tile):
     for item in ('iron','royal'):
@@ -221,6 +239,9 @@ def prefetch():
             for item in ('basic','iron','royal'):
                 for item_layer in helmet_layer(kind,item,anim,'sand')+armour_layer(kind,item,anim):
                     required.add(item_layer[4])
+            for item in ('tattered','solid'):
+                back,front=cape_layers(item,anim,'sand')
+                for cape in back+front:required.add(cape[4])
             for item in ('basic','steel','royal'):
                 for item_layer in accessory_layer(kind,item,anim):
                     required.add(item_layer[4])
