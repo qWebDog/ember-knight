@@ -178,7 +178,7 @@ test('the game uses native LPC animation atlases, not synthetic equipment drawin
   const renderer=fs.readFileSync(path.join(dist,'equipment-art.js'),'utf8');
   assert.match(html,/id="equipment-panel"[^>]*hidden/);
   assert.equal((html.match(/data-equipment-slot="(?:helmet|armor|weapon|shield|cape|boots)"/g)||[]).length,6);
-  assert.match(game,/equipmentArt\.draw\(ctx,pose\)/);
+  assert.match(game,/equipmentArt\.draw\(ctx,gearPose\)/);
   assert.match(game,/variant:attacking\?\(actor\.animation\?\.variant\|\|'slash'\)/);
   assert.match(game,/equipmentArt\.prepareLook\(equipment\.getState\(\)\)/);
   assert.doesNotMatch(renderer,/fillRect\(|lineTo\(/);
