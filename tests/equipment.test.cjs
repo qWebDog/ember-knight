@@ -17,7 +17,7 @@ test('five wearable slots and the new companion slot are all available',()=>{
   for(const slot of slots){
     const items=catalog[slot.id];
     assert.equal(items.length,slot.id==='companion'?2:3);
-    assert.equal(new Set(items.map(item=>item.id)).size,3);
+    assert.equal(new Set(items.map(item=>item.id)).size,slot.id==='companion'?2:3);
     assert.equal(defaults[slot.id],items[0].id);
   }
 });
