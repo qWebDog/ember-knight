@@ -21,13 +21,20 @@
     Object.freeze({id:'barrier', branch:'defense', name:'Магический барьер', description:'Каждый уровень добавляет 20 к максимальному здоровью мага.', maxLevel:5, icon:'skill-shield'}),
     Object.freeze({id:'channel', branch:'control', name:'Поток маны', description:'Каждый уровень ускоряет сотворение заклинаний на 5%.', maxLevel:5, icon:'bolt'})
   ]);
+  const archerCatalog = Object.freeze([
+    Object.freeze({id:'marksmanship', branch:'attack', name:'Меткий выстрел', description:'Каждый уровень добавляет 2 к урону стрел лучника.', maxLevel:5, icon:'skill-bow'}),
+    Object.freeze({id:'endurance', branch:'defense', name:'Выносливость', description:'Каждый уровень добавляет 20 к максимальному здоровью лучника.', maxLevel:5, icon:'skill-shield'}),
+    Object.freeze({id:'quickdraw', branch:'control', name:'Быстрая тетива', description:'Каждый уровень увеличивает скорость стрельбы на 5%.', maxLevel:5, icon:'bolt'})
+  ]);
   function emptyMageLevels() { return {sorcery:0, barrier:0, channel:0}; }
+  function emptyArcherLevels() { return {marksmanship:0, endurance:0, quickdraw:0}; }
   function emptyState() {
     return {version:1, gold:0, levels:{power:0, vitality:0, tempo:0}};
   }
   function copy(state) {
     const snapshot = {version:1, gold:state.gold, levels:{...state.levels}};
     if (state.mageLevels) snapshot.mageLevels = {...state.mageLevels};
+    if (state.archerLevels) snapshot.archerLevels = {...state.archerLevels};
     return snapshot;
   }
   function normalizeRank(value) {
@@ -42,27 +49,38 @@
       state.mageLevels = emptyMageLevels();
       for (const item of mageCatalog) state.mageLevels[item.id] = normalizeRank(value.mageLevels[item.id]);
     }
+    if (value.archerLevels && typeof value.archerLevels === 'object' && !Array.isArray(value.archerLevels)) {
+      state.archerLevels = emptyArcherLevels();
+      for (const item of archerCatalog) state.archerLevels[item.id] = normalizeRank(value.archerLevels[item.id]);
+    }
     return state;
   }
+  function classCatalog(classId) {
+    return classId === 'wand' ? mageCatalog : classId === 'bow' ? archerCatalog : catalog;
+  }
   function stats(state, classId = 'sword') {
-    const mage = classId === 'wand', levels = mage ? state.mageLevels || emptyMageLevels() : state.levels;
+    const levels = classId === 'wand' ? state.mageLevels || emptyMageLevels()
+      : classId === 'bow' ? state.archerLevels || emptyArcherLevels() : state.levels;
+    const ids = classId === 'wand' ? ['sorcery','barrier','channel']
+      : classId === 'bow' ? ['marksmanship','endurance','quickdraw'] : ['power','vitality','tempo'];
     return {
-      heroDamage:12 + 2 * levels[mage ? 'sorcery' : 'power'],
-      heroMaxHp:200 + 20 * levels[mage ? 'barrier' : 'vitality'],
-      heroAttackSpeed:1 + .05 * levels[mage ? 'channel' : 'tempo']
+      heroDamage:12 + 2 * levels[ids[0]],
+      heroMaxHp:200 + 20 * levels[ids[1]],
+      heroAttackSpeed:1 + .05 * levels[ids[2]]
     };
   }
   function quoteState(state, id, classId = 'sword') {
-    const item = (classId === 'wand' ? mageCatalog : catalog).find(entry => entry.id === id);
+    const item = classCatalog(classId).find(entry => entry.id === id);
     if (!item) return {id, level:0, maxLevel:0, cost:null, canBuy:false, reason:'unknown'};
-    const level = classId === 'wand' ? (state.mageLevels?.[id] || 0) : state.levels[id];
+    const level = classId === 'wand' ? (state.mageLevels?.[id] || 0)
+      : classId === 'bow' ? (state.archerLevels?.[id] || 0) : state.levels[id];
     if (level >= item.maxLevel) return {id, level, maxLevel:item.maxLevel, cost:null, canBuy:false, reason:'max'};
     const cost = 10 + 10 * level;
     return {id, level, maxLevel:item.maxLevel, cost, canBuy:state.gold >= cost, reason:state.gold >= cost ? null : 'coins'};
   }
   function createStore(options = {}) {
-    const classId = options.classId === 'wand' ? 'wand' : 'sword';
-    const activeCatalog = classId === 'wand' ? mageCatalog : catalog;
+    const classId = ['sword','bow','wand'].includes(options.classId) ? options.classId : 'sword';
+    const activeCatalog = classCatalog(classId);
     let storage;
     try { storage = options.storage === undefined ? root?.localStorage : options.storage; } catch {}
     const listeners = new Set();
@@ -114,7 +132,8 @@
       if (!offer.canBuy) return result(false, offer.reason, fresh);
       const next = copy(fresh);
       next.gold -= offer.cost;
-      const levels = classId === 'wand' ? (next.mageLevels ||= emptyMageLevels()) : next.levels;
+      const levels = classId === 'wand' ? (next.mageLevels ||= emptyMageLevels())
+        : classId === 'bow' ? (next.archerLevels ||= emptyArcherLevels()) : next.levels;
       levels[id] += 1;
       return commit(next, {type:'purchase', id, level:levels[id], classId, spent:offer.cost}, offer.cost) || result(false, 'storage', fresh);
     }
@@ -134,5 +153,5 @@
     }
     return {classId, catalog:activeCatalog, getState, getStats, quote, purchase, awardGold, subscribe};
   }
-  return {catalog, mageCatalog, createStore, storageKey, legacyGoldKey, maxGold};
+  return {catalog, mageCatalog, archerCatalog, createStore, storageKey, legacyGoldKey, maxGold};
 });
