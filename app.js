@@ -55,62 +55,13 @@
     if(!cache.has(path))cache.set(path,new Promise((resolve,reject)=>{const im=new Image();im.onload=()=>resolve(im);im.onerror=()=>{cache.delete(path);reject(new Error(path));};im.src=path;}));
     return cache.get(path);
   }
-  // All classes are normalized to the *visible silhouette*, not the
-  // nominal 64/128px LPC atlas cell (most of which is transparent).
-  // The existing Mage presentation is the reference chosen by the player.
-  const previewSize=128,referenceMageTile=52;
-  const boundsCache=new WeakMap();
-  let referenceMageImage=null;
-  function opaqueBounds(image,tile,cell,row){
-    let frames=boundsCache.get(image);
-    if(!frames){frames=new Map();boundsCache.set(image,frames);}
-    const key=tile+':'+cell+':'+row;
-    if(frames.has(key))return frames.get(key);
-    const sample=document.createElement('canvas');
-    sample.width=tile;sample.height=tile;
-    const sampleCtx=sample.getContext('2d',{willReadFrequently:true});
-    sampleCtx.clearRect(0,0,tile,tile);
-    sampleCtx.drawImage(image,cell*tile,row*tile,tile,tile,0,0,tile,tile);
-    const rgba=sampleCtx.getImageData(0,0,tile,tile).data;
-    let x0=tile,y0=tile,x1=-1,y1=-1;
-    for(let y=0;y<tile;y++)for(let x=0;x<tile;x++){
-      if(rgba[(y*tile+x)*4+3]<8)continue;
-      x0=Math.min(x0,x);x1=Math.max(x1,x);
-      y0=Math.min(y0,y);y1=Math.max(y1,y);
-    }
-    const bounds=x1>=x0?{x:x0,y:y0,width:x1-x0+1,height:y1-y0+1}
-      :{x:0,y:0,width:tile,height:tile};
-    frames.set(key,bounds);
-    return bounds;
-  }
   function draw(){
     if(!previewImage||!previewDescriptor)return;
-    const d=previewDescriptor,tile=d.tile||64,cell=step===0?frame:0;
-    if(tile>previewSize||tile<64)throw new Error('Unsupported LPC preview cell size: '+tile);
-    if(canvas.width!==previewSize||canvas.height!==previewSize){
-      canvas.width=previewSize;canvas.height=previewSize;
-    }
-    const ctx=canvas.getContext('2d');ctx.clearRect(0,0,previewSize,previewSize);ctx.imageSmoothingEnabled=false;
-    if(step===0||weapon==='wand'||!referenceMageImage){
-      // Preserve the accepted Mage exactly, including its pixel position.
-      const displayTile=step>0&&weapon==='wand'?referenceMageTile:tile;
-      ctx.drawImage(previewImage,cell*tile,direction*tile,tile,tile,
-        (previewSize-displayTile)/2,(previewSize-tile)/2+tile-displayTile,displayTile,displayTile);
-    }else{
-      // Measure actual nontransparent bounds in the same direction on
-      // both sheets. All visible characters get the Mage's exact height.
-      const mage=opaqueBounds(referenceMageImage,64,0,direction);
-      const figure=opaqueBounds(previewImage,tile,cell,direction);
-      const visibleHeight=mage.height*referenceMageTile/64;
-      const zoom=visibleHeight/figure.height;
-      const width=figure.width*zoom;
-      const mageCenter=38+(mage.x+mage.width/2)*referenceMageTile/64;
-      const mageFeet=44+(mage.y+mage.height)*referenceMageTile/64;
-      ctx.drawImage(previewImage,cell*tile+figure.x,direction*tile+figure.y,
-        figure.width,figure.height,mageCenter-width/2,mageFeet-visibleHeight,width,visibleHeight);
-    }
-    canvas.style.width='200%';canvas.style.height='200%';
-    canvas.style.left='-50%';canvas.style.top='-50%';
+    const d=previewDescriptor,tile=d.tile||64,origin=d.origin||0,cell=step===0?frame:0;
+    if(canvas.width!==tile){canvas.width=tile;canvas.height=tile;}
+    const ctx=canvas.getContext('2d');ctx.clearRect(0,0,tile,tile);ctx.imageSmoothingEnabled=false;
+    ctx.drawImage(previewImage,cell*tile,direction*tile,tile,tile,0,0,tile,tile);
+    canvas.style.width=`${tile/64*100}%`;canvas.style.height=`${tile/64*100}%`;canvas.style.left=`${-origin/64*100}%`;canvas.style.top=`${-origin/64*100}%`;
     const description=step===0?'без экипировки':`${catalogue.weapon(weapon).name}, наряд ${outfit().name}, ${catalogue.color(rememberedColors[weapon]).name}${magicChoice()?`, стихия ${magicChoice().name}`:''}`;
     canvas.setAttribute('aria-label',`Странник: ${description}. Цвет кожи: ${skins.find(s=>s.id===selected).label}. ${directionNames[direction]}.`);
   }
@@ -123,13 +74,8 @@
     const version=++imageVersion;imageReady=false;loadingError=false;updateButton();
     const path=step===0?`assets/characters/${selected}.png`:catalogue.path(choice(),selected,'walk');
     try {
-      // Load the same fixed Mage reference for every class. Measuring
-      // image alpha avoids guessing scale from padded LPC frame sizes.
-      const magePath=catalogue.path({weapon:'wand',outfit:'acolyte',outfitColor:'purple'},selected,'walk');
-      const [image,mageReference]=await Promise.all([getImage(path),step===0?Promise.resolve(null):getImage(magePath)]);
-      if(version!==imageVersion)return;
-      previewImage=image;referenceMageImage=mageReference;
-      previewDescriptor=step===0?{tile:64,origin:0}:catalogue.weapon(weapon).walk;
+      const image=await getImage(path);if(version!==imageVersion)return;
+      previewImage=image;previewDescriptor=step===0?{tile:64,origin:0}:catalogue.weapon(weapon).walk;
       imageReady=true;draw();status.textContent=step===0?'Выбери оттенок кожи':weapon==='wand'&&!magicChoice()?'Выбери стихию: огонь или лёд':`${catalogue.weapon(weapon).name}, ${appearanceLabel()}`;
     }catch{if(version!==imageVersion)return;loadingError=true;status.textContent='Не удалось загрузить облик. Нажми «Повторить загрузку».';}
     updateButton();
