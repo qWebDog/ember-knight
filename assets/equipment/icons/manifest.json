@@ -19,9 +19,93 @@
     {
       "class": "sword",
       "slot": "helmet",
+      "item": "iron",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/sword/helmet/iron/sand.png"
+    },
+    {
+      "class": "sword",
+      "slot": "helmet",
+      "item": "iron",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/sword/helmet/iron/forest.png"
+    },
+    {
+      "class": "sword",
+      "slot": "helmet",
+      "item": "iron",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/sword/helmet/iron/blue.png"
+    },
+    {
+      "class": "sword",
+      "slot": "helmet",
+      "item": "iron",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/sword/helmet/iron/red.png"
+    },
+    {
+      "class": "sword",
+      "slot": "helmet",
+      "item": "iron",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/sword/helmet/iron/purple.png"
+    },
+    {
+      "class": "sword",
+      "slot": "helmet",
+      "item": "iron",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/sword/helmet/iron/gray.png"
+    },
+    {
+      "class": "sword",
+      "slot": "helmet",
       "item": "royal",
       "color": null,
       "path": "assets/equipment/icons/sword/helmet/royal.png"
+    },
+    {
+      "class": "sword",
+      "slot": "helmet",
+      "item": "royal",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/sword/helmet/royal/sand.png"
+    },
+    {
+      "class": "sword",
+      "slot": "helmet",
+      "item": "royal",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/sword/helmet/royal/forest.png"
+    },
+    {
+      "class": "sword",
+      "slot": "helmet",
+      "item": "royal",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/sword/helmet/royal/blue.png"
+    },
+    {
+      "class": "sword",
+      "slot": "helmet",
+      "item": "royal",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/sword/helmet/royal/red.png"
+    },
+    {
+      "class": "sword",
+      "slot": "helmet",
+      "item": "royal",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/sword/helmet/royal/purple.png"
+    },
+    {
+      "class": "sword",
+      "slot": "helmet",
+      "item": "royal",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/sword/helmet/royal/gray.png"
     },
     {
       "class": "sword",
@@ -34,8 +118,92 @@
       "class": "sword",
       "slot": "armor",
       "item": "basic",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/sword/armor/basic/sand/sand.png"
+    },
+    {
+      "class": "sword",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/sword/armor/basic/sand/forest.png"
+    },
+    {
+      "class": "sword",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/sword/armor/basic/sand/blue.png"
+    },
+    {
+      "class": "sword",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/sword/armor/basic/sand/red.png"
+    },
+    {
+      "class": "sword",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/sword/armor/basic/sand/purple.png"
+    },
+    {
+      "class": "sword",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/sword/armor/basic/sand/gray.png"
+    },
+    {
+      "class": "sword",
+      "slot": "armor",
+      "item": "basic",
       "color": "forest",
       "path": "assets/equipment/icons/sword/armor/basic/forest.png"
+    },
+    {
+      "class": "sword",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/sword/armor/basic/forest/sand.png"
+    },
+    {
+      "class": "sword",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/sword/armor/basic/forest/forest.png"
+    },
+    {
+      "class": "sword",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/sword/armor/basic/forest/blue.png"
+    },
+    {
+      "class": "sword",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/sword/armor/basic/forest/red.png"
+    },
+    {
+      "class": "sword",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/sword/armor/basic/forest/purple.png"
+    },
+    {
+      "class": "sword",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/sword/armor/basic/forest/gray.png"
     },
     {
       "class": "sword",
@@ -48,8 +216,92 @@
       "class": "sword",
       "slot": "armor",
       "item": "basic",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/sword/armor/basic/blue/sand.png"
+    },
+    {
+      "class": "sword",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/sword/armor/basic/blue/forest.png"
+    },
+    {
+      "class": "sword",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/sword/armor/basic/blue/blue.png"
+    },
+    {
+      "class": "sword",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/sword/armor/basic/blue/red.png"
+    },
+    {
+      "class": "sword",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/sword/armor/basic/blue/purple.png"
+    },
+    {
+      "class": "sword",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/sword/armor/basic/blue/gray.png"
+    },
+    {
+      "class": "sword",
+      "slot": "armor",
+      "item": "basic",
       "color": "red",
       "path": "assets/equipment/icons/sword/armor/basic/red.png"
+    },
+    {
+      "class": "sword",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/sword/armor/basic/red/sand.png"
+    },
+    {
+      "class": "sword",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/sword/armor/basic/red/forest.png"
+    },
+    {
+      "class": "sword",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/sword/armor/basic/red/blue.png"
+    },
+    {
+      "class": "sword",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/sword/armor/basic/red/red.png"
+    },
+    {
+      "class": "sword",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/sword/armor/basic/red/purple.png"
+    },
+    {
+      "class": "sword",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/sword/armor/basic/red/gray.png"
     },
     {
       "class": "sword",
@@ -62,8 +314,92 @@
       "class": "sword",
       "slot": "armor",
       "item": "basic",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/sword/armor/basic/purple/sand.png"
+    },
+    {
+      "class": "sword",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/sword/armor/basic/purple/forest.png"
+    },
+    {
+      "class": "sword",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/sword/armor/basic/purple/blue.png"
+    },
+    {
+      "class": "sword",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/sword/armor/basic/purple/red.png"
+    },
+    {
+      "class": "sword",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/sword/armor/basic/purple/purple.png"
+    },
+    {
+      "class": "sword",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/sword/armor/basic/purple/gray.png"
+    },
+    {
+      "class": "sword",
+      "slot": "armor",
+      "item": "basic",
       "color": "gray",
       "path": "assets/equipment/icons/sword/armor/basic/gray.png"
+    },
+    {
+      "class": "sword",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/sword/armor/basic/gray/sand.png"
+    },
+    {
+      "class": "sword",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/sword/armor/basic/gray/forest.png"
+    },
+    {
+      "class": "sword",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/sword/armor/basic/gray/blue.png"
+    },
+    {
+      "class": "sword",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/sword/armor/basic/gray/red.png"
+    },
+    {
+      "class": "sword",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/sword/armor/basic/gray/purple.png"
+    },
+    {
+      "class": "sword",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/sword/armor/basic/gray/gray.png"
     },
     {
       "class": "sword",
@@ -75,9 +411,93 @@
     {
       "class": "sword",
       "slot": "armor",
+      "item": "iron",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/sword/armor/iron/sand.png"
+    },
+    {
+      "class": "sword",
+      "slot": "armor",
+      "item": "iron",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/sword/armor/iron/forest.png"
+    },
+    {
+      "class": "sword",
+      "slot": "armor",
+      "item": "iron",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/sword/armor/iron/blue.png"
+    },
+    {
+      "class": "sword",
+      "slot": "armor",
+      "item": "iron",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/sword/armor/iron/red.png"
+    },
+    {
+      "class": "sword",
+      "slot": "armor",
+      "item": "iron",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/sword/armor/iron/purple.png"
+    },
+    {
+      "class": "sword",
+      "slot": "armor",
+      "item": "iron",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/sword/armor/iron/gray.png"
+    },
+    {
+      "class": "sword",
+      "slot": "armor",
       "item": "royal",
       "color": null,
       "path": "assets/equipment/icons/sword/armor/royal.png"
+    },
+    {
+      "class": "sword",
+      "slot": "armor",
+      "item": "royal",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/sword/armor/royal/sand.png"
+    },
+    {
+      "class": "sword",
+      "slot": "armor",
+      "item": "royal",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/sword/armor/royal/forest.png"
+    },
+    {
+      "class": "sword",
+      "slot": "armor",
+      "item": "royal",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/sword/armor/royal/blue.png"
+    },
+    {
+      "class": "sword",
+      "slot": "armor",
+      "item": "royal",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/sword/armor/royal/red.png"
+    },
+    {
+      "class": "sword",
+      "slot": "armor",
+      "item": "royal",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/sword/armor/royal/purple.png"
+    },
+    {
+      "class": "sword",
+      "slot": "armor",
+      "item": "royal",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/sword/armor/royal/gray.png"
     },
     {
       "class": "sword",
@@ -122,11 +542,648 @@
       "path": "assets/equipment/icons/sword/shield/royal.png"
     },
     {
+      "class": "sword",
+      "slot": "cape",
+      "item": "none",
+      "color": null,
+      "path": "assets/equipment/icons/sword/cape/none.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "tattered",
+      "color": "sand",
+      "path": "assets/equipment/icons/sword/cape/tattered/sand.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/sword/cape/tattered/sand/sand.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/sword/cape/tattered/sand/forest.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/sword/cape/tattered/sand/blue.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/sword/cape/tattered/sand/red.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/sword/cape/tattered/sand/purple.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/sword/cape/tattered/sand/gray.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "tattered",
+      "color": "forest",
+      "path": "assets/equipment/icons/sword/cape/tattered/forest.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/sword/cape/tattered/forest/sand.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/sword/cape/tattered/forest/forest.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/sword/cape/tattered/forest/blue.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/sword/cape/tattered/forest/red.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/sword/cape/tattered/forest/purple.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/sword/cape/tattered/forest/gray.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "tattered",
+      "color": "blue",
+      "path": "assets/equipment/icons/sword/cape/tattered/blue.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/sword/cape/tattered/blue/sand.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/sword/cape/tattered/blue/forest.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/sword/cape/tattered/blue/blue.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/sword/cape/tattered/blue/red.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/sword/cape/tattered/blue/purple.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/sword/cape/tattered/blue/gray.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "tattered",
+      "color": "red",
+      "path": "assets/equipment/icons/sword/cape/tattered/red.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/sword/cape/tattered/red/sand.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/sword/cape/tattered/red/forest.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/sword/cape/tattered/red/blue.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/sword/cape/tattered/red/red.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/sword/cape/tattered/red/purple.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/sword/cape/tattered/red/gray.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "tattered",
+      "color": "purple",
+      "path": "assets/equipment/icons/sword/cape/tattered/purple.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/sword/cape/tattered/purple/sand.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/sword/cape/tattered/purple/forest.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/sword/cape/tattered/purple/blue.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/sword/cape/tattered/purple/red.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/sword/cape/tattered/purple/purple.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/sword/cape/tattered/purple/gray.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "tattered",
+      "color": "gray",
+      "path": "assets/equipment/icons/sword/cape/tattered/gray.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/sword/cape/tattered/gray/sand.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/sword/cape/tattered/gray/forest.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/sword/cape/tattered/gray/blue.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/sword/cape/tattered/gray/red.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/sword/cape/tattered/gray/purple.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/sword/cape/tattered/gray/gray.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "solid",
+      "color": "sand",
+      "path": "assets/equipment/icons/sword/cape/solid/sand.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/sword/cape/solid/sand/sand.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/sword/cape/solid/sand/forest.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/sword/cape/solid/sand/blue.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/sword/cape/solid/sand/red.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/sword/cape/solid/sand/purple.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/sword/cape/solid/sand/gray.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "solid",
+      "color": "forest",
+      "path": "assets/equipment/icons/sword/cape/solid/forest.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/sword/cape/solid/forest/sand.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/sword/cape/solid/forest/forest.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/sword/cape/solid/forest/blue.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/sword/cape/solid/forest/red.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/sword/cape/solid/forest/purple.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/sword/cape/solid/forest/gray.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "solid",
+      "color": "blue",
+      "path": "assets/equipment/icons/sword/cape/solid/blue.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/sword/cape/solid/blue/sand.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/sword/cape/solid/blue/forest.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/sword/cape/solid/blue/blue.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/sword/cape/solid/blue/red.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/sword/cape/solid/blue/purple.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/sword/cape/solid/blue/gray.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "solid",
+      "color": "red",
+      "path": "assets/equipment/icons/sword/cape/solid/red.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/sword/cape/solid/red/sand.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/sword/cape/solid/red/forest.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/sword/cape/solid/red/blue.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/sword/cape/solid/red/red.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/sword/cape/solid/red/purple.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/sword/cape/solid/red/gray.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "solid",
+      "color": "purple",
+      "path": "assets/equipment/icons/sword/cape/solid/purple.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/sword/cape/solid/purple/sand.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/sword/cape/solid/purple/forest.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/sword/cape/solid/purple/blue.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/sword/cape/solid/purple/red.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/sword/cape/solid/purple/purple.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/sword/cape/solid/purple/gray.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "solid",
+      "color": "gray",
+      "path": "assets/equipment/icons/sword/cape/solid/gray.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/sword/cape/solid/gray/sand.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/sword/cape/solid/gray/forest.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/sword/cape/solid/gray/blue.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/sword/cape/solid/gray/red.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/sword/cape/solid/gray/purple.png"
+    },
+    {
+      "class": "sword",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/sword/cape/solid/gray/gray.png"
+    },
+    {
       "class": "bow",
       "slot": "helmet",
       "item": "basic",
       "color": "sand",
       "path": "assets/equipment/icons/bow/helmet/basic/sand.png"
+    },
+    {
+      "class": "bow",
+      "slot": "helmet",
+      "item": "basic",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/bow/helmet/basic/sand/sand.png"
+    },
+    {
+      "class": "bow",
+      "slot": "helmet",
+      "item": "basic",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/bow/helmet/basic/sand/forest.png"
+    },
+    {
+      "class": "bow",
+      "slot": "helmet",
+      "item": "basic",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/bow/helmet/basic/sand/blue.png"
+    },
+    {
+      "class": "bow",
+      "slot": "helmet",
+      "item": "basic",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/bow/helmet/basic/sand/red.png"
+    },
+    {
+      "class": "bow",
+      "slot": "helmet",
+      "item": "basic",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/bow/helmet/basic/sand/purple.png"
+    },
+    {
+      "class": "bow",
+      "slot": "helmet",
+      "item": "basic",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/bow/helmet/basic/sand/gray.png"
     },
     {
       "class": "bow",
@@ -139,8 +1196,92 @@
       "class": "bow",
       "slot": "helmet",
       "item": "basic",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/bow/helmet/basic/forest/sand.png"
+    },
+    {
+      "class": "bow",
+      "slot": "helmet",
+      "item": "basic",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/bow/helmet/basic/forest/forest.png"
+    },
+    {
+      "class": "bow",
+      "slot": "helmet",
+      "item": "basic",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/bow/helmet/basic/forest/blue.png"
+    },
+    {
+      "class": "bow",
+      "slot": "helmet",
+      "item": "basic",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/bow/helmet/basic/forest/red.png"
+    },
+    {
+      "class": "bow",
+      "slot": "helmet",
+      "item": "basic",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/bow/helmet/basic/forest/purple.png"
+    },
+    {
+      "class": "bow",
+      "slot": "helmet",
+      "item": "basic",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/bow/helmet/basic/forest/gray.png"
+    },
+    {
+      "class": "bow",
+      "slot": "helmet",
+      "item": "basic",
       "color": "blue",
       "path": "assets/equipment/icons/bow/helmet/basic/blue.png"
+    },
+    {
+      "class": "bow",
+      "slot": "helmet",
+      "item": "basic",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/bow/helmet/basic/blue/sand.png"
+    },
+    {
+      "class": "bow",
+      "slot": "helmet",
+      "item": "basic",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/bow/helmet/basic/blue/forest.png"
+    },
+    {
+      "class": "bow",
+      "slot": "helmet",
+      "item": "basic",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/bow/helmet/basic/blue/blue.png"
+    },
+    {
+      "class": "bow",
+      "slot": "helmet",
+      "item": "basic",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/bow/helmet/basic/blue/red.png"
+    },
+    {
+      "class": "bow",
+      "slot": "helmet",
+      "item": "basic",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/bow/helmet/basic/blue/purple.png"
+    },
+    {
+      "class": "bow",
+      "slot": "helmet",
+      "item": "basic",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/bow/helmet/basic/blue/gray.png"
     },
     {
       "class": "bow",
@@ -153,8 +1294,92 @@
       "class": "bow",
       "slot": "helmet",
       "item": "basic",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/bow/helmet/basic/red/sand.png"
+    },
+    {
+      "class": "bow",
+      "slot": "helmet",
+      "item": "basic",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/bow/helmet/basic/red/forest.png"
+    },
+    {
+      "class": "bow",
+      "slot": "helmet",
+      "item": "basic",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/bow/helmet/basic/red/blue.png"
+    },
+    {
+      "class": "bow",
+      "slot": "helmet",
+      "item": "basic",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/bow/helmet/basic/red/red.png"
+    },
+    {
+      "class": "bow",
+      "slot": "helmet",
+      "item": "basic",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/bow/helmet/basic/red/purple.png"
+    },
+    {
+      "class": "bow",
+      "slot": "helmet",
+      "item": "basic",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/bow/helmet/basic/red/gray.png"
+    },
+    {
+      "class": "bow",
+      "slot": "helmet",
+      "item": "basic",
       "color": "purple",
       "path": "assets/equipment/icons/bow/helmet/basic/purple.png"
+    },
+    {
+      "class": "bow",
+      "slot": "helmet",
+      "item": "basic",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/bow/helmet/basic/purple/sand.png"
+    },
+    {
+      "class": "bow",
+      "slot": "helmet",
+      "item": "basic",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/bow/helmet/basic/purple/forest.png"
+    },
+    {
+      "class": "bow",
+      "slot": "helmet",
+      "item": "basic",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/bow/helmet/basic/purple/blue.png"
+    },
+    {
+      "class": "bow",
+      "slot": "helmet",
+      "item": "basic",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/bow/helmet/basic/purple/red.png"
+    },
+    {
+      "class": "bow",
+      "slot": "helmet",
+      "item": "basic",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/bow/helmet/basic/purple/purple.png"
+    },
+    {
+      "class": "bow",
+      "slot": "helmet",
+      "item": "basic",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/bow/helmet/basic/purple/gray.png"
     },
     {
       "class": "bow",
@@ -166,6 +1391,48 @@
     {
       "class": "bow",
       "slot": "helmet",
+      "item": "basic",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/bow/helmet/basic/gray/sand.png"
+    },
+    {
+      "class": "bow",
+      "slot": "helmet",
+      "item": "basic",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/bow/helmet/basic/gray/forest.png"
+    },
+    {
+      "class": "bow",
+      "slot": "helmet",
+      "item": "basic",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/bow/helmet/basic/gray/blue.png"
+    },
+    {
+      "class": "bow",
+      "slot": "helmet",
+      "item": "basic",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/bow/helmet/basic/gray/red.png"
+    },
+    {
+      "class": "bow",
+      "slot": "helmet",
+      "item": "basic",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/bow/helmet/basic/gray/purple.png"
+    },
+    {
+      "class": "bow",
+      "slot": "helmet",
+      "item": "basic",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/bow/helmet/basic/gray/gray.png"
+    },
+    {
+      "class": "bow",
+      "slot": "helmet",
       "item": "iron",
       "color": null,
       "path": "assets/equipment/icons/bow/helmet/iron.png"
@@ -173,9 +1440,93 @@
     {
       "class": "bow",
       "slot": "helmet",
+      "item": "iron",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/bow/helmet/iron/sand.png"
+    },
+    {
+      "class": "bow",
+      "slot": "helmet",
+      "item": "iron",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/bow/helmet/iron/forest.png"
+    },
+    {
+      "class": "bow",
+      "slot": "helmet",
+      "item": "iron",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/bow/helmet/iron/blue.png"
+    },
+    {
+      "class": "bow",
+      "slot": "helmet",
+      "item": "iron",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/bow/helmet/iron/red.png"
+    },
+    {
+      "class": "bow",
+      "slot": "helmet",
+      "item": "iron",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/bow/helmet/iron/purple.png"
+    },
+    {
+      "class": "bow",
+      "slot": "helmet",
+      "item": "iron",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/bow/helmet/iron/gray.png"
+    },
+    {
+      "class": "bow",
+      "slot": "helmet",
       "item": "royal",
       "color": null,
       "path": "assets/equipment/icons/bow/helmet/royal.png"
+    },
+    {
+      "class": "bow",
+      "slot": "helmet",
+      "item": "royal",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/bow/helmet/royal/sand.png"
+    },
+    {
+      "class": "bow",
+      "slot": "helmet",
+      "item": "royal",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/bow/helmet/royal/forest.png"
+    },
+    {
+      "class": "bow",
+      "slot": "helmet",
+      "item": "royal",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/bow/helmet/royal/blue.png"
+    },
+    {
+      "class": "bow",
+      "slot": "helmet",
+      "item": "royal",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/bow/helmet/royal/red.png"
+    },
+    {
+      "class": "bow",
+      "slot": "helmet",
+      "item": "royal",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/bow/helmet/royal/purple.png"
+    },
+    {
+      "class": "bow",
+      "slot": "helmet",
+      "item": "royal",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/bow/helmet/royal/gray.png"
     },
     {
       "class": "bow",
@@ -187,6 +1538,48 @@
     {
       "class": "bow",
       "slot": "armor",
+      "item": "basic",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/bow/armor/basic/sand.png"
+    },
+    {
+      "class": "bow",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/bow/armor/basic/forest.png"
+    },
+    {
+      "class": "bow",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/bow/armor/basic/blue.png"
+    },
+    {
+      "class": "bow",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/bow/armor/basic/red.png"
+    },
+    {
+      "class": "bow",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/bow/armor/basic/purple.png"
+    },
+    {
+      "class": "bow",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/bow/armor/basic/gray.png"
+    },
+    {
+      "class": "bow",
+      "slot": "armor",
       "item": "iron",
       "color": null,
       "path": "assets/equipment/icons/bow/armor/iron.png"
@@ -194,9 +1587,93 @@
     {
       "class": "bow",
       "slot": "armor",
+      "item": "iron",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/bow/armor/iron/sand.png"
+    },
+    {
+      "class": "bow",
+      "slot": "armor",
+      "item": "iron",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/bow/armor/iron/forest.png"
+    },
+    {
+      "class": "bow",
+      "slot": "armor",
+      "item": "iron",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/bow/armor/iron/blue.png"
+    },
+    {
+      "class": "bow",
+      "slot": "armor",
+      "item": "iron",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/bow/armor/iron/red.png"
+    },
+    {
+      "class": "bow",
+      "slot": "armor",
+      "item": "iron",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/bow/armor/iron/purple.png"
+    },
+    {
+      "class": "bow",
+      "slot": "armor",
+      "item": "iron",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/bow/armor/iron/gray.png"
+    },
+    {
+      "class": "bow",
+      "slot": "armor",
       "item": "royal",
       "color": null,
       "path": "assets/equipment/icons/bow/armor/royal.png"
+    },
+    {
+      "class": "bow",
+      "slot": "armor",
+      "item": "royal",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/bow/armor/royal/sand.png"
+    },
+    {
+      "class": "bow",
+      "slot": "armor",
+      "item": "royal",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/bow/armor/royal/forest.png"
+    },
+    {
+      "class": "bow",
+      "slot": "armor",
+      "item": "royal",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/bow/armor/royal/blue.png"
+    },
+    {
+      "class": "bow",
+      "slot": "armor",
+      "item": "royal",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/bow/armor/royal/red.png"
+    },
+    {
+      "class": "bow",
+      "slot": "armor",
+      "item": "royal",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/bow/armor/royal/purple.png"
+    },
+    {
+      "class": "bow",
+      "slot": "armor",
+      "item": "royal",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/bow/armor/royal/gray.png"
     },
     {
       "class": "bow",
@@ -241,11 +1718,641 @@
       "path": "assets/equipment/icons/bow/shield/royal.png"
     },
     {
+      "class": "bow",
+      "slot": "cape",
+      "item": "tattered",
+      "color": "sand",
+      "path": "assets/equipment/icons/bow/cape/tattered/sand.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/bow/cape/tattered/sand/sand.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/bow/cape/tattered/sand/forest.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/bow/cape/tattered/sand/blue.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/bow/cape/tattered/sand/red.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/bow/cape/tattered/sand/purple.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/bow/cape/tattered/sand/gray.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "tattered",
+      "color": "forest",
+      "path": "assets/equipment/icons/bow/cape/tattered/forest.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/bow/cape/tattered/forest/sand.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/bow/cape/tattered/forest/forest.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/bow/cape/tattered/forest/blue.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/bow/cape/tattered/forest/red.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/bow/cape/tattered/forest/purple.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/bow/cape/tattered/forest/gray.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "tattered",
+      "color": "blue",
+      "path": "assets/equipment/icons/bow/cape/tattered/blue.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/bow/cape/tattered/blue/sand.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/bow/cape/tattered/blue/forest.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/bow/cape/tattered/blue/blue.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/bow/cape/tattered/blue/red.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/bow/cape/tattered/blue/purple.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/bow/cape/tattered/blue/gray.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "tattered",
+      "color": "red",
+      "path": "assets/equipment/icons/bow/cape/tattered/red.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/bow/cape/tattered/red/sand.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/bow/cape/tattered/red/forest.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/bow/cape/tattered/red/blue.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/bow/cape/tattered/red/red.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/bow/cape/tattered/red/purple.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/bow/cape/tattered/red/gray.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "tattered",
+      "color": "purple",
+      "path": "assets/equipment/icons/bow/cape/tattered/purple.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/bow/cape/tattered/purple/sand.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/bow/cape/tattered/purple/forest.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/bow/cape/tattered/purple/blue.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/bow/cape/tattered/purple/red.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/bow/cape/tattered/purple/purple.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/bow/cape/tattered/purple/gray.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "tattered",
+      "color": "gray",
+      "path": "assets/equipment/icons/bow/cape/tattered/gray.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/bow/cape/tattered/gray/sand.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/bow/cape/tattered/gray/forest.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/bow/cape/tattered/gray/blue.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/bow/cape/tattered/gray/red.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/bow/cape/tattered/gray/purple.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/bow/cape/tattered/gray/gray.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "solid",
+      "color": "sand",
+      "path": "assets/equipment/icons/bow/cape/solid/sand.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/bow/cape/solid/sand/sand.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/bow/cape/solid/sand/forest.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/bow/cape/solid/sand/blue.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/bow/cape/solid/sand/red.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/bow/cape/solid/sand/purple.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/bow/cape/solid/sand/gray.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "solid",
+      "color": "forest",
+      "path": "assets/equipment/icons/bow/cape/solid/forest.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/bow/cape/solid/forest/sand.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/bow/cape/solid/forest/forest.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/bow/cape/solid/forest/blue.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/bow/cape/solid/forest/red.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/bow/cape/solid/forest/purple.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/bow/cape/solid/forest/gray.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "solid",
+      "color": "blue",
+      "path": "assets/equipment/icons/bow/cape/solid/blue.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/bow/cape/solid/blue/sand.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/bow/cape/solid/blue/forest.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/bow/cape/solid/blue/blue.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/bow/cape/solid/blue/red.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/bow/cape/solid/blue/purple.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/bow/cape/solid/blue/gray.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "solid",
+      "color": "red",
+      "path": "assets/equipment/icons/bow/cape/solid/red.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/bow/cape/solid/red/sand.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/bow/cape/solid/red/forest.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/bow/cape/solid/red/blue.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/bow/cape/solid/red/red.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/bow/cape/solid/red/purple.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/bow/cape/solid/red/gray.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "solid",
+      "color": "purple",
+      "path": "assets/equipment/icons/bow/cape/solid/purple.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/bow/cape/solid/purple/sand.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/bow/cape/solid/purple/forest.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/bow/cape/solid/purple/blue.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/bow/cape/solid/purple/red.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/bow/cape/solid/purple/purple.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/bow/cape/solid/purple/gray.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "solid",
+      "color": "gray",
+      "path": "assets/equipment/icons/bow/cape/solid/gray.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/bow/cape/solid/gray/sand.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/bow/cape/solid/gray/forest.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/bow/cape/solid/gray/blue.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/bow/cape/solid/gray/red.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/bow/cape/solid/gray/purple.png"
+    },
+    {
+      "class": "bow",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/bow/cape/solid/gray/gray.png"
+    },
+    {
       "class": "wand",
       "slot": "helmet",
       "item": "basic",
       "color": "sand",
       "path": "assets/equipment/icons/wand/helmet/basic/sand.png"
+    },
+    {
+      "class": "wand",
+      "slot": "helmet",
+      "item": "basic",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/wand/helmet/basic/sand/sand.png"
+    },
+    {
+      "class": "wand",
+      "slot": "helmet",
+      "item": "basic",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/wand/helmet/basic/sand/forest.png"
+    },
+    {
+      "class": "wand",
+      "slot": "helmet",
+      "item": "basic",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/wand/helmet/basic/sand/blue.png"
+    },
+    {
+      "class": "wand",
+      "slot": "helmet",
+      "item": "basic",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/wand/helmet/basic/sand/red.png"
+    },
+    {
+      "class": "wand",
+      "slot": "helmet",
+      "item": "basic",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/wand/helmet/basic/sand/purple.png"
+    },
+    {
+      "class": "wand",
+      "slot": "helmet",
+      "item": "basic",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/wand/helmet/basic/sand/gray.png"
     },
     {
       "class": "wand",
@@ -258,8 +2365,92 @@
       "class": "wand",
       "slot": "helmet",
       "item": "basic",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/wand/helmet/basic/forest/sand.png"
+    },
+    {
+      "class": "wand",
+      "slot": "helmet",
+      "item": "basic",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/wand/helmet/basic/forest/forest.png"
+    },
+    {
+      "class": "wand",
+      "slot": "helmet",
+      "item": "basic",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/wand/helmet/basic/forest/blue.png"
+    },
+    {
+      "class": "wand",
+      "slot": "helmet",
+      "item": "basic",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/wand/helmet/basic/forest/red.png"
+    },
+    {
+      "class": "wand",
+      "slot": "helmet",
+      "item": "basic",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/wand/helmet/basic/forest/purple.png"
+    },
+    {
+      "class": "wand",
+      "slot": "helmet",
+      "item": "basic",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/wand/helmet/basic/forest/gray.png"
+    },
+    {
+      "class": "wand",
+      "slot": "helmet",
+      "item": "basic",
       "color": "blue",
       "path": "assets/equipment/icons/wand/helmet/basic/blue.png"
+    },
+    {
+      "class": "wand",
+      "slot": "helmet",
+      "item": "basic",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/wand/helmet/basic/blue/sand.png"
+    },
+    {
+      "class": "wand",
+      "slot": "helmet",
+      "item": "basic",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/wand/helmet/basic/blue/forest.png"
+    },
+    {
+      "class": "wand",
+      "slot": "helmet",
+      "item": "basic",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/wand/helmet/basic/blue/blue.png"
+    },
+    {
+      "class": "wand",
+      "slot": "helmet",
+      "item": "basic",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/wand/helmet/basic/blue/red.png"
+    },
+    {
+      "class": "wand",
+      "slot": "helmet",
+      "item": "basic",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/wand/helmet/basic/blue/purple.png"
+    },
+    {
+      "class": "wand",
+      "slot": "helmet",
+      "item": "basic",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/wand/helmet/basic/blue/gray.png"
     },
     {
       "class": "wand",
@@ -272,8 +2463,92 @@
       "class": "wand",
       "slot": "helmet",
       "item": "basic",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/wand/helmet/basic/red/sand.png"
+    },
+    {
+      "class": "wand",
+      "slot": "helmet",
+      "item": "basic",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/wand/helmet/basic/red/forest.png"
+    },
+    {
+      "class": "wand",
+      "slot": "helmet",
+      "item": "basic",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/wand/helmet/basic/red/blue.png"
+    },
+    {
+      "class": "wand",
+      "slot": "helmet",
+      "item": "basic",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/wand/helmet/basic/red/red.png"
+    },
+    {
+      "class": "wand",
+      "slot": "helmet",
+      "item": "basic",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/wand/helmet/basic/red/purple.png"
+    },
+    {
+      "class": "wand",
+      "slot": "helmet",
+      "item": "basic",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/wand/helmet/basic/red/gray.png"
+    },
+    {
+      "class": "wand",
+      "slot": "helmet",
+      "item": "basic",
       "color": "purple",
       "path": "assets/equipment/icons/wand/helmet/basic/purple.png"
+    },
+    {
+      "class": "wand",
+      "slot": "helmet",
+      "item": "basic",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/wand/helmet/basic/purple/sand.png"
+    },
+    {
+      "class": "wand",
+      "slot": "helmet",
+      "item": "basic",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/wand/helmet/basic/purple/forest.png"
+    },
+    {
+      "class": "wand",
+      "slot": "helmet",
+      "item": "basic",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/wand/helmet/basic/purple/blue.png"
+    },
+    {
+      "class": "wand",
+      "slot": "helmet",
+      "item": "basic",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/wand/helmet/basic/purple/red.png"
+    },
+    {
+      "class": "wand",
+      "slot": "helmet",
+      "item": "basic",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/wand/helmet/basic/purple/purple.png"
+    },
+    {
+      "class": "wand",
+      "slot": "helmet",
+      "item": "basic",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/wand/helmet/basic/purple/gray.png"
     },
     {
       "class": "wand",
@@ -285,6 +2560,48 @@
     {
       "class": "wand",
       "slot": "helmet",
+      "item": "basic",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/wand/helmet/basic/gray/sand.png"
+    },
+    {
+      "class": "wand",
+      "slot": "helmet",
+      "item": "basic",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/wand/helmet/basic/gray/forest.png"
+    },
+    {
+      "class": "wand",
+      "slot": "helmet",
+      "item": "basic",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/wand/helmet/basic/gray/blue.png"
+    },
+    {
+      "class": "wand",
+      "slot": "helmet",
+      "item": "basic",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/wand/helmet/basic/gray/red.png"
+    },
+    {
+      "class": "wand",
+      "slot": "helmet",
+      "item": "basic",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/wand/helmet/basic/gray/purple.png"
+    },
+    {
+      "class": "wand",
+      "slot": "helmet",
+      "item": "basic",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/wand/helmet/basic/gray/gray.png"
+    },
+    {
+      "class": "wand",
+      "slot": "helmet",
       "item": "iron",
       "color": null,
       "path": "assets/equipment/icons/wand/helmet/iron.png"
@@ -292,9 +2609,93 @@
     {
       "class": "wand",
       "slot": "helmet",
+      "item": "iron",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/wand/helmet/iron/sand.png"
+    },
+    {
+      "class": "wand",
+      "slot": "helmet",
+      "item": "iron",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/wand/helmet/iron/forest.png"
+    },
+    {
+      "class": "wand",
+      "slot": "helmet",
+      "item": "iron",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/wand/helmet/iron/blue.png"
+    },
+    {
+      "class": "wand",
+      "slot": "helmet",
+      "item": "iron",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/wand/helmet/iron/red.png"
+    },
+    {
+      "class": "wand",
+      "slot": "helmet",
+      "item": "iron",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/wand/helmet/iron/purple.png"
+    },
+    {
+      "class": "wand",
+      "slot": "helmet",
+      "item": "iron",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/wand/helmet/iron/gray.png"
+    },
+    {
+      "class": "wand",
+      "slot": "helmet",
       "item": "royal",
       "color": null,
       "path": "assets/equipment/icons/wand/helmet/royal.png"
+    },
+    {
+      "class": "wand",
+      "slot": "helmet",
+      "item": "royal",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/wand/helmet/royal/sand.png"
+    },
+    {
+      "class": "wand",
+      "slot": "helmet",
+      "item": "royal",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/wand/helmet/royal/forest.png"
+    },
+    {
+      "class": "wand",
+      "slot": "helmet",
+      "item": "royal",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/wand/helmet/royal/blue.png"
+    },
+    {
+      "class": "wand",
+      "slot": "helmet",
+      "item": "royal",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/wand/helmet/royal/red.png"
+    },
+    {
+      "class": "wand",
+      "slot": "helmet",
+      "item": "royal",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/wand/helmet/royal/purple.png"
+    },
+    {
+      "class": "wand",
+      "slot": "helmet",
+      "item": "royal",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/wand/helmet/royal/gray.png"
     },
     {
       "class": "wand",
@@ -307,8 +2708,92 @@
       "class": "wand",
       "slot": "armor",
       "item": "basic",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/wand/armor/basic/sand/sand.png"
+    },
+    {
+      "class": "wand",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/wand/armor/basic/sand/forest.png"
+    },
+    {
+      "class": "wand",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/wand/armor/basic/sand/blue.png"
+    },
+    {
+      "class": "wand",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/wand/armor/basic/sand/red.png"
+    },
+    {
+      "class": "wand",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/wand/armor/basic/sand/purple.png"
+    },
+    {
+      "class": "wand",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/wand/armor/basic/sand/gray.png"
+    },
+    {
+      "class": "wand",
+      "slot": "armor",
+      "item": "basic",
       "color": "forest",
       "path": "assets/equipment/icons/wand/armor/basic/forest.png"
+    },
+    {
+      "class": "wand",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/wand/armor/basic/forest/sand.png"
+    },
+    {
+      "class": "wand",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/wand/armor/basic/forest/forest.png"
+    },
+    {
+      "class": "wand",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/wand/armor/basic/forest/blue.png"
+    },
+    {
+      "class": "wand",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/wand/armor/basic/forest/red.png"
+    },
+    {
+      "class": "wand",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/wand/armor/basic/forest/purple.png"
+    },
+    {
+      "class": "wand",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/wand/armor/basic/forest/gray.png"
     },
     {
       "class": "wand",
@@ -321,8 +2806,92 @@
       "class": "wand",
       "slot": "armor",
       "item": "basic",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/wand/armor/basic/blue/sand.png"
+    },
+    {
+      "class": "wand",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/wand/armor/basic/blue/forest.png"
+    },
+    {
+      "class": "wand",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/wand/armor/basic/blue/blue.png"
+    },
+    {
+      "class": "wand",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/wand/armor/basic/blue/red.png"
+    },
+    {
+      "class": "wand",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/wand/armor/basic/blue/purple.png"
+    },
+    {
+      "class": "wand",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/wand/armor/basic/blue/gray.png"
+    },
+    {
+      "class": "wand",
+      "slot": "armor",
+      "item": "basic",
       "color": "red",
       "path": "assets/equipment/icons/wand/armor/basic/red.png"
+    },
+    {
+      "class": "wand",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/wand/armor/basic/red/sand.png"
+    },
+    {
+      "class": "wand",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/wand/armor/basic/red/forest.png"
+    },
+    {
+      "class": "wand",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/wand/armor/basic/red/blue.png"
+    },
+    {
+      "class": "wand",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/wand/armor/basic/red/red.png"
+    },
+    {
+      "class": "wand",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/wand/armor/basic/red/purple.png"
+    },
+    {
+      "class": "wand",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/wand/armor/basic/red/gray.png"
     },
     {
       "class": "wand",
@@ -335,8 +2904,92 @@
       "class": "wand",
       "slot": "armor",
       "item": "basic",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/wand/armor/basic/purple/sand.png"
+    },
+    {
+      "class": "wand",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/wand/armor/basic/purple/forest.png"
+    },
+    {
+      "class": "wand",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/wand/armor/basic/purple/blue.png"
+    },
+    {
+      "class": "wand",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/wand/armor/basic/purple/red.png"
+    },
+    {
+      "class": "wand",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/wand/armor/basic/purple/purple.png"
+    },
+    {
+      "class": "wand",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/wand/armor/basic/purple/gray.png"
+    },
+    {
+      "class": "wand",
+      "slot": "armor",
+      "item": "basic",
       "color": "gray",
       "path": "assets/equipment/icons/wand/armor/basic/gray.png"
+    },
+    {
+      "class": "wand",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/wand/armor/basic/gray/sand.png"
+    },
+    {
+      "class": "wand",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/wand/armor/basic/gray/forest.png"
+    },
+    {
+      "class": "wand",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/wand/armor/basic/gray/blue.png"
+    },
+    {
+      "class": "wand",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/wand/armor/basic/gray/red.png"
+    },
+    {
+      "class": "wand",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/wand/armor/basic/gray/purple.png"
+    },
+    {
+      "class": "wand",
+      "slot": "armor",
+      "item": "basic",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/wand/armor/basic/gray/gray.png"
     },
     {
       "class": "wand",
@@ -348,9 +3001,93 @@
     {
       "class": "wand",
       "slot": "armor",
+      "item": "iron",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/wand/armor/iron/sand.png"
+    },
+    {
+      "class": "wand",
+      "slot": "armor",
+      "item": "iron",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/wand/armor/iron/forest.png"
+    },
+    {
+      "class": "wand",
+      "slot": "armor",
+      "item": "iron",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/wand/armor/iron/blue.png"
+    },
+    {
+      "class": "wand",
+      "slot": "armor",
+      "item": "iron",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/wand/armor/iron/red.png"
+    },
+    {
+      "class": "wand",
+      "slot": "armor",
+      "item": "iron",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/wand/armor/iron/purple.png"
+    },
+    {
+      "class": "wand",
+      "slot": "armor",
+      "item": "iron",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/wand/armor/iron/gray.png"
+    },
+    {
+      "class": "wand",
+      "slot": "armor",
       "item": "royal",
       "color": null,
       "path": "assets/equipment/icons/wand/armor/royal.png"
+    },
+    {
+      "class": "wand",
+      "slot": "armor",
+      "item": "royal",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/wand/armor/royal/sand.png"
+    },
+    {
+      "class": "wand",
+      "slot": "armor",
+      "item": "royal",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/wand/armor/royal/forest.png"
+    },
+    {
+      "class": "wand",
+      "slot": "armor",
+      "item": "royal",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/wand/armor/royal/blue.png"
+    },
+    {
+      "class": "wand",
+      "slot": "armor",
+      "item": "royal",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/wand/armor/royal/red.png"
+    },
+    {
+      "class": "wand",
+      "slot": "armor",
+      "item": "royal",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/wand/armor/royal/purple.png"
+    },
+    {
+      "class": "wand",
+      "slot": "armor",
+      "item": "royal",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/wand/armor/royal/gray.png"
     },
     {
       "class": "wand",
@@ -393,6 +3130,594 @@
       "item": "royal",
       "color": null,
       "path": "assets/equipment/icons/wand/shield/royal.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "tattered",
+      "color": "sand",
+      "path": "assets/equipment/icons/wand/cape/tattered/sand.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/wand/cape/tattered/sand/sand.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/wand/cape/tattered/sand/forest.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/wand/cape/tattered/sand/blue.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/wand/cape/tattered/sand/red.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/wand/cape/tattered/sand/purple.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/wand/cape/tattered/sand/gray.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "tattered",
+      "color": "forest",
+      "path": "assets/equipment/icons/wand/cape/tattered/forest.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/wand/cape/tattered/forest/sand.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/wand/cape/tattered/forest/forest.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/wand/cape/tattered/forest/blue.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/wand/cape/tattered/forest/red.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/wand/cape/tattered/forest/purple.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/wand/cape/tattered/forest/gray.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "tattered",
+      "color": "blue",
+      "path": "assets/equipment/icons/wand/cape/tattered/blue.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/wand/cape/tattered/blue/sand.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/wand/cape/tattered/blue/forest.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/wand/cape/tattered/blue/blue.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/wand/cape/tattered/blue/red.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/wand/cape/tattered/blue/purple.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/wand/cape/tattered/blue/gray.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "tattered",
+      "color": "red",
+      "path": "assets/equipment/icons/wand/cape/tattered/red.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/wand/cape/tattered/red/sand.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/wand/cape/tattered/red/forest.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/wand/cape/tattered/red/blue.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/wand/cape/tattered/red/red.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/wand/cape/tattered/red/purple.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/wand/cape/tattered/red/gray.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "tattered",
+      "color": "purple",
+      "path": "assets/equipment/icons/wand/cape/tattered/purple.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/wand/cape/tattered/purple/sand.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/wand/cape/tattered/purple/forest.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/wand/cape/tattered/purple/blue.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/wand/cape/tattered/purple/red.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/wand/cape/tattered/purple/purple.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/wand/cape/tattered/purple/gray.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "tattered",
+      "color": "gray",
+      "path": "assets/equipment/icons/wand/cape/tattered/gray.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/wand/cape/tattered/gray/sand.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/wand/cape/tattered/gray/forest.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/wand/cape/tattered/gray/blue.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/wand/cape/tattered/gray/red.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/wand/cape/tattered/gray/purple.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "tattered",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/wand/cape/tattered/gray/gray.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "solid",
+      "color": "sand",
+      "path": "assets/equipment/icons/wand/cape/solid/sand.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/wand/cape/solid/sand/sand.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/wand/cape/solid/sand/forest.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/wand/cape/solid/sand/blue.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/wand/cape/solid/sand/red.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/wand/cape/solid/sand/purple.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/wand/cape/solid/sand/gray.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "solid",
+      "color": "forest",
+      "path": "assets/equipment/icons/wand/cape/solid/forest.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/wand/cape/solid/forest/sand.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/wand/cape/solid/forest/forest.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/wand/cape/solid/forest/blue.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/wand/cape/solid/forest/red.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/wand/cape/solid/forest/purple.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/wand/cape/solid/forest/gray.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "solid",
+      "color": "blue",
+      "path": "assets/equipment/icons/wand/cape/solid/blue.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/wand/cape/solid/blue/sand.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/wand/cape/solid/blue/forest.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/wand/cape/solid/blue/blue.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/wand/cape/solid/blue/red.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/wand/cape/solid/blue/purple.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/wand/cape/solid/blue/gray.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "solid",
+      "color": "red",
+      "path": "assets/equipment/icons/wand/cape/solid/red.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/wand/cape/solid/red/sand.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/wand/cape/solid/red/forest.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/wand/cape/solid/red/blue.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/wand/cape/solid/red/red.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/wand/cape/solid/red/purple.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/wand/cape/solid/red/gray.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "solid",
+      "color": "purple",
+      "path": "assets/equipment/icons/wand/cape/solid/purple.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/wand/cape/solid/purple/sand.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/wand/cape/solid/purple/forest.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/wand/cape/solid/purple/blue.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/wand/cape/solid/purple/red.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/wand/cape/solid/purple/purple.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/wand/cape/solid/purple/gray.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "solid",
+      "color": "gray",
+      "path": "assets/equipment/icons/wand/cape/solid/gray.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "sand",
+      "path": "assets/equipment/icons/dyes/wand/cape/solid/gray/sand.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "forest",
+      "path": "assets/equipment/icons/dyes/wand/cape/solid/gray/forest.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "blue",
+      "path": "assets/equipment/icons/dyes/wand/cape/solid/gray/blue.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "red",
+      "path": "assets/equipment/icons/dyes/wand/cape/solid/gray/red.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "purple",
+      "path": "assets/equipment/icons/dyes/wand/cape/solid/gray/purple.png"
+    },
+    {
+      "class": "wand",
+      "slot": "cape",
+      "item": "solid",
+      "dye": "gray",
+      "path": "assets/equipment/icons/dyes/wand/cape/solid/gray/gray.png"
     }
   ]
 }

@@ -25,8 +25,9 @@
   const starterOutfit = loadout ? loadouts.outfit(loadout.weapon,loadout.outfit) : null;
   const heroMagic = loadouts?.magicSelection(character);
   const equipment = window.EmberEquipment?.createStore({classId:starterWeapon?.id||'sword'});
+  const dyeEngine=window.EmberEquipmentDye?.create({canvasFactory:()=>document.createElement('canvas')});
   const equipmentArt = starterWeapon?.id==='sword' && equipment?.enabled
-    ? window.EmberEquipmentArt?.create({loadImage}) : null;
+    ? window.EmberEquipmentArt?.create({loadImage,dye:dyeEngine,outfitColor:loadout?.outfitColor||'sand'}) : null;
   const ranged = starterWeapon && starterWeapon.projectile !== 'melee';
   const skin = character?.skin || 'light';
   const swordEquipment = starterWeapon?.id==='sword' && equipment?.enabled && loadout && window.EmberSwordEquipment
@@ -35,7 +36,7 @@
   const classEquipment = ['bow','wand'].includes(starterWeapon?.id) && equipment?.enabled && loadout && window.EmberClassEquipment
     ? window.EmberClassEquipment.create({classId:starterWeapon.id,skin,color:loadout.outfitColor,
       loadImage,standardPath:pose=>loadouts.path(loadout,skin,pose),
-      canvasFactory:()=>document.createElement('canvas')}) : null;
+      canvasFactory:()=>document.createElement('canvas'),dye:dyeEngine}) : null;
   let loadedClassSprites = null;
   function applyClassSprites(images){
     if(!images||!actors.hero.images.walk)return;
@@ -170,22 +171,23 @@
       root:equipmentPanel,store:equipment,
       outfitColor:loadout?.outfitColor||'sand',
       getSprite:()=>actors.hero.images.idle,
-      loadItem:async(slot,id)=>{
+      loadItem:async(slot,id,colors)=>{
         const nextLook={...equipment.getState(),[slot]:id};
         // Stage every layer before saving a selection. In particular, a new
         // shield must have its native foreground ready over the chest armor.
         if(classEquipment){
-          loadedClassSprites=await classEquipment.load(nextLook);
+          loadedClassSprites=await classEquipment.load(nextLook,colors||equipment.getColors(nextLook));
         }else{
           const changingWeapon=slot==='weapon'||slot==='shield';
           const [_,images]=await Promise.all([
-            equipmentArt?.prepareLook(nextLook),
+            equipmentArt?.prepareLook(nextLook,colors||equipment.getColors(nextLook)),
             changingWeapon&&swordEquipment?swordEquipment.load(nextLook):Promise.resolve(null)
           ]);
           if(images)loadedSwordSprites=images;
         }
       },
       paintItem:(ctx,pose)=>equipmentArt?.draw(ctx,pose),
+      paintBack:(ctx,pose)=>equipmentArt?.drawBack(ctx,pose),
       onEquip:(_look,slot)=>{
         if(classEquipment&&loadedClassSprites)applyClassSprites(loadedClassSprites);
         if((slot==='weapon'||slot==='shield')&&loadedSwordSprites)applySwordSprites(loadedSwordSprites);
@@ -206,7 +208,7 @@
       let idle;
       if (loadout) {
         const swordSprites=swordEquipment?await swordEquipment.load(equipment.getState()):null;
-        const classSprites=classEquipment?await classEquipment.load(equipment.getState()):null;
+        const classSprites=classEquipment?await classEquipment.load(equipment.getState(),equipment.getColors()):null;
         if(swordSprites)loadedSwordSprites=swordSprites;
         if(classSprites)loadedClassSprites=classSprites;
         const walk = classSprites?.walk||swordSprites?.walk||await loadImage(loadouts.path(loadout,skin,'walk'));
@@ -262,7 +264,7 @@
       const avatarTile=loadout?starterWeapon.walk.tile:64, avatarOrigin=loadout?starterWeapon.walk.origin:0;
       face.drawImage(idle,avatarOrigin+19,avatarTile*2+avatarOrigin+12,26,26,0,0,32,32);
       // Helmet/armor are native pose overlays; sword/shield are complete, recomposed LPC sheets.
-      if(equipmentArt)try{await equipmentArt.prepareLook(equipment.getState());}
+      if(equipmentArt)try{await equipmentArt.prepareLook(equipment.getState(),equipment.getColors());}
       catch{$('#status').textContent='Не удалось загрузить часть LPC-экипировки.';}
       ready = true;
       updateMovement(0,battle.getState());
@@ -493,12 +495,11 @@
     if (!frozen&&actor.lastKey !== key) {
       actor.canvas.width = tile; actor.canvas.height = tile;
       const ctx = actor.canvas.getContext('2d'); ctx.clearRect(0,0,tile,tile); ctx.imageSmoothingEnabled = false;
+      const gearPose=id==='hero'&&equipmentArt?{equipped:equipment.getState(),colors:equipment.getColors(),row,frame:cell,kind,
+        variant:attacking?(actor.animation?.variant||'slash'):null,tile,origin}:null;
+      if(gearPose)equipmentArt.drawBack(ctx,gearPose);
       ctx.drawImage(descriptor.image,cell*tile,row*tile,tile,tile,0,0,tile,tile);
-      if(id==='hero'&&equipmentArt){
-        const pose={equipped:equipment.getState(),row,frame:cell,kind,
-          variant:attacking?(actor.animation?.variant||'slash'):null,tile,origin};
-        equipmentArt.draw(ctx,pose);
-      }
+      if(gearPose)equipmentArt.draw(ctx,gearPose);
       actor.lastKey = key;
       actor.canvas.style.width = `${tile / 64 * 100}%`; actor.canvas.style.height = `${tile / 64 * 100}%`;
       actor.canvas.style.left = `${-origin / 64 * 100}%`; actor.canvas.style.top = `${-origin / 64 * 100}%`;
