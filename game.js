@@ -25,12 +25,26 @@
   const starterOutfit = loadout ? loadouts.outfit(loadout.weapon,loadout.outfit) : null;
   const heroMagic = loadouts?.magicSelection(character);
   const equipment = window.EmberEquipment?.createStore({classId:starterWeapon?.id||'sword'});
-  const equipmentArt = equipment?.enabled ? window.EmberEquipmentArt?.create({loadImage}) : null;
+  const equipmentArt = starterWeapon?.id==='sword' && equipment?.enabled
+    ? window.EmberEquipmentArt?.create({loadImage}) : null;
   const ranged = starterWeapon && starterWeapon.projectile !== 'melee';
   const skin = character?.skin || 'light';
-  const swordEquipment = equipment?.enabled && loadout && window.EmberSwordEquipment
+  const swordEquipment = starterWeapon?.id==='sword' && equipment?.enabled && loadout && window.EmberSwordEquipment
     ? window.EmberSwordEquipment.create({skin,color:loadout.outfitColor,loadImage,
       standardPath:pose=>loadouts.path(loadout,skin,pose)}) : null;
+  const classEquipment = ['bow','wand'].includes(starterWeapon?.id) && equipment?.enabled && loadout && window.EmberClassEquipment
+    ? window.EmberClassEquipment.create({classId:starterWeapon.id,skin,color:loadout.outfitColor,
+      loadImage,standardPath:pose=>loadouts.path(loadout,skin,pose),
+      canvasFactory:()=>document.createElement('canvas')}) : null;
+  let loadedClassSprites = null;
+  function applyClassSprites(images){
+    if(!images||!actors.hero.images.walk)return;
+    const sets=actors.hero.images;
+    for(const [kind,pose] of [['idle','walk'],['walk','walk'],['attack','attack']]){
+      if(sets[kind])sets[kind].image=images[pose];
+    }
+    actors.hero.lastKey=null;
+  }
   let loadedSwordSprites = null;
   function applySwordSprites(images){
     if(!images||!actors.hero.images.walk)return;
@@ -159,15 +173,20 @@
         const nextLook={...equipment.getState(),[slot]:id};
         // Stage every layer before saving a selection. In particular, a new
         // shield must have its native foreground ready over the chest armor.
-        const changingWeapon=slot==='weapon'||slot==='shield';
-        const [_,images]=await Promise.all([
-          equipmentArt?.prepareLook(nextLook),
-          changingWeapon&&swordEquipment?swordEquipment.load(nextLook):Promise.resolve(null)
-        ]);
-        if(images)loadedSwordSprites=images;
+        if(classEquipment){
+          loadedClassSprites=await classEquipment.load(nextLook);
+        }else{
+          const changingWeapon=slot==='weapon'||slot==='shield';
+          const [_,images]=await Promise.all([
+            equipmentArt?.prepareLook(nextLook),
+            changingWeapon&&swordEquipment?swordEquipment.load(nextLook):Promise.resolve(null)
+          ]);
+          if(images)loadedSwordSprites=images;
+        }
       },
       paintItem:(ctx,pose)=>equipmentArt?.draw(ctx,pose),
       onEquip:(_look,slot)=>{
+        if(classEquipment&&loadedClassSprites)applyClassSprites(loadedClassSprites);
         if((slot==='weapon'||slot==='shield')&&loadedSwordSprites)applySwordSprites(loadedSwordSprites);
         actors.hero.lastKey=null;
         if(ready)render(battle.getState());
@@ -186,9 +205,11 @@
       let idle;
       if (loadout) {
         const swordSprites=swordEquipment?await swordEquipment.load(equipment.getState()):null;
+        const classSprites=classEquipment?await classEquipment.load(equipment.getState()):null;
         if(swordSprites)loadedSwordSprites=swordSprites;
-        const walk = swordSprites?.walk||await loadImage(loadouts.path(loadout,skin,'walk'));
-        const attack = swordSprites?.attack||await loadImage(loadouts.path(loadout,skin,'attack'));
+        if(classSprites)loadedClassSprites=classSprites;
+        const walk = classSprites?.walk||swordSprites?.walk||await loadImage(loadouts.path(loadout,skin,'walk'));
+        const attack = classSprites?.attack||swordSprites?.attack||await loadImage(loadouts.path(loadout,skin,'attack'));
         idle = walk;
         actors.hero.images.idle = {image:walk,row:3,still:0,...starterWeapon.walk};
         actors.hero.images.walk = {image:walk,row:3,...starterWeapon.walk};
