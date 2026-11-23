@@ -180,7 +180,7 @@
         }else{
           const changingWeapon=slot==='weapon'||slot==='shield';
           const [_,images]=await Promise.all([
-            equipmentArt?.prepareLook(nextLook),
+            equipmentArt?.prepareLook(nextLook,colors||equipment.getColors(nextLook)),
             changingWeapon&&swordEquipment?swordEquipment.load(nextLook):Promise.resolve(null)
           ]);
           if(images)loadedSwordSprites=images;
@@ -264,7 +264,7 @@
       const avatarTile=loadout?starterWeapon.walk.tile:64, avatarOrigin=loadout?starterWeapon.walk.origin:0;
       face.drawImage(idle,avatarOrigin+19,avatarTile*2+avatarOrigin+12,26,26,0,0,32,32);
       // Helmet/armor are native pose overlays; sword/shield are complete, recomposed LPC sheets.
-      if(equipmentArt)try{await equipmentArt.prepareLook(equipment.getState());}
+      if(equipmentArt)try{await equipmentArt.prepareLook(equipment.getState(),equipment.getColors());}
       catch{$('#status').textContent='Не удалось загрузить часть LPC-экипировки.';}
       ready = true;
       updateMovement(0,battle.getState());
