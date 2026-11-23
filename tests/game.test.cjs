@@ -81,6 +81,14 @@ function createHarness({skin = 'bronze', preference, search = '', weapon, outfit
         const bottom=field.bottom-ground+depthOffset,left=centerX-width/2;
         return {left,right:left+width,top:bottom-width,bottom,width,height:width};
       }
+      if(this.selector==='#companion-wolf'){
+        const field=node('.battlefield').getBoundingClientRect();
+        const ground=Number.parseFloat(node('.battlefield').style['--road-ground'])||roadGround;
+        const depthOffset=Number.parseFloat(this.style['--lane-offset'])||0;
+        const width=modelSize,centerX=Number.parseFloat(this.style.left)||0;
+        const bottom=field.bottom-ground+depthOffset;
+        return {left:centerX-width/2,right:centerX+width/2,top:bottom-width,bottom,width,height:width};
+      }
       if(this.selector==='.battlefield')return {left:0,right:this.clientWidth,top:arenaHeight-fieldBottomGap-fieldHeight,bottom:arenaHeight-fieldBottomGap,width:this.clientWidth,height:fieldHeight};
       return {left:0,right:this.clientWidth,top:0,bottom:arenaHeight,width:this.clientWidth,height:arenaHeight};
     }
@@ -1131,4 +1139,46 @@ test('equipped wolf starts animating immediately in the SECOND and THIRD wave en
    assert.ok(new Set(walked).size>=4,
      `wave ${waveIndex+1} wolf must animate its paws from the start instead of sliding`);
  }
+});
+
+test('equipped Archer wolf intercepts enemies: they move into range, stop, then strike the wolf instead of hero',async()=>{
+ const ui=createHarness({weapon:'bow',outfit:'wanderer',wolfEquipped:true,
+   combatOptions:{heroDamage:1,heroMaxHp:600}});
+ await ui.loadAllImages();
+ assert.equal(ui.state().companion.hp,70);
+ assert.equal(ui.state().enemyTargetId,'companion');
+ const archer=ui.node('[data-fighter="archer1"]'),start=actorX(ui,'archer1');
+ ui.runUntil(()=>ui.events.some(e=>e.sourceId==='archer1'&&e.targetId==='companion'),20);
+ const strike=ui.events.find(e=>e.sourceId==='archer1'&&e.targetId==='companion'&&e.type==='attack');
+ assert.equal(strike.damage,7);
+ assert.ok(actorX(ui,'archer1')<start,'enemy must first run toward the wolf');
+ const restingX=actorX(ui,'archer1');
+ ui.runFor(.2);
+ assert.ok(Math.abs(actorX(ui,'archer1')-restingX)<.1,
+   'enemy must stop moving while fighting the wolf');
+ assert.equal(ui.state().hero.hp,600,'the Archer takes no damage while wolf survives');
+ assert.equal(ui.state().companion.hp,63);
+ assert.equal(ui.node('#companion-health-fill').style.width,'90%');
+ assert.equal(ui.node('#companion-wolf').hidden,false);
+ assert.ok(ui.events.some(e=>e.sourceId==='hero'&&e.projectile==='arrow'),
+   'Archer keeps shooting while the wolf tanks');
+});
+test('after the wolf falls, living enemies abandon its position and walk to the Archer',async()=>{
+ const ui=createHarness({weapon:'bow',outfit:'wanderer',wolfEquipped:true,
+   combatOptions:{companionMaxHp:14,heroDamage:1,heroMaxHp:600}});
+ await ui.loadAllImages();
+ ui.runUntil(()=>ui.events.some(e=>e.type==='death'&&e.id==='companion'),25);
+ assert.equal(ui.state().companion.hp,0);
+ assert.equal(ui.state().enemyTargetId,'hero');
+ assert.equal(ui.events.filter(e=>e.type==='death'&&e.id==='companion').length,1);
+ assert.equal(ui.state().hero.hp,600);
+ const previous=actorX(ui,'archer1');
+ ui.runFor(.6);
+ assert.ok(actorX(ui,'archer1')<previous-.1,'enemy resumes advancing towards the hero');
+ assert.equal(ui.node('#companion-wolf').dataset.motion,'die');
+ assert.equal(ui.node('#companion-health-fill').style.width,'0%');
+ ui.runUntil(()=>ui.events.some(e=>e.type==='attack'&&e.targetId==='hero'&&e.sourceId==='archer1'),12);
+ assert.ok(ui.state().hero.hp<600,'the enemy only attacks the hero after defeating the wolf');
+ assert.equal(ui.events.filter(e=>e.type==='death'&&e.id==='companion').length,1);
+ assert.ok(!ui.events.some(e=>e.sourceId==='companion'&&e.at>ui.events.find(x=>x.id==='companion'&&x.type==='death').at));
 });

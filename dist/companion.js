@@ -69,7 +69,7 @@
     // The caller supplies authoritative enemy coordinates from the same
     // snapshot the Archer fires at. This controller only decides pursuit,
     // bite-frame timing and when to request an engine-confirmed hit.
-    function advance({dt=0,time=0,phase='running',entering=false,heroAlive=true,
+    function advance({dt=0,time=0,phase='running',entering=false,heroAlive=true,companionAlive=true,
       heroX=0,heroSize=64,heroDepth=3,target=null,reducedMotion=false}={}){
       if(!active()||!image||!Number.isFinite(heroX)){
         if(position!==null)reset();
@@ -77,7 +77,9 @@
       }
       const size=Math.max(48,heroSize),home=heroX-size*.83;
       if(position===null){position=home;actorDepth=heroDepth;facing=3;motion='idle';}
-      if(!heroAlive||phase==='defeat'){motion='die';return null;}
+      if(!companionAlive||!heroAlive||phase==='defeat'){
+        motion='die';biteStarted=null;biteTarget=null;biteLanded=false;return null;
+      }
       if(entering){
         // The hero enters each wave over ~2.5 seconds; the wolf walks in
         // beside them and never strikes before the battle clock starts.

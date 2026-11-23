@@ -1038,3 +1038,84 @@ test('Wolf kills enemies once, advances waves, preserves rewards and never dupli
  assert.deepEqual(battle.companionStrike('orc',100),[]);
  assert.deepEqual(battle.advance(10),[]);
 });
+
+test('equipped Archer wolf absorbs enemy arrows first and death switches target to the hero without reward',()=>{
+ const battle=createDefaultBattle({heroWeapon:'bow',heroProjectile:'arrow',
+   companionEnabled:true,companionMaxHp:14,heroDamage:1,heroMaxHp:240});
+ assert.equal(battle.state.enemyTargetId,'companion');
+ assert.deepEqual([battle.state.companion.hp,battle.state.companion.maxHp],[14,14]);
+ assert.equal(battle.getArrowSchedule().find(s=>s.sourceId==='archer1').targetId,'companion');
+ let events=battle.advance(1.8);
+ const first=events.find(e=>e.sourceId==='archer1'&&e.type==='attack');
+ assert.equal(first.targetId,'companion');assert.equal(first.damage,7);
+ assert.equal(battle.state.companion.hp,7);assert.equal(battle.state.hero.hp,240);
+ assert.equal(battle.state.reward,0);
+ events=battle.advance(1.8);
+ assert.equal(events.filter(e=>e.type==='death'&&e.id==='companion').length,1);
+ assert.equal(battle.state.companion.hp,0);
+ assert.equal(battle.state.hero.hp,240);
+ assert.equal(battle.state.enemyTargetId,'hero');
+ assert.equal(battle.getArrowSchedule().find(s=>s.sourceId==='archer1').targetId,'hero');
+ assert.equal(battle.state.defeatedCount,0);
+ assert.equal(battle.state.reward,0,'losing the wolf never pays gold');
+ events=battle.advance(1.8);
+ assert.equal(events.filter(e=>e.type==='attack'&&e.sourceId==='archer1'&&e.targetId==='hero').length,1);
+ assert.equal(battle.state.hero.hp,233,'the third arrow hits the Archer after the wolf falls');
+ assert.equal(battle.state.companion.hp,0);
+ battle.setCompanionEnabled(false);battle.setCompanionEnabled(true);
+ assert.equal(battle.state.companion.hp,0,'equipment toggles do not resurrect a fallen wolf');
+ assert.deepEqual(battle.companionStrike('archer1',7),[]);
+ battle.restart();
+ assert.equal(battle.state.companion.hp,14,'wolf revives only for a new battle');
+ assert.equal(battle.state.enemyTargetId,'companion');
+});
+test('enemies cannot attack a wolf until within melee reach; their cooldowns are held during approach',()=>{
+ const battle=createDefaultBattle({heroWeapon:'bow',heroProjectile:'arrow',
+   companionEnabled:true,heroDamage:1,heroMaxHp:240});
+ const events=battle.advance(3.6,{enemyCanAttack:{archer1:false}});
+ assert.equal(events.some(e=>e.sourceId==='archer1'),false);
+ assert.equal(battle.state.companion.hp,70);
+ assert.equal(battle.state.hero.hp,240);
+ assert.equal(battle.getArrowSchedule().find(s=>s.sourceId==='archer1').at,5.4);
+ const after=battle.advance(1.8,{enemyCanAttack:{archer1:true}});
+ assert.equal(after.filter(e=>e.sourceId==='archer1'&&e.targetId==='companion').length,1);
+ assert.equal(battle.state.companion.hp,63);
+});
+test('wolf tanking cannot be forced for other classes and first-time live equip initializes HP once',()=>{
+ for(const [weapon,projectile] of [['sword','melee'],['wand','magic'],['sword','arrow']]){
+   const battle=createDefaultBattle({heroWeapon:weapon,heroProjectile:projectile,companionEnabled:true});
+   assert.equal(battle.state.companion,null);
+   assert.equal(battle.state.enemyTargetId,'hero');
+   assert.equal(battle.setCompanionEnabled(true),false);
+ }
+ const battle=createDefaultBattle({heroWeapon:'bow',heroProjectile:'arrow',companionEnabled:false});
+ assert.equal(battle.state.companion,null);
+ assert.equal(battle.setCompanionEnabled(true),true);
+ assert.equal(battle.state.companion.hp,70);
+ battle.advance(1.8);
+ assert.equal(battle.state.companion.hp,63);
+ battle.setCompanionEnabled(false);
+ assert.equal(battle.state.companion,null);
+ battle.setCompanionEnabled(true);
+ assert.equal(battle.state.companion.hp,63,'unequipping preserves current health');
+});
+
+test('simultaneous enemy hits do not teleport damage onto the hero at the instant the wolf dies',()=>{
+ const create=encounterFixture([[{id:'archer2',type:'archer'},{id:'archer3',type:'archer'}]],{legacyArcher:false});
+ const battle=create({heroWeapon:'bow',heroProjectile:'arrow',companionEnabled:true,
+   companionMaxHp:7,heroDamage:1,heroMaxHp:200});
+ const gates={enemyCanAttack:{archer2:true,archer3:true},enemyCanAttackHero:{archer2:false,archer3:false}};
+ let events=battle.advance(1.8,gates);
+ assert.equal(battle.state.companion.hp,0);
+ assert.equal(battle.state.enemyTargetId,'hero');
+ assert.equal(battle.state.hero.hp,200);
+ assert.equal(events.filter(e=>e.type==='attack'&&e.targetId==='companion').length,1);
+ assert.equal(events.filter(e=>e.type==='attack'&&e.targetId==='hero').length,0);
+ events=battle.advance(.2,gates);
+ assert.equal(events.some(e=>e.type==='attack'&&e.targetId==='hero'),false);
+ assert.equal(battle.state.hero.hp,200);
+ events=battle.advance(.2,{enemyCanAttack:{archer2:true,archer3:true},
+   enemyCanAttackHero:{archer2:true,archer3:true}});
+ assert.ok(events.some(e=>e.type==='attack'&&e.targetId==='hero'),
+   'enemies may attack the hero only once they have actually reached him');
+});
