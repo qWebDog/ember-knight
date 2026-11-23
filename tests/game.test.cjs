@@ -1329,14 +1329,17 @@ test('Orc plays advancing walk cells while chasing the Archer wolf instead of sl
  assert.ok(orc.motionHistory.includes('walk'),
    'the moving Orc must expose the walk pose, not the idle pose');
  const walkCells=canvas.draws.slice(drawsStart).filter(draw=>
-   draw.crop&&draw.crop[2]===64&&draw.crop[1]===64);
+   draw.src.endsWith('orc-walk.png')&&draw.crop&&draw.crop[2]===64&&draw.crop[0]>0);
  const gait=walkCells.map(draw=>draw.crop[0]);
  assert.ok(new Set(gait).size>=3,
    'Orc must cycle at least three side-facing leg frames while pursuing the wolf');
  assert.ok(walkCells.length>=3,
-   'Orc must walk in left profile toward the wolf, not stare at the viewer');
- assert.equal(canvas.draws.at(-1).crop[1],64,
-   'Orc walking left must keep facing the wolf throughout the animation');
+   'Orc must keep taking steps while moving to the wolf');
+ assert.ok(walkCells.every(draw=>draw.crop[1]===64||draw.crop[1]===192),
+   'moving Orc must face left or right along the ground, never toward the viewer');
+ assert.equal(canvas.draws.at(-1).crop[1],
+   actorX(ui,'orc')<start?64:192,
+   'the side-facing Orc must look in its actual travel direction');
  assert.ok(ui.state().enemies[0].hp>0,'test observes an Orc that is still alive');
 });
 test('Archer and living wolf exit the completed wave in the SAME direction',async()=>{
