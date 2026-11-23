@@ -60,8 +60,20 @@
     const d=previewDescriptor,tile=d.tile||64,origin=d.origin||0,cell=step===0?frame:0;
     if(canvas.width!==tile){canvas.width=tile;canvas.height=tile;}
     const ctx=canvas.getContext('2d');ctx.clearRect(0,0,tile,tile);ctx.imageSmoothingEnabled=false;
+    // Never shrink LPC pixels inside a low-resolution canvas.
+    // Keep all 64 source pixels of the Mage and reduce only its CSS display
+    // box. At high-DPI mobile resolutions this retains the fine outlines
+    // instead of resampling a 64px tile into a destructive 32px bitmap.
     ctx.drawImage(previewImage,cell*tile,direction*tile,tile,tile,0,0,tile,tile);
-    canvas.style.width=`${tile/64*100}%`;canvas.style.height=`${tile/64*100}%`;canvas.style.left=`${-origin/64*100}%`;canvas.style.top=`${-origin/64*100}%`;
+    if(step>0&&weapon==='wand'){
+      // Exactly the same on-screen position and size as the prior 32px
+      // drawing at (16,27), but rendered from the full original 64px atlas.
+      canvas.style.width='50%';canvas.style.height='50%';
+      canvas.style.left='25%';canvas.style.top='42.1875%';
+    }else{
+      canvas.style.width=`${tile/64*100}%`;canvas.style.height=`${tile/64*100}%`;
+      canvas.style.left=`${-origin/64*100}%`;canvas.style.top=`${-origin/64*100}%`;
+    }
     const description=step===0?'без экипировки':`${catalogue.weapon(weapon).name}, наряд ${outfit().name}, ${catalogue.color(rememberedColors[weapon]).name}${magicChoice()?`, стихия ${magicChoice().name}`:''}`;
     canvas.setAttribute('aria-label',`Странник: ${description}. Цвет кожи: ${skins.find(s=>s.id===selected).label}. ${directionNames[direction]}.`);
   }

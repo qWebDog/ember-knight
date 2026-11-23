@@ -24,8 +24,39 @@
   const starterWeapon = loadout ? loadouts.weapon(loadout.weapon) : null;
   const starterOutfit = loadout ? loadouts.outfit(loadout.weapon,loadout.outfit) : null;
   const heroMagic = loadouts?.magicSelection(character);
+  const equipment = window.EmberEquipment?.createStore({classId:starterWeapon?.id||'sword'});
+  const equipmentArt = starterWeapon?.id==='sword' && equipment?.enabled
+    ? window.EmberEquipmentArt?.create({loadImage}) : null;
   const ranged = starterWeapon && starterWeapon.projectile !== 'melee';
   const skin = character?.skin || 'light';
+  const swordEquipment = starterWeapon?.id==='sword' && equipment?.enabled && loadout && window.EmberSwordEquipment
+    ? window.EmberSwordEquipment.create({skin,color:loadout.outfitColor,loadImage,
+      standardPath:pose=>loadouts.path(loadout,skin,pose)}) : null;
+  const classEquipment = ['bow','wand'].includes(starterWeapon?.id) && equipment?.enabled && loadout && window.EmberClassEquipment
+    ? window.EmberClassEquipment.create({classId:starterWeapon.id,skin,color:loadout.outfitColor,
+      loadImage,standardPath:pose=>loadouts.path(loadout,skin,pose),
+      canvasFactory:()=>document.createElement('canvas')}) : null;
+  let loadedClassSprites = null;
+  function applyClassSprites(images){
+    if(!images||!actors.hero.images.walk)return;
+    const sets=actors.hero.images;
+    for(const [kind,pose] of [['idle','walk'],['walk','walk'],['attack','attack']]){
+      if(sets[kind])sets[kind].image=images[pose];
+    }
+    actors.hero.lastKey=null;
+  }
+  let loadedSwordSprites = null;
+  function applySwordSprites(images){
+    if(!images||!actors.hero.images.walk)return;
+    const sets=actors.hero.images;
+    for(const [kind,pose] of [['idle','walk'],['walk','walk'],['attack','attack'],['block','block']]){
+      if(sets[kind])sets[kind].image=images[pose];
+    }
+    for(const variant of ['slash','halfslash','backslash']){
+      if(sets.attacks?.[variant])sets.attacks[variant].image=images[variant==='slash'?'attack':variant];
+    }
+    actors.hero.lastKey=null;
+  }
   const name = typeof character?.name === 'string' && character.name.trim() ? character.name.slice(0,24) : 'Странник';
   const level = Number.isInteger(character?.level) ? Math.max(1,Math.min(99,character.level)) : 1;
   $('#player-name').textContent = name;
@@ -126,6 +157,45 @@
     }
   });
   window.EmberSkillPanel?.mount({root:$('#skills-panel'),store:progression,heroLevel:level});
+  let equipmentUI=null;
+  const equipmentPanel=$('#equipment-panel'),skillsPanel=$('#skills-panel');
+  if(equipment&&window.EmberEquipmentUI&&equipmentPanel&&skillsPanel){
+    const showLowerPanel=mode=>{
+      const isGear=mode==='equipment';
+      equipmentPanel.hidden=!isGear;
+      skillsPanel.hidden=isGear;
+      if(isGear)equipmentUI?.refreshPreview();
+    };
+    equipmentUI=window.EmberEquipmentUI.mount({
+      root:equipmentPanel,store:equipment,
+      getSprite:()=>actors.hero.images.idle,
+      loadItem:async(slot,id)=>{
+        const nextLook={...equipment.getState(),[slot]:id};
+        // Stage every layer before saving a selection. In particular, a new
+        // shield must have its native foreground ready over the chest armor.
+        if(classEquipment){
+          loadedClassSprites=await classEquipment.load(nextLook);
+        }else{
+          const changingWeapon=slot==='weapon'||slot==='shield';
+          const [_,images]=await Promise.all([
+            equipmentArt?.prepareLook(nextLook),
+            changingWeapon&&swordEquipment?swordEquipment.load(nextLook):Promise.resolve(null)
+          ]);
+          if(images)loadedSwordSprites=images;
+        }
+      },
+      paintItem:(ctx,pose)=>equipmentArt?.draw(ctx,pose),
+      onEquip:(_look,slot)=>{
+        if(classEquipment&&loadedClassSprites)applyClassSprites(loadedClassSprites);
+        if((slot==='weapon'||slot==='shield')&&loadedSwordSprites)applySwordSprites(loadedSwordSprites);
+        actors.hero.lastKey=null;
+        if(ready)render(battle.getState());
+        equipmentUI?.refreshPreview();
+      }
+    });
+    $('#open-equipment-tab')?.addEventListener('click',()=>showLowerPanel('equipment'));
+    $('#back-skills-tab')?.addEventListener('click',()=>showLowerPanel('skills'));
+  }
   function loadImage(path) {
     return new Promise((resolve,reject) => { const image = new Image(); image.onload = () => resolve(image); image.onerror = () => reject(new Error(path)); image.src = path; });
   }
@@ -134,21 +204,25 @@
     try {
       let idle;
       if (loadout) {
-        const walk = await loadImage(loadouts.path(loadout,skin,'walk'));
-        const attack = await loadImage(loadouts.path(loadout,skin,'attack'));
+        const swordSprites=swordEquipment?await swordEquipment.load(equipment.getState()):null;
+        const classSprites=classEquipment?await classEquipment.load(equipment.getState()):null;
+        if(swordSprites)loadedSwordSprites=swordSprites;
+        if(classSprites)loadedClassSprites=classSprites;
+        const walk = classSprites?.walk||swordSprites?.walk||await loadImage(loadouts.path(loadout,skin,'walk'));
+        const attack = classSprites?.attack||swordSprites?.attack||await loadImage(loadouts.path(loadout,skin,'attack'));
         idle = walk;
         actors.hero.images.idle = {image:walk,row:3,still:0,...starterWeapon.walk};
         actors.hero.images.walk = {image:walk,row:3,...starterWeapon.walk};
         actors.hero.images.attack = {image:attack,row:3,...starterWeapon.attack};
         if (starterWeapon.attacks) {
           const variants = await Promise.all(Object.entries(starterWeapon.attacks).map(async ([variant,geometry]) => {
-            const image = variant === 'slash' ? attack : await loadImage(loadouts.path(loadout,skin,variant));
+            const image = variant === 'slash' ? attack : (swordSprites?.[variant]||await loadImage(loadouts.path(loadout,skin,variant)));
             return [variant,{image,row:3,...geometry}];
           }));
           actors.hero.images.attacks = Object.fromEntries(variants);
         }
         if (starterWeapon.block) {
-          const block = await loadImage(loadouts.path(loadout,skin,'block'));
+          const block = swordSprites?.block||await loadImage(loadouts.path(loadout,skin,'block'));
           actors.hero.images.block = {image:block,row:3,still:0,...starterWeapon.block};
         }
       } else {
@@ -186,10 +260,13 @@
       const face = $('#avatar').getContext('2d'); face.imageSmoothingEnabled = false;
       const avatarTile=loadout?starterWeapon.walk.tile:64, avatarOrigin=loadout?starterWeapon.walk.origin:0;
       face.drawImage(idle,avatarOrigin+19,avatarTile*2+avatarOrigin+12,26,26,0,0,32,32);
+      // Helmet/armor are native pose overlays; sword/shield are complete, recomposed LPC sheets.
+      if(equipmentArt)try{await equipmentArt.prepareLook(equipment.getState());}
+      catch{$('#status').textContent='Не удалось загрузить часть LPC-экипировки.';}
       ready = true;
       updateMovement(0,battle.getState());
       $('#status').textContent = 'Бой готов: один лучник, два лучника, затем орк.';
-      render(battle.getState()); syncPause();
+      render(battle.getState()); equipmentUI?.refreshPreview(); syncPause();
     } catch {
       assetError = true;
       $('#result-title').textContent = 'Не удалось загрузить бой';
@@ -415,7 +492,13 @@
     if (!frozen&&actor.lastKey !== key) {
       actor.canvas.width = tile; actor.canvas.height = tile;
       const ctx = actor.canvas.getContext('2d'); ctx.clearRect(0,0,tile,tile); ctx.imageSmoothingEnabled = false;
-      ctx.drawImage(descriptor.image,cell*tile,row*tile,tile,tile,0,0,tile,tile); actor.lastKey = key;
+      ctx.drawImage(descriptor.image,cell*tile,row*tile,tile,tile,0,0,tile,tile);
+      if(id==='hero'&&equipmentArt){
+        const pose={equipped:equipment.getState(),row,frame:cell,kind,
+          variant:attacking?(actor.animation?.variant||'slash'):null,tile,origin};
+        equipmentArt.draw(ctx,pose);
+      }
+      actor.lastKey = key;
       actor.canvas.style.width = `${tile / 64 * 100}%`; actor.canvas.style.height = `${tile / 64 * 100}%`;
       actor.canvas.style.left = `${-origin / 64 * 100}%`; actor.canvas.style.top = `${-origin / 64 * 100}%`;
     }

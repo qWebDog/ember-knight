@@ -12,7 +12,7 @@ function harness({saved=null,blocked=false}={}){
   set src(v){this.attrs.src=v;assert.ok(fs.existsSync(path.join(root,v)),v)}get src(){return this.attrs.src}
   focus(){}setPointerCapture(id){this.capture=id}hasPointerCapture(id){return this.capture===id}releasePointerCapture(){this.capture=null}
   getBoundingClientRect(){return {left:0,top:0,right:400,bottom:400}}showModal(){this.open=true}close(){this.open=false}
-  getContext(){return {clearRect(){},drawImage:(im,x,y,w,h)=>{assert.ok(x>=0&&y>=0&&x+w<=im.width&&y+h<=im.height,`invalidcrop${im.src}:${[x,y,w,h]}`);this.draws.push({src:im.src,crop:[x,y,w,h]})}}}
+  getContext(){return {clearRect(){},drawImage:(im,x,y,w,h,...destination)=>{assert.ok(x>=0&&y>=0&&x+w<=im.width&&y+h<=im.height,`invalidcrop${im.src}:${[x,y,w,h]}`);this.draws.push({src:im.src,crop:[x,y,w,h],destination})}}}
  }
  function node(k){if(!nodes.has(k))nodes.set(k,new E(k));return nodes.get(k)}
  const groups={
@@ -44,6 +44,37 @@ test('creation follows skin→weapon→clothing color and saves the single match
  const saved=JSON.parse(ui.storage.get('ember.character.v1'));assert.deepEqual([saved.skin,saved.weapon,saved.outfit,saved.outfitColor],['brown','bow','wanderer','red']);assert.deepEqual(saved.equipment,['bow','wanderer']);
  assert.equal(ui.node('#success-dialog').open,true);assert.match(ui.node('#saved-loadout').textContent,/Странник.*Бордовый/);
  ui.node('#start-adventure').click();assert.equal(ui.window.location.href,'./');
+});
+test('Mage stays half display size but retains all native 64px sprite detail; other classes unchanged',async()=>{
+ const ui=harness();await ui.load();
+ const canvas=ui.node('#hero');
+ // Step 1 (skin) still uses the original unmodified sprite.
+ assert.deepEqual(canvas.draws.at(-1).destination,[0,0,64,64]);
+ ui.node('#create-button').click();await ui.load();
+ for(const [kind,tile,origin] of [
+   ['sword',64,0],['bow',128,32],['wand',64,0],
+   ['sword',64,0],['wand',64,0],['bow',128,32]
+ ]){
+   ui.node('weapon:'+kind).click();await ui.load();
+   const draw=canvas.draws.at(-1);
+   assert.equal(canvas.width,tile);assert.equal(canvas.height,tile);
+   assert.deepEqual(draw.crop.slice(2),[tile,tile]);
+   assert.deepEqual(draw.destination,[0,0,tile,tile],
+     kind+' must draw the source sprite at full native pixel resolution');
+   if(kind==='wand'){
+     assert.equal(canvas.style.width,'50%');
+     assert.equal(canvas.style.height,'50%');
+     assert.equal(canvas.style.left,'25%');
+     assert.equal(canvas.style.top,'42.1875%');
+   }else{
+     assert.equal(canvas.style.width,`${tile/64*100}%`);
+     assert.equal(canvas.style.height,`${tile/64*100}%`);
+     assert.equal(canvas.style.left,`${-origin/64*100}%`);
+     assert.equal(canvas.style.top,`${-origin/64*100}%`);
+   }
+ }
+ assert.ok(html.includes('src="app.js?v=20261123-mage-crisp-7"'),
+   'force mobile browser to load the full-resolution Mage preview');
 });
 test('all eighteen weapon and clothing-color choices preview, rotate and retain the independent skin',async()=>{
  const sets={sword:'militia',bow:'wanderer',wand:'acolyte'};
