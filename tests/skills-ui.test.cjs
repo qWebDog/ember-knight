@@ -95,7 +95,7 @@ test('the panel stays in the lower viewport grid with compact portrait and lands
  const css=fs.readFileSync(path.join(dist,'skills.css'),'utf8'),gameCSS=fs.readFileSync(path.join(dist,'game.css'),'utf8'),base=css.match(/\.skills-panel\{([^}]*)\}/)?.[1]||'';
  assert.match(base,/min-height:0/);assert.match(base,/overflow:hidden/);assert.match(base,/grid-template-rows:[^;]*minmax\(0,1fr\)/);assert.match(gameCSS,/\.game-screen\{[^}]*grid-template-rows:52% minmax\(0,1fr\)/);assert.match(gameCSS,/html\{[^}]*overflow:hidden/);assert.match(gameCSS,/body\{[^}]*overflow:hidden/);
  assert.match(css,/@media\(max-width:700px\)/);assert.match(css,/@media\(orientation:portrait\) and \(max-height:700px\)/);assert.ok(/@media\(orientation:landscape\) and \(max-height:600px\)\{\s*\.skills-panel\{[^}]*grid-template-columns:minmax\(0,[\d.]+fr\) minmax\(0,[\d.]+fr\)/.test(css),'compact landscape must place the tree and detail in two flexible columns');assert.doesNotMatch(base,/overflow(?:-y)?:\s*(?:auto|scroll)/);const treeRules=[...css.matchAll(/\.skills-tree\{([^}]*)\}/g)].map(match=>match[1]).join(';');assert.match(treeRules,/overflow-y:auto/);assert.match(treeRules,/overflow-x:hidden/);assert.match(treeRules,/overscroll-behavior:contain/);
- for(const dependency of ['progression.js','skills-ui.js'])assert.ok(html.indexOf(`src="${dependency}?v=mage-tree-1"`)<html.indexOf('src="game.js?v=mage-tree-1"'),'the dependencies must load before the game mounts the panel');
+ for(const dependency of ['progression.js','skills-ui.js'])assert.ok(html.indexOf(`src="${dependency}?v=archer-tree-2"`)<html.indexOf('src="game.js?v=archer-tree-2"'),'the dependencies must load before the game mounts the panel');
 });
 
 test('Mage displays only Mage skills and its chosen branches can be bought independently',()=>{
@@ -129,8 +129,36 @@ test('Mage displays only Mage skills and its chosen branches can be bought indep
  assert.equal(restore.node('[data-skill-id="channel"]').dataset.level,'1');
 });
 
-test('Archer heading reflects chosen class without a class switcher',()=>{
- const ui=createPanel({classId:'bow'});
+test('Archer mounts a genuine independent three-branch tree with future nodes and persistent upgrades',()=>{
+ const ui=createPanel({classId:'bow',gold:60});
  assert.equal(ui.node('.skills-title p').textContent,'ЛУЧНИК');
+ assert.equal(ui.root.dataset.heroClass,'bow');
+ assert.equal(ui.root.getAttribute('aria-label'),'Древо навыков: ЛУЧНИК');
  assert.equal(ui.root.querySelectorAll('[data-class-switch]').length,0);
+ const cases=[['marksmanship','attack','Меткий выстрел','урону стрел'],['endurance','defense','Выносливость','здоровья'],['quickdraw','control','Быстрая тетива','стрельбы']];
+ for(const [id,branch,name,fragment] of cases){
+  ui.clickSkill(id);
+  assert.equal(ui.root.dataset.selected,id);
+  assert.equal(ui.node('#skill-detail').dataset.branch,branch);
+  assert.equal(ui.node('[data-skill-name]').textContent,name);
+  assert.match(ui.node('[data-skill-benefit]').textContent,new RegExp(fragment));
+  assert.equal(ui.node('#skill-upgrade').dataset.upgrade,id);
+  ui.upgrade();assert.equal(ui.node(`[data-skill-id="${id}"]`).dataset.level,'1');
+ }
+ assert.deepEqual(clean(ui.store.getStats()),{heroDamage:14,heroMaxHp:220,heroAttackSpeed:1.05});
+ assert.equal(ui.node('[data-skill-gold]').textContent,'30');
+ assert.equal(ui.controller.select('power'),false);
+ assert.equal(ui.controller.select('sorcery'),false);
+ assert.equal(ui.root.querySelectorAll('[data-skill-future]').length,6);
+ assert.match(ui.root.querySelectorAll('[data-skill-future]')[0].getAttribute('aria-label'),/Пробивающая стрела/);
+ assert.match(ui.root.querySelectorAll('[data-skill-future]')[5].getAttribute('aria-label'),/Прицельный залп/);
+ assert.equal(ui.root.querySelectorAll('[data-skill-tab]').length,4);
+ assert.equal(ui.root.querySelectorAll('[data-skill-tab]').filter(node=>!node.disabled).length,2);
+ const saved=JSON.parse(ui.storage.get('ember.progress.v1'));
+ assert.deepEqual(saved.archerLevels,{marksmanship:1,endurance:1,quickdraw:1});
+ const restored=createPanel({classId:'bow',saved});
+ assert.equal(restored.node('[data-skill-id="marksmanship"]').dataset.level,'1');
+ assert.equal(restored.node('[data-skill-id="endurance"]').dataset.level,'1');
+ assert.equal(restored.node('[data-skill-id="quickdraw"]').dataset.level,'1');
 });
+

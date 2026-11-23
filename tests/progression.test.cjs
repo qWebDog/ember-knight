@@ -192,3 +192,41 @@ test('Mage upgrades fail safely without funds or storage and normalize invalid M
  assert.deepEqual(normalized.mageLevels,{sorcery:5,barrier:0,channel:0});
  assert.equal(createStore({storage:corrupt,classId:'wand'}).quote('sorcery').reason,'max');
 });
+
+test('Archer branch purchases change arrow stats and never borrow Warrior or Mage ranks',()=>{
+ const saved={version:1,gold:200,levels:{power:4,vitality:3,tempo:2},mageLevels:{sorcery:2,barrier:2,channel:2}};
+ const storage=memoryStorage({[storageKey]:JSON.stringify(saved)});
+ const archer=createStore({storage,classId:'bow'});
+ assert.deepEqual(archer.catalog.map(item=>[item.id,item.branch]),[['marksmanship','attack'],['endurance','defense'],['quickdraw','control']]);
+ assert.deepEqual(archer.getStats(),{heroDamage:12,heroMaxHp:200,heroAttackSpeed:1});
+ assert.equal(archer.quote('power').reason,'unknown');
+ assert.equal(archer.quote('sorcery').reason,'unknown');
+ for(const id of ['marksmanship','endurance','quickdraw'])assert.equal(archer.purchase(id).ok,true);
+ assert.deepEqual(archer.getStats(),{heroDamage:14,heroMaxHp:220,heroAttackSpeed:1.05});
+ assert.equal(archer.getState().gold,170);
+ const state=JSON.parse(storage.data.get(storageKey));
+ assert.deepEqual(state.levels,saved.levels);
+ assert.deepEqual(state.mageLevels,saved.mageLevels);
+ assert.deepEqual(state.archerLevels,{marksmanship:1,endurance:1,quickdraw:1});
+ assert.equal(createStore({storage,classId:'sword'}).getStats().heroDamage,20);
+ assert.equal(createStore({storage,classId:'wand'}).getStats().heroDamage,16);
+ assert.equal(createStore({storage,classId:'bow'}).quote('marksmanship').cost,20);
+ assert.equal(createStore({storage,classId:'bow'}).purchase('marksmanship').ok,true);
+ assert.equal(createStore({storage,classId:'bow'}).getStats().heroDamage,16);
+ assert.equal(createStore({storage,classId:'wand'}).getState().gold,150);
+});
+
+test('Archer purchases retain previous saves and avoid charging on full ranks or failed writes',()=>{
+ const storage=memoryStorage({[storageKey]:JSON.stringify({version:1,gold:75,levels:{power:2},archerLevels:{marksmanship:99,endurance:-2,quickdraw:'3',unknown:7}})});
+ const archer=createStore({storage,classId:'bow'});
+ assert.deepEqual(archer.getState().archerLevels,{marksmanship:5,endurance:0,quickdraw:0});
+ assert.equal(archer.quote('marksmanship').reason,'max');
+ assert.equal(archer.purchase('marksmanship').reason,'max');
+ assert.equal(storage.writes.length,0);
+ const before=storage.data.get(storageKey);
+ storage.setItem=()=>{throw Error('quota');};
+ assert.equal(archer.purchase('endurance').reason,'storage');
+ assert.equal(storage.data.get(storageKey),before);
+ assert.equal(archer.getState().gold,75);
+ assert.equal(archer.getStats().heroMaxHp,200);
+});

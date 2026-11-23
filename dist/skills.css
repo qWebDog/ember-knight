@@ -37,3 +37,7 @@
 /* Mage's class identity is visible without adding a class-switcher. */
 .skills-panel[data-hero-class="wand"]{background:radial-gradient(ellipse at 50% 8%,#57416b55,transparent 65%),repeating-linear-gradient(110deg,#c8bb7a03 0 1px,transparent 1px 18px),#14231f}
 .skills-panel[data-hero-class="wand"] .skills-title p{color:#cfb4e9}
+
+/* Archer class has its own identity without adding a class selector. */
+.skills-panel[data-hero-class="bow"]{background:radial-gradient(ellipse at 50% 10%,#4a653345,transparent 65%),repeating-linear-gradient(110deg,#c8bb7a03 0 1px,transparent 1px 18px),#14271f}
+.skills-panel[data-hero-class="bow"] .skills-title p{color:#c2d89c}

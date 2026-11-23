@@ -16,6 +16,16 @@
     barrier:{name:'Магический барьер',branch:'defense',category:'Защита',icon:'skill-shield',benefit:'+20 к максимуму здоровья',total:level=>`+${level*20} к максимуму здоровья`},
     channel:{name:'Поток маны',branch:'control',category:'Контроль',icon:'bolt',benefit:'+5% к скорости заклинаний',total:level=>`+${level*5}% к скорости заклинаний`}
   };
+  const archerDetails={
+    marksmanship:{name:'Меткий выстрел',branch:'attack',category:'Атака',icon:'skill-bow',benefit:'+2 к урону стрел',total:level=>`+${level*2} к урону стрел`},
+    endurance:{name:'Выносливость',branch:'defense',category:'Защита',icon:'skill-shield',benefit:'+20 к максимуму здоровья',total:level=>`+${level*20} к максимуму здоровья`},
+    quickdraw:{name:'Быстрая тетива',branch:'control',category:'Контроль',icon:'bolt',benefit:'+5% к скорости стрельбы',total:level=>`+${level*5}% к скорости стрельбы`}
+  };
+  const futureArcher={
+    attack:['Пробивающая стрела','Град стрел'],
+    defense:['Уклонение','Ловушка'],
+    control:['Замедляющая стрела','Прицельный залп']
+  };
   const futureMage={
     attack:['Огненный шквал','Ледяные осколки'],
     defense:['Защитная сфера','Поглощение чар'],
@@ -24,7 +34,8 @@
   function mount({root,store,heroLevel=1,classId=store?.classId||'sword'}={}) {
     if(!root||!store||typeof store.getState!=='function'||typeof store.purchase!=='function')throw new TypeError('A skill panel root and progression store are required.');
     const $=selector=>root.querySelector(selector);
-    const mage=classId==='wand', activeDetails=mage?mageDetails:details;
+    const mage=classId==='wand', archer=classId==='bow';
+    const activeDetails=mage?mageDetails:archer?archerDetails:details;
     const labels={sword:'ВОИН',bow:'ЛУЧНИК',wand:'МАГ'};
     root.dataset.heroClass=classId;
     root.setAttribute('aria-label',`Древо навыков: ${labels[classId]||labels.sword}`);
@@ -33,14 +44,14 @@
     const activeIds=Object.keys(activeDetails);
     // Each branch retains its existing HTML layout, but the actual ability,
     // icon and future path are determined by the permanently chosen class.
-    if(mage)for(const branch of root.querySelectorAll('.skill-branch')){
+    if(mage||archer)for(const branch of root.querySelectorAll('.skill-branch')){
       const index=['attack','defense','control'].indexOf(branch.dataset.branch);
       if(index<0)continue;
       const node=branch.querySelector('[data-skill-id]');
       node.dataset.skillId=activeIds[index];
       node.querySelector('use').setAttribute('href',`#${activeDetails[activeIds[index]].icon}`);
       branch.querySelectorAll('[data-skill-future]').forEach((future,i)=>{
-        const name=futureMage[branch.dataset.branch][i];
+        const name=(mage?futureMage:futureArcher)[branch.dataset.branch][i];
         future.setAttribute('aria-label',`${name} — скоро`);
         future.setAttribute('title',`${name}: будет доступно позже`);
       });

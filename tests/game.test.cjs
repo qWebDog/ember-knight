@@ -956,7 +956,7 @@ test('skill purchases update the active hero and HUD without healing, and surviv
  assert.equal(ui.skillMount.root,ui.node('#skills-panel'));assert.equal(ui.skillMount.heroLevel,1);
  ui.runUntil(()=>ui.events.some(event=>event.type==='attack'&&event.targetId==='hero'));
  ui.node('#auto-button').click();const hp=ui.state().hero.hp,elapsed=ui.state().elapsed;assert.ok(hp<200);
- for(const id of ['power','vitality','tempo'])assert.equal(ui.progression.purchase(id).ok,true);
+ for(const id of ['marksmanship','endurance','quickdraw'])assert.equal(ui.progression.purchase(id).ok,true);
  assert.equal(ui.state().elapsed,elapsed);assert.equal(ui.state().hero.hp,hp,'raising maximum HP must not heal the current battle');
  assert.equal(ui.state().hero.damage,14);assert.equal(ui.state().hero.maxHp,220);assert.equal(ui.state().hero.attackSpeed,1.05);
  assert.equal(ui.node('.power b').textContent,14);assert.equal(ui.node('#hero-vital').textContent,`${hp} / 220 HP`);assert.equal(ui.node('healthbar:hero').attributes['aria-valuemax'],'220');
@@ -964,18 +964,19 @@ test('skill purchases update the active hero and HUD without healing, and surviv
  const oldAttacks=ui.events.filter(event=>event.type==='attack'&&event.sourceId==='hero').length;
  ui.node('#auto-button').click();ui.runUntil(()=>ui.events.filter(event=>event.type==='attack'&&event.sourceId==='hero').length===oldAttacks+2);
  const upgraded=ui.events.filter(event=>event.type==='attack'&&event.sourceId==='hero').slice(-2);
- assert.deepEqual(upgraded.map(event=>event.damage),[14,14]);assert.ok(upgraded[1].at-upgraded[0].at<1.2,'tempo must shorten the live attack cadence');
+ assert.deepEqual(upgraded.map(event=>event.damage),[14,14]);assert.ok(upgraded[1].at-upgraded[0].at<1.2,'quickdraw must shorten the live arrow attack cadence');
  ui.runUntil(()=>ui.state().phase==='victory');ui.runUntil(()=>!ui.node('#battle-result').hidden,2);
  assert.equal(wallet(ui),110);ui.node('#replay-button').click();assert.equal(ui.state().hero.hp,220);assert.equal(ui.state().hero.damage,14);assert.equal(ui.state().hero.attackSpeed,1.05);
- const saved=JSON.parse(ui.storage.get('ember.progress.v1'));assert.deepEqual(saved.levels,{power:1,vitality:1,tempo:1});assert.equal(saved.gold,110);
- const restored=createHarness({preference:'off',savedProgression:saved});await restored.loadAllImages();
+ const saved=JSON.parse(ui.storage.get('ember.progress.v1'));assert.deepEqual(saved.levels,{power:0,vitality:0,tempo:0});
+ assert.deepEqual(saved.archerLevels,{marksmanship:1,endurance:1,quickdraw:1});assert.equal(saved.gold,110);
+ const restored=createHarness({preference:'off',weapon:'bow',outfit:'wanderer',savedProgression:saved});await restored.loadAllImages();
  assert.equal(restored.state().hero.damage,14);assert.equal(restored.state().hero.maxHp,220);assert.equal(restored.state().hero.attackSpeed,1.05);assert.equal(restored.progression.getState().gold,110);assert.equal(restored.node('.gold').attributes['aria-label'],'Золото: 110');
 });
 
 test('kill rewards can buy skills through one persistent wallet without duplicate payouts',async()=>{
  const ui=createHarness({weapon:'bow',outfit:'wanderer',legacyGold:0});await ui.loadAllImages();
  ui.runUntil(()=>kills(ui).length===2);ui.node('#auto-button').click();assert.equal(wallet(ui),10);assert.equal(ui.progression.getState().gold,10);
- assert.equal(ui.progression.purchase('power').ok,true);assert.equal(wallet(ui),0);assert.equal(ui.state().hero.damage,14);assert.equal(ui.node('.gold').attributes['aria-label'],'Золото: 0');
+ assert.equal(ui.progression.purchase('marksmanship').ok,true);assert.equal(wallet(ui),0);assert.equal(ui.state().hero.damage,14);assert.equal(ui.node('.gold').attributes['aria-label'],'Золото: 0');
  assert.equal(JSON.parse(ui.storage.get('ember.progress.v1')).gold,0);
  ui.node('#auto-button').click();ui.runUntil(()=>ui.state().phase==='victory');assert.equal(kills(ui).length,4);assert.equal(wallet(ui),10);assert.equal(ui.progression.getState().gold,10);assert.equal(JSON.parse(ui.storage.get('ember.progress.v1')).gold,10);
  ui.node('#auto-button').click();const settled=ui.storage.get('ember.progress.v1');ui.runFor(3);assert.equal(ui.storage.get('ember.progress.v1'),settled);assert.equal(wallet(ui),10);
@@ -983,7 +984,7 @@ test('kill rewards can buy skills through one persistent wallet without duplicat
 
 test('blocked persistent storage grants neither a free skill nor an unsaved kill reward',async()=>{
  const saved={version:1,gold:30,levels:{power:0,vitality:0,tempo:0}},ui=createHarness({weapon:'bow',outfit:'wanderer',savedProgression:saved,legacyGold:30,storageBlocked:true});await ui.loadAllImages();
- assert.equal(ui.progression.purchase('power').ok,false);assert.equal(ui.state().hero.damage,12);assert.equal(ui.progression.getState().gold,30);assert.equal(ui.progression.getState().levels.power,0);assert.deepEqual(JSON.parse(ui.storage.get('ember.progress.v1')),saved);
+ assert.equal(ui.progression.purchase('marksmanship').ok,false);assert.equal(ui.state().hero.damage,12);assert.equal(ui.progression.getState().gold,30);assert.equal(ui.progression.getState().archerLevels?.marksmanship||0,0);assert.deepEqual(JSON.parse(ui.storage.get('ember.progress.v1')),saved);
  ui.runUntil(()=>kills(ui).length===1);assert.equal(ui.progression.getState().gold,30);assert.equal(wallet(ui),30);assert.equal(ui.node('.gold').attributes['aria-label'],'Золото: 30');assert.equal(ui.state().hero.damage,12);assert.deepEqual(JSON.parse(ui.storage.get('ember.progress.v1')),saved);
 });
 
@@ -1003,6 +1004,30 @@ test('Mage skill purchases modify spell combat without inheriting Warrior damage
  assert.equal(ui.progression.getState().gold,70);
  const restored=createHarness({weapon:'wand',outfit:'acolyte',magic:'ice',savedProgression:JSON.parse(ui.storage.get('ember.progress.v1'))});
  await restored.loadAllImages();
+ assert.equal(restored.state().hero.damage,14);
+ assert.equal(restored.state().hero.maxHp,220);
+ assert.equal(restored.state().hero.attackSpeed,1.05);
+});
+
+test('Archer has independent live arrow upgrades and cannot spend Warrior or Mage skills',async()=>{
+ const saved={version:1,gold:100,levels:{power:5,vitality:4,tempo:3},mageLevels:{sorcery:3,barrier:2,channel:1}};
+ const ui=createHarness({weapon:'bow',outfit:'wanderer',savedProgression:saved});await ui.loadAllImages();
+ assert.equal(ui.skillMount.classId,'bow');
+ assert.equal(ui.state().hero.damage,12);
+ assert.equal(ui.state().hero.maxHp,200);
+ assert.equal(ui.progression.purchase('power').reason,'unknown');
+ assert.equal(ui.progression.purchase('sorcery').reason,'unknown');
+ assert.equal(ui.progression.purchase('marksmanship').ok,true);
+ assert.equal(ui.progression.purchase('endurance').ok,true);
+ assert.equal(ui.progression.purchase('quickdraw').ok,true);
+ assert.equal(ui.state().hero.damage,14);
+ assert.equal(ui.state().hero.maxHp,220);
+ assert.equal(ui.state().hero.attackSpeed,1.05);
+ const progress=JSON.parse(ui.storage.get('ember.progress.v1'));
+ assert.deepEqual(progress.levels,saved.levels);
+ assert.deepEqual(progress.mageLevels,saved.mageLevels);
+ assert.deepEqual(progress.archerLevels,{marksmanship:1,endurance:1,quickdraw:1});
+ const restored=createHarness({weapon:'bow',outfit:'wanderer',savedProgression:progress});await restored.loadAllImages();
  assert.equal(restored.state().hero.damage,14);
  assert.equal(restored.state().hero.maxHp,220);
  assert.equal(restored.state().hero.attackSpeed,1.05);
