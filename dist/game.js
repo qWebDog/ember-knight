@@ -99,7 +99,10 @@
   let laneStep = 0;
   arena.dataset.lanes='5';battlefield.dataset.lanes='5';
   let heroX = null, fieldWidth = null, moving = false, heroMoving = false;
-  let walkDistance = 0, walkDirection = 3, activeTime = 0;
+  // The engine clock deliberately freezes for the 2.5s wave entrance.
+  // Wolf sprite frames need their own pause-aware visual clock, otherwise
+  // its x-coordinate moves while the legs stay on one static frame.
+  let walkDistance = 0, walkDirection = 3, activeTime = 0, companionTime = 0;
   let sceneTransition = null;
   // At the start of EACH wave the hero walks in at a deliberate pace
   // from fully off-screen. The battle clock stays on hold until arrival.
@@ -580,6 +583,7 @@
     pendingIceImpacts.clear();
     cuedArrows.clear();
     heroX=null;fieldWidth=null;walkDistance=0;walkDirection=3;moving=heroMoving=false;
+    companionTime=0;
     companion?.reset();
     pairContacted=false;previousSeparation=null;contactTarget=null;previousTargetSeparation=null;
     for(const actor of Object.values(actors)){
@@ -770,7 +774,7 @@
     cueArrowShots(state);
     for (const id of Object.keys(actors)) drawActor(id,state);
     companion?.render({
-      time:activeTime,x:heroX??0,heroSize:actors.hero.element.offsetWidth,
+      time:companionTime,x:heroX??0,heroSize:actors.hero.element.offsetWidth,
       depth:actors.hero.depth,laneStep,
       moving:heroMoving,
       direction:walkDirection,
@@ -850,7 +854,7 @@
     const target=state.targetId&&actors[state.targetId];
     const unit=state.enemies.find(enemy=>enemy.id===state.targetId);
     const bite=companion.advance({
-      dt,time:activeTime,phase:state.phase,
+      dt,time:companionTime,phase:state.phase,
       entering:Boolean(heroEntrance),heroAlive:state.hero.hp>0,
       heroX:heroX??0,heroSize:actors.hero.element.offsetWidth,
       heroDepth:actors.hero.depth,reducedMotion:reducedMotion.matches,
@@ -868,6 +872,10 @@
     if(lastFrameTime===null)lastFrameTime=timestamp;
     const dt=Math.min(.1,Math.max(0,(timestamp-lastFrameTime)/1000));lastFrameTime=timestamp;
     if(ready&&auto&&!document.hidden&&!dialog.open){
+      // Advance visuals even while the combat simulation is held for entry.
+      // Freeze this clock whenever automatic play, visibility or a modal
+      // pauses the game, so bites remain synced to their actual frames.
+      companionTime+=dt;
       const before=battle.getState();
       if(['victory','defeat'].includes(before.phase)){
         activeTime+=dt;

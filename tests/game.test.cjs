@@ -1086,3 +1086,49 @@ test('legacy saved wolf is ignored for Warrior and Mage in the live game',async(
    assert.equal(ui.events.some(e=>e.sourceId==='companion'),false);
  }
 });
+
+test('equipped Archer wolf animates from the FIRST entrance frame while the combat clock is frozen',async()=>{
+ const ui=createHarness({weapon:'bow',outfit:'wanderer',wolfEquipped:true,combatOptions:{heroMaxHp:800,heroDamage:120}});
+ await ui.loadAllImages();
+ const sprite=ui.node('companion:canvas'),wolfNode=ui.node('#companion-wolf');
+ const x0=ui.heroX();
+ ui.runFor(.7);
+ assert.equal(ui.state().elapsed,0,'entrance deliberately holds only combat time');
+ assert.ok(ui.heroX()>x0,'the Archer is walking onto the screen');
+ assert.equal(wolfNode.dataset.motion,'walk','wolf must walk from the beginning of the entrance');
+ assert.equal(wolfNode.dataset.facing,'right');
+ const frames=sprite.draws.filter(draw=>draw.crop[1]===96).map(draw=>draw.crop[0]);
+ assert.ok(new Set(frames).size>=4,
+   'wolf paws must change frames during the frozen first-wave combat clock, not slide in a standing frame');
+ assert.ok(Number.parseFloat(wolfNode.style.left)>x0-64,'wolf follows the incoming Archer immediately');
+ const start=frames.length;
+ ui.node('#auto-button').click();
+ const xPause=Number.parseFloat(wolfNode.style.left),drawPause=sprite.draws.length;
+ ui.runFor(.6);
+ assert.equal(ui.state().elapsed,0);
+ assert.equal(Number.parseFloat(wolfNode.style.left),xPause,'paused entrance must stop wolf position');
+ assert.equal(sprite.draws.length,drawPause,'paused entrance must stop wolf animation frames');
+ ui.node('#auto-button').click();
+ ui.runFor(.5);
+ assert.ok(sprite.draws.length>drawPause,'wolf must resume its gait without waiting for combat');
+ assert.ok(sprite.draws.filter(draw=>draw.crop[1]===96).length>start);
+});
+
+test('equipped wolf starts animating immediately in the SECOND and THIRD wave entrances too',async()=>{
+ const ui=createHarness({weapon:'bow',outfit:'wanderer',wolfEquipped:true,
+  combatOptions:{heroMaxHp:1200,heroDamage:120}});
+ await ui.loadAllImages();
+ const sprite=ui.node('companion:canvas'),wolf=ui.node('#companion-wolf');
+ for(const waveIndex of [1,2]){
+   ui.runUntil(()=>ui.state().waveIndex===waveIndex,35);
+   const held=ui.state().elapsed;
+   const before=sprite.draws.length;
+   ui.runFor(.6);
+   assert.equal(ui.state().waveIndex,waveIndex);
+   assert.equal(ui.state().elapsed,held,'combat clock must stay frozen for each new wave entrance');
+   assert.equal(wolf.dataset.motion,'walk');
+   const walked=sprite.draws.slice(before).filter(draw=>draw.crop[1]===96).map(draw=>draw.crop[0]);
+   assert.ok(new Set(walked).size>=4,
+     `wave ${waveIndex+1} wolf must animate its paws from the start instead of sliding`);
+ }
+});
