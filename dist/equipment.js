@@ -50,7 +50,7 @@
   // represents their class accessory (quiver or sash), never an off-hand shield.
   const rangerCatalog=Object.freeze({...catalog,
     helmet:Object.freeze([
-      {id:'none',name:'Лесной капюшон',detail:'Исходный LPC-капюшон',tone:'#61774d'},
+      {id:'basic',name:'Лесной капюшон',detail:'Исходный LPC-капюшон',tone:'#61774d'},
       {id:'iron',name:'Бацинет',detail:'Родной LPC · walk и shoot',tone:'#a1b3bb'},
       {id:'royal',name:'Большой шлем',detail:'Родной LPC · walk и shoot',tone:'#bdad80'}
     ].map(Object.freeze)),
@@ -72,7 +72,7 @@
   });
   const mageCatalog=Object.freeze({...catalog,
     helmet:Object.freeze([
-      {id:'none',name:'Капюшон послушника',detail:'Исходный LPC-капюшон',tone:'#75548c'},
+      {id:'basic',name:'Капюшон послушника',detail:'Исходный LPC-капюшон',tone:'#75548c'},
       {id:'iron',name:'Синяя шляпа мага',detail:'Оригинальный LPC · blue',tone:'#6174a6'},
       {id:'royal',name:'Фиолетовая шляпа',detail:'Оригинальный LPC · purple',tone:'#8862b4'}
     ].map(Object.freeze)),
