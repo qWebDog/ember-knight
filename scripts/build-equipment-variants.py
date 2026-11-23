@@ -121,7 +121,7 @@ def equipment_layers(animation, weapon, shield):
                          (110, 'wood', 'fg'), (115, 'trim', 'fg')):
         if animation in ('walk', 'slash') and side == 'bg': continue
         path = f'spritesheets/shield/heater/original/{kind}/{side}/{animation}.png'
-        full = 'spritesheets/' + path
+        full = path
         result.append((z, shield_color(full, shield, kind), 64))
     return sorted(result, key=lambda layer: layer[0])
 
