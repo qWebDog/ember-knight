@@ -434,6 +434,48 @@ test('legacy wardrobe normalization preserves the saved skin and does not silent
  ui.node('#profile-button').click();assert.ok(ui.node('#dialog-copy').textContent.includes('Ополченец'));
 });
 
+function arrowsFrom(ui,source){
+ return ui.node('.battlefield').children.filter(e=>e.className==='projectile arrow'&&(!source||e.dataset.source===source));
+}
+function nearTime(actual,expected,epsilon=.025){
+ assert.ok(Math.abs(actual-expected)<=epsilon,'at '+actual+' expected '+expected);
+}
+test('hero bow arrow exits on original LPC frame 9 and lands with damage at 1.2 seconds',async()=>{
+ const ui=createHarness({weapon:'bow',outfit:'wanderer'});await ui.loadAllImages();
+ ui.runUntil(()=>ui.state().elapsed>=.35,8);
+ const arrow=arrowsFrom(ui,'hero')[0];assert.ok(arrow);
+ nearTime(Number(arrow.dataset.releaseAt),.92,1e-5);
+ nearTime(Number(arrow.dataset.impactAt),1.2,1e-5);
+ assert.equal(arrow.hidden,true);assert.equal(arrow.style.visibility,'hidden');
+ assert.equal(ui.state().enemies[0].hp,60);
+ runFramesUntil(ui,()=>!arrow.hidden,1);
+ nearTime(ui.state().elapsed,.92);
+ const shot=ui.node('#player-sprite').draws.filter(d=>d.src.endsWith('bronze-attack.png')).at(-1);
+ assert.ok(shot);assert.ok(shot.crop[0]/64>=9&&shot.crop[0]/64<=10);
+ assert.equal(ui.state().enemies[0].hp,60);
+ const x=parseFloat(arrow.style.left);ui.frame(32);
+ assert.ok(parseFloat(arrow.style.left)>x);
+ ui.runUntil(()=>ui.events.some(e=>e.type==='attack'&&e.sourceId==='hero'),2);
+ assert.equal(ui.state().enemies[0].hp,48);
+ assert.ok(!ui.node('.battlefield').children.includes(arrow));
+ assert.equal(ui.node('[data-fighter="hero"]').dataset.motion,'idle');
+});
+test('skeleton arrow begins at release frame, flies left, and disappears on damage',async()=>{
+ const ui=createHarness({weapon:'sword',outfit:'militia',fieldWidth:3200});await ui.loadAllImages();
+ ui.runUntil(()=>arrowsFrom(ui,'archer1').length>0,8);
+ const arrow=arrowsFrom(ui,'archer1')[0];
+ nearTime(Number(arrow.dataset.releaseAt),1.52,1e-5);
+ nearTime(Number(arrow.dataset.impactAt),1.8,1e-5);
+ assert.equal(arrow.hidden,true);assert.equal(ui.state().hero.hp,200);
+ runFramesUntil(ui,()=>!arrow.hidden,2);
+ nearTime(ui.state().elapsed,1.52);
+ const shot=ui.node('#enemy-archer1').draws.filter(d=>d.src.endsWith('skeleton-shoot.png')).at(-1);
+ assert.ok(shot);assert.ok(shot.crop[0]/64>=9&&shot.crop[0]/64<=10);
+ assert.equal(ui.state().hero.hp,200);
+ const x=parseFloat(arrow.style.left);ui.frame(32);assert.ok(parseFloat(arrow.style.left)<x);
+ ui.runUntil(()=>ui.events.some(e=>e.type==='attack'&&e.sourceId==='archer1'),2);
+ assert.equal(ui.state().hero.hp,193);assert.ok(!ui.node('.battlefield').children.includes(arrow));
+});
 test('distant archers fire during a melee approach, without spawning the old mage or allowing attacks from afar',async()=>{
  const ui=createHarness({fieldWidth:3200});await ui.loadAllImages();
  ui.runUntil(()=>ui.node('.battlefield').children.some(element=>element.className==='projectile arrow'&&!element.hidden),5);
