@@ -56,14 +56,27 @@ test('cosmetic data does not alter gold, progression or saved character',()=>{
   assert.equal(memory.map.get('ember.progress.v1'),progress);
   assert.equal(JSON.parse(memory.map.get(key)).byClass.sword.armor,'iron');
 });
-test('other classes remain selectable, but cannot fit warrior-only sprites',()=>{
+test('Archer and Mage have independent LPC inventory saves and four active class slots',()=>{
   const memory=storage(),warrior=createStore({storage:memory,classId:'sword'});
   warrior.equip('helmet','royal');
-  const ranger=createStore({storage:memory,classId:'bow'}),mage=createStore({storage:memory,classId:'wand'});
-  assert.equal(ranger.enabled,false);assert.equal(mage.enabled,false);
-  assert.equal(ranger.equip('helmet','iron').reason,'class');
-  assert.equal(mage.equip('armor','royal').ok,false);
+  const ranger=createStore({storage:memory,classId:'bow'});
+  const mage=createStore({storage:memory,classId:'wand'});
+  assert.equal(ranger.enabled,true);assert.equal(mage.enabled,true);
+  assert.equal(ranger.equip('helmet','iron').ok,true);
+  assert.equal(ranger.equip('weapon','ember').ok,true);
+  assert.equal(ranger.equip('shield','royal').ok,true);
+  assert.equal(mage.equip('armor','royal').ok,true);
+  assert.equal(mage.equip('weapon','steel').ok,true);
+  assert.equal(mage.equip('shield','steel').ok,true);
+  assert.equal(ranger.getState().helmet,'iron');
+  assert.equal(ranger.getState().weapon,'ember');
+  assert.equal(mage.getState().armor,'royal');
+  assert.equal(mage.getState().shield,'steel');
   assert.equal(warrior.getState().helmet,'royal');
+  assert.equal(warrior.getState().weapon,'basic');
+  const after=createStore({storage:memory,classId:'bow'});
+  assert.equal(after.getState().shield,'royal');
+  assert.equal(mage.equip('cape','red').reason,'unsupported');
 });
 test('storage failures never grant equipment and bad values are rejected',()=>{
   const memory=storage({[key]:'invalid-json'}),store=createStore({storage:memory,classId:'sword'});
