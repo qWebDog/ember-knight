@@ -156,9 +156,15 @@
       root:equipmentPanel,store:equipment,
       getSprite:()=>actors.hero.images.idle,
       loadItem:async(slot,id)=>{
-        if((slot==='weapon'||slot==='shield')&&swordEquipment){
-          loadedSwordSprites=await swordEquipment.load({...equipment.getState(),[slot]:id});
-        }else await equipmentArt?.ensure(slot,id);
+        const nextLook={...equipment.getState(),[slot]:id};
+        // Stage every layer before saving a selection. In particular, a new
+        // shield must have its native foreground ready over the chest armor.
+        const changingWeapon=slot==='weapon'||slot==='shield';
+        const [_,images]=await Promise.all([
+          equipmentArt?.prepareLook(nextLook),
+          changingWeapon&&swordEquipment?swordEquipment.load(nextLook):Promise.resolve(null)
+        ]);
+        if(images)loadedSwordSprites=images;
       },
       paintItem:(ctx,pose)=>equipmentArt?.draw(ctx,pose),
       onEquip:(_look,slot)=>{
