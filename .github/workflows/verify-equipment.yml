@@ -2,6 +2,7 @@ name: Verify EMBER equipment
 on:
   push:
     branches:
+      - main
       - feature/warrior-equipment-slots
   pull_request:
     branches:
