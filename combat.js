@@ -28,7 +28,8 @@
   const archetypes = {
     orc:{name:'Орк-щитоносец',maxHp:100,damage:6,interval:2.4,armor:3,projectile:'melee'},
     archer:{name:'Скелет-лучник',maxHp:60,damage:7,interval:1.8,armor:0,projectile:'arrow'},
-    mage:{name:'Могильный колдун',maxHp:65,damage:10,interval:3.8,armor:0,projectile:'magic'}
+    mage:{name:'Могильный колдун',maxHp:65,damage:10,interval:3.8,armor:0,projectile:'magic'},
+    dragon:{name:'Красный дракон',maxHp:180,damage:12,interval:2.8,armor:3,projectile:'magic'}
   };
   const waveTemplates = [
     [{id:'archer1',type:'archer'}],
@@ -43,6 +44,11 @@
     return Number.isFinite(value) && value >= 1 ? Math.min(1.25,value) : fallback;
   }
   function createBattle(options = {}) {
+    // The default three-wave encounters are immutable for existing saves
+    // and deterministic tests; the game's fourth boss wave opts in explicitly.
+    const activeWaves=options.dragonBossEnabled===true
+      ?[...waveTemplates,[{id:'dragon',type:'dragon'}]]:waveTemplates;
+    const activeTotalEnemies=activeWaves.reduce((n,wave)=>n+wave.length,0);
     const config = {
       name:typeof options.heroName === 'string' && options.heroName.trim() ? options.heroName.trim() : 'Странник',
       maxHp:positive(options.heroMaxHp, 200), damage:positive(options.heroDamage, 12),attackSpeed:attackSpeed(options.heroAttackSpeed,1),
@@ -90,14 +96,14 @@
         enemyTargetId:currentEnemyTarget().id,
         enemies:enemies.map(enemy => ({...enemy,status:enemy.status ? {type:enemy.status.type,startedAt:enemy.status.startedAt/TICKS,endsAt:enemy.status.endsAt/TICKS} : null,alive:enemy.hp > 0})),
         targetId:target ? target.id : null,
-        waveIndex,waveNumber:waveIndex+1,waveCount:waveTemplates.length,completedWaves,
-        defeatedCount,totalDefeated:defeatedCount,totalEnemies,reward,
+        waveIndex,waveNumber:waveIndex+1,waveCount:activeWaves.length,completedWaves,
+        defeatedCount,totalDefeated:defeatedCount,totalEnemies:activeTotalEnemies,reward,
         intermissionRemaining:waiting ? Math.max(0,nextWaveAt-elapsed) / TICKS : 0
       };
     }
     function spawnWave(index) {
       waveIndex = index; phase = 'running'; pausedFrom = null; nextWaveAt = null;
-      enemies = waveTemplates[index].map(unit => ({...archetypes[unit.type],...unit,hp:archetypes[unit.type].maxHp,status:null}));
+      enemies = activeWaves[index].map(unit => ({...archetypes[unit.type],...unit,hp:archetypes[unit.type].maxHp,status:null}));
       comboIndex = 0; meleeHits = 0; heroBusyUntil = elapsed; pendingCounters = []; pendingImpacts = [];
       nextHero = elapsed + heroTicks(sword ? swordSteps[0].interval : HERO_INTERVAL);
       nextEnemies = enemies.map(enemy => elapsed + Math.round(enemy.interval * TICKS));
@@ -172,7 +178,7 @@
       pendingCounters=[];pendingImpacts=[];
       enemies.forEach(enemy=>{enemy.status=null;});
       events.push({type:'wave_clear',waveIndex,waveNumber:waveIndex+1,at});
-      if(waveIndex===waveTemplates.length-1){
+      if(waveIndex===activeWaves.length-1){
         phase='victory';pausedFrom=null;nextWaveAt=null;
         events.push({type:'end',result:'victory',reward:0,totalReward:reward,at});
       }else{
@@ -248,7 +254,7 @@
         pendingCounters = []; pendingImpacts = [];
         enemies.forEach(enemy => { enemy.status = null; });
         events.push({type:'wave_clear',waveIndex,waveNumber:waveIndex+1,at:elapsed/TICKS});
-        if (waveIndex === waveTemplates.length-1) end('victory');
+        if (waveIndex === activeWaves.length-1) end('victory');
         else { phase = 'intermission'; nextWaveAt = elapsed + INTERMISSION; }
       }
       function applyStatus(target,magic) {
@@ -271,7 +277,7 @@
         if (phase === 'intermission') {
           if (nextWaveAt > until) break;
           advanceClock(nextWaveAt); spawnWave(waveIndex+1);
-          events.push({type:'wave',waveIndex,waveNumber:waveIndex+1,waveCount:waveTemplates.length,enemies:getState().enemies,at:elapsed/TICKS});
+          events.push({type:'wave',waveIndex,waveNumber:waveIndex+1,waveCount:activeWaves.length,enemies:getState().enemies,at:elapsed/TICKS});
           continue;
         }
         let next = heroCanAttack ? nextHero : Infinity;
@@ -340,7 +346,7 @@
             const blockedDamage = damage*.5; damage -= blockedDamage; blocked = true;
             events.push({type:'block',sourceId:enemy.id,targetId:'hero',blockedDamage,at:elapsed/TICKS});
           }
-          if (enemy.projectile === 'magic') cast(enemy.id,defender,damage,'shadow');
+          if (enemy.projectile === 'magic') cast(enemy.id,defender,damage,enemy.type==='dragon'?'fire':'shadow');
           else hit(enemy.id,defender,damage,enemy.projectile,enemy.type === 'archer' ? {animationDuration:.6} : undefined);
           nextEnemies[index] += Math.round(enemy.interval*TICKS);
           if (hero.hp === 0) { end('defeat'); break; }
