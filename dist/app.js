@@ -55,13 +55,23 @@
     if(!cache.has(path))cache.set(path,new Promise((resolve,reject)=>{const im=new Image();im.onload=()=>resolve(im);im.onerror=()=>{cache.delete(path);reject(new Error(path));};im.src=path;}));
     return cache.get(path);
   }
+  // Normalize the creator to a single 128px viewport for every hero.
+  // A 64px LPC cell occupies its central 64px at 1:1 source scale; an
+  // oversized 128px bow cell occupies the whole viewport. The CSS scale,
+  // crop origin, and on-screen pixel size never change when classes switch.
+  const previewSize=128;
   function draw(){
     if(!previewImage||!previewDescriptor)return;
-    const d=previewDescriptor,tile=d.tile||64,origin=d.origin||0,cell=step===0?frame:0;
-    if(canvas.width!==tile){canvas.width=tile;canvas.height=tile;}
-    const ctx=canvas.getContext('2d');ctx.clearRect(0,0,tile,tile);ctx.imageSmoothingEnabled=false;
-    ctx.drawImage(previewImage,cell*tile,direction*tile,tile,tile,0,0,tile,tile);
-    canvas.style.width=`${tile/64*100}%`;canvas.style.height=`${tile/64*100}%`;canvas.style.left=`${-origin/64*100}%`;canvas.style.top=`${-origin/64*100}%`;
+    const d=previewDescriptor,tile=d.tile||64,cell=step===0?frame:0;
+    if(tile>previewSize||tile<64)throw new Error('Unsupported LPC preview cell size: '+tile);
+    if(canvas.width!==previewSize||canvas.height!==previewSize){
+      canvas.width=previewSize;canvas.height=previewSize;
+    }
+    const ctx=canvas.getContext('2d');ctx.clearRect(0,0,previewSize,previewSize);ctx.imageSmoothingEnabled=false;
+    const inset=(previewSize-tile)/2;
+    ctx.drawImage(previewImage,cell*tile,direction*tile,tile,tile,inset,inset,tile,tile);
+    canvas.style.width='200%';canvas.style.height='200%';
+    canvas.style.left='-50%';canvas.style.top='-50%';
     const description=step===0?'без экипировки':`${catalogue.weapon(weapon).name}, наряд ${outfit().name}, ${catalogue.color(rememberedColors[weapon]).name}${magicChoice()?`, стихия ${magicChoice().name}`:''}`;
     canvas.setAttribute('aria-label',`Странник: ${description}. Цвет кожи: ${skins.find(s=>s.id===selected).label}. ${directionNames[direction]}.`);
   }
