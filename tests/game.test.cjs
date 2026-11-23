@@ -1070,8 +1070,11 @@ test('equipped Archer wolf runs into melee and hits while the Archer keeps firin
  assert.equal(hit.damage,7);
  assert.equal(hit.targetId,'archer1');
  assert.ok(hit.at>1.5,'wolf must travel and complete bite wind-up before damaging the enemy');
+ // Wolf can arrive before the Archer's second shot. Check the next shot
+ // when it occurs, not prematurely at the first bite impact.
+ ui.runUntil(()=>ui.events.filter(e=>e.type==='attack'&&e.sourceId==='hero'&&e.projectile==='arrow').length>=2,6);
  const arrows=ui.events.filter(e=>e.type==='attack'&&e.sourceId==='hero'&&e.projectile==='arrow');
- assert.ok(arrows.length>=2,'Archer must keep shooting during companion travel');
+ assert.ok(arrows.length>=2,'Archer continues shooting throughout companion combat');
  assert.equal(arrows[0].at,1.2,'wolf must not shift the first arrow attack tick');
  assert.equal(arrows[1].at,2.4,'wolf must not shift the second arrow attack tick');
  const wolfNode=ui.node('#companion-wolf');

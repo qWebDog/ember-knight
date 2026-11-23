@@ -123,7 +123,7 @@ test('game invokes the corrected wolf animation controller and exposes class com
  assert.match(html,/src="companion.js\?v=wolf-defense-1"/);
  assert.match(js,/companion\?\.render\(/);
  assert.match(js,/direction:walkDirection/);
- assert.match(js,/action:state\.phase==='defeat'\?'die':null/);
+ assert.match(js,/action:wolfFallen\|\|wolfDefeatedWithHero\?'die':null/);
  assert.match(js,/if\(slot==='companion'\)/);
  assert.match(ui,/paintCompanion\?\.\(ctx,pose\)/);
  assert.match(css,/background:url\('assets\/companions\/wolf\.png'\) -160px -28px\/320px 192px/);
