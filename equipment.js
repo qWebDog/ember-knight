@@ -12,16 +12,18 @@
     {id:'cape',name:'Плащ',icon:'cape'},
     {id:'boots',name:'Обувь',icon:'boots'}
   ].map(Object.freeze));
+  // Only these slots have native LPC sheets covering every warrior battle pose.
+  const supportedSlots=Object.freeze(['helmet','armor']);
   const catalog=Object.freeze({
     helmet:Object.freeze([
       {id:'none',name:'Без шлема',detail:'Открытая голова',tone:'#78867d'},
-      {id:'iron',name:'Железный шлем',detail:'Сталь и забрало',tone:'#a3b5bb'},
-      {id:'royal',name:'Рыцарский шлем',detail:'Золочёный гребень',tone:'#d4a955'}
+      {id:'iron',name:'Бацинет LPC',detail:'Оригинальный LPC · 5 анимаций',tone:'#a3b5bb'},
+      {id:'royal',name:'Большой шлем LPC',detail:'Оригинальный LPC · 5 анимаций',tone:'#d4a955'}
     ].map(Object.freeze)),
     armor:Object.freeze([
       {id:'basic',name:'Походная одежда',detail:'Начальный наряд',tone:'#806f59'},
-      {id:'iron',name:'Железный доспех',detail:'Стальные пластины',tone:'#9eabb1'},
-      {id:'royal',name:'Рыцарская броня',detail:'Тёмная сталь и золото',tone:'#c2a04c'}
+      {id:'iron',name:'Пластинчатая броня LPC',detail:'Оригинальный LPC · 5 анимаций',tone:'#9eabb1'},
+      {id:'royal',name:'Легионерская броня LPC',detail:'Оригинальный LPC · 5 анимаций',tone:'#c2a04c'}
     ].map(Object.freeze)),
     weapon:Object.freeze([
       {id:'basic',name:'Начальный меч',detail:'Исходный LPC-меч',tone:'#b1aca4'},
@@ -49,7 +51,7 @@
     const out={};
     for(const slot of slots){
       const selected=input?.[slot.id];
-      out[slot.id]=catalog[slot.id].some(item=>item.id===selected)?selected:defaults[slot.id];
+      out[slot.id]=supportedSlots.includes(slot.id)&&catalog[slot.id].some(item=>item.id===selected)?selected:defaults[slot.id];
     }
     return out;
   }
@@ -78,6 +80,7 @@
     function equip(slot,id){
       if(classId!=='sword')return {ok:false,reason:'class'};
       if(!Object.prototype.hasOwnProperty.call(catalog,slot)||!catalog[slot].some(item=>item.id===id))return {ok:false,reason:'invalid'};
+      if(!supportedSlots.includes(slot))return {ok:false,reason:'unsupported'};
       const fresh=read();
       const before=normalizeLook(fresh.byClass[classId]);
       if(before[slot]===id)return {ok:true,unchanged:true,state:{...before}};
@@ -97,5 +100,5 @@
     }
     return Object.freeze({classId,enabled:classId==='sword',getState:state,equip,subscribe});
   }
-  return Object.freeze({slots,catalog,defaults,key,normalizeLook,createStore});
+  return Object.freeze({slots,catalog,defaults,supportedSlots,key,normalizeLook,createStore});
 });
