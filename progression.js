@@ -14,11 +14,21 @@
     Object.freeze({id:'vitality', branch:'defense', name:'Стойкость', description:'Каждый уровень добавляет 20 к максимальному здоровью.', maxLevel:5, icon:'shield'}),
     Object.freeze({id:'tempo', branch:'control', name:'Натиск', description:'Каждый уровень ускоряет атаки на 5%.', maxLevel:5, icon:'bolt'})
   ]);
+  // Mage upgrades are class-specific. Warrior data stays in the original
+  // levels field so existing saves retain their exact ranks and wallet.
+  const mageCatalog = Object.freeze([
+    Object.freeze({id:'sorcery', branch:'attack', name:'Сила стихий', description:'Каждый уровень добавляет 2 к урону заклинаний огня и льда.', maxLevel:5, icon:'flame'}),
+    Object.freeze({id:'barrier', branch:'defense', name:'Магический барьер', description:'Каждый уровень добавляет 20 к максимальному здоровью мага.', maxLevel:5, icon:'skill-shield'}),
+    Object.freeze({id:'channel', branch:'control', name:'Поток маны', description:'Каждый уровень ускоряет сотворение заклинаний на 5%.', maxLevel:5, icon:'bolt'})
+  ]);
+  function emptyMageLevels() { return {sorcery:0, barrier:0, channel:0}; }
   function emptyState() {
     return {version:1, gold:0, levels:{power:0, vitality:0, tempo:0}};
   }
   function copy(state) {
-    return {version:1, gold:state.gold, levels:{...state.levels}};
+    const snapshot = {version:1, gold:state.gold, levels:{...state.levels}};
+    if (state.mageLevels) snapshot.mageLevels = {...state.mageLevels};
+    return snapshot;
   }
   function normalizeRank(value) {
     return Number.isFinite(value) ? Math.max(0, Math.min(5, Math.floor(value))) : 0;
@@ -28,24 +38,31 @@
     if (!value || value.version !== 1) return state;
     state.gold = Number.isSafeInteger(value.gold) ? Math.max(0, Math.min(maxGold, value.gold)) : 0;
     for (const item of catalog) state.levels[item.id] = normalizeRank(value.levels?.[item.id]);
+    if (value.mageLevels && typeof value.mageLevels === 'object' && !Array.isArray(value.mageLevels)) {
+      state.mageLevels = emptyMageLevels();
+      for (const item of mageCatalog) state.mageLevels[item.id] = normalizeRank(value.mageLevels[item.id]);
+    }
     return state;
   }
-  function stats(state) {
+  function stats(state, classId = 'sword') {
+    const mage = classId === 'wand', levels = mage ? state.mageLevels || emptyMageLevels() : state.levels;
     return {
-      heroDamage:12 + 2 * state.levels.power,
-      heroMaxHp:200 + 20 * state.levels.vitality,
-      heroAttackSpeed:1 + .05 * state.levels.tempo
+      heroDamage:12 + 2 * levels[mage ? 'sorcery' : 'power'],
+      heroMaxHp:200 + 20 * levels[mage ? 'barrier' : 'vitality'],
+      heroAttackSpeed:1 + .05 * levels[mage ? 'channel' : 'tempo']
     };
   }
-  function quoteState(state, id) {
-    const item = catalog.find(entry => entry.id === id);
+  function quoteState(state, id, classId = 'sword') {
+    const item = (classId === 'wand' ? mageCatalog : catalog).find(entry => entry.id === id);
     if (!item) return {id, level:0, maxLevel:0, cost:null, canBuy:false, reason:'unknown'};
-    const level = state.levels[id];
+    const level = classId === 'wand' ? (state.mageLevels?.[id] || 0) : state.levels[id];
     if (level >= item.maxLevel) return {id, level, maxLevel:item.maxLevel, cost:null, canBuy:false, reason:'max'};
     const cost = 10 + 10 * level;
     return {id, level, maxLevel:item.maxLevel, cost, canBuy:state.gold >= cost, reason:state.gold >= cost ? null : 'coins'};
   }
   function createStore(options = {}) {
+    const classId = options.classId === 'wand' ? 'wand' : 'sword';
+    const activeCatalog = classId === 'wand' ? mageCatalog : catalog;
     let storage;
     try { storage = options.storage === undefined ? root?.localStorage : options.storage; } catch {}
     const listeners = new Set();
@@ -68,7 +85,7 @@
     try { current = readState(); } catch {}
 
     function result(ok, reason, state = current, spent = 0, awarded) {
-      const value = {ok, reason, state:copy(state), stats:stats(state), spent};
+      const value = {ok, reason, state:copy(state), stats:stats(state,classId), spent};
       if (awarded !== undefined) value.awarded = awarded;
       return value;
     }
@@ -87,18 +104,19 @@
       return committed;
     }
     function getState() { return copy(current); }
-    function getStats() { return stats(current); }
-    function quote(id) { return quoteState(current, id); }
+    function getStats() { return stats(current,classId); }
+    function quote(id) { return quoteState(current,id,classId); }
     function purchase(id) {
-      if (!catalog.some(item => item.id === id)) return result(false, 'unknown');
+      if (!activeCatalog.some(item => item.id === id)) return result(false, 'unknown');
       let fresh;
       try { fresh = readState(); } catch { return result(false, 'storage'); }
-      const offer = quoteState(fresh, id);
+      const offer = quoteState(fresh,id,classId);
       if (!offer.canBuy) return result(false, offer.reason, fresh);
       const next = copy(fresh);
       next.gold -= offer.cost;
-      next.levels[id] += 1;
-      return commit(next, {type:'purchase', id, level:next.levels[id], spent:offer.cost}, offer.cost) || result(false, 'storage', fresh);
+      const levels = classId === 'wand' ? (next.mageLevels ||= emptyMageLevels()) : next.levels;
+      levels[id] += 1;
+      return commit(next, {type:'purchase', id, level:levels[id], classId, spent:offer.cost}, offer.cost) || result(false, 'storage', fresh);
     }
     function awardGold(amount) {
       if (!Number.isSafeInteger(amount) || amount <= 0) return result(false, 'invalid', current, 0, 0);
@@ -114,7 +132,7 @@
       listeners.add(listener);
       return () => listeners.delete(listener);
     }
-    return {getState, getStats, quote, purchase, awardGold, subscribe};
+    return {classId, catalog:activeCatalog, getState, getStats, quote, purchase, awardGold, subscribe};
   }
-  return {catalog, createStore, storageKey, legacyGoldKey, maxGold};
+  return {catalog, mageCatalog, createStore, storageKey, legacyGoldKey, maxGold};
 });
