@@ -49,7 +49,7 @@ test('Mage alone is halved in creator; original Warrior and Archer size and plac
  const ui=harness();await ui.load();
  const canvas=ui.node('#hero');
  // Step 1 (skin) still uses the original unmodified sprite.
- assert.deepEqual(canvas.draws.at(-1).destination,[]);
+ assert.deepEqual(canvas.draws.at(-1).destination,[0,0,64,64]);
  ui.node('#create-button').click();await ui.load();
  for(const [kind,tile,origin] of [
    ['sword',64,0],['bow',128,32],['wand',64,0],
@@ -62,7 +62,7 @@ test('Mage alone is halved in creator; original Warrior and Archer size and plac
    assert.equal(canvas.style.left,`${-origin/64*100}%`);
    assert.equal(canvas.style.top,`${-origin/64*100}%`);
    assert.deepEqual(draw.crop.slice(2),[tile,tile]);
-   assert.deepEqual(draw.destination,kind==='wand'?[16,27,32,32]:[],
+   assert.deepEqual(draw.destination,kind==='wand'?[16,27,32,32]:[0,0,tile,tile],
      kind+' must use its intended visual size');
  }
  assert.ok(html.includes('src="app.js?v=20261123-mage-half-6"'),
