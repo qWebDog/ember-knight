@@ -68,8 +68,14 @@
       canvas.width=previewSize;canvas.height=previewSize;
     }
     const ctx=canvas.getContext('2d');ctx.clearRect(0,0,previewSize,previewSize);ctx.imageSmoothingEnabled=false;
-    const inset=(previewSize-tile)/2;
-    ctx.drawImage(previewImage,cell*tile,direction*tile,tile,tile,inset,inset,tile,tile);
+    // Mage's 64px source cell contains a visually larger silhouette in
+    // the character selector. Actually scale the drawn mage, not just the
+    // canvas element. Keep the bottom of its feet at the same pixel row.
+    const displayTile=step>0&&weapon==='wand'?52:tile;
+    const destX=(previewSize-displayTile)/2;
+    const destY=(previewSize-tile)/2+tile-displayTile;
+    ctx.drawImage(previewImage,cell*tile,direction*tile,tile,tile,
+      destX,destY,displayTile,displayTile);
     canvas.style.width='200%';canvas.style.height='200%';
     canvas.style.left='-50%';canvas.style.top='-50%';
     const description=step===0?'без экипировки':`${catalogue.weapon(weapon).name}, наряд ${outfit().name}, ${catalogue.color(rememberedColors[weapon]).name}${magicChoice()?`, стихия ${magicChoice().name}`:''}`;
