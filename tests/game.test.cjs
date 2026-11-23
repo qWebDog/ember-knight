@@ -12,7 +12,7 @@ const combatSource = fs.readFileSync(path.join(dist, 'combat.js'), 'utf8');
 
 // The real game controller and combat engine run together. Only browser surfaces,
 // image decoding and the animation clock are replaced; no combat logic is mocked.
-function createHarness({skin = 'bronze', preference, search = '', weapon, outfit, outfitColor, magic, reducedMotion = false, fieldWidth = 800, modelSize = 64, arenaHeight = 400, fieldHeight = 180, fieldBottomGap = 62, roadGround = 36, viewportHeight = 800, combatOptions = {}, savedProgression, legacyGold, storageBlocked = false, wolfEquipped = false} = {}) {
+function createHarness({skin = 'bronze', preference, search = '', weapon, outfit, outfitColor, magic, reducedMotion = false, fieldWidth = 800, modelSize = 64, arenaHeight = 400, fieldHeight = 180, fieldBottomGap = 62, roadGround = 36, viewportHeight = 800, combatOptions = {}, savedProgression, legacyGold, storageBlocked = false, wolfEquipped = false, dragonBoss = false} = {}) {
   const storage = new Map([['ember.character.v1', JSON.stringify({version:1, skin, name:'Тестовый герой', level:1,weapon,outfit,outfitColor,magic})]]);
   if (wolfEquipped) storage.set('ember.equipment.v1',
     JSON.stringify({version:1,byClass:{
@@ -23,9 +23,9 @@ function createHarness({skin = 'bronze', preference, search = '', weapon, outfit
   if (legacyGold !== undefined) storage.set('ember.test.gold.v1', String(legacyGold));
   const nodes = new Map(), pendingImages = [], loadedPaths = [], raf = [], resizeCallbacks = [], events = [];
   let battle, skillMount, now = 0, restarts = 0;
-  const actorIds=['hero','archer1','archer2','archer3','orc'];
+  const actorIds=['hero','archer1','archer2','archer3','orc',...(dragonBoss?['dragon']:[])];
   const enemyIds=actorIds.filter(id=>id!=='hero');
-  const spawnRatios={hero:.18,archer1:.70,archer2:.62,archer3:.82,orc:.60};
+  const spawnRatios={hero:.18,archer1:.70,archer2:.62,archer3:.82,orc:.60,dragon:.76};
   const restartStates=[];
 
   class Element {
@@ -113,7 +113,8 @@ function createHarness({skin = 'bronze', preference, search = '', weapon, outfit
   }
   node('#battle-result').hidden = true;
   node('.battlefield').style.setProperty('--road-ground',`${roadGround}px`);
-  const waves = [node('wave:0'),node('wave:1'),node('wave:2')];
+  const waves = [node('wave:0'),node('wave:1'),node('wave:2'),
+    ...(dragonBoss?[node('wave:3')]:[])];
   const infoButtons = ['gold','crystals','rewards','map','fist','dash','fire'].map(id => {
     assert.ok(html.includes(`data-info="${id}"`));
     const element = node(`info:${id}`); element.dataset = {info:id}; return element;
@@ -163,6 +164,8 @@ function createHarness({skin = 'bronze', preference, search = '', weapon, outfit
     vm.runInContext(fs.readFileSync(path.join(dist,'equipment.js'),'utf8'),context,{filename:'equipment.js'});
     vm.runInContext(fs.readFileSync(path.join(dist,'companion.js'),'utf8'),context,{filename:'companion.js'});
   }
+  if(dragonBoss)vm.runInContext(fs.readFileSync(path.join(dist,'dragon.js'),'utf8'),
+    context,{filename:'dragon.js'});
   const createBattle = window.EmberCombat.createBattle;
   window.EmberCombat.createBattle = options => {
     battle = createBattle({...options,...combatOptions});
@@ -1184,4 +1187,29 @@ test('after the wolf falls, living enemies abandon its position and walk to the 
  assert.ok(ui.state().hero.hp<600,'the enemy only attacks the hero after defeating the wolf');
  assert.equal(ui.events.filter(e=>e.type==='death'&&e.id==='companion').length,1);
  assert.ok(!ui.events.some(e=>e.sourceId==='companion'&&e.at>ui.events.find(x=>x.id==='companion'&&x.type==='death').at));
+});
+
+test('animated Red Dragon boss appears after the old three waves with flapping wings during entrance',async()=>{
+ const ui=createHarness({weapon:'sword',outfit:'wanderer',dragonBoss:true,
+   combatOptions:{heroDamage:450,heroMaxHp:1400}});
+ await ui.loadAllImages();
+ assert.equal(ui.state().waveCount,4);
+ assert.equal(ui.state().totalEnemies,5);
+ const wave=ui.runUntil(()=>ui.state().waveIndex===3,45);
+ assert.ok(wave>0);
+ assert.equal(ui.state().enemies[0].id,'dragon');
+ assert.equal(ui.state().enemies[0].maxHp,180);
+ const body=ui.node('[data-fighter="dragon"]'),sprite=ui.node('#enemy-dragon');
+ assert.equal(body.hidden,false,'dragon needs a visible battle actor');
+ assert.equal(body.dataset.motion,'fly');
+ assert.ok(sprite.draws.some(d=>d.src==='assets/enemies/dragon/reddragonfly3.png'));
+ const elapsed=ui.state().elapsed,previous=sprite.draws.length;
+ ui.runFor(.6);
+ assert.equal(ui.state().elapsed,elapsed,'combat remains frozen during the boss entrance');
+ const frames=sprite.draws.slice(previous).map(draw=>draw.crop[0]);
+ assert.ok(new Set(frames).size>=3,'dragon must flap wings while moving on during the entrance');
+ ui.runUntil(()=>ui.events.some(e=>e.type==='death'&&e.id==='dragon'),10);
+ assert.equal(ui.state().phase,'victory');
+ assert.equal(ui.state().reward,25);
+ assert.equal(ui.events.filter(e=>e.type==='death'&&e.id==='dragon').length,1);
 });

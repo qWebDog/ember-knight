@@ -556,7 +556,7 @@
     const hit=activeTime-actor.hitAt<.17;
     const attack=!ended&&unit.hp>0&&age>=0&&age<(actor.animation?.duration||0);
     const kind=hit?'hit':attack?'attack':unit.hp>0?'fly':'idle';
-    const frame=window.EmberDragon.frameAt(hit?activeTime-actor.hitAt:attack?age:activeTime,
+    const frame=window.EmberDragon.frameAt(hit?activeTime-actor.hitAt:attack?age:companionTime,
       kind,'left',reducedMotion.matches);
     const key=`${frame.direction}:${frame.frame}:${kind}`;
     if(actor.lastKey!==key){
