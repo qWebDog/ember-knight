@@ -1315,32 +1315,37 @@ test('dragon fireballs disappear instantly when dragon dies during a salvo',asyn
  assert.equal(ui.state().hero.hp,hp,'no hidden damage from vanished fire');
 });
 
-test('Orc plays advancing walk cells while chasing the Archer wolf instead of sliding',async()=>{
+test('Orc faces its current direction toward the Archer wolf while running, not the viewer',async()=>{
  const ui=createHarness({weapon:'bow',outfit:'wanderer',wolfEquipped:true,
-  combatOptions:{heroDamage:120,heroMaxHp:1400}});
+   combatOptions:{heroDamage:120,heroMaxHp:1400}});
  await ui.loadAllImages();
  ui.runUntil(()=>ui.state().waveIndex===2,35);
  ui.battle.updateHeroStats({heroDamage:1});
  const orc=ui.node('[data-fighter="orc"]');
- const start=actorX(ui,'orc');
- const canvas=ui.node('#enemy-orc');
- const drawsStart=canvas.draws.length;
- ui.runUntil(()=>Math.abs(actorX(ui,'orc')-start)>12,8);
- assert.ok(orc.motionHistory.includes('walk'),
-   'the moving Orc must expose the walk pose, not the idle pose');
- const walkCells=canvas.draws.slice(drawsStart).filter(draw=>
-   draw.src.endsWith('orc-walk.png')&&draw.crop&&draw.crop[2]===64&&draw.crop[0]>0);
- const gait=walkCells.map(draw=>draw.crop[0]);
- assert.ok(new Set(gait).size>=3,
-   'Orc must cycle at least three side-facing leg frames while pursuing the wolf');
- assert.ok(walkCells.length>=3,
-   'Orc must keep taking steps while moving to the wolf');
- assert.ok(walkCells.every(draw=>draw.crop[1]===64||draw.crop[1]===192),
-   'moving Orc must face left or right along the ground, never toward the viewer');
- assert.equal(canvas.draws.at(-1).crop[1],
-   actorX(ui,'orc')<start?64:192,
-   'the side-facing Orc must look in its actual travel direction');
- assert.ok(ui.state().enemies[0].hp>0,'test observes an Orc that is still alive');
+ const startX=actorX(ui,'orc'),canvas=ui.node('#enemy-orc');
+ const gait=new Set();
+ let previous=actorX(ui,'orc'),sampled=0;
+ for(let n=0;n<110;n++){
+   ui.frame(100);
+   const position=actorX(ui,'orc');
+   const draw=canvas.draws.at(-1);
+   const dx=position-previous;
+   if(Math.abs(dx)>.001&&draw?.src.endsWith('orc-walk.png')&&draw.crop?.[0]>0){
+     // Wolf can cross the Orc, so facing must be checked PER FRAME, not
+     // against net movement over several seconds.
+     assert.equal(draw.crop[1],dx<0?64:192,
+       'Orc walk frame must face left/right toward the current moving target');
+     gait.add(draw.crop[0]);
+     sampled++;
+   }
+   previous=position;
+   if(sampled>=6&&gait.size>=3)break;
+ }
+ assert.ok(Math.abs(actorX(ui,'orc')-startX)>5,'Orc must actually travel');
+ assert.ok(orc.motionHistory.includes('walk'),'Orc uses its walk sprite while moving');
+ assert.ok(sampled>=3,'sample several real movement frames');
+ assert.ok(gait.size>=3,'Orc must animate at least three different stepping frames');
+ assert.ok(ui.state().enemies[0].hp>0,'the tested Orc is still alive');
 });
 test('Archer and living wolf exit the completed wave in the SAME direction',async()=>{
  const ui=createHarness({weapon:'bow',outfit:'wanderer',wolfEquipped:true,
