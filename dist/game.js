@@ -806,7 +806,10 @@
               if(enemy.moving)usedTime=dt;
             }
           }
-          enemy.direction=step>=0?3:1;
+          // The battle engine reconciles formation again with dt=0.
+          // A zero-length step is NOT rightward movement: preserve the
+          // last real heading so Orc faces its target during every walk.
+          if(Math.abs(step)>1e-6)enemy.direction=step>0?3:1;
         }else{
           // Exact contact aligns their feet on the same ground lane.
           enemy.depth=defenderDepth;
