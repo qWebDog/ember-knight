@@ -10,7 +10,7 @@ test('all three classes have transparent LPC item portrait paths for every selec
   let total=0;
   for(const classId of ['sword','bow','wand']){
     const catalog=data.catalogForClass(classId);
-    for(const slot of ['helmet','armor','weapon','shield']){
+    for(const slot of ['helmet','armor','weapon','shield','cape']){
       for(const item of catalog[slot]){
         const src=data.itemIconPath(classId,slot,item.id,'forest');
         assert.match(src,new RegExp('^assets/equipment/icons/'+classId+'/'+slot+'/'));
@@ -19,11 +19,11 @@ test('all three classes have transparent LPC item portrait paths for every selec
         total++;
       }
     }
-    for(const slot of ['cape','boots'])assert.equal(
+    for(const slot of ['boots'])assert.equal(
       data.itemIconPath(classId,slot,catalog[slot][0].id),null,
       'unavailable slots should not advertise fake item icons');
   }
-  assert.equal(total,36);
+  assert.equal(total,43);
   assert.equal(data.itemIconPath('invalid','helmet','basic'),null);
   assert.equal(data.itemIconPath('bow','helmet','fake'),null);
 });
@@ -52,7 +52,7 @@ test('item buttons contain only a real image and the name, never a color swatch 
   const css=fs.readFileSync(path.join(dist,'equipment.css'),'utf8');
   const game=fs.readFileSync(path.join(dist,'game.js'),'utf8');
   assert.match(js,/createElement\('img'\)/);
-  assert.match(js,/image\.src=data\.itemIconPath\(store\.classId,slot,item\.id,outfitColor\)/);
+  assert.match(js,/image\.src=data\.itemIconPath\(store\.classId,slot,item\.id,outfitColor,store\.getColor\(slot,item\.id\)\)/);
   assert.match(js,/image\.alt=''/);
   assert.match(js,/name\.textContent=item\.name/);
   assert.doesNotMatch(js,/item\.tone|item\.detail|equipment-item-swatch|createElement\('small'\)/);
@@ -69,7 +69,7 @@ test('the Pages build generates nonempty transparent LPC portraits for every dis
   const folder=path.join(dist,'assets/equipment/icons');
   const manifest=JSON.parse(fs.readFileSync(path.join(folder,'manifest.json'),'utf8'));
   assert.equal(manifest.iconSize,64);
-  assert.equal(manifest.icons.length,56);
+  assert.equal(manifest.icons.length,531);
   const included=new Set();
   for(const row of manifest.icons){
     assert.ok(row.path.startsWith('assets/equipment/icons/'));
@@ -82,7 +82,7 @@ test('the Pages build generates nonempty transparent LPC portraits for every dis
     assert.ok(png.length>150,'unexpected empty asset: '+row.path);
   }
   for(const cls of ['sword','bow','wand'])
-    for(const slot of ['helmet','armor','weapon','shield'])
+    for(const slot of ['helmet','armor','weapon','shield','cape'])
       for(const item of data.catalogForClass(cls)[slot]){
         const ref=data.itemIconPath(cls,slot,item.id,'sand');
         assert.ok(included.has(ref),'missing item portrait: '+ref);
