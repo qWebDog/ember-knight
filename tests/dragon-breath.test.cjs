@@ -50,7 +50,7 @@ test('dragon holds its physical attack until the wolf actually reaches melee dis
 });
 
 test('after defeating the wolf the dragon switches to five mouth-fire volleys against hero only',()=>{
- const b=bossFight({wolfHp:12});
+ const b=bossFight({wolfHp:20});
  const swipes=b.advance(5.6,available);
  assert.equal(swipes.filter(e=>e.type==='attack'&&e.projectile==='claw').length,2);
  assert.equal(swipes.filter(e=>e.type==='death'&&e.id==='companion').length,1);

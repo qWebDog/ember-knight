@@ -73,7 +73,7 @@ test('the old three wave battle remains unchanged unless the boss is opted in',(
  assert.equal(all.filter(e=>e.type==='death'&&e.id==='dragon').length,1);
  assert.deepEqual(all.filter(e=>e.type==='end').map(e=>e.totalReward),[25]);
 });
-test('red dragon fire cast targets the Archer wolf first when equipped',()=>{
+test('red dragon strikes the wolf with claws rather than fire',()=>{
  const battle=createBattle({heroWeapon:'bow',heroProjectile:'arrow',
    companionEnabled:true,dragonBossEnabled:true,heroDamage:1,heroMaxHp:1500});
  for(const wave of [[['archer1']], [['archer2'],['archer3']], [['orc']]]){
@@ -84,7 +84,9 @@ test('red dragon fire cast targets the Archer wolf first when equipped',()=>{
  assert.equal(battle.state.enemies[0].id,'dragon');
  assert.equal(battle.state.enemyTargetId,'companion');
  const events=battle.advance(2.8,{enemyCanAttack:{dragon:true},orcCanAttack:true});
- assert.ok(events.some(e=>e.type==='cast'&&e.sourceId==='dragon'&&e.targetId==='companion'&&e.magic==='fire'));
+ assert.ok(events.some(e=>e.type==='attack'&&e.sourceId==='dragon'
+   &&e.targetId==='companion'&&e.projectile==='claw'&&e.damage===12));
+ assert.equal(events.filter(e=>e.type==='cast'&&e.sourceId==='dragon').length,0);
 });
 test('published HTML mounts dragon before game, adds boss actor, and scales atlas without slicing 64px tiles',()=>{
  const html=fs.readFileSync(path.join(dist,'index.html'),'utf8');

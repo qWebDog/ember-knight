@@ -176,7 +176,8 @@
       defeatedCount++;reward+=KILL_REWARD;target.status=null;
       pendingCounters=pendingCounters.filter(counter=>counter.targetId!==target.id);
       pendingImpacts=pendingImpacts.filter(impact=>
-        impact.targetId!==target.id && impact.sourceId!==target.id);
+        impact.targetId!==target.id
+        && (target.type!=='dragon' || impact.sourceId!==target.id));
       pendingBreaths=pendingBreaths.filter(breath=>breath.sourceId!==target.id);
       events.push({type:'death',id:target.id,unitType:target.type,
         reward:KILL_REWARD,totalReward:reward,at});
@@ -250,7 +251,8 @@
           // A dead dragon cannot finish breathing: cancel both unreleased
           // pulses and flames which have not yet hit their targets.
           pendingImpacts = pendingImpacts.filter(impact =>
-            impact.targetId !== target.id && impact.sourceId !== target.id);
+            impact.targetId !== target.id
+            && (target.type!=='dragon'||impact.sourceId !== target.id));
           pendingBreaths = pendingBreaths.filter(breath => breath.sourceId !== target.id);
         }
       }
