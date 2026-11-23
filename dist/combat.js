@@ -59,11 +59,15 @@
       name:typeof options.heroName === 'string' && options.heroName.trim() ? options.heroName.trim() : 'Странник',
       maxHp:positive(options.heroMaxHp, 200), damage:positive(options.heroDamage, 12),attackSpeed:attackSpeed(options.heroAttackSpeed,1),
       projectile:['melee','arrow','magic'].includes(options.heroProjectile) ? options.heroProjectile : 'melee',
-      magic:['fire','ice'].includes(options.heroMagic) ? options.heroMagic : 'fire'
+      // The WebApp uses 'both'; explicit single-element modes remain
+      // compatible with legacy engine tests, not a character setting.
+      magic:options.heroMagic==='both'?'both':
+        ['fire','ice'].includes(options.heroMagic)?options.heroMagic:'fire'
     };
     const sword = options.heroWeapon === 'sword' && config.projectile === 'melee';
     let phase, pausedFrom, elapsed, remainder, hero, enemies, nextHero, nextEnemies, reward;
     let comboIndex, meleeHits, heroBusyUntil, pendingCounters, pendingImpacts, pendingBreaths;
+    let mageCastIndex=0;
     let waveIndex, completedWaves, defeatedCount, nextWaveAt;
     let companion,companionEverSummoned;
     function currentEnemyTarget(){
@@ -111,6 +115,7 @@
       waveIndex = index; phase = 'running'; pausedFrom = null; nextWaveAt = null;
       enemies = activeWaves[index].map(unit => ({...archetypes[unit.type],...unit,hp:archetypes[unit.type].maxHp,status:null}));
       comboIndex = 0; meleeHits = 0; heroBusyUntil = elapsed; pendingCounters = []; pendingImpacts = []; pendingBreaths = [];
+      mageCastIndex=0;
       nextHero = elapsed + heroTicks(sword ? swordSteps[0].interval : HERO_INTERVAL);
       nextEnemies = enemies.map(enemy => elapsed + Math.round(enemy.interval * TICKS));
     }
@@ -333,7 +338,11 @@
           const target = enemies.find(enemy => enemy.hp > 0),step = sword ? swordSteps[comboIndex] : null;
           const damage = config.damage * (step?.heavy ? 1.5 : 1);
           const metadata = step ? {variant:step.variant,comboStep:comboIndex+1,heavy:step.heavy,animationDuration:heroTicks(step.animationDuration*TICKS)/TICKS,counter:false} : {animationDuration:heroTicks((config.projectile === 'arrow' ? .9 : .66)*TICKS)/TICKS};
-          const interval = config.projectile === 'magic' ? cast('hero',target,Math.max(1,damage-target.armor),config.magic) : heroTicks(HERO_INTERVAL);
+          // One automatic spell stream, alternating fire and ice. Neither
+          // an extra attack nor a manual skill toggle is introduced.
+          const element=config.magic==='both'
+            ?(mageCastIndex++%2===0?'fire':'ice'):config.magic;
+          const interval = config.projectile === 'magic' ? cast('hero',target,Math.max(1,damage-target.armor),element) : heroTicks(HERO_INTERVAL);
           if (config.projectile !== 'magic') hit('hero',target,Math.max(1,damage-target.armor),config.projectile,metadata);
           if (sword) {
             heroBusyUntil = elapsed + heroTicks(step.animationDuration*TICKS);

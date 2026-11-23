@@ -1119,3 +1119,31 @@ test('simultaneous enemy hits do not teleport damage onto the hero at the instan
  assert.ok(events.some(e=>e.type==='attack'&&e.targetId==='hero'),
    'enemies may attack the hero only once they have actually reached him');
 });
+
+test('automatic Mage combines fire and ice on one attack timer, including after a restart',()=>{
+ const battle=createBattle({heroProjectile:'magic',heroMagic:'both',
+   heroDamage:4,heroMaxHp:1800});
+ const events=battle.advance(6);
+ const casts=events.filter(e=>e.type==='cast'&&e.sourceId==='hero');
+ assert.equal(casts.length,5);
+ assert.deepEqual(casts.map(e=>e.magic),['fire','ice','fire','ice','fire']);
+ assert.deepEqual(casts.map(e=>e.at),[1.2,2.4,3.6,4.8,6]);
+ assert.ok(casts.every(e=>e.projectile==='magic'&&e.flightDuration===.48));
+ for(const hit of events.filter(e=>e.type==='attack'&&e.sourceId==='hero'))
+   assert.equal(hit.magic,casts.find(c=>c.castId===hit.castId).magic);
+ const before=battle.state.elapsed;
+ battle.pause();assert.deepEqual(battle.advance(20),[]);
+ assert.equal(battle.state.elapsed,before);
+ battle.resume();battle.restart();
+ const first=battle.advance(1.2).find(e=>e.type==='cast'&&e.sourceId==='hero');
+ assert.equal(first.magic,'fire','new battle restarts at fire, then alternates');
+});
+test('legacy single-spell combat fixtures remain supported without player element selection',()=>{
+ for(const magic of ['fire','ice']){
+   const battle=createBattle({heroProjectile:'magic',heroMagic:magic,
+     heroDamage:1,heroMaxHp:900});
+   const shots=battle.advance(3.6).filter(e=>e.type==='cast'&&e.sourceId==='hero');
+   assert.ok(shots.length>=3);
+   assert.ok(shots.every(e=>e.magic===magic));
+ }
+});

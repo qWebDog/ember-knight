@@ -71,7 +71,7 @@ test('all three creator classes share the same native-pixel preview scale and gr
    if(kind==='wand')assert.equal(canvas.style.width,'100%',
      'Mage must not be displayed at half the Warrior size');
  }
- assert.ok(html.includes('src="app.js?v=20261123-equal-hero-scale-9"'),
+ assert.ok(html.includes('src="app.js?v=mage-dual-1"'),
    'force mobile browsers to load the consistent class preview scale');
 });
 test('all eighteen weapon and clothing-color choices preview, rotate and retain the independent skin',async()=>{

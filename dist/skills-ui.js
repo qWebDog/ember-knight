@@ -12,9 +12,9 @@
     tempo:{name:'Натиск',branch:'control',category:'Контроль',icon:'bolt',benefit:'+5% к скорости атаки',total:level=>`+${level*5}% к скорости атаки`}
   };
   const mageDetails={
-    sorcery:{name:'Сила стихий',branch:'attack',category:'Атака',icon:'flame',benefit:'+2 к урону заклинаний',total:level=>`+${level*2} к урону заклинаний`},
-    barrier:{name:'Магический барьер',branch:'defense',category:'Защита',icon:'skill-shield',benefit:'+20 к максимуму здоровья',total:level=>`+${level*20} к максимуму здоровья`},
-    channel:{name:'Поток маны',branch:'control',category:'Контроль',icon:'bolt',benefit:'+5% к скорости заклинаний',total:level=>`+${level*5}% к скорости заклинаний`}
+    sorcery:{name:'Сила стихий',branch:'attack',category:'Пиромантия',icon:'flame',benefit:'+2 к урону заклинаний',total:level=>`+${level*2} к урону заклинаний`},
+    barrier:{name:'Магический барьер',branch:'defense',category:'Аркана',icon:'skill-shield',benefit:'+20 к максимуму здоровья',total:level=>`+${level*20} к максимуму здоровья`},
+    channel:{name:'Поток маны',branch:'control',category:'Криомантия',icon:'bolt',benefit:'+5% к скорости заклинаний',total:level=>`+${level*5}% к скорости заклинаний`}
   };
   const archerDetails={
     marksmanship:{name:'Меткий выстрел',branch:'attack',category:'Атака',icon:'skill-bow',benefit:'+2 к урону стрел',total:level=>`+${level*2} к урону стрел`},
@@ -27,9 +27,9 @@
     control:['Замедляющая стрела','Прицельный залп']
   };
   const futureMage={
-    attack:['Огненный шквал','Ледяные осколки'],
-    defense:['Защитная сфера','Поглощение чар'],
-    control:['Глубокая заморозка','Эхо заклинаний']
+    attack:['Сильный ожог','Огненный шквал'],
+    defense:['Защитная сфера','Эхо заклинаний'],
+    control:['Ледяные осколки','Глубокая заморозка']
   };
   function mount({root,store,heroLevel=1,classId=store?.classId||'sword'}={}) {
     if(!root||!store||typeof store.getState!=='function'||typeof store.purchase!=='function')throw new TypeError('A skill panel root and progression store are required.');
@@ -48,6 +48,9 @@
       const index=['attack','defense','control'].indexOf(branch.dataset.branch);
       if(index<0)continue;
       const node=branch.querySelector('[data-skill-id]');
+      if(mage)branch.querySelector('h3').textContent={
+        attack:'Пиромантия',defense:'Аркана',control:'Криомантия'
+      }[branch.dataset.branch];
       node.dataset.skillId=activeIds[index];
       node.querySelector('use').setAttribute('href',`#${activeDetails[activeIds[index]].icon}`);
       branch.querySelectorAll('[data-skill-future]').forEach((future,i)=>{

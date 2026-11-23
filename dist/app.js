@@ -10,11 +10,10 @@
   const key = 'ember.character.v1', canvas = $('#hero'), createButton = $('#create-button'), status = $('#status');
   const controls = [...document.querySelectorAll('.skin-option')];
   const weaponButtons = [...document.querySelectorAll('[data-weapon]')];
-  const magicButtons = [...document.querySelectorAll('[data-magic]')];
   const colorButtons = [...document.querySelectorAll('[data-outfit-color]')];
   const progressButtons = [...document.querySelectorAll('[data-go-step]')];
   const cache = new Map();
-  let selected='light', weapon='sword', selectedMagic=null, step=0, furthest=0, direction=2, frame=0, saved=null;
+  let selected='light', weapon='sword', step=0, furthest=0, direction=2, frame=0, saved=null;
   let imageReady=false, loadingError=false, imageVersion=0, previewImage=null, previewDescriptor=null;
   const rememberedColors={sword:'sand',bow:'forest',wand:'purple'};
   const directionNames=['Вид сзади','Левый бок','Вид спереди','Правый бок'];
@@ -26,14 +25,14 @@
     if(candidate?.version===1&&skins.some(s=>s.id===restoredSkin)){
       saved=candidate;selected=restoredSkin;
       const choice=catalogue.selection(candidate);
-      if(choice){weapon=choice.weapon;rememberedColors[weapon]=choice.outfitColor;if(weapon==='wand')selectedMagic=catalogue.magic(candidate.magic)?.id||'fire';}
+      if(choice){weapon=choice.weapon;rememberedColors[weapon]=choice.outfitColor;}
     }
   }catch{}
   function choice(){return {weapon,outfit:catalogue.weapon(weapon).outfits[0].id,outfitColor:rememberedColors[weapon]};}
   function outfit(){return catalogue.weapon(weapon).outfits[0];}
-  function magicChoice(){return weapon==='wand'?catalogue.magic(selectedMagic):null;}
-  function validMagic(){return weapon!=='wand'||!!magicChoice();}
-  function appearanceLabel(){return `${outfit().name} · ${catalogue.color(rememberedColors[weapon]).name}${weapon==='wand'?` · ${magicChoice()?.name||'Выбери стихию'}`:''}`;}
+  // Both elemental schools are unlocked for every Mage. Legacy selected
+  // magic is ignored without changing the stored record until explicit save.
+  function appearanceLabel(){return `${outfit().name} · ${catalogue.color(rememberedColors[weapon]).name}${weapon==='wand'?' · Огонь и лёд':''}`;}
   function haptic(){try{telegram?.HapticFeedback?.selectionChanged();}catch{}}
   function syncViewport(){
     const visible=window.visualViewport?.height||window.innerHeight;
@@ -69,13 +68,13 @@
     // Mage feet sit about three source pixels higher in its 64px walk tile.
     // A small offset aligns its ground line without shrinking the character.
     canvas.style.top=step>0&&weapon==='wand'?'4.6875%':`${-origin/64*100}%`;
-    const description=step===0?'без экипировки':`${catalogue.weapon(weapon).name}, наряд ${outfit().name}, ${catalogue.color(rememberedColors[weapon]).name}${magicChoice()?`, стихия ${magicChoice().name}`:''}`;
+    const description=step===0?'без экипировки':`${catalogue.weapon(weapon).name}, наряд ${outfit().name}, ${catalogue.color(rememberedColors[weapon]).name}${weapon==='wand'?', огонь и лёд':''}`;
     canvas.setAttribute('aria-label',`Странник: ${description}. Цвет кожи: ${skins.find(s=>s.id===selected).label}. ${directionNames[direction]}.`);
   }
   function updateButton(){
-    createButton.disabled=(!imageReady&&!loadingError)||(step>0&&!validMagic()&&!loadingError);
-    progressButtons.forEach((button,i)=>{button.disabled=i>furthest||(i===2&&!validMagic());});
-    createButton.querySelector('span').textContent=loadingError?'Повторить загрузку':!imageReady?'Загружаем героя…':step===0?'Далее':!validMagic()?'Выбери стихию':step===1?'Выбрать цвет':saved?'Сохранить героя':'Создать персонажа';
+    createButton.disabled=!imageReady&&!loadingError;
+    progressButtons.forEach((button,i)=>{button.disabled=i>furthest;});
+    createButton.querySelector('span').textContent=loadingError?'Повторить загрузку':!imageReady?'Загружаем героя…':step===0?'Далее':step===1?'Выбрать цвет':saved?'Сохранить героя':'Создать персонажа';
   }
   async function loadPreview(){
     const version=++imageVersion;imageReady=false;loadingError=false;updateButton();
@@ -83,7 +82,7 @@
     try {
       const image=await getImage(path);if(version!==imageVersion)return;
       previewImage=image;previewDescriptor=step===0?{tile:64,origin:0}:catalogue.weapon(weapon).walk;
-      imageReady=true;draw();status.textContent=step===0?'Выбери оттенок кожи':weapon==='wand'&&!magicChoice()?'Выбери стихию: огонь или лёд':`${catalogue.weapon(weapon).name}, ${appearanceLabel()}`;
+      imageReady=true;draw();status.textContent=step===0?'Выбери оттенок кожи':`${catalogue.weapon(weapon).name}, ${appearanceLabel()}`;
     }catch{if(version!==imageVersion)return;loadingError=true;status.textContent='Не удалось загрузить облик. Нажми «Повторить загрузку».';}
     updateButton();
   }
@@ -91,10 +90,9 @@
   function updateChoices(){
     markRadios(controls,b=>b.dataset.skin===selected);$('#skin-name').textContent=skins.find(s=>s.id===selected).label;
     markRadios(weaponButtons,b=>b.dataset.weapon===weapon);
-    markRadios(magicButtons,b=>b.dataset.magic===selectedMagic);
     $('#magic-school').hidden=weapon!=='wand';
     $('.wizard').classList.toggle('has-magic',step===1&&weapon==='wand');
-    $('#magic-choice-name').textContent=magicChoice()?.description||'Выбери стихию';
+    $('#magic-choice-name').textContent='Огонь и лёд доступны вместе';
     const item=catalogue.weapon(weapon);$('#weapon-description').textContent=item.description;
     markRadios(colorButtons,b=>b.dataset.outfitColor===rememberedColors[weapon]);
     $('#fixed-outfit-name').textContent=outfit().name;$('#outfit-description').textContent=outfit().description;
@@ -103,11 +101,11 @@
     $('#preview-summary').textContent=label;$('#nameplate-subtitle').textContent=step===0?'Твой путь начинается здесь':label;
   }
   function showStep(index){
-    step=Math.max(0,Math.min(2,index));if(step===2&&!validMagic())step=1;furthest=Math.max(furthest,step);
+    step=Math.max(0,Math.min(2,index));furthest=Math.max(furthest,step);
     const titles=['Цвет кожи','Начальное оружие','Цвет наряда'];$('#step-title').textContent=titles[step];$('#step-count').textContent=`ШАГ ${step+1} ИЗ 3`;
     document.querySelectorAll('[data-step]').forEach(panel=>panel.hidden=Number(panel.dataset.step)!==step);
     $('#back-button').hidden=step===0;
-    progressButtons.forEach((button,i)=>{button.disabled=i>furthest||(i===2&&!validMagic());button.classList.toggle('current',i===step);button.classList.toggle('complete',i<step);if(i===step)button.setAttribute('aria-current','step');else button.removeAttribute('aria-current');});
+    progressButtons.forEach((button,i)=>{button.disabled=i>furthest;button.classList.toggle('current',i===step);button.classList.toggle('complete',i<step);if(i===step)button.setAttribute('aria-current','step');else button.removeAttribute('aria-current');});
     updateChoices();loadPreview();
   }
   function radioKeys(buttons,select){buttons.forEach((button,i)=>button.addEventListener('keydown',event=>{
@@ -118,10 +116,8 @@
   function selectSkin(button){selected=button.dataset.skin;haptic();updateChoices();loadPreview();}
   function selectWeapon(button){weapon=button.dataset.weapon;haptic();updateChoices();loadPreview();}
   function selectColor(button){rememberedColors[weapon]=button.dataset.outfitColor;haptic();updateChoices();loadPreview();}
-  function selectMagic(button){const option=catalogue.magic(button.dataset.magic);if(!option)return;selectedMagic=option.id;haptic();updateChoices();updateButton();draw();status.textContent=`Выбрана стихия: ${option.name}`;}
   controls.forEach(button=>button.addEventListener('click',()=>selectSkin(button)));radioKeys(controls,selectSkin);
   weaponButtons.forEach(button=>button.addEventListener('click',()=>selectWeapon(button)));radioKeys(weaponButtons,selectWeapon);
-  magicButtons.forEach(button=>button.addEventListener('click',()=>selectMagic(button)));radioKeys(magicButtons,selectMagic);
   colorButtons.forEach(button=>button.addEventListener('click',()=>selectColor(button)));radioKeys(colorButtons,selectColor);
   progressButtons.forEach((button,i)=>button.addEventListener('click',()=>{if(i<=furthest)showStep(i);}));
   $('#back-button').addEventListener('click',()=>showStep(step-1));
@@ -179,14 +175,13 @@
   $('#start-adventure').addEventListener('click',()=>{window.location.href='./';});
   createButton.addEventListener('click',()=>{
     if(loadingError){loadPreview();return;}if(!imageReady)return;
-    if(step>0&&!validMagic()){showStep(1);return;}
     if(step<2){showStep(step+1);return;}
     const editing=!!saved;
-    const character={version:1,name:saved?.name||'Странник',level:saved?.level||1,skin:selected,weapon,outfit:outfit().id,outfitColor:rememberedColors[weapon],appearanceVersion:2,...(weapon==='wand'?{magic:magicChoice().id}:{}),class:saved?.class||null,equipment:weapon==='sword'?['sword','shield',outfit().id]:[weapon,outfit().id],createdAt:saved?.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()};
+    const character={version:1,name:saved?.name||'Странник',level:saved?.level||1,skin:selected,weapon,outfit:outfit().id,outfitColor:rememberedColors[weapon],appearanceVersion:2,class:saved?.class||null,equipment:weapon==='sword'?['sword','shield',outfit().id]:[weapon,outfit().id],createdAt:saved?.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()};
     try{
       localStorage.setItem(key,JSON.stringify(character));saved=character;
       $('#success-dialog h2').textContent=editing?'Облик сохранён.':'Герой создан.';
-      $('#success-dialog > p:not(.eyebrow)').textContent=weapon==='wand'?'Кожа, палочка, стихия и цвет наряда сохранены на этом устройстве.':'Кожа, оружие и цвет наряда сохранены на этом устройстве.';
+      $('#success-dialog > p:not(.eyebrow)').textContent=weapon==='wand'?'Кожа, палочка и цвет наряда сохранены. Огонь и лёд доступны одновременно.':'Кожа, оружие и цвет наряда сохранены на этом устройстве.';
       $('#saved-skin').textContent=skins.find(s=>s.id===selected).label;$('#saved-loadout').textContent=appearanceLabel();
       updateButton();openDialog('#success-dialog');try{telegram?.HapticFeedback?.notificationOccurred('success');}catch{}
     }catch{

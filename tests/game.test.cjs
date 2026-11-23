@@ -427,7 +427,10 @@ test('automatic victory loops restore HP and appearance, reuse enemy IDs, and pa
  assert.equal(ui.restartStates[0].hero.hp,200);assert.equal(ui.node('#battle-result').hidden,true);
  ui.runUntil(()=>ui.runCount===2&&ui.state().phase==='victory');assert.equal(wallet(ui),40);
  assert.equal(kills(ui).length,8);assert.equal(kills(ui).filter(event=>event.id==='archer1').length,2);
- assert.ok(ui.events.filter(event=>event.type==='cast').every(event=>event.sourceId==='hero'&&event.magic==='ice'));
+ assert.ok(ui.events.filter(event=>event.type==='cast').every(event=>
+    event.sourceId==='hero'&&['fire','ice'].includes(event.magic)));
+ assert.deepEqual(ui.events.filter(event=>event.type==='cast').slice(0,4).map(event=>event.magic),
+   ['fire','ice','fire','ice']);
  assert.ok(ui.node('#player-sprite').draws.every(draw=>draw.src.includes('/black-')));
  ui.runUntil(()=>!ui.node('#battle-result').hidden,2);ui.node('#replay-button').click();assert.equal(ui.runCount,3);assert.equal(ui.state().hero.hp,200);assert.equal(wallet(ui),40);assert.equal(ui.spells().length,0);
 });
@@ -611,10 +614,13 @@ test('shield guard and counter work against the final orc, freeze on pause, and 
  assert.equal(hero.dataset.counter,'false');assert.equal(hero.dataset.attack,'');assert.equal(hero.classes.has('is-heavy'),false);assert.equal(hero.classes.has('is-blocking'),false);assert.equal(ui.node('.battlefield').children.length,0);
 });
 
-test('fire and ice use all eighteen animation cells and apply damage only at their matching impact',async()=>{
+test('fire and ice both use all eighteen animation cells with matching impacts',async()=>{
  for(const magic of ['fire','ice']){
-  const ui=createHarness({weapon:'wand',outfit:'acolyte',magic});await ui.loadAllImages();ui.runUntil(()=>ui.events.some(event=>event.type==='cast'));
-  const cast=ui.events.find(event=>event.type==='cast'),spell=ui.spells()[0],hp=ui.state().enemies[0].hp;
+  const ui=createHarness({weapon:'wand',outfit:'acolyte',magic:'ice'});await ui.loadAllImages();
+  ui.runUntil(()=>ui.events.some(event=>event.type==='cast'&&event.magic===magic));
+  const cast=ui.events.find(event=>event.type==='cast'&&event.magic===magic),
+    spell=ui.spells().find(element=>element.dataset.magic===magic),
+    hp=ui.state().enemies[0].hp;
   assert.equal(cast.sourceId,'hero');assert.equal(cast.targetId,'archer1');assert.equal(cast.magic,magic);assert.equal(spell.dataset.magic,magic);assert.equal(spell.dataset.phase,'appear');
   assert.equal(ui.node('[data-fighter="hero"]').dataset.motion,'attack');assert.equal(hp,60);assert.equal(currentStatus(ui,'archer1'),null);assert.equal(ui.statusCanvases().length,0);
   runFramesUntil(ui,()=>spell.dataset.phase==='flight');runFramesUntil(ui,()=>ui.state().elapsed>=cast.at+.8);assert.equal(ui.state().enemies[0].hp,hp);assert.equal(currentStatus(ui,'archer1'),null,'a flying spell cannot apply its status before impact');
@@ -631,7 +637,7 @@ test('auto, dialog and hidden states freeze actual appearance, flight and impact
  ui.node('#auto-button').click();const appearance=fullSnapshot(ui);ui.runFor(2);assert.deepEqual(fullSnapshot(ui),appearance);
  ui.node('#auto-button').click();runFramesUntil(ui,()=>spell.dataset.phase==='flight');ui.node('#profile-button').click();const flight=fullSnapshot(ui);ui.runFor(2);assert.deepEqual(fullSnapshot(ui),flight);
  ui.node('#game-dialog').close();runFramesUntil(ui,()=>spell.dataset.phase==='impact');ui.document.hidden=true;ui.document.dispatch('visibilitychange');const impact=fullSnapshot(ui);ui.runFor(2);assert.deepEqual(fullSnapshot(ui),impact);
- ui.document.hidden=false;ui.document.dispatch('visibilitychange');runFramesUntil(ui,()=>!ui.spells().includes(spell));assertSpellCells(spell,'ice');
+ ui.document.hidden=false;ui.document.dispatch('visibilitychange');runFramesUntil(ui,()=>!ui.spells().includes(spell));assertSpellCells(spell,'fire');
 });
 
 test('the winning impact finishes before automatic restart and manual replay clears remaining effects',async()=>{
@@ -657,7 +663,8 @@ test('reduced motion keeps the three-wave combat and rewards while suppressing a
  ui.runUntil(()=>ui.events.some(event=>event.castId===cast.castId&&event.type==='attack'));assert.equal(ui.events.find(event=>event.castId===cast.castId&&event.type==='attack').at,cast.impactAt);
  ui.runUntil(()=>ui.state().phase==='victory');assert.equal(wallet(ui),20);assert.equal(ui.spells().length,0);assert.equal(ui.node('.battlefield').children.length,0);
  assert.ok(ui.node('#player-sprite').draws.every(draw=>draw.src.endsWith('-walk.png')));
- assert.ok(ui.events.filter(event=>event.type==='cast').every(event=>event.magic==='ice'&&event.sourceId==='hero'));
+ assert.ok(ui.events.filter(event=>event.type==='cast').every(event=>
+   ['fire','ice'].includes(event.magic)&&event.sourceId==='hero'));
 });
 
 test('distant skeletons really shoot at 1.8 and 3.6 seconds with a shorter native shooting pose',async()=>{
@@ -1445,4 +1452,17 @@ test('Red Dragon never holds open-mouth fire pose for claw attacks on living wol
  assert.notEqual(body.dataset.motion,'breath');
  assert.ok(!ui.events.some(e=>e.type==='cast'&&e.sourceId==='dragon'),
    'wolf attacks are claw-only, without fire or held open-mouth magic');
+});
+
+test('a Mage with a legacy saved ice choice actually alternates both spells automatically',async()=>{
+ const ui=createHarness({weapon:'wand',outfit:'acolyte',magic:'ice',
+   combatOptions:{heroMaxHp:1200,heroDamage:2}});
+ await ui.loadAllImages();
+ ui.runUntil(()=>ui.events.filter(e=>e.type==='cast'&&e.sourceId==='hero').length>=4,15);
+ const casts=ui.events.filter(e=>e.type==='cast'&&e.sourceId==='hero').slice(0,4);
+ assert.deepEqual(casts.map(e=>e.magic),['fire','ice','fire','ice']);
+ assert.deepEqual(casts.map(e=>e.at),[1.2,2.4,3.6,4.8]);
+ assert.equal(JSON.parse(ui.storage.get('ember.character.v1')).magic,'ice',
+   'the old character save remains intact until explicitly edited');
+ assert.ok(!ui.actorIds.includes('mage'),'no new NPC is introduced');
 });
