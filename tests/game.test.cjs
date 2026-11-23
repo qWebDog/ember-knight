@@ -253,17 +253,44 @@ test('Warrior, Archer and Mage walk in from the left screen edge before the figh
  ]){
    const ui=createHarness(selection);await ui.loadAllImages();
    const start=ui.heroX(),home=800*.18,hero=ui.node('[data-fighter="hero"]');
-   assert.equal(start,-800*.05,'start at the actual left edge, not at the battle position');
+   assert.equal(start,-hero.offsetWidth/2,'start fully outside the left edge, not at the battle position');
    assert.equal(ui.state().elapsed,0);
    ui.runFor(.3);
    assert.ok(ui.heroX()>start&&ui.heroX()<home,'hero moves into view');
    assert.equal(hero.dataset.motion,'walk','uses native animated LPC walk cells');
    assert.equal(ui.state().elapsed,0,'entrance must not consume cooldown or combat time');
    assert.ok(!ui.events.some(e=>e.type==='attack'||e.type==='cast'));
-   ui.runFor(.6);
+   ui.runFor(2.4);
    assert.ok(ui.heroX()>=home-1e-6,'hero reaches the proper starting location');
    assert.ok(ui.state().elapsed>0,'combat begins only after entering');
    assert.ok(!ui.node('.adventure').dataset.transition,'entrance does not hide an existing scene transition');
+ }
+});
+
+test('all three waves repeat a calm left-edge walk before allowing any combat',async()=>{
+ for(const selection of [
+   {weapon:'sword',outfit:'militia'},
+   {weapon:'bow',outfit:'wanderer'},
+   {weapon:'wand',outfit:'acolyte',magic:'fire'}
+ ]){
+   const ui=createHarness(selection);await ui.loadAllImages();
+   const size=ui.node('[data-fighter="hero"]').offsetWidth,edge=-size/2,home=800*.18;
+   for(let wave=0;wave<3;wave++){
+     if(wave>0)ui.runUntil(()=>ui.state().waveIndex===wave);
+     const start=ui.heroX(),at=ui.state().elapsed;
+     const emitted=ui.events.length,health=ui.state().hero.hp;
+     assert.ok(start>=edge-1e-7&&start<edge+(home-edge)*.06,
+       'each wave starts with the hero by the left edge');
+     ui.runFor(.9);
+     assert.ok(ui.heroX()>start&&ui.heroX()<home,'walking should be visibly gradual');
+     assert.equal(ui.node('[data-fighter="hero"]').dataset.motion,'walk');
+     assert.equal(ui.state().elapsed,at,'no combat time during the entrance');
+     assert.equal(ui.events.length,emitted,'no attacks or casts occur while entering');
+     assert.equal(ui.state().hero.hp,health,'enemies cannot deal damage during entrance');
+     ui.runFor(1.8);
+     assert.ok(ui.heroX()>=home-1e-6,'character reaches the correct start point');
+     assert.ok(ui.state().elapsed>at,'battle resumes after the full walk');
+   }
  }
 });
 
@@ -277,15 +304,17 @@ test('the battle entrance pauses, survives a viewport resize and restarts at the
  assert.equal(ui.state().elapsed,time);
  assert.equal(ui.node('#player-sprite').draws.length,draws);
  ui.resizeField(1000);ui.frame(0);
- assert.ok(Math.abs(ui.heroX()-before*1.25)<1e-7,'resize retains the percent-complete entrance');
- ui.node('#auto-button').click();ui.runFor(1);
+ const oldStart=-ui.node('[data-fighter="hero"]').offsetWidth/2,oldHome=800*.18;
+ const fraction=(before-oldStart)/(oldHome-oldStart);
+ assert.ok(Math.abs(ui.heroX()-(oldStart+(1000*.18-oldStart)*fraction))<1e-7,'resize retains the percent-complete entrance');
+ ui.node('#auto-button').click();ui.runFor(2.7);
  assert.equal(ui.heroX(),1000*.18,'ranged hero rests at the normal starting point');
  ui.node('#replay-button').click();
  assert.equal(ui.state().elapsed,0);
- assert.equal(ui.heroX(),-1000*.05,'restart starts from the edge again');
+ assert.equal(ui.heroX(),-ui.node('[data-fighter="hero"]').offsetWidth/2,'restart starts fully outside the edge again');
  assert.equal(ui.state().waveIndex,0);
  ui.runFor(.3);
- assert.ok(ui.heroX()>-1000*.05&&ui.heroX()<1000*.18);
+ assert.ok(ui.heroX()>-ui.node('[data-fighter="hero"]').offsetWidth/2&&ui.heroX()<1000*.18);
 });
 
 test('reduced-motion preference skips entrance without hiding the fighter or delaying combat',async()=>{
@@ -306,7 +335,7 @@ test('assets gate startup; the first wave shows one real LPC archer and the sele
  assert.ok(ui.loadedPaths.includes('assets/characters/combat/bronze-attack.png'));
  assert.deepEqual(ui.node('#player-sprite').draws.at(-1).crop,[0,192,64,64]);
  assert.equal(ui.node('#enemy-archer1').draws.at(-1).crop[1],64);
- const enemyX=actorX(ui,'archer1');ui.runFor(.9);
+ const enemyX=actorX(ui,'archer1');ui.runFor(2.8);
  assert.ok(ui.heroX()>800*.18);assert.equal(actorX(ui,'archer1'),enemyX);assert.equal(ui.node('[data-fighter="hero"]').dataset.motion,'walk');
  assert.ok(ui.node('#player-sprite').draws.filter(draw=>draw.src.endsWith('bronze-walk.png')).every(draw=>draw.crop[0]>=64&&draw.crop[0]<=512&&draw.crop[1]===192));
  ui.runUntil(()=>ui.events.some(event=>event.type==='attack'&&event.sourceId==='hero'));
@@ -391,7 +420,7 @@ test('all starter weapons, six skins and clothing colors use matching LPC sheets
   const ui=createHarness({skin,weapon:weapon.id,outfit:outfit.id,outfitColor:color.id});await ui.loadAllImages();
   const prefix=`assets/characters/loadouts/${weapon.id}/${outfit.id}/${color.id}/${skin}-`;
   assert.ok(ui.loadedPaths.includes(prefix+'walk.png'));assert.ok(ui.loadedPaths.includes(prefix+'attack.png'));
-  ui.runFor(1);const home=ui.heroX();ui.runFor(.7);if(weapon.projectile==='melee')assert.ok(ui.heroX()>home);else assert.equal(ui.heroX(),home);
+  ui.runFor(3.2);const home=ui.heroX();ui.runFor(.7);if(weapon.projectile==='melee')assert.ok(ui.heroX()>home);else assert.equal(ui.heroX(),home);
   ui.runUntil(()=>ui.node('#player-sprite').draws.some(draw=>draw.src===prefix+'attack.png'));
   assert.ok(ui.node('#player-sprite').draws.filter(draw=>draw.src===prefix+'attack.png').every(draw=>draw.crop[1]===weapon.attack.tile*3&&draw.crop[2]===weapon.attack.tile));
   ui.node('#profile-button').click();assert.ok(ui.node('#dialog-copy').textContent.includes(outfit.name));assert.ok(ui.node('#dialog-copy').textContent.includes(color.name.toLowerCase()));
@@ -417,7 +446,7 @@ test('distant archers fire during a melee approach, without spawning the old mag
 });
 
 test('gait follows travelled distance and paused resizes preserve archer contact and later the orc pair',async()=>{
- const ui=createHarness();await ui.loadAllImages();ui.runFor(1.2);const x=ui.heroX();ui.frame(100);
+ const ui=createHarness();await ui.loadAllImages();ui.runFor(3.2);const x=ui.heroX();ui.frame(100);
  assert.ok(Math.abs(ui.heroX()-x-64*.85*.1)<1e-8);
  ui.node('#auto-button').click();const phase=ui.node('#player-sprite').draws.at(-1),draws=ui.node('#player-sprite').draws.length,before=ui.heroX();
  ui.resizeField(1000);ui.frame(0);assert.ok(Math.abs(ui.heroX()-before*1.25)<1e-8);assert.equal(ui.node('#player-sprite').draws.length,draws);assert.deepEqual(ui.node('#player-sprite').draws.at(-1),phase);
@@ -432,6 +461,7 @@ test('gait follows travelled distance and paused resizes preserve archer contact
 test('the last-wave orc walks towards melee and ranged heroes, then uses native attack tiles only in range',async()=>{
  for(const options of [{},{weapon:'bow',outfit:'wanderer'}]){
   const ui=createHarness(options);await ui.loadAllImages();ui.runUntil(()=>ui.state().waveIndex===2);
+  ui.runFor(2.6); // Let the last wave's walk-in finish before pursuing.
   const h=ui.heroX(),o=ui.orcX(),start=ui.events.length;ui.runFor(.5);
   assert.ok(ui.orcX()<o);if(options.weapon)assert.equal(ui.heroX(),h);else assert.ok(ui.heroX()>h);
   assert.equal(ui.node('[data-fighter="orc"]').dataset.motion,'walk');
@@ -523,7 +553,7 @@ test('reduced motion keeps the three-wave combat and rewards while suppressing a
 
 test('distant skeletons really shoot at 1.8 and 3.6 seconds with a shorter native shooting pose',async()=>{
  const ui=createHarness({fieldWidth:3200});await ui.loadAllImages();
- ui.runUntil(()=>ui.events.some(event=>event.type==='attack'&&event.sourceId==='archer1'),3);
+ ui.runUntil(()=>ui.events.some(event=>event.type==='attack'&&event.sourceId==='archer1'),6);
  const first=ui.events.find(event=>event.type==='attack'&&event.sourceId==='archer1');
  assert.equal(first.at,1.8);assert.equal(first.animationDuration,.6);
  assert.equal(ui.node('[data-fighter="archer1"]').dataset.motion,'attack');
@@ -539,7 +569,7 @@ test('distant skeletons really shoot at 1.8 and 3.6 seconds with a shorter nativ
 test('both wand schools accelerate only when the orc reaches them; queued far spells and paused fast spells keep their own timing',async()=>{
  for(const magic of ['fire','ice']){
   const ui=createHarness({weapon:'wand',outfit:'acolyte',magic});await ui.loadAllImages();ui.runUntil(()=>ui.state().waveIndex===2);
-  const home=ui.heroX();runFramesUntil(ui,()=>ui.inMeleeRange(),20);assert.equal(ui.heroX(),home);
+  ui.runFor(2.6);const home=ui.heroX();runFramesUntil(ui,()=>ui.inMeleeRange(),20);assert.equal(ui.heroX(),home);
   const contactTime=ui.state().elapsed;
   const queuedFar=ui.events.filter(event=>event.type==='cast'&&event.targetId==='orc'&&event.appearDuration===.42&&event.impactAt>contactTime).at(-1);
   assert.ok(queuedFar,'a far spell was already launched before contact');
@@ -566,7 +596,7 @@ test('far wand casts and the hero bow keep their original cadence, including bow
  for(const [weapon,outfit]of [['wand','acolyte'],['bow','wanderer']]){
   const ui=createHarness({weapon,outfit,magic:'fire'});await ui.loadAllImages();
   const type=weapon==='wand'?'cast':'attack';
-  ui.runUntil(()=>ui.events.filter(event=>event.type===type&&event.sourceId==='hero').length>=3,5);
+  ui.runUntil(()=>ui.events.filter(event=>event.type===type&&event.sourceId==='hero').length>=3,9);
   const first=ui.events.filter(event=>event.type===type&&event.sourceId==='hero').slice(0,3);
   assert.deepEqual(first.map(event=>event.at),[1.2,2.4,3.6]);
   if(weapon==='wand'){
@@ -734,7 +764,7 @@ test('five configured depth lanes are ordered, distinct and remain inside the ap
 
 test('melee walking changes depth towards the current enemy and every strike reaches the same physical road row',async()=>{
  const ui=createHarness({weapon:'sword',outfit:'militia'});await ui.loadAllImages();assert.equal(ui.depth('hero'),3);assert.equal(ui.depth('archer1'),2);
- ui.runFor(1.2);assert.ok(ui.depth('hero')<3&&ui.depth('hero')>=2);assert.equal(ui.node('[data-fighter="hero"]').dataset.motion,'walk');
+ ui.runFor(3.2);assert.ok(ui.depth('hero')<3&&ui.depth('hero')>=2);assert.equal(ui.node('[data-fighter="hero"]').dataset.motion,'walk');
  ui.runUntil(()=>ui.events.some(event=>event.type==='attack'&&event.sourceId==='hero'&&event.targetId==='archer1'));
  assert.ok(inReach(ui,'archer1'));almost(ui.footY('hero'),ui.footY('archer1'),.01);assert.equal(ui.depth('hero'),2);
  enterWaveExactly(ui,1);assert.equal(ui.depth('hero'),3);assert.equal(ui.depth('archer2'),1);assert.equal(ui.depth('archer3'),5);
@@ -761,7 +791,10 @@ test('ranged spells use off-row target coordinates and keep aiming correctly aft
  const angle=assertActualSpellRay(ui,spell);ui.node('#auto-button').click();const elapsed=ui.state().elapsed;
  ui.resizeField(1000,44);ui.frame(0);const resizedAngle=assertActualSpellRay(ui,spell);assert.ok(Math.abs(resizedAngle-angle)>.1);assert.equal(ui.state().elapsed,elapsed);assert.equal(spell.dataset.phase,'flight');
  assert.equal(ui.depth('hero'),3);assert.equal(ui.depth('archer1'),2);almost(roadCenterSource(ui),1028);
- ui.node('#auto-button').click();enterWaveExactly(ui,2);const startDepth=ui.depth('orc'),home=ui.heroX();assert.equal(startDepth,4);
+ ui.node('#auto-button').click();enterWaveExactly(ui,2);
+ assert.equal(ui.depth('orc'),4,'the orc waits motionless during wave entrance');
+ ui.runFor(2.6);
+ const startDepth=ui.depth('orc'),home=ui.heroX();assert.ok(startDepth<=4&&startDepth>3);
  ui.runFor(.4);assert.equal(ui.heroX(),home);assert.equal(ui.depth('hero'),3);assert.ok(ui.depth('orc')<4&&ui.depth('orc')>3);assert.equal(ui.node('[data-fighter="orc"]').dataset.motion,'walk');
  ui.runUntil(()=>ui.inMeleeRange());almost(ui.footY('hero'),ui.footY('orc'),.01);assert.equal(ui.depth('orc'),3);
 });
@@ -777,7 +810,7 @@ test('freezing holds both orc road coordinates and pose; a paused resize reproje
 });
 
 test('pause, wave spawn and replay preserve or reset formation without drifting the road or adding a fake walking frame',async()=>{
- const ui=createHarness({weapon:'sword',outfit:'militia'});await ui.loadAllImages();ui.runFor(1.2);assert.ok(ui.depth('hero')>2&&ui.depth('hero')<3);
+ const ui=createHarness({weapon:'sword',outfit:'militia'});await ui.loadAllImages();ui.runFor(3.2);assert.ok(ui.depth('hero')>2&&ui.depth('hero')<3);
  ui.node('#auto-button').click();const phase=ui.node('#player-sprite').draws.at(-1),count=ui.node('#player-sprite').draws.length,depth=ui.depth('hero');
  ui.resizeField(390,59,{arenaHeight:438.88,fieldHeight:180.384,fieldBottomGap:61,roadGround:36,viewportHeight:844});ui.frame(0);
  assert.equal(ui.depth('hero'),depth);assert.deepEqual(ui.node('#player-sprite').draws.at(-1),phase);assert.equal(ui.node('#player-sprite').draws.length,count);almost(roadCenterSource(ui),1028,1e-6);
@@ -799,12 +832,13 @@ test('wave clear keeps the hero walking visibly on the same road row, then reset
  assert.equal(sceneSnapshot(ui).phase,'wave-in');assert.equal(sceneSnapshot(ui).opacity,1,'a fully black frame conceals the spawn reset');
  const spawned=ui.events.find(event=>event.type==='wave'&&event.waveIndex===1),age=ui.state().elapsed-spawned.at;
  assert.ok(age>=0&&age<=.016+1e-6,'only the remaining piece of the last RAF frame may advance the fresh wave');
- const home=800*.18,size=ui.node('[data-fighter="hero"]').offsetWidth,progress=size*.85*age;
- almost(ui.heroX(),home+progress,1e-6,'the covered new wave consumes exactly its post-spawn frame remainder');
- const targetX=actorX(ui,'archer2'),goal=targetX-size*.23-ui.node('[data-fighter="archer2"]').offsetWidth*.34;
- almost(ui.depth('hero'),3+(1-3)*progress/(goal-home),1e-6,'new movement begins at the reset depth behind the black frame');
+ const home=800*.18,size=ui.node('[data-fighter="hero"]').offsetWidth,start=-size/2;
+ assert.ok(ui.heroX()>=start-1e-6&&ui.heroX()<home,'the next wave starts another walk from the left edge');
+ assert.equal(ui.depth('hero'),3,'new-wave entrance keeps the initial road row');
+ assert.equal(ui.state().elapsed,spawned.at,'battle time is held during the next entrance');
  assert.equal(ui.state().hero.hp,hp);assert.equal(wallet(ui),5);
  ui.runFor(.2);assert.ok(sceneSnapshot(ui).opacity>0&&sceneSnapshot(ui).opacity<1);ui.runFor(.3);assertFadeCleared(ui);
+ assert.ok(ui.heroX()<home,'the slower entrance continues after the screen fade');
  const upperStart=html.indexOf('<section class="adventure"'),upperEnd=html.indexOf('</section>',upperStart)+10,upper=html.slice(upperStart,upperEnd);
  assert.ok(upper.includes('id="scene-fade"'));assert.equal((html.match(/id="scene-fade"/g)||[]).length,1);assert.ok(!html.slice(upperEnd).includes('id="scene-fade"'));
  const css=fs.readFileSync(path.join(dist,'game.css'),'utf8'),fadeRule=css.match(/\.scene-fade\{([^}]*)\}/)?.[1]||'';

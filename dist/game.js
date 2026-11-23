@@ -88,9 +88,9 @@
   let heroX = null, fieldWidth = null, moving = false, heroMoving = false;
   let walkDistance = 0, walkDirection = 3, activeTime = 0;
   let sceneTransition = null;
-  // The hero enters from the left edge only at the start of a battle.
-  // Wave transitions retain their existing fade-and-reset choreography.
-  const heroEntranceDuration=.75;
+  // At the start of EACH wave the hero walks in at a deliberate pace
+  // from fully off-screen. The battle clock stays on hold until arrival.
+  const heroEntranceDuration=2.5;
   let heroEntrance=null;
   function beginHeroEntrance(){
     heroEntrance={elapsed:0};
@@ -316,8 +316,11 @@
     if(!sceneTransition)return;
     const transition=sceneTransition;
     // A wave reset gets one fully covered paint even if a frame crosses its boundary.
-    if(transition.fresh){transition.at=activeTime;transition.lastTime=activeTime;transition.fresh=false;}
-    const age=Math.max(0,activeTime-transition.at);
+    const justSpawned=transition.fresh;
+    if(justSpawned){transition.at=activeTime;transition.lastTime=activeTime;transition.fresh=false;}
+    const age=transition.phase==='wave-in'&&heroEntrance
+      ?(justSpawned?0:heroEntrance.elapsed)
+      :Math.max(0,activeTime-transition.at);
     const outgoing=transition.phase==='wave-out'||transition.phase==='victory';
     if(outgoing&&state.hero.hp>0){
       if(!reducedMotion.matches){
@@ -465,7 +468,9 @@
         updateControls();
       } else if(event.type==='wave'){
         prepareWave(battle.getState());
-        // Reset actors under black on this paint, then reveal on the active clock.
+        // Reset actors under black, then fade while the new entrance walks in.
+        // The engine clock is held during the entrance, so the fade follows
+        // the local entrance clock instead of relying on combat time.
         beginSceneTransition('wave-in',event.at);
         $('#status').textContent=`Волна ${event.waveNumber} из ${event.waveCount}: ${event.enemies.length===2?'два лучника':event.enemies[0].type==='orc'?'орк':'один лучник'}.`;
         updateControls();
@@ -542,6 +547,7 @@
       actor.depth=actor.defaultLane;
       actor.animation=null;actor.hitAt=-10;actor.blockAt=-10;actor.lastKey=null;
     }
+    beginHeroEntrance();
     updateMovement(0,state);
   }
   // Range holds only melee cooldowns; archers shoot throughout the approach.
@@ -564,7 +570,7 @@
     if(heroEntrance){
       // Use battlefield-relative coordinates to keep the intro at the same
       // percentage through a rotation/resize. No CSS transform blur.
-      const from=-width*.05;
+      const from=-heroSize/2; // center just outside the leftmost visible pixel
       const previousX=heroX;
       if(reducedMotion.matches){
         heroEntrance=null;heroX=home;
@@ -774,7 +780,7 @@
     battle.restart();if(startAuto)auto=true;
     activeTime=0;restartRemaining=null;resultSummary='';paidDeaths.clear();creditedRunGold=0;
     clearSceneTransition();
-    prepareWave(battle.getState());beginHeroEntrance();updateMovement(0,battle.getState());
+    prepareWave(battle.getState());
     resultPanel.hidden=true;lastFrameTime=null;
     if(startAuto)try{localStorage.setItem('ember.combat.auto.v1','on');}catch{}
     render(battle.getState());syncPause();$('#status').textContent='Битва 1–1. Волна 1: один лучник.';
