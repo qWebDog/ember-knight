@@ -476,6 +476,29 @@ test('skeleton arrow begins at release frame, flies left, and disappears on dama
  ui.runUntil(()=>ui.events.some(e=>e.type==='attack'&&e.sourceId==='archer1'),2);
  assert.equal(ui.state().hero.hp,193);assert.ok(!ui.node('.battlefield').children.includes(arrow));
 });
+test('two archers in wave two release two distinct arrows that land together',async()=>{
+ const ui=createHarness({weapon:'bow',outfit:'wanderer'});await ui.loadAllImages();
+ ui.runUntil(()=>ui.state().waveIndex===1,90);
+ const hp=ui.state().hero.hp;
+ ui.runUntil(()=>arrowsFrom(ui).filter(e=>!e.hidden&&e.dataset.source.startsWith('archer')).length===2,8);
+ const shots=arrowsFrom(ui).filter(e=>e.dataset.source.startsWith('archer'));
+ assert.deepEqual(shots.map(e=>e.dataset.source).sort(),['archer2','archer3']);
+ nearTime(Number(shots[0].dataset.impactAt),Number(shots[1].dataset.impactAt),1e-6);
+ assert.equal(ui.state().hero.hp,hp);
+ ui.runUntil(()=>ui.events.some(e=>e.type==='attack'&&e.sourceId==='archer2'),3);
+ assert.equal(ui.state().hero.hp,hp-14);
+ assert.ok(shots.every(e=>!ui.node('.battlefield').children.includes(e)));
+});
+test('pausing mid-draw freezes release timing and the hero bow frame',async()=>{
+ const ui=createHarness({weapon:'bow',outfit:'wanderer'});await ui.loadAllImages();
+ ui.runUntil(()=>arrowsFrom(ui,'hero').length>0,8);
+ const arrow=arrowsFrom(ui,'hero')[0],before=ui.state().elapsed,draws=ui.node('#player-sprite').draws.length;
+ ui.node('#auto-button').click();ui.runFor(1);
+ assert.equal(ui.state().elapsed,before);assert.equal(arrow.hidden,true);
+ assert.equal(ui.node('#player-sprite').draws.length,draws);
+ ui.node('#auto-button').click();runFramesUntil(ui,()=>!arrow.hidden,2);
+ assert.ok(ui.state().elapsed>before);assert.equal(arrow.style.visibility,'visible');
+});
 test('distant archers fire during a melee approach, without spawning the old mage or allowing attacks from afar',async()=>{
  const ui=createHarness({fieldWidth:3200});await ui.loadAllImages();
  ui.runUntil(()=>ui.node('.battlefield').children.some(element=>element.className==='projectile arrow'&&!element.hidden),5);
