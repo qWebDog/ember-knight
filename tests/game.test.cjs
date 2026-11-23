@@ -621,10 +621,11 @@ test('distant skeletons really shoot at 1.8 and 3.6 seconds with a shorter nativ
  const ui=createHarness({fieldWidth:3200});await ui.loadAllImages();
  ui.runUntil(()=>ui.node('.battlefield').children.some(element=>element.className==='projectile arrow'&&!element.hidden),6);
  assert.equal(ui.state().hero.hp,200,'enemy bow release precedes the hit');
+ assert.equal(ui.node('[data-fighter="archer1"]').dataset.motion,'attack','skeleton releases the bow while the arrow is flying');
  ui.runUntil(()=>ui.events.some(event=>event.type==='attack'&&event.sourceId==='archer1'),6);
  const first=ui.events.find(event=>event.type==='attack'&&event.sourceId==='archer1');
  assert.equal(first.at,1.8);assert.equal(first.animationDuration,.6);
- assert.equal(ui.node('[data-fighter="archer1"]').dataset.motion,'attack');
+ assert.equal(ui.node('[data-fighter="archer1"]').dataset.motion,'idle','release pose ends before the arrow hits');
  assert.ok(!ui.node('.battlefield').children.some(element=>element.className==='projectile arrow'&&!element.hidden), 'arrow reaches the hero on impact, not after damage');
  ui.runUntil(()=>ui.state().elapsed>=2.45,2);
  assert.equal(ui.node('[data-fighter="archer1"]').dataset.motion,'idle','the shortened shot pose is over before 2.5 seconds');
