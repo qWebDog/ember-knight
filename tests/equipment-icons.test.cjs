@@ -19,7 +19,7 @@ test('all three classes have transparent LPC item portrait paths for every selec
         total++;
       }
     }
-    for(const slot of ['boots'])assert.equal(
+    for(const slot of ['companion'])assert.equal(
       data.itemIconPath(classId,slot,catalog[slot][0].id),null,
       'unavailable slots should not advertise fake item icons');
   }

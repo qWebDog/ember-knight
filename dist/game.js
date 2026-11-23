@@ -84,6 +84,10 @@
     const element = document.querySelector(`[data-fighter="${id}"]`);
     actors[id] = {element, canvas:element.querySelector('canvas'), bar:element.querySelector('.healthbar'), images:{}, animation:null, hitAt:-10, blockAt:-10, lastKey:null,statusCanvas:null,statusKey:null,frozenPose:null,poseAnimation:null,poseAge:100,defaultLane:3,...enemyDefinitions[id],depth:enemyDefinitions[id]?.defaultLane||3,x:null,distance:0,direction:1,moving:false};
   }
+  // The wolf is an optional visual companion, never another combat actor.
+  const companion=window.EmberCompanion?.create({
+    element:$('#companion-wolf'),store:equipment,loadImage
+  });
   const effects = [];
   const cuedArrows=new Map();
   const spellImages = {};
@@ -187,6 +191,12 @@
       outfitColor:loadout?.outfitColor||'sand',
       getSprite:()=>actors.hero.images.idle,
       loadItem:async(slot,id,colors)=>{
+        // Stage the original wolf image before committing an equipment choice.
+        // Companion selection must not rebuild the hero's LPC armor or bow.
+        if(slot==='companion'){
+          if(id==='wolf')await companion?.load();
+          return;
+        }
         const nextLook={...equipment.getState(),[slot]:id};
         // Stage every layer before saving a selection. In particular, a new
         // shield must have its native foreground ready over the chest armor.
@@ -203,8 +213,9 @@
       },
       paintItem:(ctx,pose)=>equipmentArt?.draw(ctx,pose),
       paintBack:(ctx,pose)=>equipmentArt?.drawBack(ctx,pose),
+      paintCompanion:(ctx,pose)=>companion?.paintPreview(ctx,pose),
       onEquip:(_look,slot)=>{
-        if(classEquipment&&loadedClassSprites)applyClassSprites(loadedClassSprites);
+        if(slot!=='companion'&&classEquipment&&loadedClassSprites)applyClassSprites(loadedClassSprites);
         if((slot==='weapon'||slot==='shield')&&loadedSwordSprites)applySwordSprites(loadedSwordSprites);
         actors.hero.lastKey=null;
         if(ready)render(battle.getState());
@@ -281,6 +292,8 @@
       // Helmet/armor are native pose overlays; sword/shield are complete, recomposed LPC sheets.
       if(equipmentArt)try{await equipmentArt.prepareLook(equipment.getState(),equipment.getColors());}
       catch{$('#status').textContent='Не удалось загрузить часть LPC-экипировки.';}
+      // A missing cosmetic image should never block combat or hero creation.
+      if(equipment?.getState().companion==='wolf')try{await companion?.load();}catch{}
       ready = true;
       beginHeroEntrance();
       updateMovement(0,battle.getState());
@@ -745,6 +758,12 @@
     renderSceneTransition(state);
     cueArrowShots(state);
     for (const id of Object.keys(actors)) drawActor(id,state);
+    companion?.render({
+      time:activeTime,x:heroX??0,heroSize:actors.hero.element.offsetWidth,
+      depth:actors.hero.depth,laneStep,
+      moving:heroMoving||Boolean(heroEntrance)||sceneTransition?.phase==='wave-out',
+      reducedMotion:reducedMotion.matches,alive:state.hero.hp>0
+    });
     $('#hero-vital').textContent = `${state.hero.hp} / ${state.hero.maxHp} HP`;
     const waves = document.querySelectorAll('.wave');
     waves.forEach((wave,i) => { wave.classList.toggle('done',i<state.completedWaves); wave.classList.toggle('current',i===state.waveIndex&&i>=state.completedWaves); });

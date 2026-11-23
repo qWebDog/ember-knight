@@ -11,12 +11,12 @@ function storage(seed={}){
   const map=new Map(Object.entries(seed));let writes=0;
   return {map,get writes(){return writes;},getItem:k=>map.get(k)??null,setItem(k,v){writes++;map.set(k,String(v));}};
 }
-test('helmet, armor, weapon, shield and native cape are enabled; boots await assets',()=>{
-  assert.deepEqual(slots.map(s=>s.id),['helmet','armor','weapon','shield','cape','boots']);
-  assert.deepEqual(supportedSlots,['helmet','armor','weapon','shield','cape']);
+test('five wearable slots and the new companion slot are all available',()=>{
+  assert.deepEqual(slots.map(s=>s.id),['helmet','armor','weapon','shield','cape','companion']);
+  assert.deepEqual(supportedSlots,['helmet','armor','weapon','shield','cape','companion']);
   for(const slot of slots){
     const items=catalog[slot.id];
-    assert.equal(items.length,3);
+    assert.equal(items.length,slot.id==='companion'?2:3);
     assert.equal(new Set(items.map(item=>item.id)).size,3);
     assert.equal(defaults[slot.id],items[0].id);
   }
@@ -40,7 +40,7 @@ test('previous placeholder cape/boots are normalized out while real native sword
   const store=createStore({storage:memory,classId:'sword'});
   assert.deepEqual(store.getState(),{...defaults,helmet:'iron',armor:'royal',weapon:'ember',shield:'steel'});
   assert.equal(store.equip('cape','red').reason,'invalid');
-  assert.equal(store.equip('boots','iron').reason,'unsupported');
+  assert.equal(store.equip('boots','iron').reason,'invalid');
   assert.equal(store.equip('weapon','steel').ok,true);
   assert.equal(store.equip('shield','royal').ok,true);
   assert.equal(memory.writes,2);
@@ -177,7 +177,7 @@ test('the game uses native LPC animation atlases, not synthetic equipment drawin
   const game=fs.readFileSync(path.join(dist,'game.js'),'utf8');
   const renderer=fs.readFileSync(path.join(dist,'equipment-art.js'),'utf8');
   assert.match(html,/id="equipment-panel"[^>]*hidden/);
-  assert.equal((html.match(/data-equipment-slot="(?:helmet|armor|weapon|shield|cape|boots)"/g)||[]).length,6);
+  assert.equal((html.match(/data-equipment-slot="(?:helmet|armor|weapon|shield|cape|companion)"/g)||[]).length,6);
   assert.match(game,/equipmentArt\.draw\(ctx,gearPose\)/);
   assert.match(game,/variant:attacking\?\(actor\.animation\?\.variant\|\|'slash'\)/);
   assert.match(game,/equipmentArt\.prepareLook\(equipment\.getState\(\),equipment\.getColors\(\)\)/);
@@ -185,4 +185,24 @@ test('the game uses native LPC animation atlases, not synthetic equipment drawin
   assert.match(renderer,/ctx\.drawImage\(image,col\*frameSize,row\*frameSize/);
   assert.match(renderer,/if\(withArmor\|\|withCape\)drawLayer\('shield',worn\.shield\)/);
   assert.match(renderer,/if\(withArmor\|\|withHelmet\|\|withCape\)drawLayer\('weapon',worn\.weapon\)/);
+});
+
+test('wolf companion replaces old boots and has separate persistent slots for each class',()=>{
+ const mem=storage({[key]:JSON.stringify({version:1,byClass:{sword:{boots:'royal'},bow:{boots:'basic'},wand:{boots:'iron'}}})});
+ const warrior=createStore({storage:mem,classId:'sword'});
+ const archer=createStore({storage:mem,classId:'bow'});
+ const mage=createStore({storage:mem,classId:'wand'});
+ for(const store of [warrior,archer,mage]){
+   assert.equal(store.getState().companion,'none');
+   assert.equal(Object.hasOwn(store.getState(),'boots'),false);
+   assert.equal(store.equip('companion','wolf').ok,true);
+   assert.equal(store.getState().companion,'wolf');
+ }
+ assert.equal(createStore({storage:mem,classId:'sword'}).getState().companion,'wolf');
+ assert.equal(createStore({storage:mem,classId:'bow'}).getState().companion,'wolf');
+ assert.equal(createStore({storage:mem,classId:'wand'}).getState().companion,'wolf');
+ assert.equal(warrior.equip('companion','none').ok,true);
+ assert.equal(createStore({storage:mem,classId:'sword'}).getState().companion,'none');
+ assert.equal(createStore({storage:mem,classId:'bow'}).getState().companion,'wolf');
+ assert.equal(warrior.equip('companion','dragon').reason,'invalid');
 });

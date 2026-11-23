@@ -42,10 +42,10 @@ test('helmet armor and cape have independent per-item colors per character class
   assert.equal(w.getColor('armor','basic'),'red','preloading does not save a dye');
 });
 
-test('no color picker or storage write is allowed for weapon shield boots or bare head',()=>{
+test('no color picker or storage write is allowed for weapon shield companion or bare head',()=>{
   const memory=storage(),w=gear.createStore({classId:'sword',storage:memory});
   assert.deepEqual(gear.dyeSlots,['helmet','armor','cape']);
-  for(const slot of ['weapon','shield','boots']){
+  for(const slot of ['weapon','shield','companion']){
     assert.equal(w.setColor(slot,'red').ok,false);
     assert.equal(w.getColor(slot),'original');
   }
