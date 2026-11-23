@@ -14,6 +14,7 @@
   const intermissionDuration = 1.4;
   const INTERMISSION = Math.round(intermissionDuration * TICKS);
   const KILL_REWARD = 5;
+  const WOLF_MAX_HP = 70;
   const statusTiming = Object.freeze({duration:.5,burnTickInterval:.25,burnDamage:1});
   const STATUS_DURATION = Math.round(statusTiming.duration*TICKS);
   const BURN_INTERVAL = Math.round(statusTiming.burnTickInterval*TICKS);
@@ -52,9 +53,13 @@
     let phase, pausedFrom, elapsed, remainder, hero, enemies, nextHero, nextEnemies, reward;
     let comboIndex, meleeHits, heroBusyUntil, pendingCounters, pendingImpacts;
     let waveIndex, completedWaves, defeatedCount, nextWaveAt;
+    let companion,companionEverSummoned;
+    function currentEnemyTarget(){
+      return companionEnabled && companion?.hp>0 ? companion : hero;
+    }
     // Companion ownership is gated by the permanent Archer class and can be
     // changed live by equipment without rescheduling the Archer's next arrow.
-    let companionEnabled=config.projectile==='arrow'&&options.companionEnabled===true;
+    let companionEnabled=options.heroWeapon==='bow'&&config.projectile==='arrow'&&options.companionEnabled===true;
     function heroTicks(base) { return Math.max(1,Math.round(base/config.attackSpeed)); }
     // Pure read-only shot schedule for sprite anticipation. Existing engine
     // attack ticks, damage, rewards and cooldowns stay exactly unchanged.
@@ -71,7 +76,7 @@
         const enemy=enemies[i];
         if(enemy.hp<=0||enemy.projectile!=='arrow'
           ||enemy.status?.type==='freeze'&&enemy.status.endsAt>elapsed)continue;
-        shots.push({sourceId:enemy.id,targetId:'hero',
+        shots.push({sourceId:enemy.id,targetId:currentEnemyTarget().id,
           at:nextEnemies[i]/TICKS,animationDuration:.6});
       }
       return shots;
@@ -81,6 +86,8 @@
       const waiting = phase === 'intermission' || (phase === 'paused' && pausedFrom === 'intermission');
       return {
         phase, elapsed:elapsed / TICKS, hero:{...hero},
+        companion:companionEnabled?{...companion,alive:companion.hp>0}:null,
+        enemyTargetId:currentEnemyTarget().id,
         enemies:enemies.map(enemy => ({...enemy,status:enemy.status ? {type:enemy.status.type,startedAt:enemy.status.startedAt/TICKS,endsAt:enemy.status.endsAt/TICKS} : null,alive:enemy.hp > 0})),
         targetId:target ? target.id : null,
         waveIndex,waveNumber:waveIndex+1,waveCount:waveTemplates.length,completedWaves,
@@ -98,6 +105,9 @@
     function restart() {
       elapsed = 0; remainder = 0; reward = 0; completedWaves = 0; defeatedCount = 0;
       hero = {id:'hero',name:config.name,hp:config.maxHp,maxHp:config.maxHp,damage:config.damage,attackSpeed:config.attackSpeed};
+      const maxHp=positive(options.companionMaxHp,WOLF_MAX_HP);
+      companion={id:'companion',name:'Боевой волк',hp:companionEnabled?maxHp:0,maxHp};
+      companionEverSummoned=companionEnabled;
       spawnWave(0);
       return getState();
     }
@@ -129,7 +139,12 @@
       pendingCounters.sort((a,b) => a.at-b.at);
     }
     function setCompanionEnabled(enabled) {
-      companionEnabled=config.projectile==='arrow'&&enabled===true;
+      companionEnabled=options.heroWeapon==='bow'&&config.projectile==='arrow'&&enabled===true;
+      // Switching equipment cannot resurrect a fallen wolf. A first-time
+      // equip is allowed to summon one; a new battle restores its health.
+      if(companionEnabled&&!companionEverSummoned){
+        companion.hp=companion.maxHp;companionEverSummoned=true;
+      }
       return companionEnabled;
     }
     // The wolf's bite lands only after the sprite reaches its impact frame.
@@ -137,7 +152,7 @@
     // enemy attack cadence, or the deterministic advance() schedule.
     function companionStrike(targetId,baseDamage) {
       const events=[];
-      if(!companionEnabled||phase!=='running'||hero.hp<=0
+      if(!companionEnabled||companion.hp<=0||phase!=='running'||hero.hp<=0
         ||!Number.isFinite(baseDamage)||baseDamage<=0)return events;
       const target=enemies.find(enemy=>enemy.id===targetId&&enemy.hp>0);
       if(!target)return events;
@@ -190,6 +205,8 @@
       if (!['running','intermission'].includes(phase) || !Number.isFinite(seconds) || seconds <= 0) return events;
       const heroCanAttack = availability?.heroCanAttack !== false;
       const orcCanAttack = availability?.orcCanAttack !== false;
+      const enemyCanAttack=id=>availability?.enemyCanAttack?.[id]!==false
+        &&(currentEnemyTarget().id!=='hero'||availability?.enemyCanAttackHero?.[id]!==false);
       const delta = seconds * TICKS + remainder;
       const ticks = Math.min(Number.MAX_SAFE_INTEGER-elapsed,Math.round(delta));
       remainder = Number.isFinite(delta) ? delta-ticks : 0;
@@ -204,7 +221,7 @@
           }
           enemies.forEach((enemy,index) => {
             // Freeze and out-of-range time overlap: hold the timer once for their union.
-            if ((enemy.type === 'orc' && !orcCanAttack) || frozen(enemy)) nextEnemies[index] += passed;
+            if ((enemy.type === 'orc' && !orcCanAttack) || !enemyCanAttack(enemy.id) || frozen(enemy)) nextEnemies[index] += passed;
           });
         }
         elapsed = time;
@@ -213,9 +230,9 @@
         target.hp = Math.max(0,target.hp-damage);
         events.push({type:'attack',sourceId,targetId:target.id,damage,hp:target.hp,at:elapsed/TICKS,projectile,...metadata});
         if (target.hp === 0) {
-          const enemy = target.id !== 'hero';
+          const enemy = target.id !== 'hero' && target.id !== 'companion';
           if (enemy) { defeatedCount++; reward += KILL_REWARD; target.status = null; }
-          events.push({type:'death',id:target.id,unitType:target.type || 'hero',reward:enemy ? KILL_REWARD : 0,totalReward:reward,at:elapsed/TICKS});
+          events.push({type:'death',id:target.id,unitType:target.type || (target.id==='companion'?'companion':'hero'),reward:enemy ? KILL_REWARD : 0,totalReward:reward,at:elapsed/TICKS});
           pendingCounters = pendingCounters.filter(counter => counter.targetId !== target.id);
           pendingImpacts = pendingImpacts.filter(impact => impact.targetId !== target.id);
         }
@@ -262,7 +279,7 @@
         if (pendingImpacts.length) next = Math.min(next,pendingImpacts[0].at);
         enemies.forEach((enemy,index) => {
           if (enemy.hp <= 0) return;
-          if ((enemy.type !== 'orc' || orcCanAttack) && !frozen(enemy)) next = Math.min(next,nextEnemies[index]);
+          if ((enemy.type !== 'orc' || orcCanAttack) && enemyCanAttack(enemy.id) && !frozen(enemy)) next = Math.min(next,nextEnemies[index]);
           if (enemy.status) {
             next = Math.min(next,enemy.status.endsAt);
             if (enemy.status.type === 'burn') next = Math.min(next,enemy.status.nextTick);
@@ -305,7 +322,8 @@
         }
         if (phase !== 'running') continue;
         while (pendingImpacts.length && pendingImpacts[0].at === next) {
-          const impact = pendingImpacts.shift(),target = impact.targetId === 'hero' ? hero : enemies.find(enemy => enemy.id === impact.targetId);
+          const impact = pendingImpacts.shift(),target = impact.targetId === 'hero' ? hero
+            : impact.targetId === 'companion' ? companion : enemies.find(enemy => enemy.id === impact.targetId);
           if (!target || target.hp <= 0) continue;
           hit(impact.sourceId,target,impact.damage,'magic',{magic:impact.magic,impact:true,castAt:impact.castAt,castId:impact.castId});
           if (impact.sourceId === 'hero' && target.id !== 'hero' && target.hp > 0 && ['fire','ice'].includes(impact.magic)) applyStatus(target,impact.magic);
@@ -315,14 +333,15 @@
         if (phase !== 'running') continue;
         for (let index=0;index<enemies.length;index++) {
           const enemy = enemies[index];
-          if (enemy.hp <= 0 || nextEnemies[index] !== next || (enemy.type === 'orc' && !orcCanAttack) || frozen(enemy)) continue;
+          if (enemy.hp <= 0 || nextEnemies[index] !== next || (enemy.type === 'orc' && !orcCanAttack) || !enemyCanAttack(enemy.id) || frozen(enemy)) continue;
+          const defender=currentEnemyTarget();
           let damage = enemy.damage,blocked = false;
-          if (sword && enemy.projectile === 'melee' && ++meleeHits % 2 === 0) {
+          if (defender.id==='hero' && sword && enemy.projectile === 'melee' && ++meleeHits % 2 === 0) {
             const blockedDamage = damage*.5; damage -= blockedDamage; blocked = true;
             events.push({type:'block',sourceId:enemy.id,targetId:'hero',blockedDamage,at:elapsed/TICKS});
           }
-          if (enemy.projectile === 'magic') cast(enemy.id,hero,damage,'shadow');
-          else hit(enemy.id,hero,damage,enemy.projectile,enemy.type === 'archer' ? {animationDuration:.6} : undefined);
+          if (enemy.projectile === 'magic') cast(enemy.id,defender,damage,'shadow');
+          else hit(enemy.id,defender,damage,enemy.projectile,enemy.type === 'archer' ? {animationDuration:.6} : undefined);
           nextEnemies[index] += Math.round(enemy.interval*TICKS);
           if (hero.hp === 0) { end('defeat'); break; }
           if (blocked) reserveCounter(enemy.id);

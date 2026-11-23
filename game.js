@@ -103,6 +103,7 @@
   // Wolf sprite frames need their own pause-aware visual clock, otherwise
   // its x-coordinate moves while the legs stay on one static frame.
   let walkDistance = 0, walkDirection = 3, activeTime = 0, companionTime = 0;
+  let companionDeathAt = null, companionHitAt = -10;
   let sceneTransition = null;
   // At the start of EACH wave the hero walks in at a deliberate pace
   // from fully off-screen. The battle clock stays on hold until arrival.
@@ -223,6 +224,7 @@
       onEquip:(_look,slot)=>{
         if(slot==='companion'){
           battle.setCompanionEnabled?.(equipment.classId==='bow'&&equipment.getState().companion==='wolf');
+          companionDeathAt=null;
           companion?.reset();
         }
         if(slot!=='companion'&&classEquipment&&loadedClassSprites)applyClassSprites(loadedClassSprites);
@@ -481,7 +483,10 @@
           const spell=effects.find(effect=>effect.type==='spell'&&effect.castId===event.castId);
           if(spell){spell.landed=true;spell.impactAt=event.at;spell.duration=event.at-spell.at+spell.impactDuration;}
         }
-        if(!event.dot)actors[event.targetId].hitAt = activeTime;
+        if(!event.dot){
+          if(event.targetId==='companion')companionHitAt=companionTime;
+          else if(actors[event.targetId])actors[event.targetId].hitAt=activeTime;
+        }
         addEffect(event.counter ? 'counter' : event.heavy ? 'heavy' : 'damage',event.sourceId,event.targetId,event.counter ? `Ответ −${event.damage}` : `−${event.damage}`,event.at);
       } else if(event.type==='status'){
         syncFrozenActors(battle.getState());
@@ -492,6 +497,11 @@
         actors.hero.animation = null;
         addEffect('block',event.sourceId,'hero','Блок',event.at);
       } else if (event.type === 'death') {
+        if(event.id==='companion'){
+          companionDeathAt=companionTime;
+          $('#status').textContent='Боевой волк пал. Враги теперь идут к лучнику.';
+          continue;
+        }
         clearStatus(actors[event.id]);
         for(const [id,impact]of pendingIceImpacts)if(impact.targetId===event.id)pendingIceImpacts.delete(id);
         removeEffects(effect=>effect.type!=='spell'||effect.targetId!==event.id||effect.landed);
@@ -583,7 +593,7 @@
     pendingIceImpacts.clear();
     cuedArrows.clear();
     heroX=null;fieldWidth=null;walkDistance=0;walkDirection=3;moving=heroMoving=false;
-    companionTime=0;
+    companionTime=0;companionDeathAt=null;companionHitAt=-10;
     companion?.reset();
     pairContacted=false;previousSeparation=null;contactTarget=null;previousTargetSeparation=null;
     for(const actor of Object.values(actors)){
@@ -627,6 +637,51 @@
         walkDirection=3;
         moving=heroMoving=canMove&&heroEntrance.elapsed<heroEntranceDuration;
         if(heroEntrance.elapsed>=heroEntranceDuration-1e-8)heroEntrance=null;
+      }
+      actors.hero.element.style.left=`${heroX}px`;
+      for(const id of Object.keys(enemyDefinitions))actors[id].element.style.left=`${actors[id].x}px`;
+      projectFormation();
+      return usedTime;
+    }
+    // While the Archer's wolf has been summoned, ALL living enemies
+    // pursue the current defender. They stop at the wolf first, only
+    // resuming their advance toward the hero after the wolf dies.
+    // Non-wolf encounters keep their original movement rules.
+    if(canMove&&ranged&&state.companion){
+      const pose=state.enemyTargetId==='companion'?companion?.getPose():null;
+      const defenderX=pose?.x??(state.enemyTargetId==='companion'?heroX-heroSize*.83:heroX);
+      const defenderDepth=state.enemyTargetId==='companion'?(pose?.depth??actors.hero.depth):actors.hero.depth;
+      heroX=home;
+      for(const unit of state.enemies){
+        if(unit.hp<=0)continue;
+        const enemy=actors[unit.id];
+        const enemySize=enemy.element.offsetWidth;
+        // Exact shared stopping distance with the wolf's pursuit logic:
+        // wolf.destination = enemy.x - (enemySize*.32 + wolfSize*.18).
+        // Different distances make both actors endlessly walk past contact.
+        const separation=state.enemyTargetId==='companion'
+          ?enemySize*.32+heroSize*.18:heroSize*.23+enemySize*.34;
+        const goalX=defenderX+separation;
+        const gap=goalX-enemy.x;
+        if(isFrozen(unit,state))continue;
+        const speed=enemySize*.85;
+        const distance=reducedMotion.matches?Math.abs(gap):Math.min(Math.abs(gap),speed*dt);
+        const step=Math.sign(gap)*distance;
+        if(Math.abs(gap)>.01){
+          const oldDepth=enemy.depth;
+          const fraction=Math.min(1,distance/Math.abs(gap));
+          enemy.x+=step;
+          enemy.depth+=(defenderDepth-enemy.depth)*fraction;
+          if(!reducedMotion.matches){
+            enemy.distance+=Math.hypot(distance,(enemy.depth-oldDepth)*laneStep)/enemySize;
+            enemy.moving=distance>.001;
+            if(enemy.moving)usedTime=dt;
+          }
+          enemy.direction=step>=0?3:1;
+        }else{
+          // Exact contact aligns their feet on the same ground lane.
+          enemy.depth=defenderDepth;
+        }
       }
       actors.hero.element.style.left=`${heroX}px`;
       for(const id of Object.keys(enemyDefinitions))actors[id].element.style.left=`${actors[id].x}px`;
@@ -711,8 +766,10 @@
       cuedArrows.delete(key);
     }
     for(const shot of shots){
-      const source=actors[shot.sourceId],target=actors[shot.targetId];
+      const source=actors[shot.sourceId],
+        target=shot.targetId==='companion'?$('#companion-wolf'):actors[shot.targetId];
       if(!source?.images.attack||!target||!shot.animationDuration)continue;
+      if(state.companion && shot.sourceId!=='hero' && source.moving)continue;
       const key=shot.sourceId+':'+shot.targetId+':'+shot.at.toFixed(6);
       if(cuedArrows.has(key))continue;
       const releaseAt=shot.at-arrowFlightDuration;
@@ -733,7 +790,7 @@
       if(effect.type==='arrow'&&age<0){effect.element.hidden=true;effect.element.style.visibility='hidden';continue;}
       if(effect.type==='arrow'){effect.element.hidden=false;effect.element.style.visibility='visible';}
       const sourceElement=effect.sourceId==='companion'?$('#companion-wolf'):actors[effect.sourceId]?.element;
-      const targetElement=actors[effect.targetId]?.element;
+      const targetElement=effect.targetId==='companion'?$('#companion-wolf'):actors[effect.targetId]?.element;
       if(!sourceElement||!targetElement){effect.element.remove();effects.splice(i,1);continue;}
       const target = targetElement.getBoundingClientRect(), source = sourceElement.getBoundingClientRect();
       const p = Math.max(0,age/effect.duration), tx=target.left+target.width/2-field.left, ty=target.top+target.height*.4-field.top;
@@ -773,16 +830,28 @@
     renderSceneTransition(state);
     cueArrowShots(state);
     for (const id of Object.keys(actors)) drawActor(id,state);
+    const wolfFallen=state.companion?.hp===0&&companionDeathAt!==null;
+    const wolfDefeatedWithHero=state.phase==='defeat'&&state.companion?.hp>0;
     companion?.render({
       time:companionTime,x:heroX??0,heroSize:actors.hero.element.offsetWidth,
       depth:actors.hero.depth,laneStep,
       moving:heroMoving,
       direction:walkDirection,
-      // A wolf's fall on defeat is visual only; it never loses its equipment.
-      action:state.phase==='defeat'?'die':null,
-      actionAge:sceneTransition?.phase==='defeat'?Math.max(0,activeTime-sceneTransition.at):0,
-      reducedMotion:reducedMotion.matches,alive:state.hero.hp>0
+      action:wolfFallen||wolfDefeatedWithHero?'die':null,
+      actionAge:wolfFallen?Math.max(0,companionTime-companionDeathAt)
+        :sceneTransition?.phase==='defeat'?Math.max(0,activeTime-sceneTransition.at):0,
+      reducedMotion:reducedMotion.matches,
+      alive:state.hero.hp>0&&Boolean(state.companion?.hp>0)
     });
+    const wolfElement=$('#companion-wolf');
+    if(wolfElement){
+      wolfElement.classList.toggle('is-hit',companionTime-companionHitAt<.16);
+      if(state.companion){
+        const bar=$('#companion-health-fill');
+        if(bar)bar.style.width=`${state.companion.hp/state.companion.maxHp*100}%`;
+        wolfElement.setAttribute('aria-label',`Боевой волк: ${state.companion.hp} из ${state.companion.maxHp} HP`);
+      }
+    }
     $('#hero-vital').textContent = `${state.hero.hp} / ${state.hero.maxHp} HP`;
     const waves = document.querySelectorAll('.wave');
     waves.forEach((wave,i) => { wave.classList.toggle('done',i<state.completedWaves); wave.classList.toggle('current',i===state.waveIndex&&i>=state.completedWaves); });
@@ -794,10 +863,33 @@
     const heroSize=actors.hero.element.offsetWidth;
     const inReach=(id,x)=>Math.abs(x-heroX)<=heroSize*.23+actors[id].element.offsetWidth*.34+.01&&Math.abs(actors[id].depth-actors.hero.depth)<=1e-4;
     const target=state.targetId;
+    const wolfBattle=Boolean(state.companion);
+    const pose=state.enemyTargetId==='companion'?companion?.getPose():null;
+    const defenderX=state.enemyTargetId==='companion'?pose?.x??heroX-heroSize*.83:heroX;
+    const defenderDepth=state.enemyTargetId==='companion'?pose?.depth??actors.hero.depth:actors.hero.depth;
+    const enemyCanAttack=wolfBattle?Object.fromEntries(state.enemies.map(enemy=>{
+      const actor=actors[enemy.id],size=actor.element.offsetWidth;
+      const reach=state.enemyTargetId==='companion'
+        ?size*.32+heroSize*.18+.01:heroSize*.23+size*.34+.01;
+      return [enemy.id,Boolean(enemy.hp>0
+        &&Math.abs(actor.x-defenderX)<=reach
+        &&Math.abs(actor.depth-defenderDepth)<=.06)];
+    })):undefined;
     return {
       heroCanAttack:Boolean(target && (ranged || inReach(target,actors[target].x))),
       heroCloseRange:Boolean(target && inReach(target,actors[target].x)),
-      orcCanAttack:state.enemies.some(enemy=>enemy.type==='orc'&&enemy.hp>0) && inReach('orc',actors.orc.x)
+      orcCanAttack:wolfBattle?Boolean(enemyCanAttack.orc):
+        state.enemies.some(enemy=>enemy.type==='orc'&&enemy.hp>0) && inReach('orc',actors.orc.x),
+      enemyCanAttack,
+      // A second enemy may act on the same combat tick that the first
+      // kills the wolf. It must not strike the hero from the wolf's location.
+      enemyCanAttackHero:wolfBattle?Object.fromEntries(state.enemies.map(enemy=>{
+        const actor=actors[enemy.id],size=actor.element.offsetWidth;
+        const reach=heroSize*.23+size*.34+.01;
+        return [enemy.id,Boolean(enemy.hp>0
+          &&Math.abs(actor.x-heroX)<=reach
+          &&Math.abs(actor.depth-actors.hero.depth)<=.06)];
+      })):undefined
     };
   }
   function advanceBattleFrame(dt) {
@@ -856,6 +948,7 @@
     const bite=companion.advance({
       dt,time:companionTime,phase:state.phase,
       entering:Boolean(heroEntrance),heroAlive:state.hero.hp>0,
+      companionAlive:Boolean(state.companion?.hp>0),
       heroX:heroX??0,heroSize:actors.hero.element.offsetWidth,
       heroDepth:actors.hero.depth,reducedMotion:reducedMotion.matches,
       target:target&&unit?{id:unit.id,x:target.x,width:target.element.offsetWidth,
