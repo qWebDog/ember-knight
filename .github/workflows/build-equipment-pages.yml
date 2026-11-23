@@ -32,9 +32,14 @@ jobs:
         run: python scripts/build-equipment-variants.py --quick
       - name: Generate all sword and shield combinations
         run: python scripts/build-equipment-variants.py
+      - name: Smoke test original Archer and Mage LPC geometry
+        run: python scripts/build-class-equipment.py --quick
+      - name: Build independently wearable Archer and Mage LPC layers
+        run: python scripts/build-class-equipment.py
       - name: Verify all game and equipment tests
         env:
           EMBER_SWORD_PACKS_BUILT: '1'
+          EMBER_CLASS_LAYERS_BUILT: '1'
         run: node --test tests/*.test.cjs
       - name: Publish complete dist folder to gh-pages
         shell: bash
@@ -51,6 +56,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "No deployment changes"
           else
-            git commit -m "Deploy pixel-perfect LPC sword and shield loadouts"
+            git commit -m "Deploy class-specific animated LPC equipment"
             git push origin HEAD:gh-pages
           fi
