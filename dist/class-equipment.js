@@ -22,7 +22,7 @@
   function check(classId,skin,color,look,pose){
     if(!classIds.includes(classId)||!skins.includes(skin)||!colors.includes(color)
       ||!Object.prototype.hasOwnProperty.call(poses[classId],pose)
-      ||Object.entries(choices).some(([slot,ids])=>!ids.includes(look?.[slot]))){
+      ||Object.entries(choices).some(([slot,ids])=>!ids.includes(slot==='cape'?(look?.cape||'tattered'):look?.[slot]))){
       throw new TypeError('Invalid ranged or magic LPC equipment selection');
     }
   }
