@@ -122,3 +122,14 @@ dialog{width:min(380px,calc(100% - 32px));max-height:calc(var(--app-height) - 32
 @media(max-width:700px){
   .battlefield .dragon-breath{filter:drop-shadow(0 0 2px #ff4b10)}
 }
+
+/* The third-wave Orc is twice the original LPC fighter's rendered size.
+ * Real layout dimensions are doubled (not CSS scale()) so hitboxes and
+ * wolf approach distance match the visible sprite on every breakpoint. */
+.battlefield .fighter.enemy-one[data-fighter="orc"]{
+  width:calc(var(--enemy-size) * 2);
+  height:calc(var(--enemy-size) * 2);
+}
+.battlefield .fighter.enemy-one[data-fighter="orc"] .enemy-health{
+  top:-9px;left:22%;right:22%;height:5px;
+}
