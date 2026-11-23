@@ -12,7 +12,24 @@ function harness({saved=null,blocked=false}={}){
   set src(v){this.attrs.src=v;assert.ok(fs.existsSync(path.join(root,v)),v)}get src(){return this.attrs.src}
   focus(){}setPointerCapture(id){this.capture=id}hasPointerCapture(id){return this.capture===id}releasePointerCapture(){this.capture=null}
   getBoundingClientRect(){return {left:0,top:0,right:400,bottom:400}}showModal(){this.open=true}close(){this.open=false}
-  getContext(){return {clearRect(){},drawImage:(im,x,y,w,h,...destination)=>{assert.ok(x>=0&&y>=0&&x+w<=im.width&&y+h<=im.height,`invalidcrop${im.src}:${[x,y,w,h]}`);this.draws.push({src:im.src,crop:[x,y,w,h],destination})}}}
+  getContext(){return {
+   clearRect(){},
+   drawImage:(im,x,y,w,h,...destination)=>{
+     assert.ok(x>=0&&y>=0&&x+w<=im.width&&y+h<=im.height,`invalidcrop${im.src}:${[x,y,w,h]}`);
+     this.draws.push({src:im.src,crop:[x,y,w,h],destination});
+   },
+   getImageData:(x,y,w,h)=>{
+     assert.equal(this.key.startsWith('sample:'),true,'only offscreen sprite sampling should read pixels');
+     const src=this.draws.at(-1)?.src||'';
+     const box=src.includes('/sword/')?{x:14,y:11,width:36,height:46}:
+       src.includes('/bow/')?{x:37,y:39,width:55,height:49}:
+       {x:14,y:12,width:37,height:44};
+     const data=new Uint8ClampedArray(w*h*4);
+     for(let py=box.y;py<Math.min(h,box.y+box.height);py++)
+       for(let px=box.x;px<Math.min(w,box.x+box.width);px++)data[(py*w+px)*4+3]=255;
+     return {data};
+   }
+  }};
  }
  function node(k){if(!nodes.has(k))nodes.set(k,new E(k));return nodes.get(k)}
  const groups={
@@ -24,7 +41,8 @@ function harness({saved=null,blocked=false}={}){
   '[data-step]':[0,1,2].map(i=>{let n=node('panel:'+i);n.dataset.step=String(i);return n}),
   dialog:['#info-dialog','#success-dialog','#credits-dialog'].map(node)
  };
- const document={querySelector:node,querySelectorAll:s=>{assert.ok(groups[s],s);return groups[s]},documentElement:node('html'),hidden:false};
+ let samples=0;
+ const document={querySelector:node,querySelectorAll:s=>{assert.ok(groups[s],s);return groups[s]},createElement:tag=>{assert.equal(tag,'canvas');return node('sample:'+samples++);},documentElement:node('html'),hidden:false};
  class Im{set src(v){this.path=v;const b=fs.readFileSync(path.join(root,v));this.width=b.readUInt32BE(16);this.height=b.readUInt32BE(20);pending.push(this)}get src(){return this.path}}
  const window={innerHeight:700,location:{href:''},visualViewport:{height:700,addEventListener(){}},addEventListener(){},matchMedia:()=>({matches:false})};
  const context=vm.createContext({window,document,Image:Im,ResizeObserver:class{constructor(cb){this.cb=cb}observe(){this.cb()}},getComputedStyle:()=>({getPropertyValue:()=>88}),setInterval(){},localStorage:{getItem:k=>storage.get(k)||null,setItem(k,v){if(blocked)throw Error('blocked');storage.set(k,v)}}});
@@ -45,34 +63,36 @@ test('creation follows skin→weapon→clothing color and saves the single match
  assert.equal(ui.node('#success-dialog').open,true);assert.match(ui.node('#saved-loadout').textContent,/Странник.*Бордовый/);
  ui.node('#start-adventure').click();assert.equal(ui.window.location.href,'./');
 });
-test('all hero classes use one fixed preview zoom, centered in the same stage',async()=>{
+test('Warrior, Archer and Mage have exactly equal visible pixel height and foot baseline',async()=>{
  const ui=harness();await ui.load();
  const canvas=ui.node('#hero');
- function assertViewport(expectedTile,klass='skin'){
-   assert.equal(canvas.width,128);
-   assert.equal(canvas.height,128);
+ assert.equal(canvas.width,128);
+ ui.node('#create-button').click();await ui.load();
+ const snapshots={};
+ for(const klass of ['wand','sword','bow','wand','bow','sword']){
+   ui.node('weapon:'+klass).click();await ui.load();
+   assert.equal(canvas.width,128);assert.equal(canvas.height,128);
    assert.deepEqual([canvas.style.width,canvas.style.height,canvas.style.left,canvas.style.top],
      ['200%','200%','-50%','-50%']);
-   const frame=canvas.draws.at(-1);
-   const size={skin:64,sword:80,bow:160,wand:52}[klass];
-   const dx=(128-size)/2;
-   const origin=klass==='bow'?32:0;
-   const dy=klass==='skin'||klass==='wand'
-     ?(128-expectedTile)/2+expectedTile-size
-     :Math.round(89-(expectedTile-origin-8)*size/expectedTile);
-   assert.deepEqual(frame.destination,[dx,dy,size,size]);
-   assert.equal(frame.crop[2],expectedTile);
-   assert.equal(frame.crop[3],expectedTile);
+   const d=canvas.draws.at(-1),dest=d.destination;
+   // The Mage remains its original 52px full sprite on a 128px viewport.
+   if(klass==='wand'){
+     assert.deepEqual(d.crop.slice(2),[64,64]);
+     assert.deepEqual(dest,[38,44,52,52]);
+     snapshots[klass]={visibleHeight:44*52/64,feet:44+(12+44)*52/64};
+   }else{
+     const height=dest[3],feet=dest[1]+height;
+     assert.ok(Math.abs(height-snapshots.wand.visibleHeight)<0.01,
+       klass+' visible height should equal the Mage');
+     assert.ok(Math.abs(feet-snapshots.wand.feet)<0.01,
+       klass+' feet should align with the Mage');
+     assert.deepEqual(d.crop.slice(2),klass==='sword'?[36,46]:[55,49],
+       'crop actual opaque pixels, not a padded 64px/128px square');
+     snapshots[klass]={visibleHeight:height,feet};
+   }
  }
- assertViewport(64); // Original skin
- ui.node('#create-button').click();await ui.load();
- for(const [klass,tile]of [['sword',64],['bow',128],['wand',64],['bow',128],['wand',64],['sword',64]]){
-   ui.node('weapon:'+klass).click();await ui.load();
-   assertViewport(tile,klass);
-   assert.ok(canvas.draws.at(-1).src.includes('/'+klass+'/'));
- }
- assert.equal(html.includes('src="app.js?v=20261123-hero-scale-3"'),true,
-   'creator must bypass cached old preview renderer on iPhone');
+ assert.equal(html.includes('src="app.js?v=20261123-equal-visible-4"'),true,
+   'updated creator must bypass cached JS on iPhone');
 });
 test('all eighteen weapon and clothing-color choices preview, rotate and retain the independent skin',async()=>{
  const sets={sword:'militia',bow:'wanderer',wand:'acolyte'};
@@ -80,7 +100,7 @@ test('all eighteen weapon and clothing-color choices preview, rotate and retain 
   const ui=harness();await ui.load();ui.node('skin:black').click();await ui.load();ui.node('#create-button').click();await ui.load();
   ui.node('weapon:'+weapon).click();await ui.load();if(weapon==='wand')ui.node('magic:fire').click();ui.node('#create-button').click();await ui.load();ui.node('color:'+color).click();await ui.load();
   ui.node('#scene').dispatch('keydown',{key:'ArrowRight'});
-  const draw=ui.node('#hero').draws.at(-1);assert.ok(draw.src.endsWith(`${weapon}/${outfit}/${color}/black-walk.png`));assert.equal(draw.crop[1],weapon==='bow'?384:192);
+  const draw=ui.node('#hero').draws.at(-1);assert.ok(draw.src.endsWith(`${weapon}/${outfit}/${color}/black-walk.png`));assert.equal(draw.crop[1],weapon==='bow'?384+39:weapon==='sword'?192+11:192);
   ui.node('#create-button').click();const saved=JSON.parse(ui.storage.get('ember.character.v1'));assert.deepEqual([saved.weapon,saved.outfit,saved.outfitColor,saved.skin],[weapon,outfit,color,'black']);
  }
 });
