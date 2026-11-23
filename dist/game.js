@@ -25,6 +25,7 @@
   const starterOutfit = loadout ? loadouts.outfit(loadout.weapon,loadout.outfit) : null;
   const heroMagic = loadouts?.magicSelection(character);
   const equipment = window.EmberEquipment?.createStore({classId:starterWeapon?.id||'sword'});
+  const equipmentArt = equipment?.enabled ? window.EmberEquipmentArt?.create({loadImage}) : null;
   const ranged = starterWeapon && starterWeapon.projectile !== 'melee';
   const skin = character?.skin || 'light';
   const name = typeof character?.name === 'string' && character.name.trim() ? character.name.slice(0,24) : 'Странник';
@@ -139,6 +140,8 @@
     equipmentUI=window.EmberEquipmentUI.mount({
       root:equipmentPanel,store:equipment,
       getSprite:()=>actors.hero.images.idle,
+      loadItem:(slot,id)=>equipmentArt?.ensure(slot,id),
+      paintItem:(ctx,pose)=>equipmentArt?.draw(ctx,pose),
       onEquip:()=>{
         actors.hero.lastKey=null;
         if(ready)render(battle.getState());
@@ -207,6 +210,9 @@
       const face = $('#avatar').getContext('2d'); face.imageSmoothingEnabled = false;
       const avatarTile=loadout?starterWeapon.walk.tile:64, avatarOrigin=loadout?starterWeapon.walk.origin:0;
       face.drawImage(idle,avatarOrigin+19,avatarTile*2+avatarOrigin+12,26,26,0,0,32,32);
+      // Real LPC sheets are loaded for the saved helmet/armor; other slots stay disabled.
+      if(equipmentArt)try{await equipmentArt.prepareLook(equipment.getState());}
+      catch{$('#status').textContent='Не удалось загрузить часть LPC-экипировки.';}
       ready = true;
       updateMovement(0,battle.getState());
       $('#status').textContent = 'Бой готов: один лучник, два лучника, затем орк.';
@@ -436,11 +442,12 @@
     if (!frozen&&actor.lastKey !== key) {
       actor.canvas.width = tile; actor.canvas.height = tile;
       const ctx = actor.canvas.getContext('2d'); ctx.clearRect(0,0,tile,tile); ctx.imageSmoothingEnabled = false;
-      const art=id==='hero'&&equipment?.enabled?window.EmberEquipmentArt:null;
-      const pose=art?{equipped:equipment.getState(),row,frame:cell,kind,tile,origin}:null;
-      if(art)art.drawBack(ctx,pose);
       ctx.drawImage(descriptor.image,cell*tile,row*tile,tile,tile,0,0,tile,tile);
-      if(art)art.drawFront(ctx,pose);
+      if(id==='hero'&&equipmentArt){
+        const pose={equipped:equipment.getState(),row,frame:cell,kind,
+          variant:attacking?(actor.animation?.variant||'slash'):null,tile,origin};
+        equipmentArt.draw(ctx,pose);
+      }
       actor.lastKey = key;
       actor.canvas.style.width = `${tile / 64 * 100}%`; actor.canvas.style.height = `${tile / 64 * 100}%`;
       actor.canvas.style.left = `${-origin / 64 * 100}%`; actor.canvas.style.top = `${-origin / 64 * 100}%`;
