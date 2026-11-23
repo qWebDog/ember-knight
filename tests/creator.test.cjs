@@ -45,7 +45,7 @@ test('creation follows skin→weapon→clothing color and saves the single match
  assert.equal(ui.node('#success-dialog').open,true);assert.match(ui.node('#saved-loadout').textContent,/Странник.*Бордовый/);
  ui.node('#start-adventure').click();assert.equal(ui.window.location.href,'./');
 });
-test('Mage alone is halved in creator; original Warrior and Archer size and placement remain unchanged',async()=>{
+test('Mage stays half display size but retains all native 64px sprite detail; other classes unchanged',async()=>{
  const ui=harness();await ui.load();
  const canvas=ui.node('#hero');
  // Step 1 (skin) still uses the original unmodified sprite.
@@ -58,15 +58,23 @@ test('Mage alone is halved in creator; original Warrior and Archer size and plac
    ui.node('weapon:'+kind).click();await ui.load();
    const draw=canvas.draws.at(-1);
    assert.equal(canvas.width,tile);assert.equal(canvas.height,tile);
-   assert.equal(canvas.style.width,`${tile/64*100}%`);
-   assert.equal(canvas.style.left,`${-origin/64*100}%`);
-   assert.equal(canvas.style.top,`${-origin/64*100}%`);
    assert.deepEqual(draw.crop.slice(2),[tile,tile]);
-   assert.deepEqual(draw.destination,kind==='wand'?[16,27,32,32]:[0,0,tile,tile],
-     kind+' must use its intended visual size');
+   assert.deepEqual(draw.destination,[0,0,tile,tile],
+     kind+' must draw the source sprite at full native pixel resolution');
+   if(kind==='wand'){
+     assert.equal(canvas.style.width,'50%');
+     assert.equal(canvas.style.height,'50%');
+     assert.equal(canvas.style.left,'25%');
+     assert.equal(canvas.style.top,'42.1875%');
+   }else{
+     assert.equal(canvas.style.width,`${tile/64*100}%`);
+     assert.equal(canvas.style.height,`${tile/64*100}%`);
+     assert.equal(canvas.style.left,`${-origin/64*100}%`);
+     assert.equal(canvas.style.top,`${-origin/64*100}%`);
+   }
  }
- assert.ok(html.includes('src="app.js?v=20261123-mage-half-6"'),
-   'force mobile browser to load the new Mage preview');
+ assert.ok(html.includes('src="app.js?v=20261123-mage-crisp-7"'),
+   'force mobile browser to load the full-resolution Mage preview');
 });
 test('all eighteen weapon and clothing-color choices preview, rotate and retain the independent skin',async()=>{
  const sets={sword:'militia',bow:'wanderer',wand:'acolyte'};
