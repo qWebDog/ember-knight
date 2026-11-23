@@ -53,6 +53,26 @@
     let comboIndex, meleeHits, heroBusyUntil, pendingCounters, pendingImpacts;
     let waveIndex, completedWaves, defeatedCount, nextWaveAt;
     function heroTicks(base) { return Math.max(1,Math.round(base/config.attackSpeed)); }
+    // Pure read-only shot schedule for sprite anticipation. Existing engine
+    // attack ticks, damage, rewards and cooldowns stay exactly unchanged.
+    function getArrowSchedule() {
+      if(phase!=='running'&&phase!=='paused')return [];
+      const target=enemies.find(enemy=>enemy.hp>0);
+      if(!target||hero.hp<=0)return [];
+      const shots=[];
+      if(config.projectile==='arrow'){
+        shots.push({sourceId:'hero',targetId:target.id,
+          at:nextHero/TICKS,animationDuration:heroTicks(.9*TICKS)/TICKS});
+      }
+      for(let i=0;i<enemies.length;i++){
+        const enemy=enemies[i];
+        if(enemy.hp<=0||enemy.projectile!=='arrow'
+          ||enemy.status?.type==='freeze'&&enemy.status.endsAt>elapsed)continue;
+        shots.push({sourceId:enemy.id,targetId:'hero',
+          at:nextEnemies[i]/TICKS,animationDuration:.6});
+      }
+      return shots;
+    }
     function getState() {
       const target = enemies.find(enemy => enemy.hp > 0);
       const waiting = phase === 'intermission' || (phase === 'paused' && pausedFrom === 'intermission');
@@ -272,7 +292,7 @@
       return events;
     }
     restart();
-    return {getState,advance,pause,resume,restart,updateHeroStats,get state(){return getState();}};
+    return {getState,getArrowSchedule,advance,pause,resume,restart,updateHeroStats,get state(){return getState();}};
   }
   return {createBattle,magicTiming,closeMagicTiming,statusTiming,intermissionDuration};
 });
