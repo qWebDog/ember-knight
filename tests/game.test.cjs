@@ -12,11 +12,13 @@ const combatSource = fs.readFileSync(path.join(dist, 'combat.js'), 'utf8');
 
 // The real game controller and combat engine run together. Only browser surfaces,
 // image decoding and the animation clock are replaced; no combat logic is mocked.
-function createHarness({skin = 'bronze', preference, search = '', weapon, outfit, outfitColor, magic, reducedMotion = false, fieldWidth = 800, modelSize = 64, arenaHeight = 400, fieldHeight = 180, fieldBottomGap = 62, roadGround = 36, viewportHeight = 800, combatOptions = {}} = {}) {
+function createHarness({skin = 'bronze', preference, search = '', weapon, outfit, outfitColor, magic, reducedMotion = false, fieldWidth = 800, modelSize = 64, arenaHeight = 400, fieldHeight = 180, fieldBottomGap = 62, roadGround = 36, viewportHeight = 800, combatOptions = {}, savedProgression, legacyGold, storageBlocked = false} = {}) {
   const storage = new Map([['ember.character.v1', JSON.stringify({version:1, skin, name:'Тестовый герой', level:1,weapon,outfit,outfitColor,magic})]]);
   if (preference) storage.set('ember.combat.auto.v1', preference);
+  if (savedProgression) storage.set('ember.progress.v1', JSON.stringify(savedProgression));
+  if (legacyGold !== undefined) storage.set('ember.test.gold.v1', String(legacyGold));
   const nodes = new Map(), pendingImages = [], loadedPaths = [], raf = [], resizeCallbacks = [], events = [];
-  let battle, now = 0, restarts = 0;
+  let battle, skillMount, now = 0, restarts = 0;
   const actorIds=['hero','archer1','archer2','archer3','orc'];
   const enemyIds=actorIds.filter(id=>id!=='hero');
   const spawnRatios={hero:.18,archer1:.70,archer2:.62,archer3:.82,orc:.60};
@@ -128,16 +130,18 @@ function createHarness({skin = 'bronze', preference, search = '', weapon, outfit
   const window = {
     innerWidth:fieldWidth, innerHeight:viewportHeight, location:{search},
     matchMedia:() => ({matches:reducedMotion}), addEventListener() {},
-    requestAnimationFrame:callback => raf.push(callback)
+    requestAnimationFrame:callback => raf.push(callback),
+    EmberSkillPanel:{mount:options => {skillMount = options; return {destroy() {}};}}
   };
   const context = vm.createContext({
     window, document, Image:ImageStub, URLSearchParams,
     getComputedStyle:element=>({getPropertyValue:name=>element.style[name]??(name==='--road-ground'?`${roadGround}px`:'')}),
     ResizeObserver:class {constructor(callback) {this.callback = callback;} observe() {resizeCallbacks.push(this.callback); this.callback();}},
-    localStorage:{getItem:key => storage.get(key) ?? null, setItem:(key,value) => storage.set(key,String(value))}
+    localStorage:{getItem:key => storage.get(key) ?? null, setItem:(key,value) => {if(storageBlocked)throw new Error('storage blocked');storage.set(key,String(value));}}
   });
   vm.runInContext(fs.readFileSync(path.join(dist,'loadouts.js'),'utf8'), context, {filename:'loadouts.js'});
   vm.runInContext(combatSource, context, {filename:'combat.js'});
+  vm.runInContext(fs.readFileSync(path.join(dist,'progression.js'),'utf8'), context, {filename:'progression.js'});
   const createBattle = window.EmberCombat.createBattle;
   window.EmberCombat.createBattle = options => {
     battle = createBattle({...options,...combatOptions});
@@ -217,7 +221,7 @@ function createHarness({skin = 'bronze', preference, search = '', weapon, outfit
     if(nextModelSize)for(const id of actorIds)node(`[data-fighter="${id}"]`).offsetWidth=nextModelSize;
     resizeCallbacks.forEach(callback => callback());
   }
-  return {node, storage, loadedPaths, document, state, events, actorIds, enemyIds, restartStates, get runCount(){return restarts+1;}, loadNextImage, loadAllImages, runFor, runUntil, frame, heroX, orcX, footY, depth, inMeleeRange, spells, spellState, statusCanvases, statusState, visualState, resizeField};
+  return {node, storage, get skillMount(){return skillMount;}, get progression(){return skillMount.store;}, loadedPaths, document, state, events, actorIds, enemyIds, restartStates, get runCount(){return restarts+1;}, loadNextImage, loadAllImages, runFor, runUntil, frame, heroX, orcX, footY, depth, inMeleeRange, spells, spellState, statusCanvases, statusState, visualState, resizeField};
 }
 function runFramesUntil(ui, condition, maxSeconds=5) {
   for(let count=0;!condition() && count<Math.ceil(maxSeconds*1000/16);count++)ui.frame(16);
@@ -751,8 +755,8 @@ test('wave clear keeps the hero walking visibly on the same road row, then reset
  almost(ui.depth('hero'),3+(1-3)*progress/(goal-home),1e-6,'new movement begins at the reset depth behind the black frame');
  assert.equal(ui.state().hero.hp,hp);assert.equal(wallet(ui),5);
  ui.runFor(.2);assert.ok(sceneSnapshot(ui).opacity>0&&sceneSnapshot(ui).opacity<1);ui.runFor(.3);assertFadeCleared(ui);
- const upper=html.slice(html.indexOf('<section class="adventure"'),html.indexOf('<section class="lower-placeholder"'));
- assert.ok(upper.includes('id="scene-fade"'));assert.equal((html.match(/id="scene-fade"/g)||[]).length,1);assert.ok(!html.slice(html.indexOf('<section class="lower-placeholder"')).includes('id="scene-fade"'));
+ const upperStart=html.indexOf('<section class="adventure"'),upperEnd=html.indexOf('</section>',upperStart)+10,upper=html.slice(upperStart,upperEnd);
+ assert.ok(upper.includes('id="scene-fade"'));assert.equal((html.match(/id="scene-fade"/g)||[]).length,1);assert.ok(!html.slice(upperEnd).includes('id="scene-fade"'));
  const css=fs.readFileSync(path.join(dist,'game.css'),'utf8'),fadeRule=css.match(/\.scene-fade\{([^}]*)\}/)?.[1]||'';
  assert.match(fadeRule,/position:absolute/);assert.match(fadeRule,/inset:0/);assert.match(fadeRule,/z-index:20/);
  assert.ok(!/\.battlefield\.is-between-waves \.fighter\{[^}]*opacity:0/.test(css),'the outgoing hero must not vanish through the old blanket opacity rule');
@@ -792,4 +796,40 @@ test('reduced motion keeps transitions without walking and manual replay clears 
  ui.runUntil(()=>ui.state().phase==='victory');assert.equal(sceneSnapshot(ui).opacity,1);assert.equal(sceneSnapshot(ui).resultHidden,false);assert.equal(wallet(ui),20);
  ui.node('#replay-button').click();assert.equal(ui.runCount,2);assert.equal(ui.state().hero.hp,200);assert.equal(ui.state().waveIndex,0);assertFadeCleared(ui);assert.equal(ui.statusCanvases().length,0);assert.equal(ui.spells().length,0);assert.equal(wallet(ui),20);
  ui.runFor(.4);assertFadeCleared(ui);assert.equal(ui.runCount,2);assert.ok(ui.node('#player-sprite').draws.every(draw=>draw.crop[0]===0));
+});
+
+test('skill purchases update the active hero and HUD without healing, and survive replay and reload',async()=>{
+ const ui=createHarness({weapon:'bow',outfit:'wanderer',savedProgression:{version:1,gold:120,levels:{power:0,vitality:0,tempo:0}}});await ui.loadAllImages();
+ assert.equal(ui.skillMount.root,ui.node('#skills-panel'));assert.equal(ui.skillMount.heroLevel,1);
+ ui.runUntil(()=>ui.events.some(event=>event.type==='attack'&&event.targetId==='hero'));
+ ui.node('#auto-button').click();const hp=ui.state().hero.hp,elapsed=ui.state().elapsed;assert.ok(hp<200);
+ for(const id of ['power','vitality','tempo'])assert.equal(ui.progression.purchase(id).ok,true);
+ assert.equal(ui.state().elapsed,elapsed);assert.equal(ui.state().hero.hp,hp,'raising maximum HP must not heal the current battle');
+ assert.equal(ui.state().hero.damage,14);assert.equal(ui.state().hero.maxHp,220);assert.equal(ui.state().hero.attackSpeed,1.05);
+ assert.equal(ui.node('.power b').textContent,14);assert.equal(ui.node('#hero-vital').textContent,`${hp} / 220 HP`);assert.equal(ui.node('healthbar:hero').attributes['aria-valuemax'],'220');
+ assert.equal(wallet(ui),90);assert.equal(ui.node('.gold').attributes['aria-label'],'Золото: 90');
+ const oldAttacks=ui.events.filter(event=>event.type==='attack'&&event.sourceId==='hero').length;
+ ui.node('#auto-button').click();ui.runUntil(()=>ui.events.filter(event=>event.type==='attack'&&event.sourceId==='hero').length===oldAttacks+2);
+ const upgraded=ui.events.filter(event=>event.type==='attack'&&event.sourceId==='hero').slice(-2);
+ assert.deepEqual(upgraded.map(event=>event.damage),[14,14]);assert.ok(upgraded[1].at-upgraded[0].at<1.2,'tempo must shorten the live attack cadence');
+ ui.runUntil(()=>ui.state().phase==='victory');ui.runUntil(()=>!ui.node('#battle-result').hidden,2);
+ assert.equal(wallet(ui),110);ui.node('#replay-button').click();assert.equal(ui.state().hero.hp,220);assert.equal(ui.state().hero.damage,14);assert.equal(ui.state().hero.attackSpeed,1.05);
+ const saved=JSON.parse(ui.storage.get('ember.progress.v1'));assert.deepEqual(saved.levels,{power:1,vitality:1,tempo:1});assert.equal(saved.gold,110);
+ const restored=createHarness({preference:'off',savedProgression:saved});await restored.loadAllImages();
+ assert.equal(restored.state().hero.damage,14);assert.equal(restored.state().hero.maxHp,220);assert.equal(restored.state().hero.attackSpeed,1.05);assert.equal(restored.progression.getState().gold,110);assert.equal(restored.node('.gold').attributes['aria-label'],'Золото: 110');
+});
+
+test('kill rewards can buy skills through one persistent wallet without duplicate payouts',async()=>{
+ const ui=createHarness({weapon:'bow',outfit:'wanderer',legacyGold:0});await ui.loadAllImages();
+ ui.runUntil(()=>kills(ui).length===2);ui.node('#auto-button').click();assert.equal(wallet(ui),10);assert.equal(ui.progression.getState().gold,10);
+ assert.equal(ui.progression.purchase('power').ok,true);assert.equal(wallet(ui),0);assert.equal(ui.state().hero.damage,14);assert.equal(ui.node('.gold').attributes['aria-label'],'Золото: 0');
+ assert.equal(JSON.parse(ui.storage.get('ember.progress.v1')).gold,0);
+ ui.node('#auto-button').click();ui.runUntil(()=>ui.state().phase==='victory');assert.equal(kills(ui).length,4);assert.equal(wallet(ui),10);assert.equal(ui.progression.getState().gold,10);assert.equal(JSON.parse(ui.storage.get('ember.progress.v1')).gold,10);
+ ui.node('#auto-button').click();const settled=ui.storage.get('ember.progress.v1');ui.runFor(3);assert.equal(ui.storage.get('ember.progress.v1'),settled);assert.equal(wallet(ui),10);
+});
+
+test('blocked persistent storage grants neither a free skill nor an unsaved kill reward',async()=>{
+ const saved={version:1,gold:30,levels:{power:0,vitality:0,tempo:0}},ui=createHarness({weapon:'bow',outfit:'wanderer',savedProgression:saved,legacyGold:30,storageBlocked:true});await ui.loadAllImages();
+ assert.equal(ui.progression.purchase('power').ok,false);assert.equal(ui.state().hero.damage,12);assert.equal(ui.progression.getState().gold,30);assert.equal(ui.progression.getState().levels.power,0);assert.deepEqual(JSON.parse(ui.storage.get('ember.progress.v1')),saved);
+ ui.runUntil(()=>kills(ui).length===1);assert.equal(ui.progression.getState().gold,30);assert.equal(wallet(ui),30);assert.equal(ui.node('.gold').attributes['aria-label'],'Золото: 30');assert.equal(ui.state().hero.damage,12);assert.deepEqual(JSON.parse(ui.storage.get('ember.progress.v1')),saved);
 });

@@ -20,7 +20,7 @@ function encounterFixture(waves,{slowFlight=false,legacyArcher=true,closeInterva
   // Return ordinary host objects so assertions compare data, not VM prototypes.
   return options=>{
     const battle=create(options),snapshot=()=>JSON.parse(JSON.stringify(battle.getState()));
-    return {getState:snapshot,get state(){return snapshot();},advance:(...args)=>JSON.parse(JSON.stringify(battle.advance(...args))),pause:()=>JSON.parse(JSON.stringify(battle.pause())),resume:()=>JSON.parse(JSON.stringify(battle.resume())),restart:()=>JSON.parse(JSON.stringify(battle.restart()))};
+    return {getState:snapshot,get state(){return snapshot();},advance:(...args)=>JSON.parse(JSON.stringify(battle.advance(...args))),pause:()=>JSON.parse(JSON.stringify(battle.pause())),resume:()=>JSON.parse(JSON.stringify(battle.resume())),restart:()=>JSON.parse(JSON.stringify(battle.restart())),updateHeroStats:stats=>JSON.parse(JSON.stringify(battle.updateHeroStats(stats)))};
   };
 }
 const createBattle=encounterFixture([focusedEncounter]);
@@ -595,7 +595,7 @@ test('production skeletons fire every 1.8 seconds with a 0.6-second attack pose 
   const shots=events.filter(event=>event.type==='attack'&&event.sourceId==='archer1');
   assert.deepEqual(shots.map(event=>[event.at,event.damage,event.projectile,event.animationDuration]),[[1.8,7,'arrow',.6],[3.6,7,'arrow',.6],[5.4,7,'arrow',.6]]);
   assert.equal(battle.state.enemies[0].interval,1.8);assert.equal(battle.state.hero.hp,979);
-  assert.ok(events.filter(event=>event.type==='attack'&&event.sourceId==='hero').every(event=>event.animationDuration===undefined),'player bow/basic pose does not inherit NPC skeleton speed');
+  assert.ok(events.filter(event=>event.type==='attack'&&event.sourceId==='hero').every(event=>event.animationDuration===.66),'player basic pose does not inherit NPC skeleton speed');
 });
 
 test('close-range fire and ice use the same faster launch, flight and cast cadence', () => {
@@ -827,5 +827,134 @@ test('status ticks, refreshes, expiry and range-gated freezes remain determinist
     assert.deepEqual(small.battle.state,whole.battle.state);assert.deepEqual(irregular.battle.state,whole.battle.state);
     assert.equal(whole.battle.state.phase,'victory');assert.equal(whole.battle.state.reward,10);
     assert.ok(whole.battle.state.enemies.every(enemy=>enemy.status===null));
+  }
+});
+
+test('live hero stats preserve remaining cooldown, paused phase and current HP without granting an immediate strike', () => {
+  const battle=createDefaultBattle();battle.advance(.6);battle.pause();
+  const updated=battle.updateHeroStats({heroDamage:14,heroMaxHp:220,heroAttackSpeed:1.25});
+  assert.equal(updated.phase,'paused');assert.equal(updated.elapsed,.6);
+  assert.deepEqual(updated.hero,{id:'hero',name:'Странник',hp:200,maxHp:220,damage:14,attackSpeed:1.25});
+  assert.deepEqual(battle.advance(100),[]);assert.deepEqual(battle.state,updated);
+  battle.resume();assert.deepEqual(battle.advance(.479999),[]);
+  const first=battle.advance(.000001);assert.equal(first.length,1);
+  assert.deepEqual([first[0].at,first[0].damage,first[0].animationDuration],[1.08,14,.528]);
+  const rest=battle.advance(.96);
+  assert.deepEqual(rest.filter(event=>event.type==='attack').map(event=>[event.sourceId,event.at]),[['archer1',1.8],['hero',2.04]]);
+});
+
+test('stat updates never heal or revive, clamp HP only downward and persist for a full restart', () => {
+  const battle=createDefaultBattle();battle.advance(1.8);assert.equal(battle.state.hero.hp,193);
+  assert.equal(battle.updateHeroStats({heroMaxHp:240}).hero.hp,193);
+  assert.equal(battle.updateHeroStats({heroMaxHp:150}).hero.hp,150);
+  assert.equal(battle.updateHeroStats({heroMaxHp:260}).hero.hp,150);
+  assert.equal(battle.restart().hero.hp,260);
+  const fallen=createDefaultBattle({heroMaxHp:1});fallen.advance(1.8);
+  const upgraded=fallen.updateHeroStats({heroMaxHp:240,heroDamage:16,heroAttackSpeed:1.25});
+  assert.equal(upgraded.phase,'defeat');assert.equal(upgraded.hero.hp,0);assert.deepEqual(fallen.advance(100),[]);
+  const fresh=fallen.restart();assert.equal(fresh.hero.hp,240);assert.equal(fresh.hero.maxHp,240);assert.equal(fresh.hero.attackSpeed,1.25);
+  const first=fallen.advance(.96).find(event=>event.sourceId==='hero');assert.equal(first.damage,16);assert.equal(first.at,.96);
+});
+
+test('attack speed validates the five upgrade ranks and invalid stat updates retain existing configuration', () => {
+  for(const value of [undefined,null,0,-1,.9,NaN,Infinity,'1.2'])assert.equal(createDefaultBattle({heroAttackSpeed:value}).state.hero.attackSpeed,1);
+  const battle=createDefaultBattle({heroAttackSpeed:5});assert.equal(battle.state.hero.attackSpeed,1.25);
+  const saved=battle.updateHeroStats({heroDamage:14,heroMaxHp:220,heroAttackSpeed:1.1});
+  for(const value of [null,0,-1,.9,NaN,Infinity,'1.2']){
+    assert.deepEqual(battle.updateHeroStats({heroDamage:0,heroMaxHp:-1,heroAttackSpeed:value}),saved);
+  }
+  assert.deepEqual(battle.updateHeroStats(),saved);assert.deepEqual(battle.updateHeroStats(null),saved);
+  saved.hero.damage=900;assert.equal(battle.state.hero.damage,14);
+});
+
+test('speed changes retain range-held cooldown progress and do not alter an active intermission', () => {
+  const battle=createDefaultBattle({heroProjectile:'arrow',heroDamage:1,heroMaxHp:1000});
+  battle.advance(.6);battle.advance(2,{heroCanAttack:false});
+  battle.updateHeroStats({heroAttackSpeed:1.25});assert.deepEqual(battle.advance(.479999),[]);
+  const released=battle.advance(.000001);assert.equal(released.length,1);assert.equal(released[0].at,3.08);assert.equal(released[0].animationDuration,.72);
+  const separate=createDefaultBattle();separate.advance(6.2);separate.pause();
+  const updated=separate.updateHeroStats({heroAttackSpeed:1.25});
+  assert.equal(updated.phase,'paused');assert.equal(updated.intermissionRemaining,1.2);
+  separate.resume();const spawn=separate.advance(1.2);assert.equal(spawn.length,1);assert.equal(spawn[0].at,7.4);
+  const attack=separate.advance(.96).find(event=>event.sourceId==='hero');assert.equal(attack.at,8.36);
+});
+
+test('a live power or tempo purchase affects new casts while already launched damage and travel stay locked', () => {
+  const battle=createDefaultBattle({heroProjectile:'magic',heroMagic:'fire'});
+  const oldCast=battle.advance(1.2)[0];battle.advance(.1);
+  battle.updateHeroStats({heroDamage:20,heroAttackSpeed:1.25});
+  const beforeImpact=battle.advance(.799999);assert.ok(!beforeImpact.some(event=>event.impact));
+  const hit=battle.advance(.000001).find(event=>event.impact);
+  assert.equal(hit.castId,oldCast.castId);assert.equal(hit.at,2.1);assert.equal(hit.damage,12);
+  const nextCast=battle.advance(.08).find(event=>event.type==='cast');
+  assert.deepEqual([nextCast.at,nextCast.castInterval,nextCast.animationDuration,nextCast.impactAt],[2.18,.96,.528,3.08]);
+  assert.deepEqual([nextCast.appearDuration,nextCast.flightDuration,nextCast.impactDuration],[.42,.48,.42]);
+  const later=battle.advance(.9),newHit=later.find(event=>event.impact&&event.castId===nextCast.castId);
+  assert.equal(newHit.damage,20);assert.equal(newHit.at,3.08);
+  assert.deepEqual(later.filter(event=>event.dot).map(event=>[event.at,event.damage]),[[2.35,1],[2.6,1]]);
+});
+
+test('hero tempo scales close and far cast poses and cooldowns while elemental effects and NPC timing remain fixed', () => {
+  for(const magic of ['fire','ice'])for(const close of [false,true]){
+    const battle=createDefaultBattle({heroProjectile:'magic',heroMagic:magic,heroAttackSpeed:1.25,heroDamage:1,heroMaxHp:1000});
+    const events=battle.advance(1.86,{heroCloseRange:close}),cast=events.find(event=>event.type==='cast');
+    assert.deepEqual([cast.at,cast.castInterval,cast.animationDuration],[.96,close?.64:.96,close?.288:.528]);
+    assert.deepEqual([cast.appearDuration,cast.flightDuration,cast.impactDuration],[close?.18:.42,close?.12:.48,.42]);
+    const status=events.find(event=>event.type==='status');assert.equal(status.at,close?1.26:1.86);assert.equal(status.duration,.5);assert.equal(status.endsAt,close?1.76:2.36);
+  }
+  const npc=createBattle({heroProjectile:'arrow',heroAttackSpeed:1.25,heroDamage:1,heroMaxHp:1000});
+  const events=npc.advance(3.8),mage=events.find(event=>event.type==='cast'&&event.sourceId==='mage');
+  assert.deepEqual([mage.at,mage.animationDuration,mage.castInterval,mage.impactAt],[3.8,.66,3.8,4.7]);
+  assert.deepEqual(events.filter(event=>event.sourceId==='hero').map(event=>[event.at,event.animationDuration]),[[.96,.72],[1.92,.72],[2.88,.72]]);
+  const skeleton=createDefaultBattle({heroProjectile:'arrow',heroAttackSpeed:1.25,heroDamage:1,heroMaxHp:1000});
+  assert.deepEqual(skeleton.advance(3.6).filter(event=>event.sourceId==='archer1').map(event=>[event.at,event.animationDuration]),[[1.8,.6],[3.6,.6]]);
+});
+
+test('a paused tempo change rescales a pending sword counter and active swing without adding a counter or shifting enemy cadence', () => {
+  const fixture=encounterFixture([[{id:'orc',type:'orc'}]]),battle=fixture({heroWeapon:'sword',heroDamage:1,heroMaxHp:1000});
+  const before=battle.advance(4.9);assert.equal(before.filter(event=>event.type==='block').length,1);assert.ok(!before.some(event=>event.counter));
+  battle.pause();battle.updateHeroStats({heroDamage:14,heroAttackSpeed:1.25});assert.deepEqual(battle.advance(100),[]);battle.resume();
+  assert.deepEqual(battle.advance(.247999),[]);
+  const counter=battle.advance(.000001).find(event=>event.counter);
+  assert.deepEqual([counter.at,counter.damage,counter.animationDuration],[5.148,11,.288]);
+  const after=battle.advance(2.1),regular=after.find(event=>event.sourceId==='hero'&&!event.counter);
+  assert.deepEqual([regular.at,regular.variant,regular.comboStep,regular.animationDuration],[5.66,'slash',2,.528]);
+  assert.ok(counter.at+counter.animationDuration<=regular.at);
+  assert.deepEqual(after.filter(event=>event.sourceId==='orc').map(event=>event.at),[7.2]);
+});
+
+test('scaled sword reaction delay and all combo poses reserve nonoverlapping slots through repeated live speed changes', () => {
+  const slowOrc=encounterFixture([[{id:'orc',type:'orc',interval:3.5}]]),fast=slowOrc({heroWeapon:'sword',heroDamage:1,heroAttackSpeed:1.25,heroMaxHp:1000});
+  const fixed=fast.advance(7.24),counter=fixed.find(event=>event.counter);
+  assert.deepEqual([counter.at,counter.animationDuration],[7.24,.288]);
+  const fixture=encounterFixture([[{id:'orc',type:'orc'}]]),battle=fixture({heroWeapon:'sword',heroDamage:1,heroMaxHp:1000}),attacks=[],blocks=[];
+  let previousSpeed=1;
+  for(const [duration,speed]of [[4.9,1.05],[4.8,1.1],[4.8,1.15],[4.8,1.2],[4.8,1.25],[4.8,1.05],[4.8,1.25],[10,null]]){
+    const events=battle.advance(duration);attacks.push(...events.filter(event=>event.sourceId==='hero'&&event.type==='attack'));blocks.push(...events.filter(event=>event.type==='block'));
+    if(speed!==null){
+      const now=battle.state.elapsed,last=attacks.at(-1);
+      if(last&&last.at+last.animationDuration>now)last.animationDuration=now-last.at+Math.round((last.at+last.animationDuration-now)*1000000*previousSpeed/speed)/1000000;
+      battle.updateHeroStats({heroAttackSpeed:speed});previousSpeed=speed;
+    }
+  }
+  for(let i=1;i<attacks.length;i++)assert.ok(attacks[i-1].at+attacks[i-1].animationDuration<=attacks[i].at+1e-9,`sword pose at ${attacks[i-1].at} overlaps ${attacks[i].at}`);
+  assert.ok(attacks.some(event=>event.heavy));assert.ok(attacks.filter(event=>event.counter).length>3);
+  assert.ok(attacks.filter(event=>event.counter).length<=blocks.length);
+});
+
+test('live stat updates remain deterministic through gates, pause, waves and irregular frame sizes for every weapon', () => {
+  const schedule=[[.6,{}, {heroDamage:6,heroMaxHp:1020,heroAttackSpeed:1.05}], [4.3,{heroCanAttack:false,orcCanAttack:false},{heroAttackSpeed:1.1}], [3.7,{heroCloseRange:true},{heroDamage:8,heroAttackSpeed:1.15}], [5.1,{}, {heroAttackSpeed:1.25}], [150,{},null]];
+  function run(options,pattern){
+    const battle=createDefaultBattle({...options,heroDamage:4,heroMaxHp:1000}),events=[];let index=0;
+    for(const [seconds,gates,stats]of schedule){
+      if(!pattern)events.push(...battle.advance(seconds,gates));
+      else{let remaining=Math.round(seconds*1000000);while(remaining>0){const ticks=Math.min(remaining,pattern[index++%pattern.length]);events.push(...battle.advance(ticks/1000000,gates));remaining-=ticks;}}
+      if(stats){battle.pause();battle.updateHeroStats(stats);assert.deepEqual(battle.advance(20),[]);battle.resume();}
+    }
+    return{state:battle.state,events};
+  }
+  for(const options of [{},{heroWeapon:'sword'},{heroProjectile:'arrow'},{heroProjectile:'magic',heroMagic:'fire'},{heroProjectile:'magic',heroMagic:'ice'}]){
+    const whole=run(options),small=run(options,[100000]),irregular=run(options,[37000,63000]);
+    assert.deepEqual(small,whole);assert.deepEqual(irregular,whole);assert.equal(whole.state.phase,'victory');assert.equal(whole.state.reward,20);
   }
 });

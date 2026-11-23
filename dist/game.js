@@ -12,9 +12,11 @@
     const saved = JSON.parse(localStorage.getItem('ember.character.v1'));
     if (saved?.version === 1 && skinIds.includes(saved.skin)) character = saved;
     auto = localStorage.getItem('ember.combat.auto.v1') !== 'off';
-    const coins = Number(localStorage.getItem('ember.test.gold.v1'));
-    if (Number.isSafeInteger(coins) && coins >= 0) wallet = Math.min(coins,999999999);
   } catch {}
+  let progressionStorage = null;
+  try { progressionStorage = localStorage; } catch {}
+  const progression = window.EmberProgression.createStore({storage:progressionStorage});
+  wallet = progression.getState().gold;
   if (new URLSearchParams(window.location.search).get('battle') === 'test') auto = true;
   const loadouts = window.EmberLoadouts;
   const arrowSprite = 'assets/projectiles/arrow.png';
@@ -29,10 +31,11 @@
   $('#player-name').textContent = name;
   $('.fighter-name').textContent = name;
   $('#level-badge').textContent = level;
-  const battle = window.EmberCombat.createBattle({heroName:name,heroProjectile:starterWeapon?.projectile,heroWeapon:starterWeapon?.id,heroMagic});
+  const battle = window.EmberCombat.createBattle({heroName:name,heroProjectile:starterWeapon?.projectile,heroWeapon:starterWeapon?.id,heroMagic,...progression.getStats()});
   battle.pause();
   let ready = false, assetError = false, lastFrameTime = null, restartRemaining = null, resultSummary = '';
   const paidDeaths = new Set();
+  let creditedRunGold = 0;
   const enemyDefinitions = {
     archer1:{type:'archer',spawn:.62,label:'Лучник',defaultLane:2},
     archer2:{type:'archer',spawn:.61,label:'Лучник I',defaultLane:1},
@@ -98,6 +101,31 @@
     $('.gold').setAttribute('aria-label', `Золото: ${wallet}`);
   }
   updateWallet();
+  $('.power b').textContent = battle.getState().hero.damage;
+  progression.subscribe((state,change) => {
+    wallet = state.gold;
+    updateWallet();
+    if(change?.type!=='purchase')return;
+    const current = battle.getState().hero, stats = progression.getStats();
+    const oldSpeed = current.attackSpeed || 1;
+    if (current.damage !== stats.heroDamage || current.maxHp !== stats.heroMaxHp || oldSpeed !== stats.heroAttackSpeed) {
+      const ratio = oldSpeed / stats.heroAttackSpeed;
+      const animation = actors.hero.animation;
+      if (animation && ratio !== 1) {
+        const age = Math.max(0,activeTime-animation.at);
+        if (age < animation.duration) {
+          animation.at = activeTime-age*ratio;
+          animation.duration *= ratio;
+        }
+      }
+      const guardAge = activeTime-actors.hero.blockAt;
+      if (ratio !== 1 && guardAge >= 0 && guardAge < .28/oldSpeed) actors.hero.blockAt=activeTime-guardAge*ratio;
+      battle.updateHeroStats(stats);
+      $('.power b').textContent = battle.getState().hero.damage;
+      if (ready) render(battle.getState());
+    }
+  });
+  window.EmberSkillPanel?.mount({root:$('#skills-panel'),store:progression,heroLevel:level});
   function loadImage(path) {
     return new Promise((resolve,reject) => { const image = new Image(); image.onload = () => resolve(image); image.onerror = () => reject(new Error(path)); image.src = path; });
   }
@@ -332,12 +360,14 @@
         clearStatus(actors[event.id]);
         for(const [id,impact]of pendingIceImpacts)if(impact.targetId===event.id)pendingIceImpacts.delete(id);
         removeEffects(effect=>effect.type!=='spell'||effect.targetId!==event.id||effect.landed);
+        let rewardSaved = true, receivedReward = event.reward;
         if(event.id!=='hero'&&event.reward>0&&!paidDeaths.has(event.id)){
-          paidDeaths.add(event.id);wallet=Math.min(999999999,wallet+event.reward);updateWallet();
-          try{localStorage.setItem('ember.test.gold.v1',String(wallet));}catch{}
-          addEffect('coin','hero',event.id,`+${event.reward}`,event.at);
+          paidDeaths.add(event.id);
+          const award = progression.awardGold(event.reward);
+          rewardSaved = award.ok;
+          if(award.ok){receivedReward=award.awarded;creditedRunGold+=receivedReward;if(receivedReward>0)addEffect('coin','hero',event.id,`+${receivedReward}`,event.at);}
         }
-        $('#status').textContent = event.id === 'hero' ? 'Герой пал. Монеты за побеждённых врагов сохранены.' : `${actors[event.id].label} побеждён. +${event.reward} монет.`;
+        $('#status').textContent = event.id === 'hero' ? 'Герой пал. Монеты за побеждённых врагов сохранены.' : rewardSaved ? `${actors[event.id].label} побеждён. +${receivedReward} монет.` : `${actors[event.id].label} побеждён. Не удалось сохранить награду — проверь доступ к хранилищу.`;
       } else if(event.type==='wave_clear'){
         removeEffects(effect=>effect.type!=='spell'||effect.landed);
         beginSceneTransition('wave-out',event.at);
@@ -352,11 +382,11 @@
       } else if (event.type === 'end') {
         pendingIceImpacts.clear();for(const actor of Object.values(actors))clearStatus(actor);
         restartRemaining=2;
-        resultSummary=event.result==='victory'?`Все три волны пройдены. За бой: +${event.totalReward} монет.`:`Герой пал. За бой сохранено: +${event.totalReward} монет.`;
+        resultSummary=event.result==='victory'?`Все три волны пройдены. За бой: +${creditedRunGold} монет.`:`Герой пал. За бой сохранено: +${creditedRunGold} монет.`;
         $('#result-title').textContent = event.result === 'victory' ? 'Победа' : 'Поражение';
         beginSceneTransition(event.result,event.at);
         $('#replay-button').textContent = 'Начать сейчас'; resultPanel.hidden = true;
-        $('#status').textContent = event.result === 'victory' ? `Победа. Следующий бой начнётся автоматически. Получено ${event.totalReward} монет.` : 'Герой восстановится и начнёт бой заново. Заработанные монеты сохранены.';
+        $('#status').textContent = event.result === 'victory' ? `Победа. Следующий бой начнётся автоматически. Получено ${creditedRunGold} монет.` : 'Герой восстановится и начнёт бой заново. Заработанные монеты сохранены.';
         try { telegram?.HapticFeedback?.notificationOccurred(event.result === 'victory' ? 'success' : 'warning'); } catch {}
         removeEffects(effect=>effect.type!=='spell'||effect.landed);
         updateControls();
@@ -374,7 +404,7 @@
     const walkingOut=id==='hero'&&(sceneTransition?.phase==='wave-out'||sceneTransition?.phase==='victory');
     const distance = id === 'hero' ? walkDistance : actor.distance;
     const walking = (id==='hero'?heroMoving:actor.moving) && distance > 0 && unit.hp > 0 && (!ended||walkingOut) && !reducedMotion.matches && actor.images.walk?.frames > 1;
-    const blocking = !walking && !ended && unit.hp > 0 && !reducedMotion.matches && actor.images.block && activeTime - actor.blockAt < .28;
+    const blocking = !walking && !ended && unit.hp > 0 && !reducedMotion.matches && actor.images.block && activeTime - actor.blockAt < .28/(state.hero.attackSpeed||1);
     const attacking = !walking && !blocking && !ended && age >= 0 && age < (actor.animation?.duration || 0) && unit.hp > 0 && !reducedMotion.matches;
     const kind = walking ? 'walk' : blocking ? 'block' : attacking ? 'attack' : 'idle';
     const descriptor = attacking && actor.images.attacks?.[actor.animation.variant] || actor.images[kind];
@@ -616,7 +646,7 @@
   }
   function restartBattle(startAuto) {
     battle.restart();if(startAuto)auto=true;
-    activeTime=0;restartRemaining=null;resultSummary='';paidDeaths.clear();
+    activeTime=0;restartRemaining=null;resultSummary='';paidDeaths.clear();creditedRunGold=0;
     clearSceneTransition();
     prepareWave(battle.getState());resultPanel.hidden=true;lastFrameTime=null;
     if(startAuto)try{localStorage.setItem('ember.combat.auto.v1','on');}catch{}
@@ -641,7 +671,7 @@
     $('#sprite-credits').hidden=!profile;
     if (!dialog.open) dialog.showModal(); syncPause();
   }
-  $('#profile-button').addEventListener('click', () => openInfo('ТВОЙ ГЕРОЙ',name,`Уровень ${level} · Сила 12 · ${skinNames[skinIds.indexOf(skin)]} оттенок кожи. ${loadout ? `${starterWeapon.name} · наряд «${starterOutfit.name}», ${loadouts.color(loadout.outfitColor).name.toLowerCase()} цвет.${heroMagic?` Магия: ${loadouts.magic(heroMagic).name}.`:''}` : 'Без класса, брони и оружия.'} В тестовом бою: 200 здоровья.`,true));
+  $('#profile-button').addEventListener('click', () => openInfo('ТВОЙ ГЕРОЙ',name,`Уровень ${level} · Сила ${battle.getState().hero.damage} · ${skinNames[skinIds.indexOf(skin)]} оттенок кожи. ${loadout ? `${starterWeapon.name} · наряд «${starterOutfit.name}», ${loadouts.color(loadout.outfitColor).name.toLowerCase()} цвет.${heroMagic?` Магия: ${loadouts.magic(heroMagic).name}.`:''}` : 'Без класса, брони и оружия.'} Максимум здоровья: ${battle.getState().hero.maxHp}.`,true));
   document.querySelectorAll('[data-info]').forEach(button=>button.addEventListener('click',()=>openInfo(...information[button.dataset.info]())));
   dialog.querySelectorAll('.dialog-close,.dialog-action').forEach(button=>button.addEventListener('click',()=>dialog.close()));
   dialog.addEventListener('close',syncPause);

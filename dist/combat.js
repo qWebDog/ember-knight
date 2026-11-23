@@ -38,10 +38,13 @@
   function positive(value, fallback) {
     return Number.isFinite(value) && value > 0 ? value : fallback;
   }
+  function attackSpeed(value,fallback) {
+    return Number.isFinite(value) && value >= 1 ? Math.min(1.25,value) : fallback;
+  }
   function createBattle(options = {}) {
     const config = {
       name:typeof options.heroName === 'string' && options.heroName.trim() ? options.heroName.trim() : 'Странник',
-      maxHp:positive(options.heroMaxHp, 200), damage:positive(options.heroDamage, 12),
+      maxHp:positive(options.heroMaxHp, 200), damage:positive(options.heroDamage, 12),attackSpeed:attackSpeed(options.heroAttackSpeed,1),
       projectile:['melee','arrow','magic'].includes(options.heroProjectile) ? options.heroProjectile : 'melee',
       magic:['fire','ice'].includes(options.heroMagic) ? options.heroMagic : 'fire'
     };
@@ -49,6 +52,7 @@
     let phase, pausedFrom, elapsed, remainder, hero, enemies, nextHero, nextEnemies, reward;
     let comboIndex, meleeHits, heroBusyUntil, pendingCounters, pendingImpacts;
     let waveIndex, completedWaves, defeatedCount, nextWaveAt;
+    function heroTicks(base) { return Math.max(1,Math.round(base/config.attackSpeed)); }
     function getState() {
       const target = enemies.find(enemy => enemy.hp > 0);
       const waiting = phase === 'intermission' || (phase === 'paused' && pausedFrom === 'intermission');
@@ -65,12 +69,12 @@
       waveIndex = index; phase = 'running'; pausedFrom = null; nextWaveAt = null;
       enemies = waveTemplates[index].map(unit => ({...archetypes[unit.type],...unit,hp:archetypes[unit.type].maxHp,status:null}));
       comboIndex = 0; meleeHits = 0; heroBusyUntil = elapsed; pendingCounters = []; pendingImpacts = [];
-      nextHero = elapsed + (sword ? swordSteps[0].interval : HERO_INTERVAL);
+      nextHero = elapsed + heroTicks(sword ? swordSteps[0].interval : HERO_INTERVAL);
       nextEnemies = enemies.map(enemy => elapsed + Math.round(enemy.interval * TICKS));
     }
     function restart() {
       elapsed = 0; remainder = 0; reward = 0; completedWaves = 0; defeatedCount = 0;
-      hero = {id:'hero',name:config.name,hp:config.maxHp,maxHp:config.maxHp,damage:config.damage};
+      hero = {id:'hero',name:config.name,hp:config.maxHp,maxHp:config.maxHp,damage:config.damage,attackSpeed:config.attackSpeed};
       spawnWave(0);
       return getState();
     }
@@ -82,20 +86,44 @@
       if (phase === 'paused') { phase = pausedFrom || 'running'; pausedFrom = null; }
       return getState();
     }
-    function reserveCounter(targetId) {
-      let candidate = Math.max(elapsed + COUNTER_DELAY,heroBusyUntil);
+    function counterSlot(earliest) {
+      const duration = heroTicks(COUNTER_DURATION);
+      let candidate = Math.max(earliest,heroBusyUntil);
       for (;;) {
-        const reserved = pendingCounters.find(counter => candidate < counter.at + COUNTER_DURATION && candidate + COUNTER_DURATION > counter.at);
-        if (reserved) { candidate = reserved.at + COUNTER_DURATION; continue; }
+        const reserved = pendingCounters.find(counter => candidate < counter.at + duration && candidate + duration > counter.at);
+        if (reserved) { candidate = reserved.at + duration; continue; }
         let regularAt = nextHero,index = comboIndex;
-        while (regularAt + swordSteps[index].animationDuration * TICKS <= candidate) {
-          index = (index+1) % swordSteps.length; regularAt += swordSteps[index].interval;
+        while (regularAt + heroTicks(swordSteps[index].animationDuration * TICKS) <= candidate) {
+          index = (index+1) % swordSteps.length; regularAt += heroTicks(swordSteps[index].interval);
         }
-        if (candidate + COUNTER_DURATION <= regularAt) break;
-        candidate = Math.max(candidate,regularAt + swordSteps[index].animationDuration * TICKS);
+        if (candidate + duration <= regularAt) break;
+        candidate = Math.max(candidate,regularAt + heroTicks(swordSteps[index].animationDuration * TICKS));
       }
-      pendingCounters.push({targetId,at:Math.round(candidate)});
+      return candidate;
+    }
+    function reserveCounter(targetId) {
+      pendingCounters.push({targetId,at:counterSlot(elapsed + heroTicks(COUNTER_DELAY))});
       pendingCounters.sort((a,b) => a.at-b.at);
+    }
+    function updateHeroStats(stats = {}) {
+      const oldSpeed = config.attackSpeed;
+      config.damage = positive(stats?.heroDamage,config.damage);
+      config.maxHp = positive(stats?.heroMaxHp,config.maxHp);
+      config.attackSpeed = attackSpeed(stats?.heroAttackSpeed,config.attackSpeed);
+      hero.damage = config.damage; hero.maxHp = config.maxHp; hero.attackSpeed = config.attackSpeed;
+      // A purchase changes the next battle's maximum but never heals this one.
+      hero.hp = Math.min(hero.hp,config.maxHp);
+      if (oldSpeed !== config.attackSpeed) {
+        const ratio = oldSpeed/config.attackSpeed;
+        const rescale = at => elapsed + Math.max(0,Math.round((at-elapsed)*ratio));
+        nextHero = rescale(nextHero); heroBusyUntil = rescale(heroBusyUntil);
+        const reserved = pendingCounters.map(counter => ({...counter,at:rescale(counter.at)}));
+        pendingCounters = [];
+        // Integer rounding can close a one-tick gap. Revalidate each existing
+        // reservation without adding another reaction delay or another counter.
+        for (const counter of reserved) pendingCounters.push({...counter,at:counterSlot(counter.at)});
+      }
+      return getState();
     }
     function advance(seconds,availability = {}) {
       const events = [];
@@ -154,10 +182,10 @@
       function cast(sourceId,target,damage,magic) {
         const close = sourceId === 'hero' && availability?.heroCloseRange === true;
         const timing = close ? closeMagicTiming : magicTiming;
-        const interval = sourceId === 'hero' ? close ? CLOSE_MAGIC_INTERVAL : HERO_INTERVAL : Math.round(enemies.find(enemy=>enemy.id===sourceId).interval*TICKS);
+        const interval = sourceId === 'hero' ? heroTicks(close ? CLOSE_MAGIC_INTERVAL : HERO_INTERVAL) : Math.round(enemies.find(enemy=>enemy.id===sourceId).interval*TICKS);
         const delay = Math.round((timing.appearDuration+timing.flightDuration)*TICKS);
         const castAt = elapsed/TICKS,impactTick = elapsed+delay,castId = `${sourceId}:${elapsed}`;
-        events.push({type:'cast',sourceId,targetId:target.id,projectile:'magic',magic,at:castAt,...timing,impactAt:impactTick/TICKS,castId,animationDuration:close ? .36 : .66,castInterval:interval/TICKS});
+        events.push({type:'cast',sourceId,targetId:target.id,projectile:'magic',magic,at:castAt,...timing,impactAt:impactTick/TICKS,castId,animationDuration:sourceId === 'hero' ? heroTicks((close ? .36 : .66)*TICKS)/TICKS : .66,castInterval:interval/TICKS});
         pendingImpacts.push({sourceId,targetId:target.id,damage,magic,at:impactTick,castAt,castId});
         pendingImpacts.sort((a,b) => a.at-b.at || Number(b.sourceId==='hero')-Number(a.sourceId==='hero'));
         return interval;
@@ -186,20 +214,20 @@
         if (heroCanAttack && nextHero === next) {
           const target = enemies.find(enemy => enemy.hp > 0),step = sword ? swordSteps[comboIndex] : null;
           const damage = config.damage * (step?.heavy ? 1.5 : 1);
-          const metadata = step ? {variant:step.variant,comboStep:comboIndex+1,heavy:step.heavy,animationDuration:step.animationDuration,counter:false} : undefined;
-          const interval = config.projectile === 'magic' ? cast('hero',target,Math.max(1,damage-target.armor),config.magic) : HERO_INTERVAL;
+          const metadata = step ? {variant:step.variant,comboStep:comboIndex+1,heavy:step.heavy,animationDuration:heroTicks(step.animationDuration*TICKS)/TICKS,counter:false} : {animationDuration:heroTicks((config.projectile === 'arrow' ? .9 : .66)*TICKS)/TICKS};
+          const interval = config.projectile === 'magic' ? cast('hero',target,Math.max(1,damage-target.armor),config.magic) : heroTicks(HERO_INTERVAL);
           if (config.projectile !== 'magic') hit('hero',target,Math.max(1,damage-target.armor),config.projectile,metadata);
           if (sword) {
-            heroBusyUntil = elapsed + step.animationDuration*TICKS;
-            comboIndex = (comboIndex+1) % swordSteps.length; nextHero += swordSteps[comboIndex].interval;
+            heroBusyUntil = elapsed + heroTicks(step.animationDuration*TICKS);
+            comboIndex = (comboIndex+1) % swordSteps.length; nextHero += heroTicks(swordSteps[comboIndex].interval);
           } else nextHero += interval;
           if (enemies.every(enemy => enemy.hp === 0)) { clearWave(); continue; }
         }
         while (heroCanAttack && pendingCounters.length && pendingCounters[0].at === next) {
           const counter = pendingCounters.shift(),target = enemies.find(enemy => enemy.id === counter.targetId && enemy.hp > 0);
           if (!target || hero.hp <= 0) continue;
-          heroBusyUntil = elapsed + COUNTER_DURATION;
-          hit('hero',target,Math.max(1,config.damage-target.armor),'melee',{variant:'halfslash',comboStep:0,heavy:false,animationDuration:COUNTER_DURATION/TICKS,counter:true});
+          heroBusyUntil = elapsed + heroTicks(COUNTER_DURATION);
+          hit('hero',target,Math.max(1,config.damage-target.armor),'melee',{variant:'halfslash',comboStep:0,heavy:false,animationDuration:heroTicks(COUNTER_DURATION)/TICKS,counter:true});
           if (enemies.every(enemy => enemy.hp === 0)) { clearWave(); break; }
         }
         if (phase !== 'running') continue;
@@ -244,7 +272,7 @@
       return events;
     }
     restart();
-    return {getState,advance,pause,resume,restart,get state(){return getState();}};
+    return {getState,advance,pause,resume,restart,updateHeroStats,get state(){return getState();}};
   }
   return {createBattle,magicTiming,closeMagicTiming,statusTiming,intermissionDuration};
 });
