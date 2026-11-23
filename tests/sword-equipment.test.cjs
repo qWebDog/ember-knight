@@ -82,7 +82,7 @@ test('the battle replaces original sword/sheild sprites rather than overlaying d
   const builder=fs.readFileSync(path.join(__dirname,'../scripts/build-equipment-variants.py'),'utf8');
   assert.match(html,/src="sword-equipment.js"/);
   assert.match(game,/swordEquipment\.load\(nextLook\)/);
-  assert.match(game,/equipmentArt\?\.prepareLook\(nextLook\)/);
+  assert.match(game,/equipmentArt\?\.prepareLook\(nextLook,colors\|\|equipment\.getColors\(nextLook\)\)/);
   assert.match(game,/applySwordSprites\(loadedSwordSprites\)/);
   assert.match(game,/swordSprites\?\.walk/);
   assert.match(builder,/ImageChops\.difference\(baseline, default\)/);
