@@ -48,12 +48,14 @@
     let image=null,inflight=null,lastKey=null,idleSince=null;
     let position=null,actorDepth=3,facing=3,motion='idle',engaged=false;
     let biteStarted=null,biteTarget=null,biteLanded=false,nextBiteAt=0;
+    let exitHeroX=null;
     const biteImpact=3/12, biteDuration=5/12, biteInterval=1.25, biteDamage=7;
     const active=()=>store?.classId==='bow'&&store?.getState()?.companion==='wolf';
     function loaded(){return Boolean(image);}
     function reset(){
       position=null;actorDepth=3;facing=3;motion='idle';engaged=false;
       idleSince=null;biteStarted=null;biteTarget=null;biteLanded=false;nextBiteAt=0;
+      exitHeroX=null;
       lastKey=null;
     }
     function load(){
@@ -73,7 +75,8 @@
     // snapshot the Archer fires at. This controller only decides pursuit,
     // bite-frame timing and when to request an engine-confirmed hit.
     function advance({dt=0,time=0,phase='running',entering=false,heroAlive=true,companionAlive=true,
-      heroX=0,anchorX=null,heroSize=64,heroDepth=3,target=null,reducedMotion=false}={}){
+      heroX=0,anchorX=null,heroSize=64,heroDepth=3,target=null,
+      exiting=false,reducedMotion=false}={}){
       if(!active()||!image||!Number.isFinite(heroX)){
         if(position!==null)reset();
         return null;
@@ -95,6 +98,14 @@
         biteStarted=null;biteTarget=null;biteLanded=false;return null;
       }
       if(phase==='paused')return null;
+      if(exiting&&(phase==='intermission'||phase==='victory')){
+        // During scene fade the hero walks RIGHT. Never begin a separate
+        // leftward return to the old battlefield anchor.
+        engaged=false;motion='walk';facing=3;idleSince=null;
+        biteStarted=null;biteTarget=null;biteLanded=false;
+        return null;
+      }
+      exitHeroX=null;
       const attacking=phase==='running'&&target&&Number.isFinite(target.x)&&Number.isFinite(target.width)
         &&target.hp>0;
       const destination=attacking
@@ -143,6 +154,18 @@
         nextBiteAt=time+biteInterval;motion='bite';idleSince=null;
       }
       return null;
+    }
+    // Called after the hero's scene-exit displacement has been rendered.
+    // Keep the wolf moving in the SAME direction and at the same pace,
+    // without teleporting it across the arena at the instant of victory.
+    function followExit({heroX,heroDepth=3}={}){
+      if(!active()||!Number.isFinite(heroX)||position===null)return false;
+      if(exitHeroX!==null)position+=Math.max(0,heroX-exitHeroX);
+      exitHeroX=heroX;
+      actorDepth=heroDepth;facing=3;motion='walk';engaged=false;
+      biteStarted=null;biteTarget=null;biteLanded=false;
+      idleSince=null;
+      return true;
     }
     function render({time=0,x=0,heroSize=64,depth=3,laneStep=0,moving=false,
       direction=3,action=null,actionAge=0,reducedMotion=false,alive=true}={}){
@@ -198,7 +221,7 @@
       }
       return true;
     }
-    return Object.freeze({load,loaded,reset,advance,render,paintPreview,
+    return Object.freeze({load,loaded,reset,advance,followExit,render,paintPreview,
       getPose:()=>({x:position,depth:actorDepth,facing,motion,engaged,biteStarted,biteTarget})});
   }
   return Object.freeze({path,sprite,contact,strips,frameAt,create});
