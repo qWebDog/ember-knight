@@ -11,9 +11,9 @@ function storage(seed={}){
   const map=new Map(Object.entries(seed));let writes=0;
   return {map,get writes(){return writes;},getItem:k=>map.get(k)??null,setItem(k,v){writes++;map.set(k,String(v));}};
 }
-test('helmet, armor, weapon and shield are enabled; cape and boots await native animation assets',()=>{
+test('helmet, armor, weapon, shield and native cape are enabled; boots await assets',()=>{
   assert.deepEqual(slots.map(s=>s.id),['helmet','armor','weapon','shield','cape','boots']);
-  assert.deepEqual(supportedSlots,['helmet','armor','weapon','shield']);
+  assert.deepEqual(supportedSlots,['helmet','armor','weapon','shield','cape']);
   for(const slot of slots){
     const items=catalog[slot.id];
     assert.equal(items.length,3);
@@ -39,9 +39,8 @@ test('previous placeholder cape/boots are normalized out while real native sword
   const memory=storage({[key]:JSON.stringify(previous)});
   const store=createStore({storage:memory,classId:'sword'});
   assert.deepEqual(store.getState(),{...defaults,helmet:'iron',armor:'royal',weapon:'ember',shield:'steel'});
-  for(const [slot,id]of [['cape','red'],['boots','iron']]){
-    assert.equal(store.equip(slot,id).reason,'unsupported');
-  }
+  assert.equal(store.equip('cape','red').reason,'invalid');
+  assert.equal(store.equip('boots','iron').reason,'unsupported');
   assert.equal(store.equip('weapon','steel').ok,true);
   assert.equal(store.equip('shield','royal').ok,true);
   assert.equal(memory.writes,2);
@@ -76,7 +75,8 @@ test('Archer and Mage have independent LPC inventory saves and four active class
   assert.equal(warrior.getState().weapon,'basic');
   const after=createStore({storage:memory,classId:'bow'});
   assert.equal(after.getState().shield,'royal');
-  assert.equal(mage.equip('cape','red').reason,'unsupported');
+  assert.equal(mage.equip('cape','solid').ok,true);
+  assert.equal(mage.getState().cape,'solid');
 });
 test('storage failures never grant equipment and bad values are rejected',()=>{
   const memory=storage({[key]:'invalid-json'}),store=createStore({storage:memory,classId:'sword'});
