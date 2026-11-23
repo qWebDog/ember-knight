@@ -11,8 +11,8 @@ function fullPath(kind,color,skin,pose,suffix){
 }
 test('Archer gets original animated bow and quiver, Mage a wand and belt',()=>{
   const archer=eq.catalogForClass('bow'),mage=eq.catalogForClass('wand');
-  assert.deepEqual(eq.supportedForClass('bow'),['helmet','armor','weapon','shield']);
-  assert.deepEqual(eq.supportedForClass('wand'),['helmet','armor','weapon','shield']);
+  assert.deepEqual(eq.supportedForClass('bow'),['helmet','armor','weapon','shield','cape']);
+  assert.deepEqual(eq.supportedForClass('wand'),['helmet','armor','weapon','shield','cape']);
   assert.equal(eq.slotLabel('bow','shield'),'Колчан');
   assert.equal(eq.slotLabel('wand','shield'),'Пояс');
   assert.equal(eq.slotLabel('sword','shield'),'Щит');
@@ -143,7 +143,7 @@ test('battle and equipment panel route every class to the correct LPC engine',()
   const builder=fs.readFileSync(path.join(__dirname,'../scripts/build-class-equipment.py'),'utf8');
   assert.match(html,/src="class-equipment.js(?:\?v=[^"]+)?"/);
   assert.match(source,/window\.EmberClassEquipment\.create/);
-  assert.match(source,/classEquipment\.load\(nextLook\)/);
+  assert.match(source,/classEquipment\.load\(nextLook,colors\|\|equipment\.getColors\(nextLook\)\)/);
   assert.match(source,/applyClassSprites\(loadedClassSprites\)/);
   assert.match(ui,/data\.catalogForClass\(store\.classId\)/);
   assert.match(ui,/data\.slotLabel\(store\.classId,slot\)/);
