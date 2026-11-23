@@ -68,7 +68,7 @@ test('the actual panel selects three distinct branches and exposes only the avai
  const cases=[['power','attack','Сила удара','+2 к урону'],['vitality','defense','Стойкость','+20 к максимуму здоровья'],['tempo','control','Натиск','+5% к скорости атаки']];
  for(const [id,branch,name,benefit]of cases){ui.clickSkill(id);assert.equal(ui.root.dataset.selected,id);assert.equal(ui.node('#skill-detail').dataset.branch,branch);assert.equal(ui.node('[data-skill-name]').textContent,name);assert.match(ui.node('[data-skill-benefit]').textContent,new RegExp(benefit.replace(/[+%]/g,'\\$&')));assert.equal(ui.node('#skill-upgrade').dataset.upgrade,id);assert.equal(ui.node('[data-skill-price]').textContent,'10');assert.equal(ui.node('[data-skill-rank]').textContent,'Уровень 0/5');for(const [other]of cases)assert.equal(ui.node(`[data-skill-id="${other}"]`).getAttribute('aria-pressed'),String(other===id));}
  const future=ui.root.querySelectorAll('[data-skill-future]');assert.equal(future.length,6);for(const node of future){assert.equal(node.disabled,true);assert.match(node.getAttribute('aria-label'),/скоро/i);node.click();}assert.equal(ui.root.dataset.selected,'tempo');
- const tabs=ui.root.querySelectorAll('[data-skill-tab]');assert.equal(tabs.length,4);assert.equal(tabs[0].getAttribute('aria-current'),'page');assert.deepEqual(tabs.slice(1).map(tab=>tab.disabled),[true,true,true]);
+ const tabs=ui.root.querySelectorAll('[data-skill-tab]');assert.equal(tabs.length,4);assert.equal(tabs[0].getAttribute('aria-current'),'page');assert.deepEqual(tabs.slice(1).map(tab=>tab.disabled),[false,true,true]);
  assert.equal(ui.controller.select('shadow'),false);assert.equal(ui.root.dataset.selected,'tempo');
 });
 
