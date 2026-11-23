@@ -103,7 +103,7 @@ test('Mage displays only Mage skills and its chosen branches can be bought indep
  assert.equal(ui.node('.skills-title p').textContent,'МАГ');
  assert.equal(ui.root.dataset.heroClass,'wand');
  assert.equal(ui.root.getAttribute('aria-label'),'Древо навыков: МАГ');
- const cases=[['sorcery','attack','Сила стихий','заклинаний'],['barrier','defense','Магический барьер','здоровью'],['channel','control','Поток маны','заклинаний']];
+ const cases=[['sorcery','attack','Сила стихий','заклинаний'],['barrier','defense','Магический барьер','здоровья'],['channel','control','Поток маны','заклинаний']];
  for(const [id,branch,name,fragment]of cases){
   ui.clickSkill(id);assert.equal(ui.root.dataset.selected,id);
   assert.equal(ui.node('#skill-detail').dataset.branch,branch);
