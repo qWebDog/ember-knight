@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#14231f">
 <title>EMBER — Приключение</title><meta name="description" content="Твой путь начинается в Забытом лесу. EMBER — пиксельная idle RPG.">
-<link rel="stylesheet" href="game.css"><link rel="stylesheet" href="skills.css"><link rel="stylesheet" href="equipment.css?v=item-icons-1"><script src="https://telegram.org/js/telegram-web-app.js"></script><script src="loadouts.js" defer></script><script src="progression.js" defer></script><script src="combat.js" defer></script><script src="skills-ui.js" defer></script><script src="equipment.js?v=item-icons-1" defer></script><script src="sword-equipment.js" defer></script><script src="class-equipment.js" defer></script><script src="equipment-art.js" defer></script><script src="equipment-ui.js?v=item-icons-1" defer></script><script src="game.js?v=item-icons-1" defer></script>
+<link rel="stylesheet" href="game.css"><link rel="stylesheet" href="skills.css"><link rel="stylesheet" href="equipment.css?v=rotate-hero-1"><script src="https://telegram.org/js/telegram-web-app.js"></script><script src="loadouts.js" defer></script><script src="progression.js" defer></script><script src="combat.js" defer></script><script src="skills-ui.js" defer></script><script src="equipment.js?v=item-icons-1" defer></script><script src="sword-equipment.js" defer></script><script src="class-equipment.js" defer></script><script src="equipment-art.js" defer></script><script src="equipment-ui.js?v=rotate-hero-1" defer></script><script src="game.js?v=item-icons-1" defer></script>
 </head>
 <body>
 <svg class="svg-defs" xmlns="http://www.w3.org/2000/svg"><defs>
@@ -74,7 +74,7 @@
 <section class="equipment-panel" id="equipment-panel" aria-label="Экипировка героя" hidden>
   <header class="equipment-heading"><h2>Экипировка</h2><span class="equipment-class" data-equipment-class>ВОИН</span></header>
   <div class="equipment-dashboard">
-    <div class="equipment-portrait"><canvas id="equipment-preview" width="64" height="64" role="img" aria-label="Текущий облик героя спереди"></canvas></div>
+    <div class="equipment-portrait" tabindex="0" role="group" aria-label="Поворот героя свайпом влево или вправо"><canvas id="equipment-preview" width="64" height="64" role="img" aria-label="Текущий облик героя спереди"></canvas><span class="equipment-rotate-hint" aria-hidden="true">↔ Повернуть</span></div>
     <div class="equipment-slots" role="group" aria-label="Отдельные слоты снаряжения">
       <button class="equipment-slot is-active" type="button" data-equipment-slot="helmet" aria-pressed="true"><span class="equipment-slot-icon" aria-hidden="true">♜</span><strong>Шлем</strong><span data-equipment-slot-name>Без шлема</span></button>
       <button class="equipment-slot" type="button" data-equipment-slot="armor" aria-pressed="false"><span class="equipment-slot-icon" aria-hidden="true">⬟</span><strong>Броня</strong><span data-equipment-slot-name>Походная одежда</span></button>
