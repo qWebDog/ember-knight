@@ -30,10 +30,10 @@ jobs:
         run: python -m pip install "Pillow>=11,<13"
       - name: Smoke test full LPC compositing against original hero
         run: python scripts/build-equipment-variants.py --quick
-      - name: Generate all sword and shield combinations
-        run: python scripts/build-equipment-variants.py
       - name: Smoke test original Archer and Mage LPC geometry
         run: python scripts/build-class-equipment.py --quick
+      - name: Generate all sword and shield combinations
+        run: python scripts/build-equipment-variants.py
       - name: Build independently wearable Archer and Mage LPC layers
         run: python scripts/build-class-equipment.py
       - name: Verify all game and equipment tests
