@@ -12,7 +12,7 @@ function harness({saved=null,blocked=false}={}){
   set src(v){this.attrs.src=v;assert.ok(fs.existsSync(path.join(root,v)),v)}get src(){return this.attrs.src}
   focus(){}setPointerCapture(id){this.capture=id}hasPointerCapture(id){return this.capture===id}releasePointerCapture(){this.capture=null}
   getBoundingClientRect(){return {left:0,top:0,right:400,bottom:400}}showModal(){this.open=true}close(){this.open=false}
-  getContext(){return {clearRect(){},drawImage:(im,x,y,w,h)=>{assert.ok(x>=0&&y>=0&&x+w<=im.width&&y+h<=im.height,`invalidcrop${im.src}:${[x,y,w,h]}`);this.draws.push({src:im.src,crop:[x,y,w,h]})}}}
+  getContext(){return {clearRect(){},drawImage:(im,x,y,w,h,...destination)=>{assert.ok(x>=0&&y>=0&&x+w<=im.width&&y+h<=im.height,`invalidcrop${im.src}:${[x,y,w,h]}`);this.draws.push({src:im.src,crop:[x,y,w,h],destination})}}}
  }
  function node(k){if(!nodes.has(k))nodes.set(k,new E(k));return nodes.get(k)}
  const groups={
@@ -44,6 +44,27 @@ test('creation follows skin→weapon→clothing color and saves the single match
  const saved=JSON.parse(ui.storage.get('ember.character.v1'));assert.deepEqual([saved.skin,saved.weapon,saved.outfit,saved.outfitColor],['brown','bow','wanderer','red']);assert.deepEqual(saved.equipment,['bow','wanderer']);
  assert.equal(ui.node('#success-dialog').open,true);assert.match(ui.node('#saved-loadout').textContent,/Странник.*Бордовый/);
  ui.node('#start-adventure').click();assert.equal(ui.window.location.href,'./');
+});
+test('all hero classes use one fixed preview zoom, centered in the same stage',async()=>{
+ const ui=harness();await ui.load();
+ const canvas=ui.node('#hero');
+ function assertViewport(expectedTile){
+   assert.equal(canvas.width,128);
+   assert.equal(canvas.height,128);
+   assert.deepEqual([canvas.style.width,canvas.style.height,canvas.style.left,canvas.style.top],
+     ['200%','200%','-50%','-50%']);
+   const frame=canvas.draws.at(-1),inset=(128-expectedTile)/2;
+   assert.deepEqual(frame.destination,[inset,inset,expectedTile,expectedTile]);
+   assert.equal(frame.crop[2],expectedTile);
+   assert.equal(frame.crop[3],expectedTile);
+ }
+ assertViewport(64); // Original skin
+ ui.node('#create-button').click();await ui.load();
+ for(const [klass,tile]of [['sword',64],['bow',128],['wand',64],['bow',128],['wand',64],['sword',64]]){
+   ui.node('weapon:'+klass).click();await ui.load();
+   assertViewport(tile);
+   assert.ok(canvas.draws.at(-1).src.includes('/'+klass+'/'));
+ }
 });
 test('all eighteen weapon and clothing-color choices preview, rotate and retain the independent skin',async()=>{
  const sets={sword:'militia',bow:'wanderer',wand:'acolyte'};
