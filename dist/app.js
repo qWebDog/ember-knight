@@ -68,12 +68,18 @@
       canvas.width=previewSize;canvas.height=previewSize;
     }
     const ctx=canvas.getContext('2d');ctx.clearRect(0,0,previewSize,previewSize);ctx.imageSmoothingEnabled=false;
-    // Mage's 64px source cell contains a visually larger silhouette in
-    // the character selector. Actually scale the drawn mage, not just the
-    // canvas element. Keep the bottom of its feet at the same pixel row.
-    const displayTile=step>0&&weapon==='wand'?52:tile;
+    // The Mage's current 52px appearance is the accepted reference.
+    // Warrior and Archer were too small, so enlarge the actual LPC pixels,
+    // not the CSS canvas. Oversized 128px bow cells include 32px padding.
+    const displayTile=step===0?tile:({
+      sword:80,bow:160,wand:52
+    }[weapon]||tile);
     const destX=(previewSize-displayTile)/2;
-    const destY=(previewSize-tile)/2+tile-displayTile;
+    // Keep the existing Mage rendering untouched; pin the other classes'
+    // feet near the same ground line despite their different LPC cell sizes.
+    const destY=step>0&&weapon!=='wand'
+      ?Math.round(89-(tile-(d.origin||0)-8)*displayTile/tile)
+      :(previewSize-tile)/2+tile-displayTile;
     ctx.drawImage(previewImage,cell*tile,direction*tile,tile,tile,
       destX,destY,displayTile,displayTile);
     canvas.style.width='200%';canvas.style.height='200%';
