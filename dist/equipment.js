@@ -125,7 +125,7 @@
       +(colored?'/'+color:'')+'.png';
   }
   const catalogs=Object.freeze({sword:catalog,bow:rangerCatalog,wand:mageCatalog});
-  const supportedByClass=Object.freeze({sword:supportedSlots,bow:Object.freeze(['helmet','armor','weapon','shield']),wand:Object.freeze(['helmet','armor','weapon','shield'])});
+  const supportedByClass=Object.freeze({sword:supportedSlots,bow:Object.freeze(['helmet','armor','weapon','shield','cape']),wand:Object.freeze(['helmet','armor','weapon','shield','cape'])});
   const slotNames=Object.freeze({sword:Object.freeze({shield:'Щит'}),bow:Object.freeze({shield:'Колчан'}),wand:Object.freeze({shield:'Пояс'})});
   function catalogForClass(classId){return catalogs[classId]||catalog;}
   function supportedForClass(classId){return supportedByClass[classId]||supportedSlots;}
