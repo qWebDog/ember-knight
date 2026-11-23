@@ -194,6 +194,39 @@ def build_foreground_layers():
     print(f'READY {written} original LPC sword/shield foreground atlases', flush=True)
 
 
+def build_cape_layers():
+    """Original LPC cape frames in both planes for every warrior pose.
+
+    LPC has slash/idle/walk capes but does not publish special 13-frame
+    backslash capes; those frames interpolate the original slash positions.
+    The original alpha and clothing palette are preserved.
+    """
+    total=0
+    for color,(main,_) in COLORS.items():
+        for item in ('tattered','solid'):
+            for pose,animation,frames,tile in POSES:
+                source_animation = ('walk' if animation=='walk' else
+                                    'idle' if animation=='combat_idle' else 'slash')
+                for side in ('bg','fg'):
+                    path=f'spritesheets/cape/{item}/{side}/{source_animation}.png'
+                    im=recolored(path,'cloth',main)
+                    source_frames=im.width//64
+                    if source_frames<1 or im.height!=256:
+                        raise ValueError(f'Invalid original LPC cape frame: {path} {im.size}')
+                    sheet=Image.new('RGBA',(frames*64,4*64))
+                    for row in range(4):
+                        for index in range(frames):
+                            src=0 if frames==1 else round(index*(source_frames-1)/(frames-1))
+                            sheet.alpha_composite(im.crop((src*64,row*64,(src+1)*64,(row+1)*64)),
+                                                  (index*64,row*64))
+                    dest=PROJECT/'dist/assets/equipment/lpc/cape'/item/color
+                    dest.mkdir(parents=True,exist_ok=True)
+                    sheet.save(dest/f'{pose}-{side}.png',optimize=True)
+                    total+=1
+    assert total==120,total
+    print(f'READY {total} native LPC cape foreground/background atlases',flush=True)
+
+
 def build(color, skin):
     written = 0
     for outa, animation, frames, tile in POSES:
@@ -234,6 +267,10 @@ def prefetch():
             for side in ('bg','fg'):
                 if animation in ('walk', 'slash') and side == 'bg': continue
                 needed.add(f'spritesheets/shield/heater/original/{kind}/{side}/{animation}.png')
+    for item in ('tattered','solid'):
+        for anim in ('walk','idle','slash'):
+            for side in ('bg','fg'):
+                needed.add(f'spritesheets/cape/{item}/{side}/{anim}.png')
     needed.update(('palette_definitions/body/body_ulpc.json',
                    'palette_definitions/cloth/cloth_ulpc.json'))
     with ThreadPoolExecutor(max_workers=8) as pool:
@@ -243,6 +280,7 @@ def prefetch():
 if __name__ == '__main__':
     prefetch()
     build_foreground_layers()
+    build_cape_layers()
     colors = ('sand',) if args.quick else COLORS.keys()
     skins = ('light',) if args.quick else SKINS
     count = 0
