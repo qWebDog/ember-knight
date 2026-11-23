@@ -1308,3 +1308,65 @@ test('flames and later breath pulses disappear instantly when dragon dies during
  assert.equal(ui.events.filter(e=>e.type==='attack'&&e.sourceId==='dragon').length,hits);
  assert.equal(ui.state().hero.hp,hp,'no hidden damage from vanished fire');
 });
+
+test('Orc plays advancing walk cells while chasing the Archer wolf instead of sliding',async()=>{
+ const ui=createHarness({weapon:'bow',outfit:'wanderer',wolfEquipped:true,
+  combatOptions:{heroDamage:120,heroMaxHp:1400}});
+ await ui.loadAllImages();
+ ui.runUntil(()=>ui.state().waveIndex===2,35);
+ ui.battle.updateHeroStats({heroDamage:1});
+ const orc=ui.node('[data-fighter="orc"]');
+ const start=actorX(ui,'orc');
+ const canvas=ui.node('#enemy-orc');
+ const drawsStart=canvas.draws.length;
+ ui.runUntil(()=>Math.abs(actorX(ui,'orc')-start)>12,8);
+ assert.ok(orc.motionHistory.includes('walk'),
+   'the moving Orc must expose the walk pose, not the idle pose');
+ const gait=canvas.draws.slice(drawsStart).filter(draw=>draw.crop&&draw.crop[2]===64)
+   .map(draw=>draw.crop[0]);
+ assert.ok(new Set(gait).size>=3,
+   'Orc must cycle at least three different leg frames while physically moving');
+ assert.ok(ui.state().enemies[0].hp>0,'test observes an Orc that is still alive');
+});
+test('Archer and living wolf exit the completed wave in the SAME direction',async()=>{
+ const ui=createHarness({weapon:'bow',outfit:'wanderer',wolfEquipped:true,
+  combatOptions:{heroDamage:140,heroMaxHp:1300}});
+ await ui.loadAllImages();
+ ui.runUntil(()=>ui.events.some(e=>e.type==='wave_clear'),23);
+ const wolf=ui.node('#companion-wolf');
+ const heroBefore=ui.heroX(),wolfBefore=Number.parseFloat(wolf.style.left);
+ ui.runFor(.7);
+ const heroAfter=ui.heroX(),wolfAfter=Number.parseFloat(wolf.style.left);
+ assert.ok(heroAfter>heroBefore+10,'the Archer walks right into the wave transition');
+ assert.ok(wolfAfter>=wolfBefore,'wolf cannot run left away from the exiting Archer');
+ assert.ok(wolfAfter>wolfBefore+8,'wolf accompanies the Archer instead of remaining stranded');
+ assert.equal(wolf.dataset.facing,'right');
+ assert.equal(wolf.dataset.motion,'walk');
+});
+test('dragon visibly descends toward wolf before claw strike and climbs back up before breathing fire',async()=>{
+ const ui=createHarness({weapon:'bow',outfit:'wanderer',dragonBoss:true,wolfEquipped:true,
+   combatOptions:{heroDamage:300,heroMaxHp:1800,companionMaxHp:12}});
+ await ui.loadAllImages();
+ ui.runUntil(()=>ui.state().waveIndex===3,45);
+ ui.battle.updateHeroStats({heroDamage:1});
+ const dragon=ui.node('[data-fighter="dragon"]');
+ ui.runFor(.6);
+ const high=Number.parseFloat(dragon.style['--dragon-hover']);
+ assert.ok(high < -15,'dragon initially hovers visibly above the road');
+ ui.runUntil(()=>dragon.dataset.dive==='descending',13);
+ const descending=Number.parseFloat(dragon.style['--dragon-hover']);
+ assert.ok(descending>high+1,'dragon lowers its body as wolf approaches');
+ ui.runUntil(()=>dragon.dataset.dive==='near-wolf',8);
+ const near=Number.parseFloat(dragon.style['--dragon-hover']);
+ assert.ok(near>high+15,'dragon reaches wolf level before claw contact');
+ ui.runUntil(()=>ui.events.some(e=>e.type==='attack'&&e.sourceId==='dragon'
+   &&e.projectile==='claw'),7);
+ assert.equal(ui.events.filter(e=>e.type==='cast'&&e.sourceId==='dragon').length,0,
+   'the dive ends in physical contact, never flame damage against wolf');
+ ui.runUntil(()=>ui.state().companion.hp===0,8);
+ ui.runUntil(()=>dragon.dataset.dive==='high',5);
+ const risen=Number.parseFloat(dragon.style['--dragon-hover']);
+ assert.ok(risen<near-15,'after wolf falls dragon visibly takes flight again');
+ ui.runUntil(()=>ui.events.some(e=>e.type==='cast'&&e.sourceId==='dragon'),8);
+ assert.ok(ui.events.some(e=>e.sourceId==='dragon'&&e.breath&&e.targetId==='hero'));
+});

@@ -120,7 +120,7 @@ test('game invokes the corrected wolf animation controller and exposes class com
  assert.match(html,/data-equipment-slot="companion"/);
  assert.doesNotMatch(html,/data-equipment-slot="boots"/);
  assert.match(html,/id="companion-wolf"/);
- assert.match(html,/src="companion.js\?v=wolf-return-2"/);
+ assert.match(html,/src="companion.js\?v=wolf-flight-fix-3"/);
  assert.match(js,/companion\?\.render\(/);
  assert.match(js,/direction:walkDirection/);
  assert.match(js,/action:wolfFallen\|\|wolfDefeatedWithHero\?'die':null/);
@@ -232,4 +232,31 @@ test('Orc uses a true double-size layout box across all responsive breakpoints',
  const game=fs.readFileSync(path.join(dist,'game.js'),'utf8');
  assert.match(game,/window\.EmberCompanion\?\.contact/);
  assert.match(game,/anchorX:battlefield\.clientWidth/);
+});
+
+test('wolf stays with the exiting Archer instead of running left toward the old wave anchor',async()=>{
+ const h=harness();await h.actor.load();h.store.equip('companion','wolf');
+ const target={id:'orc',x:410,width:128,depth:3,hp:100};
+ let t=0;
+ for(let i=0;i<45;i++,t+=.1)
+   h.actor.advance({dt:.1,time:t,phase:'running',heroX:144,anchorX:144,
+     heroSize:64,heroDepth:3,target});
+ const start=h.actor.getPose().x;
+ assert.ok(start>180,'wolf is out in the arena after engaging its enemy');
+ let heroX=144;
+ for(let n=0;n<14;n++){
+   const before=h.actor.getPose().x;
+   h.actor.advance({dt:.1,time:t+n*.1,phase:'intermission',exiting:true,
+     heroX,anchorX:144,heroSize:64,heroDepth:3});
+   heroX+=12;
+   h.actor.followExit({heroX,heroDepth:3});
+   h.actor.render({time:t+n*.1,x:heroX,laneStep:9,heroSize:64,depth:3});
+   const pose=h.actor.getPose();
+   assert.ok(pose.x>=before,'wolf never turns and runs left during the wave exit');
+   assert.equal(pose.facing,3,'wolf faces the same direction as the leaving Archer');
+   assert.equal(pose.motion,'walk','wolf walks alongside the exit animation');
+ }
+ assert.ok(h.actor.getPose().x>start+90,'wolf leaves to the right with the hero');
+ assert.ok(Number.parseFloat(h.element.style.left)>start);
+ h.actor.reset();assert.equal(h.actor.getPose().x,null,'next wave resets escort position');
 });

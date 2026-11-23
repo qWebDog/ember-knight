@@ -504,7 +504,8 @@
         // Visual bow wind-up already began before impact. Do not restart it
         // at the moment the arrow reaches its target.
         if (!event.impact&&!event.dot&&event.projectile!=='arrow'&&event.sourceId!=='companion')
-          actors[event.sourceId].animation = {at:activeTime,duration:event.animationDuration || .66,variant:event.variant,heavy:event.heavy,counter:event.counter};
+          actors[event.sourceId].animation = {at:activeTime,duration:event.animationDuration || .66,
+            variant:event.variant,heavy:event.heavy,counter:event.counter,swipe:event.dragonSwipe};
         if (event.impact) {
           pendingIceImpacts.delete(event.castId);
           const spell=effects.find(effect=>(effect.type==='spell'||effect.type==='dragon-breath')&&effect.castId===event.castId);
@@ -582,6 +583,29 @@
   }
   function drawDragon(actor,unit,state){
     if(!dragonSprites)return;
+    const pose=companion?.getPose();
+    const towardWolf=state.phase==='running'&&state.enemyTargetId==='companion'
+      &&unit.hp>0&&Number.isFinite(pose?.x)
+      &&Math.abs(actor.x-pose.x)<Math.max(145,actor.element.offsetWidth*2.2);
+    // Descend visibly BEFORE swiping, and rise back up before breathing
+    // fire at the hero. These are presentation coordinates only.
+    const now=companionTime;
+    const elapsed=actor.diveClock===null||actor.diveClock===undefined?0:
+      Math.max(0,Math.min(.1,now-actor.diveClock));
+    actor.diveClock=now;
+    const desired=towardWolf?1:0;
+    const current=actor.dive||0;
+    actor.dive=Math.max(0,Math.min(1,current+Math.sign(desired-current)
+      *Math.min(Math.abs(desired-current),elapsed*(desired?1.6:1.9))));
+    const hoverHeight=Math.min(60,Math.max(30,actors.hero.element.offsetWidth*.7));
+    const ageOfStrike=actor.animation?.swipe?activeTime-actor.animation.at:99;
+    const lunge=ageOfStrike>=0&&ageOfStrike<.66
+      ?Math.max(0,Math.sin(ageOfStrike/.66*Math.PI))*9:0;
+    actor.element.style.setProperty('--dragon-hover',
+      `${-hoverHeight*(1-actor.dive)
+        +Math.sin(now*3.1)*(actor.dive>.95?.75:2)+lunge}px`);
+    actor.element.dataset.dive=actor.dive>.92?'near-wolf':
+      actor.dive>.08?'descending':'high';
     const age=actor.animation?activeTime-actor.animation.at:999;
     const ended=state.phase==='defeat'||state.phase==='victory';
     const hit=activeTime-actor.hitAt<.17;
@@ -590,7 +614,7 @@
     const frame=window.EmberDragon.frameAt(hit?activeTime-actor.hitAt:attack?age:companionTime,
       kind,'left',reducedMotion.matches);
     actor.dragonFrame=frame;
-    actor.element.style.setProperty('--dragon-hover',`${Math.sin(companionTime*3.1)*2}px`);
+    // Hover/dive transform is set above; never overwrite it with idle bob.
     const key=`${frame.direction}:${frame.frame}:${kind}`;
     if(actor.lastKey!==key){
       const geometry=window.EmberDragon.sheet;
@@ -673,6 +697,7 @@
       actor.x=null;actor.distance=0;actor.moving=false;actor.direction=1;
       actor.depth=actor.defaultLane;
       actor.animation=null;actor.hitAt=-10;actor.blockAt=-10;actor.lastKey=null;
+      if(actor.type==='dragon'){actor.dive=0;actor.diveClock=null;}
     }
     beginHeroEntrance();
     updateMovement(0,state);
@@ -690,8 +715,13 @@
     const resized=fieldWidth&&fieldWidth!==width;
     if(resized){const ratio=width/fieldWidth;heroX*=ratio;for(const id of Object.keys(enemyDefinitions))actors[id].x*=ratio;}
     fieldWidth=width;
-    moving=heroMoving=false;
-    for(const id of Object.keys(enemyDefinitions))actors[id].moving=false;
+    // The second zero-dt reconciliation in advanceBattleFrame must NOT
+    // erase movement flags set when the Orc physically walked this frame.
+    // That erased his walk animation and made him appear to slide.
+    if(dt>0){
+      moving=heroMoving=false;
+      for(const id of Object.keys(enemyDefinitions))actors[id].moving=false;
+    }
     let usedTime=0;
     const canMove=(state.phase==='running'||(state.phase==='paused'&&state.completedWaves===state.waveIndex))&&state.hero.hp>0;
     if(heroEntrance){
@@ -749,8 +779,10 @@
           enemy.depth+=(defenderDepth-enemy.depth)*fraction;
           if(!reducedMotion.matches){
             enemy.distance+=Math.hypot(distance,(enemy.depth-oldDepth)*laneStep)/enemySize;
-            enemy.moving=distance>.001;
-            if(enemy.moving)usedTime=dt;
+            if(dt>0){
+              enemy.moving=distance>.001;
+              if(enemy.moving)usedTime=dt;
+            }
           }
           enemy.direction=step>=0?3:1;
         }else{
@@ -935,6 +967,11 @@
   }
   function render(state) {
     renderSceneTransition(state);
+    if(sceneTransition?.phase==='wave-out'||sceneTransition?.phase==='victory'){
+      companion?.followExit({
+        heroX:heroX??0,heroDepth:actors.hero.depth
+      });
+    }
     cueArrowShots(state);
     for (const id of Object.keys(actors)) drawActor(id,state);
     const wolfFallen=state.companion?.hp===0&&companionDeathAt!==null;
@@ -983,7 +1020,9 @@
       return [enemy.id,Boolean(enemy.hp>0
         &&(enemy.type==='dragon'&&state.enemyTargetId==='hero'
           ||Math.abs(actor.x-defenderX)<=reach)
-        &&Math.abs(actor.depth-defenderDepth)<=.06)];
+        &&Math.abs(actor.depth-defenderDepth)<=.06
+        &&(enemy.type!=='dragon'||state.enemyTargetId==='hero'
+          ||(actor.dive||0)>=.92))];
     })):undefined;
     return {
       heroCanAttack:Boolean(target && (ranged || inReach(target,actors[target].x))),
@@ -998,7 +1037,8 @@
         const reach=heroSize*.23+size*.34+.01;
         return [enemy.id,Boolean(enemy.hp>0
           &&(enemy.type==='dragon'||Math.abs(actor.x-heroX)<=reach)
-          &&Math.abs(actor.depth-actors.hero.depth)<=.06)];
+          &&Math.abs(actor.depth-actors.hero.depth)<=.06
+          &&(enemy.type!=='dragon'||(actor.dive||0)<=.08))];
       })):undefined
     };
   }
@@ -1057,7 +1097,9 @@
     const unit=state.enemies.find(enemy=>enemy.id===state.targetId);
     const bite=companion.advance({
       dt,time:companionTime,phase:state.phase,
-      entering:Boolean(heroEntrance),heroAlive:state.hero.hp>0,
+      entering:Boolean(heroEntrance),
+      exiting:sceneTransition?.phase==='wave-out'||sceneTransition?.phase==='victory',
+      heroAlive:state.hero.hp>0,
       companionAlive:Boolean(state.companion?.hp>0),
       heroX:heroX??0,
       // Resting point must never follow the hero's wave-exit movement.
