@@ -6,6 +6,8 @@
   function mount({root,store,getSprite,loadItem,paintItem,onEquip}={}){
     if(!root||!store||!host?.EmberEquipment)throw new TypeError('Equipment panel and store required');
     const data=host.EmberEquipment;
+    const catalogue=data.catalogForClass(store.classId);
+    const enabledSlots=data.supportedForClass(store.classId);
     const $=selector=>root.querySelector(selector);
     const items=$('#equipment-items'),preview=$('#equipment-preview');
     const slotNodes=[...root.querySelectorAll('[data-equipment-slot]')];
@@ -38,7 +40,7 @@
       button.className='equipment-item'+(current===item.id?' is-equipped':'');
       button.setAttribute('data-equipment-item',item.id);
       button.setAttribute('aria-pressed',String(current===item.id));
-      button.disabled=!store.enabled||busy||!data.supportedSlots.includes(slot);
+      button.disabled=!store.enabled||busy||!enabledSlots.includes(slot);
       const swatch=items.ownerDocument.createElement('span');
       swatch.className='equipment-item-swatch';
       swatch.style.backgroundColor=item.tone;
@@ -49,7 +51,7 @@
       description.textContent=current===item.id?'Надето':item.detail;
       label.append(name,description);button.append(swatch,label);
       button.addEventListener('click',async()=>{
-        if(destroyed||busy||!store.enabled||!data.supportedSlots.includes(slot))return;
+        if(destroyed||busy||!store.enabled||!enabledSlots.includes(slot))return;
         if(store.getState()[slot]===item.id){message('Этот предмет уже надет.');return;}
         busy=true;message('Загружаем анимации LPC…');render();
         try{
@@ -71,20 +73,22 @@
       const equipped=store.getState();
       for(const button of slotNodes){
         const slot=button.dataset.equipmentSlot;
-        const current=data.catalog[slot]?.find(item=>item.id===equipped[slot]);
+        const current=catalogue[slot]?.find(item=>item.id===equipped[slot]);
         if(!current)continue;
         button.classList.toggle('is-active',selected===slot);
         button.setAttribute('aria-pressed',String(selected===slot));
         button.querySelector('[data-equipment-slot-name]').textContent=current.name;
-        button.disabled=!store.enabled||busy||!data.supportedSlots.includes(slot);
+        const label=button.querySelector('strong');
+        if(label)label.textContent=data.slotLabel(store.classId,slot);
+        button.disabled=!store.enabled||busy||!enabledSlots.includes(slot);
       }
       const category=data.slots.find(item=>item.id===selected);
-      $('[data-equipment-category]').textContent=category?.name||'Экипировка';
-      items.replaceChildren(...data.catalog[selected].map(item=>createItemButton(item,equipped[selected])));
+      $('[data-equipment-category]').textContent=data.slotLabel(store.classId,selected)||category?.name||'Экипировка';
+      items.replaceChildren(...catalogue[selected].map(item=>createItemButton(item,equipped[selected])));
       paintPreview();
     }
     function select(slot){
-      if(destroyed||busy||!data.supportedSlots.includes(slot)||!store.enabled)return false;
+      if(destroyed||busy||!enabledSlots.includes(slot)||!store.enabled)return false;
       selected=slot;render();return true;
     }
     for(const button of slotNodes)listen(button,'click',()=>select(button.dataset.equipmentSlot));
