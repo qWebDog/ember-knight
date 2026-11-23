@@ -1029,8 +1029,8 @@ test('Wolf kills enemies once, advances waves, preserves rewards and never dupli
  assert.equal(battle.state.reward,15);
  battle.advance(intermissionDuration);
  assert.equal(battle.state.waveIndex,2);
- a=battle.companionStrike('orc',100);
- assert.equal(a[0].damage,97,'wolf bite respects armor on the Orc');
+ a=battle.companionStrike('orc',200);
+ assert.equal(a[0].damage,197,'wolf bite respects armor on the Orc');
  assert.deepEqual(a.map(e=>e.type),['attack','death','wave_clear','end']);
  assert.equal(battle.state.phase,'victory');
  assert.equal(battle.state.reward,20);
