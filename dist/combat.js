@@ -175,7 +175,8 @@
       if(target.hp!==0)return events;
       defeatedCount++;reward+=KILL_REWARD;target.status=null;
       pendingCounters=pendingCounters.filter(counter=>counter.targetId!==target.id);
-      pendingImpacts=pendingImpacts.filter(impact=>impact.targetId!==target.id);
+      pendingImpacts=pendingImpacts.filter(impact=>
+        impact.targetId!==target.id && impact.sourceId!==target.id);
       pendingBreaths=pendingBreaths.filter(breath=>breath.sourceId!==target.id);
       events.push({type:'death',id:target.id,unitType:target.type,
         reward:KILL_REWARD,totalReward:reward,at});
@@ -246,7 +247,10 @@
           if (enemy) { defeatedCount++; reward += KILL_REWARD; target.status = null; }
           events.push({type:'death',id:target.id,unitType:target.type || (target.id==='companion'?'companion':'hero'),reward:enemy ? KILL_REWARD : 0,totalReward:reward,at:elapsed/TICKS});
           pendingCounters = pendingCounters.filter(counter => counter.targetId !== target.id);
-          pendingImpacts = pendingImpacts.filter(impact => impact.targetId !== target.id);
+          // A dead dragon cannot finish breathing: cancel both unreleased
+          // pulses and flames which have not yet hit their targets.
+          pendingImpacts = pendingImpacts.filter(impact =>
+            impact.targetId !== target.id && impact.sourceId !== target.id);
           pendingBreaths = pendingBreaths.filter(breath => breath.sourceId !== target.id);
         }
       }
@@ -270,7 +274,10 @@
         events.push({type:'status',status:type,sourceId:'hero',targetId:target.id,at:elapsed/TICKS,duration:statusTiming.duration,endsAt:target.status.endsAt/TICKS});
       }
       function dragonPulse(sourceId,burstIndex){
+        // Fire belongs exclusively to the hero-facing ranged phase. A living
+        // companion is handled by a separate close-range physical swipe.
         const defender=currentEnemyTarget();
+        if(defender.id!=='hero')return;
         const hitAt=elapsed+DRAGON_BREATH_FLIGHT;
         const castAt=elapsed/TICKS;
         const castId=`${sourceId}:breath:${elapsed}:${burstIndex}`;
@@ -385,10 +392,18 @@
             events.push({type:'block',sourceId:enemy.id,targetId:'hero',blockedDamage,at:elapsed/TICKS});
           }
           if(enemy.type==='dragon'){
-            dragonPulse(enemy.id,0);
-            for(let index=1;index<dragonBreath.bursts;index++)
-              pendingBreaths.push({sourceId:enemy.id,at:elapsed+DRAGON_BREATH_SPACING*index,index});
-            pendingBreaths.sort((a,b)=>a.at-b.at||a.index-b.index);
+            if(defender.id==='companion'){
+              // The wolf has reached the hovering dragon: a physical swipe
+              // with no fire effect, no delayed flame and no breath queue.
+              hit(enemy.id,defender,damage,'claw',
+                {animationDuration:.66,dragonSwipe:true});
+            }else{
+              dragonPulse(enemy.id,0);
+              for(let index=1;index<dragonBreath.bursts;index++)
+                pendingBreaths.push({sourceId:enemy.id,
+                  at:elapsed+DRAGON_BREATH_SPACING*index,index});
+              pendingBreaths.sort((a,b)=>a.at-b.at||a.index-b.index);
+            }
           }else if (enemy.projectile === 'magic') cast(enemy.id,defender,damage,'shadow');
           else hit(enemy.id,defender,damage,enemy.projectile,enemy.type === 'archer' ? {animationDuration:.6} : undefined);
           nextEnemies[index] += Math.round(enemy.interval*TICKS);

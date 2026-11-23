@@ -23,19 +23,50 @@ function bossFight({wolfHp=70}={}){
 }
 const available={enemyCanAttack:{dragon:true},enemyCanAttackHero:{dragon:true}};
 
-test('red dragon produces exactly five timed mouth breaths in each salvo',()=>{
+test('dragon swipes at living wolf without any fire, even across multiple attack cycles',()=>{
  const b=bossFight();
- assert.deepEqual([combat.dragonBreath.bursts,combat.dragonBreath.spacing,combat.dragonBreath.damage],
-   [5,.26,3]);
+ const emitted=b.advance(5.6,available);
+ const attacks=emitted.filter(e=>e.type==='attack'&&e.sourceId==='dragon');
+ assert.equal(attacks.length,2);
+ assert.ok(attacks.every(e=>e.targetId==='companion'&&e.projectile==='claw'
+   &&e.dragonSwipe===true&&e.damage===12));
+ assert.equal(emitted.filter(e=>e.type==='cast'&&e.sourceId==='dragon').length,0);
+ assert.equal(emitted.filter(e=>e.breath).length,0);
+ assert.equal(b.state.companion.hp,46);
+ assert.equal(b.state.hero.hp,1200);
+ assert.equal(b.state.reward,20);
+});
+
+test('dragon holds its physical attack until the wolf actually reaches melee distance',()=>{
+ const b=bossFight();
+ const far={enemyCanAttack:{dragon:false},enemyCanAttackHero:{dragon:true}};
+ const stopped=b.advance(5.6,far);
+ assert.equal(stopped.filter(e=>e.sourceId==='dragon').length,0);
+ assert.equal(b.state.companion.hp,70);
+ const reached=b.advance(2.8,available);
+ assert.ok(reached.some(e=>e.type==='attack'&&e.projectile==='claw'
+   &&e.targetId==='companion'));
+ assert.equal(reached.filter(e=>e.type==='cast'&&e.sourceId==='dragon').length,0);
+});
+
+test('after defeating the wolf the dragon switches to five mouth-fire volleys against hero only',()=>{
+ const b=bossFight({wolfHp:12});
+ const swipes=b.advance(5.6,available);
+ assert.equal(swipes.filter(e=>e.type==='attack'&&e.projectile==='claw').length,2);
+ assert.equal(swipes.filter(e=>e.type==='death'&&e.id==='companion').length,1);
+ assert.equal(swipes.filter(e=>e.type==='cast'&&e.sourceId==='dragon').length,0);
+ assert.equal(b.state.companion.hp,0);
+ assert.equal(b.state.enemyTargetId,'hero');
  const emitted=b.advance(4.2,available);
  const casts=emitted.filter(e=>e.type==='cast'&&e.sourceId==='dragon');
+ assert.deepEqual([combat.dragonBreath.bursts,combat.dragonBreath.spacing,
+   combat.dragonBreath.damage],[5,.26,3]);
  assert.equal(casts.length,5);
  assert.deepEqual(casts.map(e=>e.burstIndex),[0,1,2,3,4]);
  for(const cast of casts){
-   assert.equal(cast.breath,true);
-   assert.equal(cast.projectile,'breath','dragon must not throw a standard magic projectile');
+   assert.equal(cast.projectile,'breath');
    assert.equal(cast.magic,'fire');
-   assert.equal(cast.targetId,'companion');
+   assert.equal(cast.targetId,'hero');
    assert.equal(cast.burstCount,5);
    assert.equal(Number((cast.impactAt-cast.at).toFixed(2)),.21);
  }
@@ -43,37 +74,56 @@ test('red dragon produces exactly five timed mouth breaths in each salvo',()=>{
    assert.equal(Number((casts[i].at-casts[i-1].at).toFixed(2)),.26);
  const hits=emitted.filter(e=>e.type==='attack'&&e.sourceId==='dragon');
  assert.equal(hits.length,5);
- assert.ok(hits.every(e=>e.breath&&e.damage===3&&e.targetId==='companion'));
- assert.equal(b.state.companion.hp,55);
- assert.equal(b.state.hero.hp,1200);
- assert.equal(b.state.reward,20,'dragon fire does not grant kill rewards');
+ assert.ok(hits.every(e=>e.breath&&e.damage===3&&e.targetId==='hero'));
+ assert.equal(b.state.hero.hp,1185);
 });
-test('dragon re-aims later flame pulses after the wolf dies, without ghost damage',()=>{
- const b=bossFight({wolfHp:6});
- const emitted=b.advance(4.2,available);
- const casts=emitted.filter(e=>e.type==='cast'&&e.sourceId==='dragon');
- assert.equal(casts.length,5);
- assert.deepEqual(casts.map(e=>e.targetId),['companion','companion','hero','hero','hero']);
- assert.equal(b.state.companion.hp,0);
- assert.equal(b.state.enemyTargetId,'hero');
- assert.equal(b.state.hero.hp,1191);
- assert.equal(emitted.filter(e=>e.type==='death'&&e.id==='companion').length,1);
- assert.equal(emitted.filter(e=>e.type==='attack'&&e.sourceId==='dragon').length,5);
-});
-test('pausing dragon during breath freezes pending pulses and fire impacts',()=>{
+
+test('unequipped wolf also causes five flames directed only at hero',()=>{
  const b=bossFight();
- const opened=b.advance(2.8,available);
- assert.equal(opened.filter(e=>e.type==='cast'&&e.sourceId==='dragon').length,1);
- const time=b.state.elapsed;
+ b.setCompanionEnabled(false);
+ assert.equal(b.state.enemyTargetId,'hero');
+ const emitted=b.advance(4.2,available);
+ assert.equal(emitted.filter(e=>e.type==='cast'&&e.sourceId==='dragon').length,5);
+ assert.ok(emitted.filter(e=>e.type==='attack'&&e.sourceId==='dragon')
+   .every(e=>e.targetId==='hero'&&e.projectile==='magic'));
+ assert.equal(emitted.some(e=>e.dragonSwipe),false);
+});
+
+test('pause during breathing holds all later cast and impact events',()=>{
+ const b=bossFight();
+ b.setCompanionEnabled(false);
+ const first=b.advance(2.8,available);
+ assert.equal(first.filter(e=>e.type==='cast'&&e.sourceId==='dragon').length,1);
+ const elapsed=b.state.elapsed;
  b.pause();
  assert.deepEqual(b.advance(10,available),[]);
- assert.equal(b.state.elapsed,time);
+ assert.equal(b.state.elapsed,elapsed);
  b.resume();
- const resumed=b.advance(1.4,available);
- assert.equal(resumed.filter(e=>e.type==='cast'&&e.sourceId==='dragon').length,4);
- assert.equal(resumed.filter(e=>e.type==='attack'&&e.sourceId==='dragon').length,5);
- assert.equal(b.state.companion.hp,55);
+ const continued=b.advance(1.4,available);
+ assert.equal(continued.filter(e=>e.type==='cast'&&e.sourceId==='dragon').length,4);
+ assert.equal(continued.filter(e=>e.type==='attack'&&e.sourceId==='dragon').length,5);
+ assert.equal(b.state.hero.hp,1185);
 });
+
+test('killing dragon mid-breath cancels unreleased volleys and in-flight fire damage',()=>{
+ const b=bossFight();
+ b.setCompanionEnabled(false);
+ const first=b.advance(2.8,available);
+ assert.equal(first.filter(e=>e.type==='cast'&&e.sourceId==='dragon').length,1);
+ b.updateHeroStats({heroDamage:500});
+ const after=b.advance(.8,available);
+ assert.ok(after.some(e=>e.type==='death'&&e.id==='dragon'));
+ assert.equal(b.state.phase,'victory');
+ const casts=first.concat(after).filter(e=>e.type==='cast'&&e.sourceId==='dragon');
+ assert.ok(casts.length>1&&casts.length<5,'fire is cut short at dragon death');
+ const hits=first.concat(after).filter(e=>e.type==='attack'&&e.sourceId==='dragon');
+ assert.ok(hits.length<casts.length,'some flames were still travelling at death');
+ const health=b.state.hero.hp;
+ assert.deepEqual(b.advance(15,available),[],'no post-mortem casts or attacks');
+ assert.equal(b.state.hero.hp,health,'no post-mortem damage');
+ assert.equal(b.state.reward,25,'dragon kill is rewarded once');
+});
+
 test('dragon mouth is anchored to native frame pixels and follows rendered responsive canvas',()=>{
  const desktop={left:300,top:70,width:164,height:128.8};
  const frame=dragon.frameAt(0,'attack','left');
@@ -96,6 +146,7 @@ test('dragon flame salvo does not alter the existing non-dragon spell and bow be
  assert.equal(tick,1.2);
  assert.equal(base.getArrowSchedule()[0].at,3.6);
  const boss=bossFight();
+ boss.setCompanionEnabled(false);
  boss.advance(4.2,available);
  const casts=boss.getArrowSchedule().filter(s=>s.sourceId==='hero');
  assert.equal(casts.length,1);

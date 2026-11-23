@@ -530,6 +530,13 @@
           continue;
         }
         clearStatus(actors[event.id]);
+        if(event.id==='dragon'){
+          // Boss death is authoritative. No flames, cast particles or
+          // dragon-generated damage numbers may outlive the dragon sprite.
+          removeEffects(effect=>effect.sourceId!=='dragon'
+            && effect.type!=='dragon-breath');
+          actors.dragon.animation=null;
+        }
         for(const [id,impact]of pendingIceImpacts)if(impact.targetId===event.id)pendingIceImpacts.delete(id);
         removeEffects(effect=>effect.type!=='spell'||effect.targetId!==event.id||effect.landed);
         let rewardSaved = true, receivedReward = event.reward;
@@ -541,7 +548,8 @@
         }
         $('#status').textContent = event.id === 'hero' ? 'Герой пал. Монеты за побеждённых врагов сохранены.' : rewardSaved ? `${actors[event.id].label} побеждён. +${receivedReward} монет.` : `${actors[event.id].label} побеждён. Не удалось сохранить награду — проверь доступ к хранилищу.`;
       } else if(event.type==='wave_clear'){
-        removeEffects(effect=>effect.type!=='spell'||effect.landed);
+        removeEffects(effect=>effect.type!=='dragon-breath'
+          && (effect.type!=='spell'||effect.landed));
         beginSceneTransition('wave-out',event.at);
         $('#status').textContent=`Волна ${event.waveNumber} пройдена.`;
         updateControls();
@@ -554,6 +562,11 @@
         $('#status').textContent=`Волна ${event.waveNumber} из ${event.waveCount}: ${event.enemies[0].type==='dragon'?'красный дракон':event.enemies.length===2?'два лучника':event.enemies[0].type==='orc'?'орк':'один лучник'}.`;
         updateControls();
       } else if (event.type === 'end') {
+        // Terminal transitions must not freeze a visible breath in place
+        // while the result/auto-restart countdown is running.
+        removeEffects(effect=>effect.type!=='dragon-breath'
+          && effect.sourceId!=='dragon'
+          && (effect.type!=='spell'||effect.landed));
         pendingIceImpacts.clear();for(const actor of Object.values(actors))clearStatus(actor);
         restartRemaining=2;
         resultSummary=event.result==='victory'?`Все ${battle.getState().waveCount} волн пройдены. За бой: +${creditedRunGold} монет.`:`Герой пал. За бой сохранено: +${creditedRunGold} монет.`;
@@ -846,6 +859,13 @@
     const field = battlefield.getBoundingClientRect();
     for (let i=effects.length-1;i>=0;i--) {
       const effect = effects[i], age = activeTime - effect.at;
+      // Fail safe for any animation/order-of-events race: a flame is only
+      // allowed while its owner exists, is alive and the battle is running.
+      if(effect.type==='dragon-breath'){
+        const alive=state.phase==='running'
+          &&state.enemies.some(unit=>unit.id==='dragon'&&unit.hp>0);
+        if(!alive){effect.element.remove();effects.splice(i,1);continue;}
+      }
       if (age+1e-6 >= effect.duration || reducedMotion.matches) { effect.element.remove(); effects.splice(i,1); continue; }
       if(effect.type==='arrow'&&age<0){effect.element.hidden=true;effect.element.style.visibility='hidden';continue;}
       if(effect.type==='arrow'){effect.element.hidden=false;effect.element.style.visibility='visible';}
@@ -957,7 +977,8 @@
       const reach=state.enemyTargetId==='companion'
         ?size*.32+heroSize*.18+.01:heroSize*.23+size*.34+.01;
       return [enemy.id,Boolean(enemy.hp>0
-        &&(enemy.type==='dragon'||Math.abs(actor.x-defenderX)<=reach)
+        &&(enemy.type==='dragon'&&state.enemyTargetId==='hero'
+          ||Math.abs(actor.x-defenderX)<=reach)
         &&Math.abs(actor.depth-defenderDepth)<=.06)];
     })):undefined;
     return {

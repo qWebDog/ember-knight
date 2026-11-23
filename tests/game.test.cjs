@@ -1225,7 +1225,7 @@ test('animated Red Dragon boss appears after the old three waves with flapping w
 });
 
 test('dragon hovers at fixed x and breathes a five-pulse stream from its animated mouth, never throwing fireballs',async()=>{
- const ui=createHarness({weapon:'bow',outfit:'wanderer',dragonBoss:true,wolfEquipped:true,
+ const ui=createHarness({weapon:'bow',outfit:'wanderer',dragonBoss:true,wolfEquipped:false,
    combatOptions:{heroDamage:300,heroMaxHp:1800}});
  await ui.loadAllImages();
  ui.runUntil(()=>ui.state().waveIndex===3,45);
@@ -1260,4 +1260,51 @@ test('dragon hovers at fixed x and breathes a five-pulse stream from its animate
  assert.equal(Number.parseFloat(dragonActor.style.left),firstX,'flame volley cannot slide dragon toward target');
  const hit=ui.events.filter(e=>e.type==='attack'&&e.sourceId==='dragon');
  assert.ok(hit.length>=4,'fire tongues produce real engine-confirmed hits');
+});
+
+test('hovering dragon hits equipped wolf with claws, not with persistent fire',async()=>{
+ const ui=createHarness({weapon:'bow',outfit:'wanderer',dragonBoss:true,wolfEquipped:true,
+   combatOptions:{heroDamage:300,heroMaxHp:1800}});
+ await ui.loadAllImages();
+ ui.runUntil(()=>ui.state().waveIndex===3,45);
+ ui.battle.updateHeroStats({heroDamage:1});
+ assert.ok(ui.state().companion.hp>0,'wolf must be alive at boss entrance');
+ const boss=ui.node('[data-fighter="dragon"]');
+ const initialX=Number.parseFloat(boss.style.left);
+ ui.runUntil(()=>ui.events.some(e=>e.type==='attack'&&e.sourceId==='dragon'
+   &&e.projectile==='claw'),18);
+ const claw=ui.events.find(e=>e.sourceId==='dragon'&&e.projectile==='claw');
+ assert.equal(claw.targetId,'companion');
+ assert.equal(claw.damage,12);
+ assert.ok(ui.state().companion.hp<ui.state().companion.maxHp);
+ assert.equal(ui.events.filter(e=>e.type==='cast'&&e.sourceId==='dragon').length,0,
+   'no fireball or fire breath may be aimed at a living wolf');
+ assert.equal(ui.node('.battlefield').children.filter(el=>el.className==='dragon-breath').length,0);
+ assert.equal(Number.parseFloat(boss.style.left),initialX,
+   'dragon stays hovering while swiping at the wolf');
+});
+
+test('flames and later breath pulses disappear instantly when dragon dies during a salvo',async()=>{
+ const ui=createHarness({weapon:'bow',outfit:'wanderer',dragonBoss:true,wolfEquipped:false,
+   combatOptions:{heroDamage:300,heroMaxHp:1800}});
+ await ui.loadAllImages();
+ ui.runUntil(()=>ui.state().waveIndex===3,45);
+ ui.battle.updateHeroStats({heroDamage:1});
+ ui.runUntil(()=>ui.events.some(e=>e.type==='cast'&&e.sourceId==='dragon'),14);
+ ui.runFor(.1);
+ const visible=()=>ui.node('.battlefield').children.filter(el=>el.className==='dragon-breath');
+ assert.ok(visible().length>0,'fire exists while dragon is alive and exhaling');
+ ui.battle.updateHeroStats({heroDamage:500});
+ ui.runUntil(()=>ui.events.some(e=>e.type==='death'&&e.id==='dragon'),3);
+ assert.equal(ui.state().phase,'victory');
+ assert.equal(visible().length,0,'every flame is removed in the death event, not at timeout');
+ const casts=ui.events.filter(e=>e.type==='cast'&&e.sourceId==='dragon').length;
+ const hits=ui.events.filter(e=>e.type==='attack'&&e.sourceId==='dragon').length;
+ const hp=ui.state().hero.hp;
+ ui.runFor(1.4);
+ assert.equal(visible().length,0,'fire cannot linger during the result transition');
+ assert.equal(ui.events.filter(e=>e.type==='cast'&&e.sourceId==='dragon').length,casts,
+   'no extra flame volleys after the boss is killed');
+ assert.equal(ui.events.filter(e=>e.type==='attack'&&e.sourceId==='dragon').length,hits);
+ assert.equal(ui.state().hero.hp,hp,'no hidden damage from vanished fire');
 });
