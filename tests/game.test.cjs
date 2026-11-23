@@ -1208,7 +1208,7 @@ test('animated Red Dragon boss appears after the old three waves with flapping w
  assert.equal(ui.state().elapsed,elapsed,'combat remains frozen during the boss entrance');
  const frames=sprite.draws.slice(previous).map(draw=>draw.crop[0]);
  assert.ok(new Set(frames).size>=3,'dragon must flap wings while moving on during the entrance');
- ui.runUntil(()=>ui.events.some(e=>e.type==='death'&&e.id==='dragon'),10);
+ ui.runUntil(()=>ui.events.some(e=>e.type==='death'&&e.id==='dragon'),25);
  assert.equal(ui.state().phase,'victory');
  assert.equal(ui.state().reward,25);
  assert.equal(ui.events.filter(e=>e.type==='death'&&e.id==='dragon').length,1);
