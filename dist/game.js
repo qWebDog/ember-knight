@@ -667,10 +667,10 @@
     const attacking = !walking && !blocking && !ended && age >= 0 && age < (actor.animation?.duration || 0) && unit.hp > 0 && !reducedMotion.matches;
     const kind = walking ? 'walk' : blocking ? 'block' : attacking ? 'attack' : 'idle';
     const descriptor = attacking && actor.images.attacks?.[actor.animation.variant] || actor.images[kind];
-    // The LPC Orc atlas uses row 0 for its BACK and row 2 for its FACE.
-    // Show the front-facing walk on its approach so it does not run
-    // toward the player with its back/shield hiding the face.
-    const row = walking ? id==='hero'?walkDirection:id==='orc'?2:actor.direction : descriptor.row;
+    // LPC directions: 0=back, 1=left, 2=front, 3=right.
+    // When moving toward a hero/wolf on the left, Orc must use the LEFT
+    // profile (row 1), not the front-facing row 2.
+    const row = walking ? (id==='hero'?walkDirection:actor.direction) : descriptor.row;
     const tile = descriptor.tile || 64, origin = descriptor.origin || 0;
     const cell = walking ? 1 + Math.floor((distance / .75 % 1) * 8) : attacking ? Math.min(descriptor.frames-1,Math.floor((age+(actor.animation?.arrowCue?1e-6:0)) / actor.animation.duration * descriptor.frames)) : Number.isInteger(descriptor.still) ? descriptor.still : id === 'hero' && auto && unit.hp > 0 && !ended && !reducedMotion.matches ? Math.floor(activeTime / .65) % 2 : 0;
     const key = `${kind}-${descriptor.image.src}-${cell}-${row}-${tile}-${origin}`;

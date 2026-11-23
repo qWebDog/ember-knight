@@ -574,8 +574,8 @@ test('the last-wave orc walks towards melee and ranged heroes, then uses native 
   const walking=ui.node('#enemy-orc').draws.filter(draw=>draw.src.endsWith('orc-walk.png'));
   assert.ok(walking.some(draw=>draw.crop[0]>0));
   const strides=walking.filter(draw=>draw.crop[0]>0);
-  assert.ok(strides.every(draw=>draw.crop[1]===128),
-   'Moving Orc uses the front-facing LPC walk row; static idle frames may be side-on');
+  assert.ok(strides.every(draw=>draw.crop[1]===64),
+   'Orc moving left toward the hero must use the side-facing LPC row 1, not the front row 2');
   assert.ok(!ui.events.slice(start).some(event=>event.type==='attack'&&event.sourceId==='orc'));
   ui.runUntil(()=>ui.inMeleeRange());assert.ok(Math.abs(ui.orcX()-ui.heroX()-64*.57)<.01);
   ui.runUntil(()=>ui.node('#enemy-orc').draws.some(draw=>draw.src.endsWith('orc-attack.png')));
@@ -1329,12 +1329,14 @@ test('Orc plays advancing walk cells while chasing the Archer wolf instead of sl
  assert.ok(orc.motionHistory.includes('walk'),
    'the moving Orc must expose the walk pose, not the idle pose');
  const walkCells=canvas.draws.slice(drawsStart).filter(draw=>
-   draw.crop&&draw.crop[2]===64&&draw.crop[1]===128);
+   draw.crop&&draw.crop[2]===64&&draw.crop[1]===64);
  const gait=walkCells.map(draw=>draw.crop[0]);
  assert.ok(new Set(gait).size>=3,
-   'Orc must cycle at least three front-facing leg frames');
+   'Orc must cycle at least three side-facing leg frames while pursuing the wolf');
  assert.ok(walkCells.length>=3,
-   'Orc walks facing the viewer, never showing its back');
+   'Orc must walk in left profile toward the wolf, not stare at the viewer');
+ assert.equal(canvas.draws.at(-1).crop[1],64,
+   'Orc walking left must keep facing the wolf throughout the animation');
  assert.ok(ui.state().enemies[0].hp>0,'test observes an Orc that is still alive');
 });
 test('Archer and living wolf exit the completed wave in the SAME direction',async()=>{
