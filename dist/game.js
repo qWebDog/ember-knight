@@ -316,9 +316,10 @@
     if(!sceneTransition)return;
     const transition=sceneTransition;
     // A wave reset gets one fully covered paint even if a frame crosses its boundary.
-    if(transition.fresh){transition.at=activeTime;transition.lastTime=activeTime;transition.fresh=false;}
+    const justSpawned=transition.fresh;
+    if(justSpawned){transition.at=activeTime;transition.lastTime=activeTime;transition.fresh=false;}
     const age=transition.phase==='wave-in'&&heroEntrance
-      ?(transition.fresh?0:heroEntrance.elapsed)
+      ?(justSpawned?0:heroEntrance.elapsed)
       :Math.max(0,activeTime-transition.at);
     const outgoing=transition.phase==='wave-out'||transition.phase==='victory';
     if(outgoing&&state.hero.hp>0){
