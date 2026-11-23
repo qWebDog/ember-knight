@@ -65,7 +65,9 @@ test('Mage stays half display size but retains all native 64px sprite detail; ot
      assert.equal(canvas.style.width,'50%');
      assert.equal(canvas.style.height,'50%');
      assert.equal(canvas.style.left,'25%');
-     assert.equal(canvas.style.top,'42.1875%');
+     assert.equal(canvas.style.top,'50%');
+     // Mage canvas is 50% tall and starts at 50%: bottom aligned to stage.
+     assert.equal(parseFloat(canvas.style.top)+parseFloat(canvas.style.height),100);
    }else{
      assert.equal(canvas.style.width,`${tile/64*100}%`);
      assert.equal(canvas.style.height,`${tile/64*100}%`);
@@ -73,7 +75,7 @@ test('Mage stays half display size but retains all native 64px sprite detail; ot
      assert.equal(canvas.style.top,`${-origin/64*100}%`);
    }
  }
- assert.ok(html.includes('src="app.js?v=20261123-mage-crisp-7"'),
+ assert.ok(html.includes('src="app.js?v=20261123-mage-ground-8"'),
    'force mobile browser to load the full-resolution Mage preview');
 });
 test('all eighteen weapon and clothing-color choices preview, rotate and retain the independent skin',async()=>{
