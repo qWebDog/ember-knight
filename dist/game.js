@@ -656,7 +656,11 @@
         if(unit.hp<=0)continue;
         const enemy=actors[unit.id];
         const enemySize=enemy.element.offsetWidth;
-        const separation=heroSize*.23+enemySize*.34;
+        // Exact shared stopping distance with the wolf's pursuit logic:
+        // wolf.destination = enemy.x - (enemySize*.32 + wolfSize*.18).
+        // Different distances make both actors endlessly walk past contact.
+        const separation=state.enemyTargetId==='companion'
+          ?enemySize*.32+heroSize*.18:heroSize*.23+enemySize*.34;
         const goalX=defenderX+separation;
         const gap=goalX-enemy.x;
         if(isFrozen(unit,state))continue;
@@ -865,7 +869,8 @@
     const defenderDepth=state.enemyTargetId==='companion'?pose?.depth??actors.hero.depth:actors.hero.depth;
     const enemyCanAttack=wolfBattle?Object.fromEntries(state.enemies.map(enemy=>{
       const actor=actors[enemy.id],size=actor.element.offsetWidth;
-      const reach=heroSize*.23+size*.34+.01;
+      const reach=state.enemyTargetId==='companion'
+        ?size*.32+heroSize*.18+.01:heroSize*.23+size*.34+.01;
       return [enemy.id,Boolean(enemy.hp>0
         &&Math.abs(actor.x-defenderX)<=reach
         &&Math.abs(actor.depth-defenderDepth)<=.06)];
