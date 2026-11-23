@@ -416,23 +416,6 @@
     battlefield.appendChild(element);effects.push(effect);
     return effect;
   }
-  // A dragon exhales a connected jet of fire starting at its visible
-  // muzzle. Never use the generic detached magic-orb projectile.
-  function addDragonBreath(event){
-    if(reducedMotion.matches)return;
-    const element=document.createElement('div');
-    element.className='dragon-breath';
-    element.dataset.source='dragon';
-    element.dataset.target=event.targetId;
-    element.dataset.burst=String(event.burstIndex);
-    element.setAttribute('aria-hidden','true');
-    battlefield.appendChild(element);
-    effects.push({element,type:'dragon-breath',sourceId:'dragon',targetId:event.targetId,
-      castId:event.castId,at:event.at,impactAt:event.impactAt,
-      flightDuration:event.flightDuration,afterglow:event.impactDuration,
-      duration:event.flightDuration+event.impactDuration,
-      burstIndex:event.burstIndex,landed:false});
-  }
   function addSpell(event) {
     if (reducedMotion.matches) return;
     const magic=event.sourceId==='hero'?(event.magic==='ice'?'ice':'fire')
@@ -440,11 +423,19 @@
     const element=document.createElement('canvas');
     element.width=64; element.height=64; element.className='spell-projectile';
     element.dataset.magic=magic; element.dataset.source=event.sourceId; element.dataset.target=event.targetId;
+    if(event.breath&&event.sourceId==='dragon'){
+      // Each pulse is one independent fire spell, exactly like a Mage orb,
+      // spawned from the dragon's visible mouth rather than body centre.
+      element.dataset.dragonVolley='true';
+      element.dataset.burst=String(event.burstIndex);
+    }
     element.setAttribute('aria-hidden','true'); battlefield.appendChild(element);
     effects.push({element,type:'spell',sourceId:event.sourceId,targetId:event.targetId,magic,image:spellImages[magic],
       castId:event.castId,at:event.at,impactAt:event.impactAt,appearDuration:event.appearDuration,
       flightDuration:event.flightDuration,impactDuration:event.impactDuration,
-      duration:event.appearDuration+event.flightDuration+event.impactDuration,landed:false,lastKey:null,angle:null});
+      duration:event.appearDuration+event.flightDuration+event.impactDuration,
+      dragonVolley:Boolean(event.breath&&event.sourceId==='dragon'),
+      mouthOrigin:null,landed:false,lastKey:null,angle:null});
   }
   function removeEffects(keep) {
     for(let i=effects.length-1;i>=0;i--)if(!keep(effects[i])){effects[i].element.remove();effects.splice(i,1);}
@@ -498,8 +489,7 @@
       if (event.type === 'cast') {
         if(event.sourceId==='hero'&&event.magic==='ice')pendingIceImpacts.set(event.castId,{at:event.impactAt,targetId:event.targetId});
         actors[event.sourceId].animation={at:event.at,duration:event.animationDuration||.66};
-        if(event.breath&&event.sourceId==='dragon')addDragonBreath(event);
-        else addSpell(event);
+        addSpell(event);
       } else if (event.type === 'attack') {
         // Visual bow wind-up already began before impact. Do not restart it
         // at the moment the arrow reaches its target.
@@ -508,7 +498,7 @@
             variant:event.variant,heavy:event.heavy,counter:event.counter,swipe:event.dragonSwipe};
         if (event.impact) {
           pendingIceImpacts.delete(event.castId);
-          const spell=effects.find(effect=>(effect.type==='spell'||effect.type==='dragon-breath')&&effect.castId===event.castId);
+          const spell=effects.find(effect=>effect.type==='spell'&&effect.castId===event.castId);
           if(spell){spell.landed=true;spell.impactAt=event.at;spell.duration=event.at-spell.at+spell.impactDuration;}
         }
         if(!event.dot){
@@ -534,8 +524,7 @@
         if(event.id==='dragon'){
           // Boss death is authoritative. No flames, cast particles or
           // dragon-generated damage numbers may outlive the dragon sprite.
-          removeEffects(effect=>effect.sourceId!=='dragon'
-            && effect.type!=='dragon-breath');
+          removeEffects(effect=>effect.sourceId!=='dragon');
           actors.dragon.animation=null;
         }
         for(const [id,impact]of pendingIceImpacts)if(impact.targetId===event.id)pendingIceImpacts.delete(id);
@@ -549,8 +538,7 @@
         }
         $('#status').textContent = event.id === 'hero' ? 'Герой пал. Монеты за побеждённых врагов сохранены.' : rewardSaved ? `${actors[event.id].label} побеждён. +${receivedReward} монет.` : `${actors[event.id].label} побеждён. Не удалось сохранить награду — проверь доступ к хранилищу.`;
       } else if(event.type==='wave_clear'){
-        removeEffects(effect=>effect.type!=='dragon-breath'
-          && (effect.type!=='spell'||effect.landed));
+        removeEffects(effect=>effect.type!=='spell'||effect.landed);
         beginSceneTransition('wave-out',event.at);
         $('#status').textContent=`Волна ${event.waveNumber} пройдена.`;
         updateControls();
@@ -565,8 +553,7 @@
       } else if (event.type === 'end') {
         // Terminal transitions must not freeze a visible breath in place
         // while the result/auto-restart countdown is running.
-        removeEffects(effect=>effect.type!=='dragon-breath'
-          && effect.sourceId!=='dragon'
+        removeEffects(effect=>effect.sourceId!=='dragon'
           && (effect.type!=='spell'||effect.landed));
         pendingIceImpacts.clear();for(const actor of Object.values(actors))clearStatus(actor);
         restartRemaining=2;
@@ -651,7 +638,10 @@
     const attacking = !walking && !blocking && !ended && age >= 0 && age < (actor.animation?.duration || 0) && unit.hp > 0 && !reducedMotion.matches;
     const kind = walking ? 'walk' : blocking ? 'block' : attacking ? 'attack' : 'idle';
     const descriptor = attacking && actor.images.attacks?.[actor.animation.variant] || actor.images[kind];
-    const row = walking ? id === 'hero' ? walkDirection : actor.direction : descriptor.row;
+    // The LPC Orc atlas uses row 0 for its BACK and row 2 for its FACE.
+    // Show the front-facing walk on its approach so it does not run
+    // toward the player with its back/shield hiding the face.
+    const row = walking ? id==='hero'?walkDirection:id==='orc'?2:actor.direction : descriptor.row;
     const tile = descriptor.tile || 64, origin = descriptor.origin || 0;
     const cell = walking ? 1 + Math.floor((distance / .75 % 1) * 8) : attacking ? Math.min(descriptor.frames-1,Math.floor((age+(actor.animation?.arrowCue?1e-6:0)) / actor.animation.duration * descriptor.frames)) : Number.isInteger(descriptor.still) ? descriptor.still : id === 'hero' && auto && unit.hp > 0 && !ended && !reducedMotion.matches ? Math.floor(activeTime / .65) % 2 : 0;
     const key = `${kind}-${descriptor.image.src}-${cell}-${row}-${tile}-${origin}`;
@@ -893,9 +883,9 @@
     const field = battlefield.getBoundingClientRect();
     for (let i=effects.length-1;i>=0;i--) {
       const effect = effects[i], age = activeTime - effect.at;
-      // Fail safe for any animation/order-of-events race: a flame is only
-      // allowed while its owner exists, is alive and the battle is running.
-      if(effect.type==='dragon-breath'){
+      // Each dragon orb is finite, removed on impact or immediately on
+      // source death, and never survives result screens or wave transitions.
+      if(effect.dragonVolley){
         const alive=state.phase==='running'
           &&state.enemies.some(unit=>unit.id==='dragon'&&unit.hp>0);
         if(!alive){effect.element.remove();effects.splice(i,1);continue;}
@@ -908,39 +898,30 @@
       if(!sourceElement||!targetElement){effect.element.remove();effects.splice(i,1);continue;}
       const target = targetElement.getBoundingClientRect(), source = sourceElement.getBoundingClientRect();
       const p = Math.max(0,age/effect.duration), tx=target.left+target.width/2-field.left, ty=target.top+target.height*.4-field.top;
-      if(effect.type==='dragon-breath'){
-        const dragon=actors.dragon;
-        const canvas=dragon?.canvas;
-        if(!canvas||!dragon.dragonFrame){
-          effect.element.remove();effects.splice(i,1);continue;
-        }
-        // The mouth is measured on the rendered (scaled, floating) canvas,
-        // not a generic 28%-of-fighter projectile origin. As the head moves
-        // through each original attack frame, the flame remains attached.
-        const mouth=window.EmberDragon.mouthAt(canvas.getBoundingClientRect(),dragon.dragonFrame);
-        const sx=mouth.x-field.left,sy=mouth.y-field.top;
-        const dx=tx-sx,dy=target.top+target.height*.52-field.top-sy;
-        const distance=Math.hypot(dx,dy);
-        const growth=Math.min(1,Math.max(.035,(age+.012)/effect.flightDuration));
-        const linger=Math.min(1,Math.max(0,(effect.duration-age)/effect.afterglow));
-        const angle=Math.atan2(dy,dx)*180/Math.PI;
-        effect.element.style.left=`${sx}px`;
-        effect.element.style.top=`${sy}px`;
-        effect.element.style.width=`${Math.max(2,distance*growth)}px`;
-        effect.element.style.height=`${Math.max(12,22+6*Math.sin(age*32+effect.burstIndex))}px`;
-        effect.element.style.transform=`translateY(-50%) rotate(${angle}deg) scaleY(${.7+.3*linger})`;
-        effect.element.style.opacity=String(age<=effect.flightDuration?1:linger);
-        effect.element.dataset.phase=age<effect.flightDuration?'exhale':'flare';
-        continue;
-      }
       if (effect.type === 'spell') {
         const phase=effect.landed?'impact':age+1e-6<effect.appearDuration?'appear':'flight';
         const row=phase==='appear'?0:phase==='flight'?1:2;
         const phaseAge=Math.max(0,phase==='appear'?age:phase==='flight'?age-effect.appearDuration:activeTime-effect.impactAt);
         const phaseDuration=phase==='appear'?effect.appearDuration:phase==='flight'?effect.flightDuration:effect.impactDuration;
         const cell=phase==='flight'?Math.floor((phaseAge+1e-6)/(phaseDuration/6))%6:Math.min(5,Math.floor((phaseAge+1e-6)/(phaseDuration/6)));
-        const sx=source.left+source.width*(effect.sourceId==='hero'?.88:.28)-field.left;
-        const sy=source.top+source.height*(effect.sourceId==='hero'?.67:.53)-field.top;
+        let sx=source.left+source.width*(effect.sourceId==='hero'?.88:.28)-field.left;
+        let sy=source.top+source.height*(effect.sourceId==='hero'?.67:.53)-field.top;
+        if(effect.dragonVolley){
+          // Snapshot muzzle position ONCE at this shot's launch. Never
+          // tether its trajectory to later wing/head frames.
+          if(!effect.mouthOrigin){
+            const dragon=actors.dragon;
+            if(!dragon?.canvas||!dragon.dragonFrame){
+              effect.element.remove();effects.splice(i,1);continue;
+            }
+            const mouth=window.EmberDragon.mouthAt(
+              dragon.canvas.getBoundingClientRect(),dragon.dragonFrame);
+            effect.mouthOrigin={x:mouth.x-field.left,y:mouth.y-field.top};
+            effect.element.dataset.muzzleX=String(effect.mouthOrigin.x);
+            effect.element.dataset.muzzleY=String(effect.mouthOrigin.y);
+          }
+          sx=effect.mouthOrigin.x;sy=effect.mouthOrigin.y;
+        }
         const hitY=target.top+target.height*.55-field.top;
         const progress=phase==='appear'?0:phase==='impact'?1:Math.min(1,phaseAge/effect.flightDuration);
         if(phase!=='impact'||effect.angle===null)effect.angle=Math.atan2(hitY-sy,tx-sx)*180/Math.PI+180;

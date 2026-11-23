@@ -57,7 +57,7 @@ test('after defeating the wolf the dragon switches to five mouth-fire volleys ag
  assert.equal(swipes.filter(e=>e.type==='cast'&&e.sourceId==='dragon').length,0);
  assert.equal(b.state.companion.hp,0);
  assert.equal(b.state.enemyTargetId,'hero');
- const emitted=b.advance(4.2,available);
+ const emitted=b.advance(4.3,available);
  const casts=emitted.filter(e=>e.type==='cast'&&e.sourceId==='dragon');
  assert.deepEqual([combat.dragonBreath.bursts,combat.dragonBreath.spacing,
    combat.dragonBreath.damage],[5,.26,3]);
@@ -68,7 +68,7 @@ test('after defeating the wolf the dragon switches to five mouth-fire volleys ag
    assert.equal(cast.magic,'fire');
    assert.equal(cast.targetId,'hero');
    assert.equal(cast.burstCount,5);
-   assert.equal(Number((cast.impactAt-cast.at).toFixed(2)),.21);
+   assert.equal(Number((cast.impactAt-cast.at).toFixed(2)),.42);
  }
  for(let i=1;i<casts.length;i++)
    assert.equal(Number((casts[i].at-casts[i-1].at).toFixed(2)),.26);
@@ -82,7 +82,7 @@ test('unequipped wolf also causes five flames directed only at hero',()=>{
  const b=bossFight();
  b.setCompanionEnabled(false);
  assert.equal(b.state.enemyTargetId,'hero');
- const emitted=b.advance(4.2,available);
+ const emitted=b.advance(4.3,available);
  assert.equal(emitted.filter(e=>e.type==='cast'&&e.sourceId==='dragon').length,5);
  assert.ok(emitted.filter(e=>e.type==='attack'&&e.sourceId==='dragon')
    .every(e=>e.targetId==='hero'&&e.projectile==='magic'));
@@ -99,7 +99,7 @@ test('pause during breathing holds all later cast and impact events',()=>{
  assert.deepEqual(b.advance(10,available),[]);
  assert.equal(b.state.elapsed,elapsed);
  b.resume();
- const continued=b.advance(1.4,available);
+ const continued=b.advance(1.7,available);
  assert.equal(continued.filter(e=>e.type==='cast'&&e.sourceId==='dragon').length,4);
  assert.equal(continued.filter(e=>e.type==='attack'&&e.sourceId==='dragon').length,5);
  assert.equal(b.state.hero.hp,1185);
@@ -147,9 +147,25 @@ test('dragon flame salvo does not alter the existing non-dragon spell and bow be
  assert.equal(base.getArrowSchedule()[0].at,3.6);
  const boss=bossFight();
  boss.setCompanionEnabled(false);
- boss.advance(4.2,available);
+ boss.advance(4.3,available);
  const casts=boss.getArrowSchedule().filter(s=>s.sourceId==='hero');
  assert.equal(casts.length,1);
  assert.equal(casts[0].targetId,'dragon');
  assert.equal(casts[0].at,9.0);
+});
+
+test('five dragon fireballs form one finite volley with a clear pause before the next volley',()=>{
+ const b=bossFight();b.setCompanionEnabled(false);
+ let events=b.advance(5.5,available);
+ const spells=events.filter(e=>e.type==='cast'&&e.sourceId==='dragon');
+ assert.equal(spells.length,5,'exactly five independent launches in one attack cycle');
+ assert.ok(spells.every(e=>e.breath&&e.magic==='fire'&&e.projectile==='breath'));
+ assert.deepEqual(spells.map(e=>e.burstIndex),[0,1,2,3,4]);
+ assert.equal(events.filter(e=>e.type==='attack'&&e.sourceId==='dragon').length,5);
+ assert.equal(b.state.hero.hp,1185);
+ assert.equal(b.advance(.09,available).filter(e=>e.sourceId==='dragon').length,0,
+   'all five fireballs ended and there is a visible gap before the next salvo');
+ events=b.advance(.21,available);
+ assert.equal(events.filter(e=>e.type==='cast'&&e.sourceId==='dragon').length,1,
+   'next volley is scheduled on a new distinct attack interval');
 });

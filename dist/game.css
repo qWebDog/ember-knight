@@ -89,38 +89,20 @@ dialog{width:min(380px,calc(100% - 32px));max-height:calc(var(--app-height) - 32
 .battlefield .enemy-dragon.is-target:after{bottom:0}
 @media(max-width:700px){.battlefield .fighter.enemy-dragon{width:73px;height:78px}.battlefield .enemy-dragon canvas:not(.status-effect){width:127px!important;bottom:4px}.battlefield .enemy-dragon .enemy-health{top:-9px}}
 
-/* BOSS: mouth-anchored, five-pulse flame breath. No detached fireballs. */
-.battlefield .fighter.enemy-dragon{
-  transform:translateX(-50%) translateY(var(--dragon-hover,0px));
-  will-change:transform;
-}
-.battlefield .dragon-breath{
-  position:absolute;
+/* Dragon fire uses the SAME animated 64x64 fire spell as the Mage.
+ * Five separate short-lived projectiles; no continuous fire strip. */
+.battlefield .spell-projectile[data-dragon-volley="true"]{
   z-index:650;
-  height:26px;
-  width:2px;
-  transform-origin:0 50%;
+  width:calc(var(--enemy-size)*.75);
+  height:calc(var(--enemy-size)*.75);
+  filter:drop-shadow(0 0 4px #ff6d18);
+  image-rendering:pixelated;
   pointer-events:none;
-  border-radius:1px;
-  opacity:1;
-  background:linear-gradient(to bottom,
-    #fa4e0c 0%,#ffc02a 25%,#fff5a8 46%,#ffe054 56%,#ff6815 78%,#9f2710 100%);
-  clip-path:polygon(0 42%,5% 30%,11% 37%,17% 14%,23% 33%,30% 9%,
-    39% 26%,47% 7%,55% 30%,64% 8%,71% 30%,80% 18%,91% 38%,100% 50%,
-    90% 62%,82% 87%,73% 70%,65% 100%,57% 72%,50% 96%,40% 74%,
-    33% 95%,25% 66%,18% 80%,11% 62%,5% 70%,0 58%);
-  filter:drop-shadow(0 0 4px #ff4b10);
-}
-.battlefield .dragon-breath::before{
-  content:"";position:absolute;inset:38% 0;border-radius:2px;
-  background:linear-gradient(90deg,#fffbc4,#ffe274 50%,#ff9719);
-}
-.battlefield .dragon-breath::after{
-  content:"";position:absolute;inset:0;
-  background:repeating-linear-gradient(110deg,transparent 0 14px,#f936083d 15px 20px,transparent 21px 32px);
 }
 @media(max-width:700px){
-  .battlefield .dragon-breath{filter:drop-shadow(0 0 2px #ff4b10)}
+  .battlefield .spell-projectile[data-dragon-volley="true"]{
+    filter:drop-shadow(0 0 2px #ff6d18);
+  }
 }
 
 /* The third-wave Orc is twice the original LPC fighter's rendered size.

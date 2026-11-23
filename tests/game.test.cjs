@@ -1224,42 +1224,45 @@ test('animated Red Dragon boss appears after the old three waves with flapping w
  assert.equal(ui.events.filter(e=>e.type==='death'&&e.id==='dragon').length,1);
 });
 
-test('dragon hovers at fixed x and breathes a five-pulse stream from its animated mouth, never throwing fireballs',async()=>{
+test('dragon hovers and fires five separate Mage-style fireballs from its mouth',async()=>{
  const ui=createHarness({weapon:'bow',outfit:'wanderer',dragonBoss:true,wolfEquipped:false,
    combatOptions:{heroDamage:300,heroMaxHp:1800}});
  await ui.loadAllImages();
  ui.runUntil(()=>ui.state().waveIndex===3,45);
  ui.battle.updateHeroStats({heroDamage:1});
  const dragonActor=ui.node('[data-fighter="dragon"]');
- const center=Number.parseFloat(dragonActor.style.left);
+ const startX=Number.parseFloat(dragonActor.style.left);
  ui.runFor(.7);
- assert.equal(Number.parseFloat(dragonActor.style.left),center,
-   'dragon must keep hovering instead of pursuing the wolf');
- assert.ok(ui.node('#enemy-dragon').draws.length>=4,'wings flap in place');
+ assert.equal(Number.parseFloat(dragonActor.style.left),startX);
+ assert.ok(ui.node('#enemy-dragon').draws.length>=4,'dragon still flaps its wings while flying');
+ const orbs=()=>ui.node('.battlefield').children.filter(el=>
+   el.className==='spell-projectile'&&el.dataset.dragonVolley==='true');
  ui.runUntil(()=>ui.events.some(e=>e.type==='cast'&&e.sourceId==='dragon'),12);
- ui.runFor(.1);
- const breaths=ui.node('.battlefield').children.filter(e=>e.className==='dragon-breath');
- assert.ok(breaths.length>=1,'a connected fire tongue must appear');
- const flame=breaths[0],mouth=ui.node('#enemy-dragon').getBoundingClientRect();
- const src=require('../dist/dragon.js').mouthAt(mouth,{frame:12,direction:'left'});
- const actualX=Number.parseFloat(flame.style.left);
- const actualY=Number.parseFloat(flame.style.top);
- const arena=ui.node('.battlefield').getBoundingClientRect();
- assert.ok(Math.abs(actualX-(src.x-arena.left))<10,'flame begins at mouth, not body center');
- assert.ok(Math.abs(actualY-(src.y-arena.top))<10,'fire must leave from mouth height');
- assert.ok(Number.parseFloat(flame.style.width)>0,'the connected jet grows toward the enemy');
- assert.equal(flame.dataset.source,'dragon');
- assert.ok(['exhale','flare'].includes(flame.dataset.phase));
- assert.ok(ui.node('.battlefield').children.every(e=>!(
-   e.className==='spell-projectile'&&e.dataset.source==='dragon')),
-   'the old detached throwing projectile must never be spawned for dragon');
- const firstX=Number.parseFloat(dragonActor.style.left);
+ assert.ok(orbs().length>=1,'first fireball is rendered');
+ const first=orbs()[0],mouth=ui.node('#enemy-dragon').getBoundingClientRect();
+ const atlas=require('../dist/dragon.js');
+ const draw=ui.node('#enemy-dragon').draws.at(-1);
+ const frame={frame:Math.floor(draw.crop[1]/161)*4+Math.floor(draw.crop[0]/205),direction:'left'};
+ const point=atlas.mouthAt(mouth,frame),field=ui.node('.battlefield').getBoundingClientRect();
+ assert.ok(Math.abs(Number(first.dataset.muzzleX)-(point.x-field.left))<9,
+   'fireball launches from the animated mouth, not the torso');
+ assert.ok(Math.abs(Number(first.dataset.muzzleY)-(point.y-field.top))<9,
+   'fireball launches at mouth height');
+ assert.equal(first.dataset.magic,'fire');
+ assert.equal(first.dataset.burst,'0');
+ assert.ok(['flight','impact'].includes(first.dataset.phase));
  ui.runUntil(()=>ui.events.filter(e=>e.type==='cast'&&e.sourceId==='dragon').length>=5,10);
- const volley=ui.events.filter(e=>e.type==='cast'&&e.sourceId==='dragon').slice(0,5);
- assert.deepEqual(volley.map(e=>e.burstIndex),[0,1,2,3,4]);
- assert.equal(Number.parseFloat(dragonActor.style.left),firstX,'flame volley cannot slide dragon toward target');
- const hit=ui.events.filter(e=>e.type==='attack'&&e.sourceId==='dragon');
- assert.ok(hit.length>=4,'fire tongues produce real engine-confirmed hits');
+ const casts=ui.events.filter(e=>e.type==='cast'&&e.sourceId==='dragon').slice(0,5);
+ assert.deepEqual(casts.map(e=>e.burstIndex),[0,1,2,3,4]);
+ assert.equal(Number.parseFloat(dragonActor.style.left),startX);
+ assert.ok(orbs().every(el=>el.className==='spell-projectile'),
+   'no continuous fire beam is drawn');
+ ui.runFor(.8);
+ assert.equal(orbs().length,0,'every fireball expires before the next volley starts');
+ assert.equal(ui.events.filter(e=>e.type==='cast'&&e.sourceId==='dragon').length,5,
+   'dragon pauses between distinct salvos');
+ const hits=ui.events.filter(e=>e.type==='attack'&&e.sourceId==='dragon');
+ assert.equal(hits.length,5,'each of the five magic shots deals engine-confirmed damage');
 });
 
 test('hovering dragon hits equipped wolf with claws, not with persistent fire',async()=>{
@@ -1284,7 +1287,7 @@ test('hovering dragon hits equipped wolf with claws, not with persistent fire',a
    'dragon stays hovering while swiping at the wolf');
 });
 
-test('flames and later breath pulses disappear instantly when dragon dies during a salvo',async()=>{
+test('dragon fireballs disappear instantly when dragon dies during a salvo',async()=>{
  const ui=createHarness({weapon:'bow',outfit:'wanderer',dragonBoss:true,wolfEquipped:false,
    combatOptions:{heroDamage:300,heroMaxHp:1800}});
  await ui.loadAllImages();
@@ -1292,19 +1295,19 @@ test('flames and later breath pulses disappear instantly when dragon dies during
  ui.battle.updateHeroStats({heroDamage:1});
  ui.runUntil(()=>ui.events.some(e=>e.type==='cast'&&e.sourceId==='dragon'),14);
  ui.runFor(.1);
- const visible=()=>ui.node('.battlefield').children.filter(el=>el.className==='dragon-breath');
+ const visible=()=>ui.node('.battlefield').children.filter(el=>el.className==='spell-projectile'&&el.dataset.dragonVolley==='true');
  assert.ok(visible().length>0,'fire exists while dragon is alive and exhaling');
  ui.battle.updateHeroStats({heroDamage:500});
  ui.runUntil(()=>ui.events.some(e=>e.type==='death'&&e.id==='dragon'),3);
  assert.equal(ui.state().phase,'victory');
- assert.equal(visible().length,0,'every flame is removed in the death event, not at timeout');
+ assert.equal(visible().length,0,'every fireball is removed in the death event, not at timeout');
  const casts=ui.events.filter(e=>e.type==='cast'&&e.sourceId==='dragon').length;
  const hits=ui.events.filter(e=>e.type==='attack'&&e.sourceId==='dragon').length;
  const hp=ui.state().hero.hp;
  ui.runFor(1.4);
  assert.equal(visible().length,0,'fire cannot linger during the result transition');
  assert.equal(ui.events.filter(e=>e.type==='cast'&&e.sourceId==='dragon').length,casts,
-   'no extra flame volleys after the boss is killed');
+   'no extra fireball volleys after the boss is killed');
  assert.equal(ui.events.filter(e=>e.type==='attack'&&e.sourceId==='dragon').length,hits);
  assert.equal(ui.state().hero.hp,hp,'no hidden damage from vanished fire');
 });
@@ -1322,10 +1325,13 @@ test('Orc plays advancing walk cells while chasing the Archer wolf instead of sl
  ui.runUntil(()=>Math.abs(actorX(ui,'orc')-start)>12,8);
  assert.ok(orc.motionHistory.includes('walk'),
    'the moving Orc must expose the walk pose, not the idle pose');
- const gait=canvas.draws.slice(drawsStart).filter(draw=>draw.crop&&draw.crop[2]===64)
-   .map(draw=>draw.crop[0]);
+ const walkCells=canvas.draws.slice(drawsStart).filter(draw=>
+   draw.crop&&draw.crop[2]===64&&draw.crop[1]===128);
+ const gait=walkCells.map(draw=>draw.crop[0]);
  assert.ok(new Set(gait).size>=3,
-   'Orc must cycle at least three different leg frames while physically moving');
+   'Orc must cycle at least three front-facing leg frames');
+ assert.ok(walkCells.length>=3,
+   'Orc walks facing the viewer, never showing its back');
  assert.ok(ui.state().enemies[0].hp>0,'test observes an Orc that is still alive');
 });
 test('Archer and living wolf exit the completed wave in the SAME direction',async()=>{
