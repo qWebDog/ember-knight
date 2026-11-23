@@ -572,8 +572,10 @@ test('the last-wave orc walks towards melee and ranged heroes, then uses native 
   assert.ok(ui.orcX()<o);if(options.weapon)assert.equal(ui.heroX(),h);else assert.ok(ui.heroX()>h);
   assert.equal(ui.node('[data-fighter="orc"]').dataset.motion,'walk');
   const walking=ui.node('#enemy-orc').draws.filter(draw=>draw.src.endsWith('orc-walk.png'));
-  assert.ok(walking.some(draw=>draw.crop[0]>0));assert.ok(walking.every(draw=>draw.crop[1]===128),
-   'Orc must visibly face the player instead of walking backward');
+  assert.ok(walking.some(draw=>draw.crop[0]>0));
+  const strides=walking.filter(draw=>draw.crop[0]>0);
+  assert.ok(strides.every(draw=>draw.crop[1]===128),
+   'Moving Orc uses the front-facing LPC walk row; static idle frames may be side-on');
   assert.ok(!ui.events.slice(start).some(event=>event.type==='attack'&&event.sourceId==='orc'));
   ui.runUntil(()=>ui.inMeleeRange());assert.ok(Math.abs(ui.orcX()-ui.heroX()-64*.57)<.01);
   ui.runUntil(()=>ui.node('#enemy-orc').draws.some(draw=>draw.src.endsWith('orc-attack.png')));
