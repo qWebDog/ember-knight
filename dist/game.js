@@ -82,7 +82,7 @@
     archer2:{type:'archer',spawn:.61,label:'Лучник I',defaultLane:1},
     archer3:{type:'archer',spawn:.80,label:'Лучник II',defaultLane:5},
     orc:{type:'orc',spawn:.65,label:'Орк',defaultLane:4},
-    dragon:{type:'dragon',spawn:.76,label:'Красный дракон',defaultLane:3}
+    ...(dragonBoss?{dragon:{type:'dragon',spawn:.76,label:'Красный дракон',defaultLane:3}}:{})
   };
   const actors = {};
   let dragonSprites=null;
