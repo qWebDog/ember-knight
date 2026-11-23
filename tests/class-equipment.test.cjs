@@ -11,8 +11,8 @@ function fullPath(kind,color,skin,pose,suffix){
 }
 test('Archer gets original animated bow and quiver, Mage a wand and belt',()=>{
   const archer=eq.catalogForClass('bow'),mage=eq.catalogForClass('wand');
-  assert.deepEqual(eq.supportedForClass('bow'),['helmet','armor','weapon','shield']);
-  assert.deepEqual(eq.supportedForClass('wand'),['helmet','armor','weapon','shield']);
+  assert.deepEqual(eq.supportedForClass('bow'),['helmet','armor','weapon','shield','cape']);
+  assert.deepEqual(eq.supportedForClass('wand'),['helmet','armor','weapon','shield','cape']);
   assert.equal(eq.slotLabel('bow','shield'),'Колчан');
   assert.equal(eq.slotLabel('wand','shield'),'Пояс');
   assert.equal(eq.slotLabel('sword','shield'),'Щит');
@@ -23,34 +23,30 @@ test('Archer gets original animated bow and quiver, Mage a wand and belt',()=>{
   assert.match(mage.weapon[1].name,/палочка/i);
 });
 
-test('LPC layers preserve z-order and class-specific original pose dimensions',()=>{
+test('LPC capes use original back/front z-order with armor below headwear',()=>{
   const bow=gear.paths({classId:'bow',skin:'olive',color:'forest',look:look({
-    helmet:'iron',armor:'royal',weapon:'ember',shield:'steel'
+    helmet:'iron',armor:'royal',weapon:'ember',shield:'steel',cape:'solid'
   }),pose:'attack'});
-  assert.equal(bow.length,8);
-  assert.match(bow[0],/bow\/weapon\/ember\/attack-back\.png$/);
-  assert.match(bow[1],/bow\/shield\/steel\/attack\.png$/);
-  assert.match(bow[2],/bow\/base\/forest\/olive\/attack-under\.png$/);
-  assert.match(bow[3],/bow\/armor\/royal\/attack\.png$/);
-  assert.match(bow[4],/bow\/base\/forest\/olive\/attack-middle\.png$/);
-  assert.match(bow[5],/bow\/base\/forest\/olive\/attack-head\.png$/);
-  assert.match(bow[6],/bow\/helmet\/iron\/forest\/attack\.png$/);
-  assert.match(bow[7],/bow\/weapon\/ember\/attack-front\.png$/);
+  assert.equal(bow.length,10);
+  const b=['weapon/ember/attack-back.png','shield/steel/attack.png',
+    'cape/solid/forest/attack-back.png','base/forest/olive/attack-under.png',
+    'armor/royal/attack.png','base/forest/olive/attack-middle.png',
+    'cape/solid/forest/attack-front.png','base/forest/olive/attack-head.png',
+    'helmet/iron/forest/attack.png','weapon/ember/attack-front.png'];
+  for(let i=0;i<b.length;i++)assert.ok(bow[i].endsWith(b[i]),bow[i]+' expected '+b[i]);
   const mage=gear.paths({classId:'wand',skin:'light',color:'purple',look:look({
-    helmet:'royal',armor:'iron',weapon:'steel',shield:'royal'
+    helmet:'royal',armor:'iron',weapon:'steel',shield:'royal',cape:'tattered'
   }),pose:'walk'});
-  assert.equal(mage.length,7);
-  assert.match(mage[0],/wand\/base\/purple\/light\/walk-under\.png$/);
-  assert.match(mage[1],/wand\/armor\/iron\/walk\.png$/);
-  assert.match(mage[2],/wand\/base\/purple\/light\/walk-middle\.png$/);
-  assert.match(mage[3],/wand\/shield\/royal\/walk\.png$/);
-  assert.match(mage[4],/wand\/base\/purple\/light\/walk-head\.png$/);
-  assert.match(mage[5],/wand\/helmet\/royal\/purple\/walk\.png$/);
-  assert.match(mage[6],/wand\/weapon\/steel\/walk-front\.png$/);
+  assert.equal(mage.length,9);
+  const m=['cape/tattered/purple/walk-back.png','base/purple/light/walk-under.png',
+    'armor/iron/walk.png','base/purple/light/walk-middle.png',
+    'cape/tattered/purple/walk-front.png','shield/royal/walk.png',
+    'base/purple/light/walk-head.png','helmet/royal/purple/walk.png',
+    'weapon/steel/walk-front.png'];
+  for(let i=0;i<m.length;i++)assert.ok(mage[i].endsWith(m[i]),mage[i]+' expected '+m[i]);
   assert.deepEqual(gear.poses.bow,{walk:{frames:9,tile:128},attack:{frames:13,tile:64}});
   assert.deepEqual(gear.poses.wand,{walk:{frames:9,tile:64},attack:{frames:6,tile:64}});
 });
-
 test('default class gear uses original source instead of redundant overlays',async()=>{
   const got=[];
   const loader=gear.create({classId:'bow',skin:'light',color:'sand',
@@ -145,9 +141,9 @@ test('battle and equipment panel route every class to the correct LPC engine',()
   const html=fs.readFileSync(path.join(dist,'index.html'),'utf8');
   const ui=fs.readFileSync(path.join(dist,'equipment-ui.js'),'utf8');
   const builder=fs.readFileSync(path.join(__dirname,'../scripts/build-class-equipment.py'),'utf8');
-  assert.match(html,/src="class-equipment.js"/);
+  assert.match(html,/src="class-equipment.js(?:\?v=[^"]+)?"/);
   assert.match(source,/window\.EmberClassEquipment\.create/);
-  assert.match(source,/classEquipment\.load\(nextLook\)/);
+  assert.match(source,/classEquipment\.load\(nextLook,colors\|\|equipment\.getColors\(nextLook\)\)/);
   assert.match(source,/applyClassSprites\(loadedClassSprites\)/);
   assert.match(ui,/data\.catalogForClass\(store\.classId\)/);
   assert.match(ui,/data\.slotLabel\(store\.classId,slot\)/);

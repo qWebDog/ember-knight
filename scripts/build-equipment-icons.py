@@ -6,7 +6,7 @@ Uses the SAME pinned LPC PNGs, palette files and generated pose atlases.
 Never invents icon silhouettes or includes the full hero in an item portrait.
 """
 from pathlib import Path
-from PIL import Image, ImageColor
+from PIL import Image, ImageColor, ImageDraw
 import json
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -24,7 +24,8 @@ SLOTS={
  'helmet':('none','iron','royal'),
  'armor':('basic','iron','royal'),
  'weapon':('basic','steel','ember'),
- 'shield':('basic','steel','royal')
+ 'shield':('basic','steel','royal'),
+ 'cape':('none','tattered','solid')
 }
 IMAGE_SIZE=64
 HEAD='spritesheets/head/heads/human/male/walk.png'
@@ -53,6 +54,13 @@ def cloth(layer,name):
     return image
 
 def parts(class_id,slot,item,color):
+    if slot=='cape':
+        if class_id=='sword':
+            return [(generated(f'lpc/cape/{item}/{color}/walk-bg.png'),64),
+                    (generated(f'lpc/cape/{item}/{color}/walk-fg.png'),64)]
+        tile=128 if class_id=='bow' else 64
+        return [(generated(f'class-layers/{class_id}/cape/{item}/{color}/walk-back.png'),tile),
+                (generated(f'class-layers/{class_id}/cape/{item}/{color}/walk-front.png'),tile)]
     if class_id=='sword':
         if slot=='helmet':
             return [(cached(HEAD),64)] if item=='none' else [(generated(f'lpc/helmet/{item}/walk.png'),64)]
@@ -125,21 +133,59 @@ def icon(layers):
 
 def color_dependent(class_id,slot,item):
     return ((slot=='armor' and item=='basic' and class_id in ('sword','wand'))
-        or (slot=='helmet' and item=='basic' and class_id in ('bow','wand')))
+        or (slot=='helmet' and item=='basic' and class_id in ('bow','wand'))
+        or (slot=='cape' and item!='none'))
+
+PALETTE={
+    'sand':'#c4a371','forest':'#5f956a','blue':'#577fc5',
+    'red':'#bd5962','purple':'#9867c3','gray':'#97a4ac'
+}
+
+def dye_image(original,colour):
+    rgb=ImageColor.getrgb(PALETTE[colour])
+    image=original.copy()
+    data=[]
+    for pixel in original.getdata():
+        if not pixel[3]:
+            data.append(pixel)
+            continue
+        y=(.2126*pixel[0]+.7152*pixel[1]+.0722*pixel[2])/255
+        factor=.42+y*.91
+        data.append(tuple(max(0,min(255,round(component*factor))) for component in rgb)+(pixel[3],))
+    image.putdata(data)
+    return image
 
 def write_icon(class_id,slot,item,color):
-    result=icon(parts(class_id,slot,item,color))
+    if slot=='cape' and item=='none':
+        result=Image.new('RGBA',(IMAGE_SIZE,IMAGE_SIZE))
+        pencil=ImageDraw.Draw(result)
+        pencil.ellipse((15,15,49,49),outline='#a8b4aa',width=3)
+        pencil.line((18,46,46,18),fill='#a8b4aa',width=4)
+    else:
+        result=icon(parts(class_id,slot,item,color))
     relative=f'{class_id}/{slot}/{item}/'+color+'.png' if color_dependent(class_id,slot,item) else f'{class_id}/{slot}/{item}.png'
     target=OUT/relative
     target.parent.mkdir(parents=True,exist_ok=True)
     result.save(target,optimize=True)
     records.append({'class':class_id,'slot':slot,'item':item,'color':color if color_dependent(class_id,slot,item) else None,'path':'assets/equipment/icons/'+relative})
+    if slot in ('helmet','armor','cape') and not (item=='none' and slot in ('helmet','cape')):
+        for dye in PALETTE:
+            dyed=dye_image(result,dye)
+            sub=(f'{class_id}/{slot}/{item}/'+color+'/' if color_dependent(class_id,slot,item)
+                 else f'{class_id}/{slot}/{item}/')
+            output=OUT/'dyes'/sub/(dye+'.png')
+            output.parent.mkdir(parents=True,exist_ok=True)
+            dyed.save(output,optimize=True)
+            records.append({'class':class_id,'slot':slot,'item':item,'dye':dye,
+                            'path':'assets/equipment/icons/dyes/'+sub+dye+'.png'})
 
 if __name__=='__main__':
     for class_id in CLASSES:
         for slot,items in SLOTS.items():
             if class_id!='sword' and slot=='helmet':
                 ids=('basic','iron','royal')
+            elif class_id!='sword' and slot=='cape':
+                ids=('tattered','solid')
             else:
                 ids=items
             for item in ids:

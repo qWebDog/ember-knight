@@ -21,6 +21,14 @@
 .equipment-inventory{min-width:0;min-height:0;display:grid;grid-template-rows:22px minmax(0,1fr);gap:4px;max-width:740px;width:100%;justify-self:center}
 .equipment-inventory-heading{display:flex;justify-content:space-between;align-items:center;gap:10px;min-width:0;color:#c3d0b2}
 .equipment-inventory-heading strong{font:800 13px/18px Manrope,Arial,sans-serif;color:#e2ce98}
+.equipment-dyes{display:flex;align-items:center;gap:5px;justify-content:flex-end;min-width:0;overflow-x:auto;scrollbar-width:none}
+.equipment-dyes[hidden]{display:none!important}
+.equipment-dye{flex:0 0 19px;width:19px;height:19px;border-radius:50%;border:2px solid #253b31;outline:1px solid #9c9d8070;box-shadow:inset 0 -3px 4px #0003;cursor:pointer;padding:0}
+.equipment-dye[aria-pressed="true"]{outline:2px solid #eacf93;outline-offset:1px;box-shadow:0 0 8px #edc77977,inset 0 -3px 4px #0004}
+.equipment-dye:focus-visible{outline:3px solid #f0c875;outline-offset:2px}
+.equipment-dye:disabled{opacity:.45;cursor:wait}
+@media(max-width:430px){.equipment-dyes{gap:3px}.equipment-dye{flex-basis:16px;width:16px;height:16px}}
+
 .equipment-inventory-heading small{font:500 10px/14px Manrope,Arial,sans-serif;color:#93a88c;text-align:right}
 .equipment-items{display:flex;gap:7px;min-width:0;min-height:0;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;scrollbar-width:thin;scrollbar-color:#657955 transparent;padding:2px 1px 6px}
 .equipment-item{flex:0 0 146px;display:flex;gap:7px;align-items:center;min-width:0;padding:6px 8px;border:1px solid #546b55;border-radius:5px;background:linear-gradient(#223b2e,#172c22);color:#dedfc7;text-align:left;cursor:pointer}

@@ -20,9 +20,10 @@
   });
   const variants=Object.freeze({
     helmet:Object.freeze(['iron','royal']),
-    armor:Object.freeze(['iron','royal']),
+    armor:Object.freeze(['basic','iron','royal']),
     weapon:Object.freeze(['basic','steel','ember']),
-    shield:Object.freeze(['basic','steel','royal'])
+    shield:Object.freeze(['basic','steel','royal']),
+    cape:Object.freeze(['tattered','solid'])
   });
   function poseAnimation(pose){
     if(pose?.kind==='block')return 'combat_idle';
@@ -30,8 +31,10 @@
     return 'walk';
   }
   function isFront(slot){return slot==='weapon'||slot==='shield';}
-  function imagePath(slot,id,animation){
+  function imagePath(slot,id,animation,outfitColor='sand',side='fg'){
     if(!variants[slot]?.includes(id)||!Object.prototype.hasOwnProperty.call(poses,animation))return null;
+    if(slot==='cape')return directory+'cape/'+id+'/'+outfitColor+'/'+animation+'-'+side+'.png';
+    if(slot==='armor'&&id==='basic')return directory+'armor/basic/'+outfitColor+'/'+animation+'.png';
     return (isFront(slot)?frontDirectory:directory)+slot+'/'+id+'/'+animation+'.png';
   }
   function validateSprite(image,path,slot,animation){
@@ -43,11 +46,11 @@
     }
     return image;
   }
-  function create({loadImage}={}){
+  function create({loadImage,dye,outfitColor='sand'}={}){
     if(typeof loadImage!=='function')throw new TypeError('loadImage is required');
     const cache=new Map(),resolved=new Map();
-    function load(slot,id,animation){
-      const path=imagePath(slot,id,animation);
+    function load(slot,id,animation,side='fg'){
+      const path=imagePath(slot,id,animation,outfitColor,side);
       if(!path)return Promise.reject(new Error('Unsupported LPC item: '+slot+'/'+id));
       if(!cache.has(path)){
         const promise=Promise.resolve().then(()=>loadImage(path)).then(img=>validateSprite(img,path,slot,animation))
@@ -58,25 +61,42 @@
     }
     async function ensure(slot,id){
       if(!variants[slot]?.includes(id))return;
-      const items=await Promise.all(Object.keys(poses).map(async animation=>{
-        const img=await load(slot,id,animation);
-        return [imagePath(slot,id,animation),img];
-      }));
+      const items=await Promise.all(Object.keys(poses).flatMap(animation=>(slot==='cape'?['bg','fg']:['fg']).map(async side=>{
+        const img=await load(slot,id,animation,side);
+        return [imagePath(slot,id,animation,outfitColor,side),img];
+      })));
       for(const [path,img] of items)resolved.set(path,img);
     }
-    async function prepareLook(equipped){
+    async function prepareLook(equipped,dyes={}){
       const jobs=[];
-      if(variants.armor.includes(equipped?.armor))jobs.push(ensure('armor',equipped.armor));
+      if(variants.armor.includes(equipped?.armor)
+        &&(equipped.armor!=='basic'||dyes.armor&&dyes.armor!=='original'))jobs.push(ensure('armor',equipped.armor));
       if(variants.helmet.includes(equipped?.helmet))jobs.push(ensure('helmet',equipped.helmet));
+      if(variants.cape.includes(equipped?.cape))jobs.push(ensure('cape',equipped.cape));
       // Native front shield pixels must be repainted over the armor.
       // Native sword pixels must be repainted over both armor and helmet.
-      if(variants.armor.includes(equipped?.armor)){
+      if((variants.armor.includes(equipped?.armor)
+        &&(equipped.armor!=='basic'||dyes.armor&&dyes.armor!=='original'))||variants.cape.includes(equipped?.cape)){
         jobs.push(ensure('shield',equipped.shield));
       }
-      if(variants.armor.includes(equipped?.armor)||variants.helmet.includes(equipped?.helmet)){
+      if((variants.armor.includes(equipped?.armor)&&
+          (equipped.armor!=='basic'||dyes.armor&&dyes.armor!=='original'))
+          ||variants.helmet.includes(equipped?.helmet)||variants.cape.includes(equipped?.cape)){
         jobs.push(ensure('weapon',equipped.weapon));
       }
       await Promise.all(jobs);
+    }
+    function drawBack(ctx,pose){
+      if(!ctx||!pose||!variants.cape.includes(pose.equipped?.cape))return 0;
+      const animation=poseAnimation(pose),row=pose.row,frame=pose.frame;
+      const tile=pose.tile||64,origin=Number.isFinite(pose.origin)?pose.origin:(tile-64)/2;
+      if(!poses[animation]||!Number.isInteger(row)||row<0||row>=4||tile!==poses[animation].tile)return 0;
+      const path=imagePath('cape',pose.equipped.cape,animation,outfitColor,'bg');
+      let image=resolved.get(path);if(!image)return 0;
+      if(dye)image=dye.apply(image,pose.colors?.cape||'original');
+      const index=Math.min(frame,poses[animation].frames-1);
+      ctx.drawImage(image,index*64,row*64,64,64,origin,origin,64,64);
+      return 1;
     }
     function draw(ctx,pose){
       if(!ctx||!pose||!pose.equipped)return 0;
@@ -86,13 +106,15 @@
       const tile=pose.tile||64,origin=Number.isFinite(pose.origin)?pose.origin:(tile-frameSize)/2;
       if(tile!==geometry.tile||origin<0||origin+frameSize>tile)return 0;
       const col=Math.min(frame,geometry.frames-1);
-      const worn=pose.equipped,withArmor=variants.armor.includes(worn.armor);
-      const withHelmet=variants.helmet.includes(worn.helmet);
+      const worn=pose.equipped,withArmor=variants.armor.includes(worn.armor)
+        &&(worn.armor!=='basic'||pose.colors?.armor&&pose.colors.armor!=='original');
+      const withHelmet=variants.helmet.includes(worn.helmet),withCape=variants.cape.includes(worn.cape);
       let count=0;
       function drawLayer(slot,id){
-        const path=imagePath(slot,id,animation);
-        const image=resolved.get(path);
+        const path=imagePath(slot,id,animation,outfitColor,'fg');
+        let image=resolved.get(path);
         if(!image)return false;
+        if(dye&&['helmet','armor','cape'].includes(slot))image=dye.apply(image,pose.colors?.[slot]||'original');
         if(isFront(slot)){
           ctx.drawImage(image,col*tile,row*tile,tile,tile,0,0,tile,tile);
         }else{
@@ -104,13 +126,14 @@
       // Exact LPC z-order: armor z60, shield foreground z110-115,
       // helmet z130, sword foreground z140-150.
       if(withArmor)drawLayer('armor',worn.armor);
-      if(withArmor)drawLayer('shield',worn.shield);
+      if(variants.cape.includes(worn.cape))drawLayer('cape',worn.cape);
+      if(withArmor||withCape)drawLayer('shield',worn.shield);
       if(withHelmet)drawLayer('helmet',worn.helmet);
-      if(withArmor||withHelmet)drawLayer('weapon',worn.weapon);
+      if(withArmor||withHelmet||withCape)drawLayer('weapon',worn.weapon);
       return count;
     }
     return Object.freeze({
-      draw,ensure,prepareLook,ensureLook:prepareLook,poseAnimation,imagePath,loaded:()=>resolved.size
+      draw,drawBack,ensure,prepareLook,ensureLook:prepareLook,poseAnimation,imagePath,loaded:()=>resolved.size
     });
   }
   return Object.freeze({create,poseAnimation,imagePath,poses});

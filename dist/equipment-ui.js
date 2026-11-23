@@ -3,13 +3,13 @@
  */
 (function(root,factory){'use strict';const api=factory(root);if(typeof module==='object'&&module.exports)module.exports=api;if(root)root.EmberEquipmentUI=api;})(typeof window!=='undefined'?window:null,function(host){
   'use strict';
-  function mount({root,store,getSprite,loadItem,paintItem,onEquip,outfitColor='sand'}={}){
+  function mount({root,store,getSprite,loadItem,paintItem,paintBack,onEquip,outfitColor='sand'}={}){
     if(!root||!store||!host?.EmberEquipment)throw new TypeError('Equipment panel and store required');
     const data=host.EmberEquipment;
     const catalogue=data.catalogForClass(store.classId);
     const enabledSlots=data.supportedForClass(store.classId);
     const $=selector=>root.querySelector(selector);
-    const items=$('#equipment-items'),preview=$('#equipment-preview'),portrait=$('.equipment-portrait');
+    const items=$('#equipment-items'),preview=$('#equipment-preview'),portrait=$('.equipment-portrait'),dyePanel=$('#equipment-dyes');
     const slotNodes=[...root.querySelectorAll('[data-equipment-slot]')];
     const classes={sword:'ВОИН',bow:'ЛУЧНИК',wand:'МАГ'};
     let selected='helmet',destroyed=false,busy=false,orientation=0,gesture=null;
@@ -59,8 +59,10 @@
       ctx.imageSmoothingEnabled=false;
       ctx.clearRect(0,0,64,64);
       const tile=descriptor.tile||64,origin=descriptor.origin||0,row=directions[orientation].row;
+      const pose={equipped:store.getState(),colors:store.getColors(),row,frame:0,kind:'idle',tile:64,origin:0};
+      if(store.enabled)paintBack?.(ctx,pose);
       ctx.drawImage(descriptor.image,origin,tile*row+origin,64,64,0,0,64,64);
-      if(store.enabled)paintItem?.(ctx,{equipped:store.getState(),row,frame:0,kind:'idle',tile:64,origin:0});
+      if(store.enabled)paintItem?.(ctx,pose);
       preview.setAttribute('aria-label','Текущий облик героя '+directions[orientation].name+'. Проведи влево или вправо для поворота.');
     }
     function createItemButton(item,current){
@@ -75,7 +77,7 @@
       artwork.className='equipment-item-art';
       const image=items.ownerDocument.createElement('img');
       image.className='equipment-item-image';
-      image.src=data.itemIconPath(store.classId,slot,item.id,outfitColor);
+      image.src=data.itemIconPath(store.classId,slot,item.id,outfitColor,store.getColor(slot,item.id));
       image.alt='';
       image.loading='lazy';
       image.decoding='async';
@@ -91,7 +93,7 @@
         if(store.getState()[slot]===item.id){message('Этот предмет уже надет.');return;}
         busy=true;message('Загружаем анимации LPC…');render();
         try{
-          await loadItem?.(slot,item.id);
+          await loadItem?.(slot,item.id,store.getColors({...store.getState(),[slot]:item.id}));
           if(destroyed)return;
           const result=store.equip(slot,item.id);
           if(result.ok){
@@ -103,6 +105,40 @@
         }finally{busy=false;if(!destroyed)render();}
       });
       return button;
+    }
+    function renderDyes(equipped){
+      if(!dyePanel)return;
+      const slot=selected,id=equipped[slot];
+      const visible=data.dyeSlots.includes(slot)&&id!=='none';
+      dyePanel.hidden=!visible;
+      if(!visible){dyePanel.replaceChildren();return;}
+      const palette=host.EmberEquipmentDye?.palette||[];
+      dyePanel.replaceChildren(...palette.map(item=>{
+        const button=items.ownerDocument.createElement('button');
+        button.type='button';button.className='equipment-dye';
+        button.style.backgroundColor=item.hex;
+        button.setAttribute('aria-label','Цвет: '+item.name);
+        button.setAttribute('title',item.name);
+        button.setAttribute('aria-pressed',String(store.getColor(slot,id)===item.id));
+        button.disabled=busy;
+        button.addEventListener('click',async()=>{
+          if(destroyed||busy||store.getColor(slot,id)===item.id)return;
+          busy=true;message('Применяем цвет LPC…');render();
+          try{
+            const nextColors=store.getColors(store.getState(),slot,item.id);
+            await loadItem?.(slot,id,nextColors);
+            if(destroyed)return;
+            const result=store.setColor(slot,item.id,id);
+            if(result.ok){
+              message('Цвет «'+item.name+'» применён.');
+              onEquip?.(store.getState(),slot,id);
+            }else message('Не удалось сохранить выбранный цвет.');
+          }catch{
+            if(!destroyed)message('Не удалось загрузить цветные LPC-анимации.');
+          }finally{busy=false;if(!destroyed)render();}
+        });
+        return button;
+      }));
     }
     function render(){
       if(destroyed)return;
@@ -121,6 +157,7 @@
       const category=data.slots.find(item=>item.id===selected);
       $('[data-equipment-category]').textContent=data.slotLabel(store.classId,selected)||category?.name||'Экипировка';
       items.replaceChildren(...catalogue[selected].map(item=>createItemButton(item,equipped[selected])));
+      renderDyes(equipped);
       paintPreview();
     }
     function select(slot){
