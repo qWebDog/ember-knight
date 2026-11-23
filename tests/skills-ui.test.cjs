@@ -52,13 +52,13 @@ function parseHTML(source){
  }
  return document;
 }
-function createPanel({gold=0,levels={},saved,legacyGold,blocked=false,heroLevel=7}={}){
+function createPanel({gold=0,levels={},saved,legacyGold,blocked=false,heroLevel=7,classId='sword'}={}){
  const document=parseHTML(html),root=document.querySelector('#skills-panel');assert.ok(root,'real index must contain the skill panel');
  const storage=new Map();if(saved||legacyGold===undefined)storage.set('ember.progress.v1',JSON.stringify(saved||{version:1,gold,levels:{power:0,vitality:0,tempo:0,...levels}}));if(legacyGold!==undefined)storage.set('ember.test.gold.v1',String(legacyGold));
  const storageAPI={getItem:key=>storage.get(key)??null,setItem:(key,value)=>{if(blocked)throw new Error('storage blocked');storage.set(key,String(value));}};
  const window={},context=vm.createContext({window});
  for(const name of ['progression.js','skills-ui.js'])vm.runInContext(fs.readFileSync(path.join(dist,name),'utf8'),context,{filename:name});
- const store=window.EmberProgression.createStore({storage:storageAPI}),controller=window.EmberSkillPanel.mount({root,store,heroLevel});
+ const store=window.EmberProgression.createStore({storage:storageAPI,classId}),controller=window.EmberSkillPanel.mount({root,store,heroLevel,classId});
  const node=selector=>{const found=root.querySelector(selector);assert.ok(found,`missing real panel node ${selector}`);return found;};
  return {root,node,store,controller,storage,clickSkill:id=>node(`[data-skill-id="${id}"]`).click(),upgrade:()=>node('#skill-upgrade').click()};
 }
@@ -95,5 +95,42 @@ test('the panel stays in the lower viewport grid with compact portrait and lands
  const css=fs.readFileSync(path.join(dist,'skills.css'),'utf8'),gameCSS=fs.readFileSync(path.join(dist,'game.css'),'utf8'),base=css.match(/\.skills-panel\{([^}]*)\}/)?.[1]||'';
  assert.match(base,/min-height:0/);assert.match(base,/overflow:hidden/);assert.match(base,/grid-template-rows:[^;]*minmax\(0,1fr\)/);assert.match(gameCSS,/\.game-screen\{[^}]*grid-template-rows:52% minmax\(0,1fr\)/);assert.match(gameCSS,/html\{[^}]*overflow:hidden/);assert.match(gameCSS,/body\{[^}]*overflow:hidden/);
  assert.match(css,/@media\(max-width:700px\)/);assert.match(css,/@media\(orientation:portrait\) and \(max-height:700px\)/);assert.ok(/@media\(orientation:landscape\) and \(max-height:600px\)\{\s*\.skills-panel\{[^}]*grid-template-columns:minmax\(0,[\d.]+fr\) minmax\(0,[\d.]+fr\)/.test(css),'compact landscape must place the tree and detail in two flexible columns');assert.doesNotMatch(base,/overflow(?:-y)?:\s*(?:auto|scroll)/);const treeRules=[...css.matchAll(/\.skills-tree\{([^}]*)\}/g)].map(match=>match[1]).join(';');assert.match(treeRules,/overflow-y:auto/);assert.match(treeRules,/overflow-x:hidden/);assert.match(treeRules,/overscroll-behavior:contain/);
- for(const dependency of ['progression.js','skills-ui.js'])assert.ok(html.indexOf(`src="${dependency}"`)<html.indexOf('src="game.js'),'the dependencies must load before the game mounts the panel');
+ for(const dependency of ['progression.js','skills-ui.js'])assert.ok(html.indexOf(`src="${dependency}?v=mage-tree-1"`)<html.indexOf('src="game.js?v=mage-tree-1"'),'the dependencies must load before the game mounts the panel');
+});
+
+test('Mage displays only Mage skills and its chosen branches can be bought independently',()=>{
+ const ui=createPanel({classId:'wand',gold:60});
+ assert.equal(ui.node('.skills-title p').textContent,'МАГ');
+ assert.equal(ui.root.dataset.heroClass,'wand');
+ assert.equal(ui.root.getAttribute('aria-label'),'Древо навыков: МАГ');
+ const cases=[['sorcery','attack','Сила стихий','заклинаний'],['barrier','defense','Магический барьер','здоровью'],['channel','control','Поток маны','заклинаний']];
+ for(const [id,branch,name,fragment]of cases){
+  ui.clickSkill(id);assert.equal(ui.root.dataset.selected,id);
+  assert.equal(ui.node('#skill-detail').dataset.branch,branch);
+  assert.equal(ui.node('[data-skill-name]').textContent,name);
+  assert.match(ui.node('[data-skill-benefit]').textContent,new RegExp(fragment));
+  assert.equal(ui.node('#skill-upgrade').dataset.upgrade,id);
+  ui.upgrade();assert.equal(ui.node(`[data-skill-id="${id}"]`).dataset.level,'1');
+ }
+ assert.equal(ui.store.getStats().heroDamage,14);
+ assert.equal(ui.store.getStats().heroMaxHp,220);
+ assert.equal(ui.store.getStats().heroAttackSpeed,1.05);
+ assert.equal(ui.node('[data-skill-gold]').textContent,'30');
+ assert.equal(ui.controller.select('power'),false);
+ assert.equal(ui.root.querySelectorAll('[data-skill-future]').length,6);
+ assert.match(ui.root.querySelectorAll('[data-skill-future]')[0].getAttribute('aria-label'),/Огненный шквал/);
+ assert.equal(ui.root.querySelectorAll('[data-skill-tab]').length,4);
+ assert.equal(ui.root.querySelectorAll('[data-skill-tab]').filter(node=>!node.disabled).length,2);
+ const saved=JSON.parse(ui.storage.get('ember.progress.v1'));
+ assert.deepEqual(saved.mageLevels,{sorcery:1,barrier:1,channel:1});
+ const restore=createPanel({classId:'wand',saved});
+ assert.equal(restore.node('[data-skill-id="sorcery"]').dataset.level,'1');
+ assert.equal(restore.node('[data-skill-id="barrier"]').dataset.level,'1');
+ assert.equal(restore.node('[data-skill-id="channel"]').dataset.level,'1');
+});
+
+test('Archer heading reflects chosen class without a class switcher',()=>{
+ const ui=createPanel({classId:'bow'});
+ assert.equal(ui.node('.skills-title p').textContent,'ЛУЧНИК');
+ assert.equal(ui.root.querySelectorAll('[data-class-switch]').length,0);
 });

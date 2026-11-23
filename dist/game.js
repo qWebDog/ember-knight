@@ -15,8 +15,6 @@
   } catch {}
   let progressionStorage = null;
   try { progressionStorage = localStorage; } catch {}
-  const progression = window.EmberProgression.createStore({storage:progressionStorage});
-  wallet = progression.getState().gold;
   if (new URLSearchParams(window.location.search).get('battle') === 'test') auto = true;
   const loadouts = window.EmberLoadouts;
   const arrowSprite = 'assets/projectiles/arrow.png';
@@ -27,6 +25,10 @@
   const starterWeapon = loadout ? loadouts.weapon(loadout.weapon) : null;
   const starterOutfit = loadout ? loadouts.outfit(loadout.weapon,loadout.outfit) : null;
   const heroMagic = loadouts?.magicSelection(character);
+  // Do not apply Warrior upgrades to Mage spells. Gold stays shared in one
+  // atomic progression record; only the selected class's ranks affect combat.
+  const progression = window.EmberProgression.createStore({storage:progressionStorage,classId:starterWeapon?.id||'sword'});
+  wallet = progression.getState().gold;
   const equipment = window.EmberEquipment?.createStore({classId:starterWeapon?.id||'sword'});
   const dyeEngine=window.EmberEquipmentDye?.create({canvasFactory:()=>document.createElement('canvas')});
   const equipmentArt = starterWeapon?.id==='sword' && equipment?.enabled
@@ -170,7 +172,7 @@
       if (ready) render(battle.getState());
     }
   });
-  window.EmberSkillPanel?.mount({root:$('#skills-panel'),store:progression,heroLevel:level});
+  window.EmberSkillPanel?.mount({root:$('#skills-panel'),store:progression,heroLevel:level,classId:starterWeapon?.id||'sword'});
   let equipmentUI=null;
   const equipmentPanel=$('#equipment-panel'),skillsPanel=$('#skills-panel');
   if(equipment&&window.EmberEquipmentUI&&equipmentPanel&&skillsPanel){

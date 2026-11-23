@@ -158,3 +158,37 @@ test('listeners receive isolated snapshots after commit, can unsubscribe, and ca
   assert.deepEqual(observations,[[1,'purchase'],[1,'gold']],'subscriber mutations cannot affect another subscriber');
   stop();stop();stopNested();store.awardGold(1);assert.equal(seen,3);
 });
+
+test('Mage progression is class-specific, combines independent branches, and preserves Warrior ranks and shared gold', () => {
+ const storage=memoryStorage({[storageKey]:canonical(200,{power:3,vitality:1,tempo:2})});
+ const mage=createStore({storage,classId:'wand'});
+ assert.deepEqual(mage.catalog.map(item=>item.id),['sorcery','barrier','channel']);
+ assert.deepEqual(mage.getStats(),{heroDamage:12,heroMaxHp:200,heroAttackSpeed:1});
+ assert.equal(mage.quote('power').reason,'unknown');
+ for(const id of ['sorcery','barrier','channel'])assert.equal(mage.purchase(id).ok,true);
+ assert.deepEqual(mage.getStats(),{heroDamage:14,heroMaxHp:220,heroAttackSpeed:1.05});
+ assert.equal(mage.getState().gold,170);
+ const warrior=createStore({storage});
+ assert.deepEqual(warrior.getStats(),{heroDamage:18,heroMaxHp:220,heroAttackSpeed:1.1});
+ assert.equal(warrior.quote('sorcery').reason,'unknown');
+ assert.deepEqual(warrior.getState().levels,{power:3,vitality:1,tempo:2});
+ assert.deepEqual(warrior.getState().mageLevels,{sorcery:1,barrier:1,channel:1});
+ assert.equal(warrior.purchase('power').ok,true);
+ assert.equal(createStore({storage,classId:'wand'}).getStats().heroDamage,14);
+ assert.equal(createStore({storage,classId:'wand'}).getState().gold,130);
+});
+
+test('Mage upgrades fail safely without funds or storage and normalize invalid Mage ranks', () => {
+ const storage=memoryStorage({[storageKey]:canonical(0,{power:1})});
+ const mage=createStore({storage,classId:'wand'});
+ assert.equal(mage.purchase('sorcery').reason,'coins');assert.equal(storage.writes.length,0);
+ mage.awardGold(10);const saved=storage.data.get(storageKey);
+ storage.setItem=()=>{throw new Error('full');};
+ assert.equal(mage.purchase('sorcery').reason,'storage');
+ assert.equal(storage.data.get(storageKey),saved);
+ assert.equal(mage.getState().mageLevels,undefined);
+ const corrupt=memoryStorage({[storageKey]:JSON.stringify({version:1,gold:80,levels:{power:2},mageLevels:{sorcery:50,barrier:-1,channel:'4',other:5}})});
+ const normalized=createStore({storage:corrupt,classId:'wand'}).getState();
+ assert.deepEqual(normalized.mageLevels,{sorcery:5,barrier:0,channel:0});
+ assert.equal(createStore({storage:corrupt,classId:'wand'}).quote('sorcery').reason,'max');
+});

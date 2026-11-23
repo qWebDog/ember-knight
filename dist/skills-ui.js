@@ -11,21 +11,51 @@
     vitality:{name:'Стойкость',branch:'defense',category:'Защита',icon:'skill-shield',benefit:'+20 к максимуму здоровья',total:level=>`+${level*20} к максимуму здоровья`},
     tempo:{name:'Натиск',branch:'control',category:'Контроль',icon:'bolt',benefit:'+5% к скорости атаки',total:level=>`+${level*5}% к скорости атаки`}
   };
-  function mount({root,store,heroLevel=1}={}) {
+  const mageDetails={
+    sorcery:{name:'Сила стихий',branch:'attack',category:'Атака',icon:'flame',benefit:'+2 к урону заклинаний',total:level=>`+${level*2} к урону заклинаний`},
+    barrier:{name:'Магический барьер',branch:'defense',category:'Защита',icon:'skill-shield',benefit:'+20 к максимуму здоровья',total:level=>`+${level*20} к максимуму здоровья`},
+    channel:{name:'Поток маны',branch:'control',category:'Контроль',icon:'bolt',benefit:'+5% к скорости заклинаний',total:level=>`+${level*5}% к скорости заклинаний`}
+  };
+  const futureMage={
+    attack:['Огненный шквал','Ледяные осколки'],
+    defense:['Защитная сфера','Поглощение чар'],
+    control:['Глубокая заморозка','Эхо заклинаний']
+  };
+  function mount({root,store,heroLevel=1,classId=store?.classId||'sword'}={}) {
     if(!root||!store||typeof store.getState!=='function'||typeof store.purchase!=='function')throw new TypeError('A skill panel root and progression store are required.');
     const $=selector=>root.querySelector(selector);
+    const mage=classId==='wand', activeDetails=mage?mageDetails:details;
+    const labels={sword:'ВОИН',bow:'ЛУЧНИК',wand:'МАГ'};
+    root.dataset.heroClass=classId;
+    root.setAttribute('aria-label',`Древо навыков: ${labels[classId]||labels.sword}`);
+    $('.skills-title p').textContent=labels[classId]||labels.sword;
     const nodes=Array.from(root.querySelectorAll('[data-skill-id]'));
+    const activeIds=Object.keys(activeDetails);
+    // Each branch retains its existing HTML layout, but the actual ability,
+    // icon and future path are determined by the permanently chosen class.
+    if(mage)for(const branch of root.querySelectorAll('.skill-branch')){
+      const index=['attack','defense','control'].indexOf(branch.dataset.branch);
+      if(index<0)continue;
+      const node=branch.querySelector('[data-skill-id]');
+      node.dataset.skillId=activeIds[index];
+      node.querySelector('use').setAttribute('href',`#${activeDetails[activeIds[index]].icon}`);
+      branch.querySelectorAll('[data-skill-future]').forEach((future,i)=>{
+        const name=futureMage[branch.dataset.branch][i];
+        future.setAttribute('aria-label',`${name} — скоро`);
+        future.setAttribute('title',`${name}: будет доступно позже`);
+      });
+    }
     const upgrade=$('#skill-upgrade');
-    let selected='power',destroyed=false;
+    let selected=activeIds[0],destroyed=false;
     const removers=[];
     function render() {
       if(destroyed)return;
-      const state=store.getState(),entry=details[selected],quote=store.quote(selected);
+      const state=store.getState(),entry=activeDetails[selected],quote=store.quote(selected);
       $('[data-skill-gold]').textContent=String(state.gold);
       $('[data-skill-hero-level]').textContent=String(Number.isInteger(heroLevel)&&heroLevel>0?heroLevel:1);
       root.dataset.selected=selected;root.dataset.ready='true';
       for(const node of nodes){
-        const id=node.dataset.skillId,item=details[id];if(!item)continue;
+        const id=node.dataset.skillId,item=activeDetails[id];if(!item)continue;
         const rank=store.quote(id),active=id===selected;
         node.classList.toggle('is-selected',active);
         node.classList.toggle('is-learned',rank.level>0);
@@ -50,7 +80,7 @@
       upgrade.setAttribute('aria-label',quote.reason==='max'?`${entry.name}: максимальный уровень`:`Улучшить ${entry.name} за ${quote.cost} монет${quote.canBuy?'':', не хватает монет'}`);
     }
     function select(id) {
-      if(!Object.prototype.hasOwnProperty.call(details,id)||destroyed)return false;
+      if(!Object.prototype.hasOwnProperty.call(activeDetails,id)||destroyed)return false;
       selected=id;render();return true;
     }
     function listen(element,event,handler){element.addEventListener(event,handler);removers.push(()=>element.removeEventListener(event,handler));}
@@ -59,7 +89,7 @@
       if(destroyed)return;
       const result=store.purchase(selected);
       render();
-      $('[data-skill-message]').textContent=result.ok?`${details[selected].name}: уровень ${store.quote(selected).level}. Потрачено ${result.spent} монет.`:result.reason==='storage'?'Не удалось сохранить улучшение. Попробуй ещё раз.':result.reason==='max'?'Навык уже улучшен до максимума.':'Недостаточно монет.';
+      $('[data-skill-message]').textContent=result.ok?`${activeDetails[selected].name}: уровень ${store.quote(selected).level}. Потрачено ${result.spent} монет.`:result.reason==='storage'?'Не удалось сохранить улучшение. Попробуй ещё раз.':result.reason==='max'?'Навык уже улучшен до максимума.':'Недостаточно монет.';
       if(result.reason==='storage'){
         $('[data-skill-benefit]').textContent='Не удалось сохранить. Попробуй ещё раз.';
         $('[data-skill-benefit]').dataset.feedback='error';

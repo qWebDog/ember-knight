@@ -986,3 +986,24 @@ test('blocked persistent storage grants neither a free skill nor an unsaved kill
  assert.equal(ui.progression.purchase('power').ok,false);assert.equal(ui.state().hero.damage,12);assert.equal(ui.progression.getState().gold,30);assert.equal(ui.progression.getState().levels.power,0);assert.deepEqual(JSON.parse(ui.storage.get('ember.progress.v1')),saved);
  ui.runUntil(()=>kills(ui).length===1);assert.equal(ui.progression.getState().gold,30);assert.equal(wallet(ui),30);assert.equal(ui.node('.gold').attributes['aria-label'],'Золото: 30');assert.equal(ui.state().hero.damage,12);assert.deepEqual(JSON.parse(ui.storage.get('ember.progress.v1')),saved);
 });
+
+test('Mage skill purchases modify spell combat without inheriting Warrior damage',async()=>{
+ const saved={version:1,gold:100,levels:{power:5,vitality:3,tempo:3}};
+ const ui=createHarness({weapon:'wand',outfit:'acolyte',magic:'fire',savedProgression:saved});
+ await ui.loadAllImages();
+ assert.equal(ui.skillMount.classId,'wand');
+ assert.equal(ui.state().hero.damage,12,'Warrior ranks must not buff Mage spells');
+ assert.equal(ui.state().hero.maxHp,200);
+ assert.equal(ui.progression.purchase('sorcery').ok,true);
+ assert.equal(ui.progression.purchase('barrier').ok,true);
+ assert.equal(ui.progression.purchase('channel').ok,true);
+ assert.equal(ui.state().hero.damage,14);
+ assert.equal(ui.state().hero.maxHp,220);
+ assert.equal(ui.state().hero.attackSpeed,1.05);
+ assert.equal(ui.progression.getState().gold,70);
+ const restored=createHarness({weapon:'wand',outfit:'acolyte',magic:'ice',savedProgression:JSON.parse(ui.storage.get('ember.progress.v1'))});
+ await restored.loadAllImages();
+ assert.equal(restored.state().hero.damage,14);
+ assert.equal(restored.state().hero.maxHp,220);
+ assert.equal(restored.state().hero.attackSpeed,1.05);
+});
