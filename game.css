@@ -69,3 +69,9 @@ dialog{width:min(380px,calc(100% - 32px));max-height:calc(var(--app-height) - 32
 /* Upper-scene transitions advance only on the controller active clock. */
 .scene-fade{position:absolute;inset:0;background:#000;z-index:20;pointer-events:none;opacity:0;transition:none!important}
 .battle-result{z-index:22}
+
+/* Companion keeps the hero's ground plane and never blocks battle inputs. */
+.battlefield .companion-wolf{position:absolute;bottom:calc(var(--road-ground) - var(--lane-offset,0px));left:0;width:64px;height:64px;transform:translateX(-50%);pointer-events:none;isolation:isolate}
+.companion-wolf canvas{display:block;width:100%;height:100%;image-rendering:pixelated;filter:drop-shadow(0 2px 0 #091b12a0)}
+.companion-wolf[hidden]{display:none!important}
+@media(max-width:700px){.battlefield .companion-wolf{width:54px;height:54px}}

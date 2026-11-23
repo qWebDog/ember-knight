@@ -499,3 +499,5 @@ Custom artwork generated with image_gen; selected cartoon variation 3.
 Copied without pixel edits from the approved image.
 Displayed at its original aspect ratio; responsive cropping and foot-aligned road use CSS.
 Separate from Universal LPC character artwork.
+
+Wolf companion sprite ([LPC] Wolf Animation): Stephen "Redshrike" Challener (artist), William.Thompsonj (contributor). CC BY 4.0. https://opengameart.org/content/lpc-wolf-animation . Original wolf sheet preserved as assets/companions/wolf.png; full attribution in assets/companions/CREDITS.md.

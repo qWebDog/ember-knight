@@ -68,3 +68,8 @@
  .equipment-slot-icon{font-size:12px;line-height:13px}.equipment-slot [data-equipment-slot-name]{display:none}
  .equipment-item{flex-basis:125px}
 }
+
+/* Original LPC wolf animation. Show an atlas cell, not a downscaled sheet. */
+.companion-item-wolf{display:block;width:36px;height:36px;flex:none;background:url('assets/companions/wolf.png') -180px 0/360px 216px no-repeat;image-rendering:pixelated}
+.companion-item-empty{display:grid;place-items:center;width:30px;height:30px;flex:none;border:1px dashed #8d997e;border-radius:50%}
+.companion-item-empty:before{content:'×';font:600 22px/1 Arial,sans-serif;color:#9eaa98}

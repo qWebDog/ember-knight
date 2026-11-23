@@ -3,7 +3,7 @@
  */
 (function(root,factory){'use strict';const api=factory(root);if(typeof module==='object'&&module.exports)module.exports=api;if(root)root.EmberEquipmentUI=api;})(typeof window!=='undefined'?window:null,function(host){
   'use strict';
-  function mount({root,store,getSprite,loadItem,paintItem,paintBack,onEquip,outfitColor='sand'}={}){
+  function mount({root,store,getSprite,loadItem,paintItem,paintBack,paintCompanion,onEquip,outfitColor='sand'}={}){
     if(!root||!store||!host?.EmberEquipment)throw new TypeError('Equipment panel and store required');
     const data=host.EmberEquipment;
     const catalogue=data.catalogForClass(store.classId);
@@ -63,6 +63,7 @@
       if(store.enabled)paintBack?.(ctx,pose);
       ctx.drawImage(descriptor.image,origin,tile*row+origin,64,64,0,0,64,64);
       if(store.enabled)paintItem?.(ctx,pose);
+      if(store.enabled)paintCompanion?.(ctx,pose);
       preview.setAttribute('aria-label','Текущий облик героя '+directions[orientation].name+'. Проведи влево или вправо для поворота.');
     }
     function createItemButton(item,current){
@@ -75,13 +76,22 @@
       button.disabled=!store.enabled||busy||!enabledSlots.includes(slot);
       const artwork=items.ownerDocument.createElement('span');
       artwork.className='equipment-item-art';
-      const image=items.ownerDocument.createElement('img');
-      image.className='equipment-item-image';
-      image.src=data.itemIconPath(store.classId,slot,item.id,outfitColor,store.getColor(slot,item.id));
-      image.alt='';
-      image.loading='lazy';
-      image.decoding='async';
-      artwork.append(image);
+      if(slot==='companion'){
+        // Crop the original 640×384 LPC sheet with CSS rather than shrinking
+        // the entire atlas into a nearly invisible thumbnail.
+        const sprite=items.ownerDocument.createElement('span');
+        sprite.className=item.id==='wolf'?'companion-item-wolf':'companion-item-empty';
+        sprite.setAttribute('aria-hidden','true');
+        artwork.append(sprite);
+      }else{
+        const image=items.ownerDocument.createElement('img');
+        image.className='equipment-item-image';
+        image.src=data.itemIconPath(store.classId,slot,item.id,outfitColor,store.getColor(slot,item.id));
+        image.alt='';
+        image.loading='lazy';
+        image.decoding='async';
+        artwork.append(image);
+      }
       const label=items.ownerDocument.createElement('span');
       label.className='equipment-item-copy';
       const name=items.ownerDocument.createElement('strong');name.textContent=item.name;
@@ -90,18 +100,18 @@
       button.setAttribute('aria-label',item.name+(current===item.id?' (надето)':''));
       button.addEventListener('click',async()=>{
         if(destroyed||busy||!store.enabled||!enabledSlots.includes(slot))return;
-        if(store.getState()[slot]===item.id){message('Этот предмет уже надет.');return;}
-        busy=true;message('Загружаем анимации LPC…');render();
+        if(store.getState()[slot]===item.id){message(slot==='companion'?'Этот компаньон уже выбран.':'Этот предмет уже надет.');return;}
+        busy=true;message(slot==='companion'?'Готовим компаньона…':'Загружаем анимации LPC…');render();
         try{
           await loadItem?.(slot,item.id,store.getColors({...store.getState(),[slot]:item.id}));
           if(destroyed)return;
           const result=store.equip(slot,item.id);
           if(result.ok){
-            message('Предмет «'+item.name+'» надет. Анимации обновлены.');
+            message(slot==='companion'?'Компаньон: '+item.name+'.':'Предмет «'+item.name+'» надет. Анимации обновлены.');
             onEquip?.(result.state,slot,item.id);
           }else message(result.reason==='storage'?'Не удалось сохранить экипировку.':'Предмет недоступен.');
         }catch{
-          if(!destroyed)message('Не удалось загрузить оригинальные LPC-спрайты. Выбор не изменён.');
+          if(!destroyed)message(slot==='companion'?'Не удалось загрузить волка. Выбор не изменён.':'Не удалось загрузить оригинальные LPC-спрайты. Выбор не изменён.');
         }finally{busy=false;if(!destroyed)render();}
       });
       return button;
