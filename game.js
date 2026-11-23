@@ -28,6 +28,21 @@
   const equipmentArt = equipment?.enabled ? window.EmberEquipmentArt?.create({loadImage}) : null;
   const ranged = starterWeapon && starterWeapon.projectile !== 'melee';
   const skin = character?.skin || 'light';
+  const swordEquipment = equipment?.enabled && loadout && window.EmberSwordEquipment
+    ? window.EmberSwordEquipment.create({skin,color:loadout.outfitColor,loadImage,
+      standardPath:pose=>loadouts.path(loadout,skin,pose)}) : null;
+  let loadedSwordSprites = null;
+  function applySwordSprites(images){
+    if(!images||!actors.hero.images.walk)return;
+    const sets=actors.hero.images;
+    for(const [kind,pose] of [['idle','walk'],['walk','walk'],['attack','attack'],['block','block']]){
+      if(sets[kind])sets[kind].image=images[pose];
+    }
+    for(const variant of ['slash','halfslash','backslash']){
+      if(sets.attacks?.[variant])sets.attacks[variant].image=images[variant==='slash'?'attack':variant];
+    }
+    actors.hero.lastKey=null;
+  }
   const name = typeof character?.name === 'string' && character.name.trim() ? character.name.slice(0,24) : 'Странник';
   const level = Number.isInteger(character?.level) ? Math.max(1,Math.min(99,character.level)) : 1;
   $('#player-name').textContent = name;
@@ -140,11 +155,17 @@
     equipmentUI=window.EmberEquipmentUI.mount({
       root:equipmentPanel,store:equipment,
       getSprite:()=>actors.hero.images.idle,
-      loadItem:(slot,id)=>equipmentArt?.ensure(slot,id),
+      loadItem:async(slot,id)=>{
+        if((slot==='weapon'||slot==='shield')&&swordEquipment){
+          loadedSwordSprites=await swordEquipment.load({...equipment.getState(),[slot]:id});
+        }else await equipmentArt?.ensure(slot,id);
+      },
       paintItem:(ctx,pose)=>equipmentArt?.draw(ctx,pose),
-      onEquip:()=>{
+      onEquip:(_look,slot)=>{
+        if((slot==='weapon'||slot==='shield')&&loadedSwordSprites)applySwordSprites(loadedSwordSprites);
         actors.hero.lastKey=null;
         if(ready)render(battle.getState());
+        equipmentUI?.refreshPreview();
       }
     });
     $('#open-equipment-tab')?.addEventListener('click',()=>showLowerPanel('equipment'));
@@ -158,21 +179,23 @@
     try {
       let idle;
       if (loadout) {
-        const walk = await loadImage(loadouts.path(loadout,skin,'walk'));
-        const attack = await loadImage(loadouts.path(loadout,skin,'attack'));
+        const swordSprites=swordEquipment?await swordEquipment.load(equipment.getState()):null;
+        if(swordSprites)loadedSwordSprites=swordSprites;
+        const walk = swordSprites?.walk||await loadImage(loadouts.path(loadout,skin,'walk'));
+        const attack = swordSprites?.attack||await loadImage(loadouts.path(loadout,skin,'attack'));
         idle = walk;
         actors.hero.images.idle = {image:walk,row:3,still:0,...starterWeapon.walk};
         actors.hero.images.walk = {image:walk,row:3,...starterWeapon.walk};
         actors.hero.images.attack = {image:attack,row:3,...starterWeapon.attack};
         if (starterWeapon.attacks) {
           const variants = await Promise.all(Object.entries(starterWeapon.attacks).map(async ([variant,geometry]) => {
-            const image = variant === 'slash' ? attack : await loadImage(loadouts.path(loadout,skin,variant));
+            const image = variant === 'slash' ? attack : (swordSprites?.[variant]||await loadImage(loadouts.path(loadout,skin,variant)));
             return [variant,{image,row:3,...geometry}];
           }));
           actors.hero.images.attacks = Object.fromEntries(variants);
         }
         if (starterWeapon.block) {
-          const block = await loadImage(loadouts.path(loadout,skin,'block'));
+          const block = swordSprites?.block||await loadImage(loadouts.path(loadout,skin,'block'));
           actors.hero.images.block = {image:block,row:3,still:0,...starterWeapon.block};
         }
       } else {
@@ -210,7 +233,7 @@
       const face = $('#avatar').getContext('2d'); face.imageSmoothingEnabled = false;
       const avatarTile=loadout?starterWeapon.walk.tile:64, avatarOrigin=loadout?starterWeapon.walk.origin:0;
       face.drawImage(idle,avatarOrigin+19,avatarTile*2+avatarOrigin+12,26,26,0,0,32,32);
-      // Real LPC sheets are loaded for the saved helmet/armor; other slots stay disabled.
+      // Helmet/armor are native pose overlays; sword/shield are complete, recomposed LPC sheets.
       if(equipmentArt)try{await equipmentArt.prepareLook(equipment.getState());}
       catch{$('#status').textContent='Не удалось загрузить часть LPC-экипировки.';}
       ready = true;

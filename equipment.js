@@ -12,8 +12,8 @@
     {id:'cape',name:'Плащ',icon:'cape'},
     {id:'boots',name:'Обувь',icon:'boots'}
   ].map(Object.freeze));
-  // Only these slots have native LPC sheets covering every warrior battle pose.
-  const supportedSlots=Object.freeze(['helmet','armor']);
+  // Helms/armor use original LPC pose overlays; swords/shields are fully recomposed native LPC sheets.
+  const supportedSlots=Object.freeze(['helmet','armor','weapon','shield']);
   const catalog=Object.freeze({
     helmet:Object.freeze([
       {id:'none',name:'Без шлема',detail:'Открытая голова',tone:'#78867d'},
@@ -27,13 +27,13 @@
     ].map(Object.freeze)),
     weapon:Object.freeze([
       {id:'basic',name:'Начальный меч',detail:'Исходный LPC-меч',tone:'#b1aca4'},
-      {id:'steel',name:'Стальной меч',detail:'Светлый клинок',tone:'#d2e0dd'},
-      {id:'ember',name:'Клинок Эмбера',detail:'Огненная гарда',tone:'#dc7b37'}
+      {id:'steel',name:'Серебряный меч LPC',detail:'Оригинальный LPC · серебро',tone:'#d2e0dd'},
+      {id:'ember',name:'Золотой меч LPC',detail:'Оригинальный LPC · золото',tone:'#dcab37'}
     ].map(Object.freeze)),
     shield:Object.freeze([
       {id:'basic',name:'Деревянный щит',detail:'Исходный LPC-щит',tone:'#7a6149'},
-      {id:'steel',name:'Стальной щит',detail:'Серебряная окантовка',tone:'#9cbdcb'},
-      {id:'royal',name:'Королевский щит',detail:'Золотой герб',tone:'#d1a44d'}
+      {id:'steel',name:'Стальной щит LPC',detail:'Анимированный heater · стальная палитра',tone:'#9cbdcb'},
+      {id:'royal',name:'Королевский щит LPC',detail:'Анимированный heater · красный и золото',tone:'#d1a44d'}
     ].map(Object.freeze)),
     cape:Object.freeze([
       {id:'none',name:'Без плаща',detail:'Без дополнительного плаща',tone:'#737b69'},
