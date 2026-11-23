@@ -174,3 +174,62 @@ test('Wolf is unusable on Warrior and Mage even from migrated save data',async()
    assert.equal(wolfActor.render({time:1,x:150}),false);
  }
 });
+
+test('wolf returns to a fixed Archer anchor instead of chasing the exit animation offscreen',async()=>{
+ const h=harness();await h.actor.load();h.store.equip('companion','wolf');
+ const target={id:'archer1',x:410,width:64,depth:4,hp:60};
+ let time=0;
+ for(let i=0;i<35;i++,time+=.1)
+   h.actor.advance({dt:.1,time,phase:'running',heroX:150,anchorX:150,heroSize:64,heroDepth:3,target});
+ assert.ok(h.actor.getPose().x>200,'wolf first travels toward the enemy');
+ const home=150-64*.83;
+ let furthest=-Infinity,returned=false;
+ for(let i=0;i<40;i++,time+=.1){
+   const exitingHeroX=250+i*35;
+   h.actor.advance({dt:.1,time,phase:'intermission',heroX:exitingHeroX,
+     anchorX:150,heroSize:64,heroDepth:3,target:null});
+   const pose=h.actor.getPose();
+   furthest=Math.max(furthest,pose.x);
+   if(Math.abs(pose.x-home)<1)returned=true;
+   h.actor.render({time,x:exitingHeroX,laneStep:8,heroSize:64,depth:3});
+ }
+ assert.equal(returned,true,'wolf reaches the genuine stationary Archer home');
+ assert.ok(furthest<420,'it never follows the exiting hero thousands of pixels away');
+ assert.ok(Math.abs(h.actor.getPose().x-home)<1,'wolf stays home after arrival');
+ assert.equal(h.actor.getPose().motion,'idle');
+ assert.equal(h.actor.getPose().facing,1,'returning wolf correctly faces left');
+ assert.ok(Math.abs(h.actor.getPose().depth-3)<.01,'wolf returns to Archer lane too');
+ assert.ok(Math.abs(Number.parseFloat(h.element.style.left)-home)<1,
+   'rendered wolf x stays anchored while the hero crosses the wave fade');
+});
+test('wolf displays its head in front of the same-depth enemy during a bite',async()=>{
+ const h=harness();await h.actor.load();h.store.equip('companion','wolf');
+ const target={id:'orc',x:360,width:148,depth:4,hp:100};
+ const contact=wolf.contact;
+ assert.ok(contact.enemy>.5,'wolf must stop near the visible edge of a 2x Orc');
+ const expected=target.x-target.width*contact.enemy-64*contact.companion;
+ let time=0;
+ for(let i=0;i<50&&h.actor.getPose().motion!=='bite';i++,time+=.1)
+   h.actor.advance({dt:.1,time,phase:'running',heroX:130,
+     anchorX:130,heroSize:64,heroDepth:3,target});
+ const pose=h.actor.getPose();
+ assert.equal(pose.motion,'bite');
+ assert.ok(Math.abs(pose.x-expected)<=1,'the wolf stops before the enlarged Orc sprite');
+ h.actor.render({time,heroSize:64,depth:3,laneStep:9});
+ const wolfLayer=Number(h.element.style.zIndex);
+ const enemyLayer=Math.round(100+(target.depth-1)*100);
+ assert.ok(wolfLayer>enemyLayer,'attacking wolf must render above target at equal depth');
+ assert.equal(h.element.dataset.motion,'bite');
+ assert.equal(h.element.dataset.facing,'right');
+ assert.ok(pose.x+64*.5<target.x-target.width*.5+18,
+   'the wolf muzzle is not swallowed by the oversized enemy');
+});
+test('Orc uses a true double-size layout box across all responsive breakpoints',()=>{
+ const css=fs.readFileSync(path.join(dist,'game.css'),'utf8');
+ const html=fs.readFileSync(path.join(dist,'index.html'),'utf8');
+ assert.match(css,/\.fighter\.enemy-one\[data-fighter="orc"\]\s*\{\s*width:calc\(var\(--enemy-size\) \* 2\);\s*height:calc\(var\(--enemy-size\) \* 2\)/);
+ assert.match(html,/data-fighter="orc"/);
+ const game=fs.readFileSync(path.join(dist,'game.js'),'utf8');
+ assert.match(game,/window\.EmberCompanion\?\.contact/);
+ assert.match(game,/anchorX:battlefield\.clientWidth/);
+});
