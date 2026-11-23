@@ -194,6 +194,28 @@ def build_foreground_layers():
     print(f'READY {written} original LPC sword/shield foreground atlases', flush=True)
 
 
+def build_basic_clothing():
+    """Export the exact native starting shirt as a colorable torso plane.
+
+    Repainting this same geometry over the precomposed base changes the
+    starting garment color while leaving the body, face and weapon intact.
+    """
+    recipe=json.loads((SCRIPTS/'sword-recipes.json').read_text())['militia']['layers']
+    shirt=next(layer for layer in recipe
+               if 'torso/clothes/longsleeve/' in layer['sources']['walk'])
+    total=0
+    for color,(main,_) in COLORS.items():
+        for pose,animation,frames,tile in POSES:
+            path=shirt['sources']['walk'].replace('/walk','/{a}').format(a=animation)
+            image=recolored(path,'cloth',main)
+            output=PROJECT/'dist/assets/equipment/lpc/armor/basic'/color
+            output.mkdir(parents=True,exist_ok=True)
+            image.save(output/f'{pose}.png',optimize=True)
+            total+=1
+    assert total==30,total
+    print(f'READY {total} original colorable warrior shirt atlases',flush=True)
+
+
 def build_cape_layers():
     """Original LPC cape frames in both planes for every warrior pose.
 
@@ -280,6 +302,7 @@ def prefetch():
 if __name__ == '__main__':
     prefetch()
     build_foreground_layers()
+    build_basic_clothing()
     build_cape_layers()
     colors = ('sand',) if args.quick else COLORS.keys()
     skins = ('light',) if args.quick else SKINS
