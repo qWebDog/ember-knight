@@ -5,7 +5,7 @@
   const skinNames = ['Светлый','Тёплый','Оливковый','Бронзовый','Смуглый','Тёмный'];
   const telegram = window.Telegram?.WebApp;
   const arena = $('.adventure'), battlefield = $('.battlefield'), dialog = $('#game-dialog');
-  const autoButton = $('#auto-button'), resultPanel = $('#battle-result');
+  const autoButton = $('#auto-button'), resultPanel = $('#battle-result'), sceneFade = $('#scene-fade');
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   let character = null, auto = true, wallet = 0;
   try {
@@ -52,6 +52,9 @@
   arena.dataset.lanes='5';battlefield.dataset.lanes='5';
   let heroX = null, fieldWidth = null, moving = false, heroMoving = false;
   let walkDistance = 0, walkDirection = 3, activeTime = 0;
+  let sceneTransition = null;
+  const waveExitDuration=window.EmberCombat.intermissionDuration||1.4;
+  arena.dataset.transition='';sceneFade.dataset.opacity='0';sceneFade.style.opacity='0';
   let pairContacted = false, previousSeparation = null, contactTarget = null, previousTargetSeparation = null;
   try { telegram?.ready(); telegram?.expand(); telegram?.setHeaderColor('#14231f'); telegram?.setBackgroundColor('#161e18'); } catch {}
   function syncViewport() {
@@ -176,12 +179,48 @@
     autoButton.setAttribute('aria-pressed', String(auto));
     autoButton.setAttribute('aria-label', `${ended?'Автоповтор':'Автобой'} ${auto ? 'включён' : 'приостановлен'}`);
     $('#auto-label').textContent = auto ? 'ВКЛ' : 'ВЫКЛ';
-    $('#battle-state').textContent = !ready ? assetError ? 'Ошибка загрузки' : 'Загрузка боя' : !auto ? 'Пауза' : state.phase === 'victory' ? 'Победа · 3/3' : state.phase === 'defeat' ? 'Новый заход' : state.phase==='intermission' ? 'Следующая волна…' : moving ? 'Подход к цели' : `Волна ${state.waveNumber}/${state.waveCount}`;
+    $('#battle-state').textContent = !ready ? assetError ? 'Ошибка загрузки' : 'Загрузка боя' : !auto ? 'Пауза' : state.phase === 'victory' ? 'Победа · 3/3' : state.phase === 'defeat' ? 'Поражение' : state.phase==='intermission' ? 'Следующая волна…' : moving ? 'Подход к цели' : `Волна ${state.waveNumber}/${state.waveCount}`;
     if(ended) updateCountdown();
   }
   function updateCountdown() {
     if(restartRemaining===null)return;
     $('#result-copy').textContent=`${resultSummary} ${auto ? `Новый бой через ${Math.max(1,Math.ceil(restartRemaining))} с.` : 'Автоповтор на паузе.'}`;
+  }
+  function beginSceneTransition(phase,at) {
+    sceneTransition={phase,at,lastTime:at,depth:actors.hero.depth,fresh:phase==='wave-in'};
+    arena.dataset.transition=phase;sceneFade.dataset.phase=phase;
+    if(phase==='wave-out'||phase==='victory'||phase==='defeat')actors.hero.animation=null;
+  }
+  function clearSceneTransition() {
+    sceneTransition=null;arena.dataset.transition='';sceneFade.dataset.phase='';sceneFade.dataset.opacity='0';sceneFade.style.opacity='0';
+  }
+  function renderSceneTransition(state) {
+    if(!sceneTransition)return;
+    const transition=sceneTransition;
+    // A wave reset gets one fully covered paint even if a frame crosses its boundary.
+    if(transition.fresh){transition.at=activeTime;transition.lastTime=activeTime;transition.fresh=false;}
+    const age=Math.max(0,activeTime-transition.at);
+    const outgoing=transition.phase==='wave-out'||transition.phase==='victory';
+    if(outgoing&&state.hero.hp>0){
+      if(!reducedMotion.matches){
+        const elapsed=Math.max(0,activeTime-transition.lastTime),size=actors.hero.element.offsetWidth;
+        const distance=size*.85*elapsed;
+        heroX+=distance;walkDistance+=distance/size;
+        walkDirection=3;heroMoving=true;moving=true;
+      }else heroMoving=false;
+      actors.hero.depth=transition.depth;
+      actors.hero.element.style.left=`${heroX}px`;projectFormation();
+    }
+    transition.lastTime=activeTime;
+    let opacity;
+    if(transition.phase==='wave-in'){
+      opacity=Math.max(0,1-age/.4);
+      if(age>=.4){clearSceneTransition();return;}
+    }else if(reducedMotion.matches)opacity=1;
+    else if(transition.phase==='defeat')opacity=Math.min(1,age/.5);
+    else opacity=Math.max(0,Math.min(1,(age-.5)/(waveExitDuration-.5)));
+    sceneFade.style.opacity=String(opacity);sceneFade.dataset.opacity=String(opacity);
+    if(transition.phase==='victory'||transition.phase==='defeat')resultPanel.hidden=opacity<.85;
   }
   function syncPause() {
     if (ready && auto && !document.hidden && !dialog.open) battle.resume(); else battle.pause();
@@ -301,18 +340,22 @@
         $('#status').textContent = event.id === 'hero' ? 'Герой пал. Монеты за побеждённых врагов сохранены.' : `${actors[event.id].label} побеждён. +${event.reward} монет.`;
       } else if(event.type==='wave_clear'){
         removeEffects(effect=>effect.type!=='spell'||effect.landed);
+        beginSceneTransition('wave-out',event.at);
         $('#status').textContent=`Волна ${event.waveNumber} пройдена.`;
         updateControls();
       } else if(event.type==='wave'){
         prepareWave(battle.getState());
+        // Reset actors under black on this paint, then reveal on the active clock.
+        beginSceneTransition('wave-in',event.at);
         $('#status').textContent=`Волна ${event.waveNumber} из ${event.waveCount}: ${event.enemies.length===2?'два лучника':event.enemies[0].type==='orc'?'орк':'один лучник'}.`;
         updateControls();
       } else if (event.type === 'end') {
         pendingIceImpacts.clear();for(const actor of Object.values(actors))clearStatus(actor);
         restartRemaining=2;
         resultSummary=event.result==='victory'?`Все три волны пройдены. За бой: +${event.totalReward} монет.`:`Герой пал. За бой сохранено: +${event.totalReward} монет.`;
-        $('#result-title').textContent = event.result === 'victory' ? 'Победа!' : 'Новый заход';
-        $('#replay-button').textContent = 'Начать сейчас'; resultPanel.hidden = false;
+        $('#result-title').textContent = event.result === 'victory' ? 'Победа' : 'Поражение';
+        beginSceneTransition(event.result,event.at);
+        $('#replay-button').textContent = 'Начать сейчас'; resultPanel.hidden = true;
         $('#status').textContent = event.result === 'victory' ? `Победа. Следующий бой начнётся автоматически. Получено ${event.totalReward} монет.` : 'Герой восстановится и начнёт бой заново. Заработанные монеты сохранены.';
         try { telegram?.HapticFeedback?.notificationOccurred(event.result === 'victory' ? 'success' : 'warning'); } catch {}
         removeEffects(effect=>effect.type!=='spell'||effect.landed);
@@ -328,8 +371,9 @@
     const frozen=syncFrozenPose(actor,unit,state);
     const age = actor.animation ? activeTime - actor.animation.at : 100;
     const ended = ['victory','defeat'].includes(state.phase);
+    const walkingOut=id==='hero'&&(sceneTransition?.phase==='wave-out'||sceneTransition?.phase==='victory');
     const distance = id === 'hero' ? walkDistance : actor.distance;
-    const walking = (id==='hero'?heroMoving:actor.moving) && distance > 0 && unit.hp > 0 && !ended && !reducedMotion.matches && actor.images.walk?.frames > 1;
+    const walking = (id==='hero'?heroMoving:actor.moving) && distance > 0 && unit.hp > 0 && (!ended||walkingOut) && !reducedMotion.matches && actor.images.walk?.frames > 1;
     const blocking = !walking && !ended && unit.hp > 0 && !reducedMotion.matches && actor.images.block && activeTime - actor.blockAt < .28;
     const attacking = !walking && !blocking && !ended && age >= 0 && age < (actor.animation?.duration || 0) && unit.hp > 0 && !reducedMotion.matches;
     const kind = walking ? 'walk' : blocking ? 'block' : attacking ? 'attack' : 'idle';
@@ -495,6 +539,7 @@
     }
   }
   function render(state) {
+    renderSceneTransition(state);
     for (const id of Object.keys(actors)) drawActor(id,state);
     $('#hero-vital').textContent = `${state.hero.hp} / ${state.hero.maxHp} HP`;
     const waves = document.querySelectorAll('.wave');
@@ -515,10 +560,18 @@
   }
   function advanceBattleFrame(dt) {
     let remaining=dt;
+    const advance=(seconds,availability)=>{
+      const events=battle.advance(seconds,availability);
+      // A terminal hit may stop partway through a frame. Follow actual engine time
+      // until the terminal countdown becomes the owner of the visual clock.
+      activeTime=battle.getState().elapsed;
+      handleEvents(events);
+    };
     while(remaining>1e-7){
       const before=battle.getState();
       if(['victory','defeat'].includes(before.phase))break;
       let step=remaining;
+      if(before.phase==='intermission')step=Math.min(step,before.intermissionRemaining);
       // Cast events supply their engine-time impact boundary even with reduced motion.
       // Status rendering itself always reads the enemy snapshot, never this schedule.
       for(const [id,impact]of pendingIceImpacts){
@@ -527,16 +580,15 @@
       }
       for(const unit of before.enemies)if(isFrozen(unit,before))step=Math.min(step,unit.status.endsAt-before.elapsed);
       step=Math.min(remaining,Math.max(1e-6,step));
-      activeTime+=step;
       const wasMoving=moving;
       if(before.phase==='intermission'){
-        handleEvents(battle.advance(step,{heroCanAttack:Boolean(ranged),orcCanAttack:false}));
+        advance(step,{heroCanAttack:Boolean(ranged),orcCanAttack:false});
       }else{
         const beforeRange=attackAvailability(before);
         const walkTime=updateMovement(step,before);
         battle.resume();
-        if(walkTime>0)handleEvents(battle.advance(walkTime,beforeRange));
-        if(step>walkTime)handleEvents(battle.advance(step-walkTime,attackAvailability(battle.getState())));
+        if(walkTime>0)advance(walkTime,beforeRange);
+        if(step>walkTime)advance(step-walkTime,attackAvailability(battle.getState()));
       }
       const after=battle.getState();
       syncFrozenActors(after);updateMovement(0,after);
@@ -565,6 +617,7 @@
   function restartBattle(startAuto) {
     battle.restart();if(startAuto)auto=true;
     activeTime=0;restartRemaining=null;resultSummary='';paidDeaths.clear();
+    clearSceneTransition();
     prepareWave(battle.getState());resultPanel.hidden=true;lastFrameTime=null;
     if(startAuto)try{localStorage.setItem('ember.combat.auto.v1','on');}catch{}
     render(battle.getState());syncPause();$('#status').textContent='Битва 1–1. Волна 1: один лучник.';

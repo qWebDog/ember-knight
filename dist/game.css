@@ -47,8 +47,8 @@ dialog{width:min(380px,calc(100% - 32px));max-height:calc(var(--app-height) - 32
 .wave-archer[data-fighter="archer2"]{left:61%}
 .wave-archer[data-fighter="archer3"]{left:80%}
 .enemy-one{left:65%;bottom:19px}
-.fighter{transition:opacity .12s ease}
-.battlefield.is-between-waves .fighter{opacity:0;pointer-events:none}
+.fighter{transition:none}
+.battlefield.is-between-waves .enemy{opacity:0;pointer-events:none}
 .battle-controls{z-index:11}
 .damage-number.coin-number{color:#f3cf79;font-size:13px;white-space:nowrap;text-shadow:0 2px 0 #132117,0 0 6px #b5813033}
 @media(orientation:landscape) and (max-height:600px){.wave-archer,.enemy-one{bottom:14px}}
@@ -65,3 +65,7 @@ dialog{width:min(380px,calc(100% - 32px));max-height:calc(var(--app-height) - 32
 .spell-projectile{z-index:601}
 .damage-number{z-index:602}
 @media(orientation:landscape) and (max-height:600px){.battlefield{--road-ground:26px}}
+
+/* Upper-scene transitions advance only on the controller active clock. */
+.scene-fade{position:absolute;inset:0;background:#000;z-index:20;pointer-events:none;opacity:0;transition:none!important}
+.battle-result{z-index:22}

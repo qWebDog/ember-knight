@@ -23,6 +23,7 @@
 <main class="game-screen">
 <section class="adventure" aria-label="Основной экран приключения">
 <div class="battle-landscape" aria-hidden="true"></div><div class="landscape-shade" aria-hidden="true"></div>
+<div class="scene-fade" id="scene-fade" data-phase="" aria-hidden="true"></div>
 <header class="hud">
 <button class="profile" id="profile-button" aria-label="Профиль героя"><span class="avatar"><canvas id="avatar" width="32" height="32" aria-hidden="true"></canvas><span id="level-badge">1</span></span><span class="profile-info"><strong id="player-name">Странник</strong><span class="power"><svg><use href="#swords"/></svg><b>12</b><span>СИЛА</span></span></span></button>
 <div class="wallet"><button class="currency gold" data-info="gold" aria-label="Золото: 0"><svg><use href="#coin"/></svg><strong>0</strong><span class="currency-plus">+</span></button><button class="currency crystals" data-info="crystals" aria-label="Кристаллы: 0"><svg><use href="#gem"/></svg><strong>0</strong><span class="currency-plus">+</span></button></div>
@@ -41,7 +42,7 @@
 <div class="mote m1"></div><div class="mote m2"></div><div class="mote m3"></div>
 </div>
 <div class="battle-controls"><div class="battle-state"><span class="battle-live"><span class="state-dot"></span><span id="battle-state">Загрузка боя</span></span><span id="hero-vital">200 / 200 HP</span></div><div class="abilities"><button class="auto-button active" id="auto-button" aria-pressed="true" aria-label="Автобой включён"><span>АВТО</span><b id="auto-label">ВКЛ</b></button><button class="ability fist" data-info="fist" aria-label="Умение Натиск, откроется на третьем уровне"><svg><use href="#fist"/></svg><span class="ability-lock"><svg><use href="#lock"/></svg></span></button><button class="ability dash" data-info="dash" aria-label="Умение Рывок, откроется на пятом уровне"><svg><use href="#bolt"/></svg><span class="ability-lock"><svg><use href="#lock"/></svg></span></button><button class="ability fire" data-info="fire" aria-label="Умение Внутренний огонь, откроется на десятом уровне"><svg><use href="#flame"/></svg><span class="ability-lock"><svg><use href="#lock"/></svg></span></button></div></div>
-<div class="battle-result" id="battle-result" hidden><div class="result-card"><span class="result-eyebrow">МЕЖДУ ВОЛНАМИ</span><h2 id="result-title">Волна пройдена</h2><p id="result-copy"></p><button id="replay-button">Начать сейчас</button></div></div>
+<div class="battle-result" id="battle-result" hidden><div class="result-card"><span class="result-eyebrow">БИТВА 1–1</span><h2 id="result-title">Победа</h2><p id="result-copy"></p><button id="replay-button">Начать сейчас</button></div></div>
 <div class="arena-border" aria-hidden="true"><span></span></div>
 </section>
 <section class="lower-placeholder" aria-label="Нижняя панель — заглушка"><div class="placeholder-inner"><div class="placeholder-rune"><svg><use href="#anvil"/></svg></div><span class="soon-label">СЛЕДУЮЩАЯ ГЛАВА</span><h2>Продолжение следует</h2><p>Нижняя панель появится здесь</p><span class="placeholder-dots"><i></i><i></i><i></i></span></div><div class="ember-sign"><svg><use href="#flame"/></svg><span>EMBER</span></div></section>

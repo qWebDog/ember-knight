@@ -238,7 +238,8 @@ function actorX(ui,id){return Number.parseFloat(ui.node(`[data-fighter="${id}"]`
 function inReach(ui,id){return Math.abs(actorX(ui,id)-ui.heroX())<=ui.node('[data-fighter="hero"]').offsetWidth*.23+ui.node(`[data-fighter="${id}"]`).offsetWidth*.34+.01&&Math.abs(ui.footY(id)-ui.footY('hero'))<=.01;}
 function kills(ui){return ui.events.filter(event=>event.type==='death'&&event.id!=='hero');}
 function wallet(ui){return Number(ui.storage.get('ember.test.gold.v1')||0);}
-function fullSnapshot(ui){return {combat:ui.state(),spells:ui.spellState(),statuses:ui.statusState(),actors:ui.actorIds.map(id=>({id,x:actorX(ui,id),depth:ui.depth(id),footY:ui.footY(id),lane:ui.node(`[data-fighter="${id}"]`).dataset.lane,z:ui.node(`[data-fighter="${id}"]`).style.zIndex,hidden:ui.node(`[data-fighter="${id}"]`).hidden,motion:ui.node(`[data-fighter="${id}"]`).dataset.motion,draws:ui.node(id==='hero'?'#player-sprite':`#enemy-${id}`).draws.length,last:ui.node(id==='hero'?'#player-sprite':`#enemy-${id}`).draws.at(-1)}))};}
+function sceneSnapshot(ui){const fade=ui.node(html.includes('id="scene-fade"')?'#scene-fade':'.scene-fade');return {opacity:Number(fade.style.opacity||0),phase:fade.dataset.phase||'',resultHidden:ui.node('#battle-result').hidden,title:ui.node('#result-title').textContent};}
+function fullSnapshot(ui){return {combat:ui.state(),scene:sceneSnapshot(ui),spells:ui.spellState(),statuses:ui.statusState(),actors:ui.actorIds.map(id=>({id,x:actorX(ui,id),depth:ui.depth(id),footY:ui.footY(id),lane:ui.node(`[data-fighter="${id}"]`).dataset.lane,z:ui.node(`[data-fighter="${id}"]`).style.zIndex,hidden:ui.node(`[data-fighter="${id}"]`).hidden,motion:ui.node(`[data-fighter="${id}"]`).dataset.motion,draws:ui.node(id==='hero'?'#player-sprite':`#enemy-${id}`).draws.length,last:ui.node(id==='hero'?'#player-sprite':`#enemy-${id}`).draws.at(-1)}))};}
 
 test('assets gate startup; the first wave shows one real LPC archer and the selected bare hero skin',async()=>{
  const ui=createHarness({skin:'bronze',preference:'off',search:'?battle=test'});
@@ -305,7 +306,7 @@ test('automatic victory loops restore HP and appearance, reuse enemy IDs, and pa
  assert.equal(kills(ui).length,8);assert.equal(kills(ui).filter(event=>event.id==='archer1').length,2);
  assert.ok(ui.events.filter(event=>event.type==='cast').every(event=>event.sourceId==='hero'&&event.magic==='ice'));
  assert.ok(ui.node('#player-sprite').draws.every(draw=>draw.src.includes('/black-')));
- ui.node('#replay-button').click();assert.equal(ui.runCount,3);assert.equal(ui.state().hero.hp,200);assert.equal(wallet(ui),40);assert.equal(ui.spells().length,0);
+ ui.runUntil(()=>!ui.node('#battle-result').hidden,2);ui.node('#replay-button').click();assert.equal(ui.runCount,3);assert.equal(ui.state().hero.hp,200);assert.equal(wallet(ui),40);assert.equal(ui.spells().length,0);
 });
 
 test('victory countdown uses active visible time and can be paused without blocking or duplicating the RAF loop',async()=>{
@@ -413,7 +414,7 @@ test('shield guard and counter work against the final orc, freeze on pause, and 
  assert.ok(guard.src.endsWith('-block.png'));assert.deepEqual(guard.crop,[0,192,64,64]);assert.equal(ui.node('#player-sprite').style.width,'100%');
  ui.node('#auto-button').click();const held=fullSnapshot(ui);ui.runFor(2);assert.deepEqual(fullSnapshot(ui),held);assert.equal(hero.classes.has('is-blocking'),true);
  ui.node('#auto-button').click();ui.runUntil(()=>ui.events.some(event=>event.counter));assert.equal(hero.dataset.counter,'true');assert.equal(hero.dataset.attack,'halfslash');
- ui.runUntil(()=>ui.state().phase==='victory');ui.node('#replay-button').click();
+ ui.runUntil(()=>ui.state().phase==='victory');ui.runUntil(()=>!ui.node('#battle-result').hidden,2);ui.node('#replay-button').click();
  assert.equal(hero.dataset.counter,'false');assert.equal(hero.dataset.attack,'');assert.equal(hero.classes.has('is-heavy'),false);assert.equal(hero.classes.has('is-blocking'),false);assert.equal(ui.node('.battlefield').children.length,0);
 });
 
@@ -446,7 +447,7 @@ test('the winning impact finishes before automatic restart and manual replay cle
  ui.node('#profile-button').click();const held=ui.spellState();ui.runFor(1);assert.deepEqual(ui.spellState(),held);ui.node('#game-dialog').close();
  runFramesUntil(ui,()=>ui.spells().length===0,1);for(const spell of landed)assert.deepEqual([...new Set(spell.draws.filter(draw=>draw.crop[1]===128).map(draw=>draw.crop[0]/64))].sort((a,b)=>a-b),[0,1,2,3,4,5]);
  assert.deepEqual(ui.state(),state);assert.equal(ui.events.length,events);assert.equal(wallet(ui),20);assert.equal(ui.runCount,1);
- ui.node('#replay-button').click();assert.equal(ui.runCount,2);assert.equal(ui.spells().length,0);assert.equal(wallet(ui),20);assert.equal(ui.state().hero.hp,200);
+ ui.runUntil(()=>!ui.node('#battle-result').hidden,2);ui.node('#replay-button').click();assert.equal(ui.runCount,2);assert.equal(ui.spells().length,0);assert.equal(wallet(ui),20);assert.equal(ui.state().hero.hp,200);
 });
 
 test('old and invalid hero schools become fire; this encounter spawns no NPC mage or shadow casts',async()=>{
@@ -633,6 +634,21 @@ function sourceFoot(ui,id){const {scale,top}=roadProjection(ui);return (ui.footY
 function roadCenterSource(ui){const {scale,top}=roadProjection(ui),offset=Number.parseFloat(ui.node('[data-fighter="hero"]').style['--lane-offset'])||0;return (ui.footY('hero')-offset-top)/scale;}
 function almost(actual,expected,tolerance=1e-6,message='values are equal'){assert.ok(Math.abs(actual-expected)<=tolerance,`${message}: ${actual} vs${expected}`);}
 function actorRowSnapshot(ui){return ui.actorIds.map(id=>({id,depth:ui.depth(id),lane:ui.node(`[data-fighter="${id}"]`).dataset.lane,foot:ui.footY(id),offset:ui.node(`[data-fighter="${id}"]`).style['--lane-offset'],z:ui.node(`[data-fighter="${id}"]`).style.zIndex}));}
+// Exact spawn assertions sample the event boundary, not the legitimate remaining
+// fraction of a RAF frame that may already advance the new wave under black.
+function enterWaveExactly(ui,index){
+ while(ui.state().waveIndex<index){
+  ui.runUntil(()=>ui.state().phase==='intermission');
+  const before=ui.state().waveIndex;let attempts=0;
+  while(ui.state().phase==='intermission'){
+   assert.ok(++attempts<100,'the intermission must finish');
+   const remaining=ui.state().intermissionRemaining;assert.ok(remaining>0);
+   ui.frame(Math.min(.1,remaining)*1000);
+  }
+  assert.equal(ui.state().waveIndex,before+1);
+ }
+}
+
 
 test('five configured depth lanes are ordered, distinct and remain inside the approved road at phone, laptop and landscape sizes',async()=>{
  const cases=[
@@ -667,10 +683,10 @@ test('melee walking changes depth towards the current enemy and every strike rea
  ui.runFor(.4);assert.ok(ui.depth('hero')<3&&ui.depth('hero')>=2);assert.equal(ui.node('[data-fighter="hero"]').dataset.motion,'walk');
  ui.runUntil(()=>ui.events.some(event=>event.type==='attack'&&event.sourceId==='hero'&&event.targetId==='archer1'));
  assert.ok(inReach(ui,'archer1'));almost(ui.footY('hero'),ui.footY('archer1'),.01);assert.equal(ui.depth('hero'),2);
- ui.runUntil(()=>ui.state().waveIndex===1);assert.equal(ui.depth('hero'),3);assert.equal(ui.depth('archer2'),1);assert.equal(ui.depth('archer3'),5);
+ enterWaveExactly(ui,1);assert.equal(ui.depth('hero'),3);assert.equal(ui.depth('archer2'),1);assert.equal(ui.depth('archer3'),5);
  ui.runUntil(()=>ui.events.some(event=>event.type==='attack'&&event.sourceId==='hero'&&event.targetId==='archer2'));almost(ui.footY('hero'),ui.footY('archer2'),.01);assert.equal(ui.depth('hero'),1);
  ui.runUntil(()=>ui.events.some(event=>event.type==='attack'&&event.sourceId==='hero'&&event.targetId==='archer3'));almost(ui.footY('hero'),ui.footY('archer3'),.01);assert.equal(ui.depth('hero'),5);
- ui.runUntil(()=>ui.state().waveIndex===2);assert.equal(ui.depth('hero'),3);assert.equal(ui.depth('orc'),4);
+ enterWaveExactly(ui,2);assert.equal(ui.depth('hero'),3);assert.equal(ui.depth('orc'),4);
  ui.runUntil(()=>ui.events.some(event=>event.type==='attack'&&event.sourceId==='orc'));assert.ok(ui.inMeleeRange());assert.equal(ui.depth('hero'),4);assert.equal(ui.depth('orc'),4);almost(ui.footY('hero'),ui.footY('orc'),.01);
 });
 
@@ -691,7 +707,7 @@ test('ranged spells use off-row target coordinates and keep aiming correctly aft
  const angle=assertActualSpellRay(ui,spell);ui.node('#auto-button').click();const elapsed=ui.state().elapsed;
  ui.resizeField(1000,44);ui.frame(0);const resizedAngle=assertActualSpellRay(ui,spell);assert.ok(Math.abs(resizedAngle-angle)>.1);assert.equal(ui.state().elapsed,elapsed);assert.equal(spell.dataset.phase,'flight');
  assert.equal(ui.depth('hero'),3);assert.equal(ui.depth('archer1'),2);almost(roadCenterSource(ui),1028);
- ui.node('#auto-button').click();ui.runUntil(()=>ui.state().waveIndex===2);const startDepth=ui.depth('orc'),home=ui.heroX();assert.equal(startDepth,4);
+ ui.node('#auto-button').click();enterWaveExactly(ui,2);const startDepth=ui.depth('orc'),home=ui.heroX();assert.equal(startDepth,4);
  ui.runFor(.4);assert.equal(ui.heroX(),home);assert.equal(ui.depth('hero'),3);assert.ok(ui.depth('orc')<4&&ui.depth('orc')>3);assert.equal(ui.node('[data-fighter="orc"]').dataset.motion,'walk');
  ui.runUntil(()=>ui.inMeleeRange());almost(ui.footY('hero'),ui.footY('orc'),.01);assert.equal(ui.depth('orc'),3);
 });
@@ -712,6 +728,68 @@ test('pause, wave spawn and replay preserve or reset formation without drifting 
  ui.resizeField(390,59,{arenaHeight:438.88,fieldHeight:180.384,fieldBottomGap:61,roadGround:36,viewportHeight:844});ui.frame(0);
  assert.equal(ui.depth('hero'),depth);assert.deepEqual(ui.node('#player-sprite').draws.at(-1),phase);assert.equal(ui.node('#player-sprite').draws.length,count);almost(roadCenterSource(ui),1028,1e-6);
  const held=fullSnapshot(ui);ui.runFor(2);assert.deepEqual(fullSnapshot(ui),held);
- ui.node('#auto-button').click();ui.runUntil(()=>ui.state().waveIndex===1);assert.equal(ui.depth('hero'),3);assert.equal(ui.depth('archer2'),1);assert.equal(ui.depth('archer3'),5);assert.ok(Number(ui.node('[data-fighter="archer3"]').style.zIndex)>Number(ui.node('[data-fighter="archer2"]').style.zIndex));
- ui.runUntil(()=>ui.state().phase==='victory');ui.node('#replay-button').click();assert.equal(ui.depth('hero'),3);assert.equal(ui.depth('archer1'),2);assert.equal(ui.depth('orc'),4);assert.equal(ui.node('[data-fighter="hero"]').dataset.motion,'idle');almost(roadCenterSource(ui),1028,1e-6);
+ ui.node('#auto-button').click();enterWaveExactly(ui,1);assert.equal(ui.depth('hero'),3);assert.equal(ui.depth('archer2'),1);assert.equal(ui.depth('archer3'),5);assert.ok(Number(ui.node('[data-fighter="archer3"]').style.zIndex)>Number(ui.node('[data-fighter="archer2"]').style.zIndex));
+ ui.runUntil(()=>ui.state().phase==='victory');ui.runUntil(()=>!ui.node('#battle-result').hidden,2);ui.node('#replay-button').click();assert.equal(ui.depth('hero'),3);assert.equal(ui.depth('archer1'),2);assert.equal(ui.depth('orc'),4);assert.equal(ui.node('[data-fighter="hero"]').dataset.motion,'idle');almost(roadCenterSource(ui),1028,1e-6);
+});
+
+function attacks(ui){return ui.events.filter(event=>event.type==='attack').length;}
+function assertFadeCleared(ui){const scene=sceneSnapshot(ui);assert.equal(scene.opacity,0);assert.equal(scene.phase,'');assert.equal(scene.resultHidden,true);}
+
+test('wave clear keeps the hero walking visibly on the same road row, then resets the wave behind a fully black upper scene',async()=>{
+ const ui=createHarness({weapon:'sword',outfit:'militia'});await ui.loadAllImages();ui.runUntil(()=>ui.state().phase==='intermission');
+ const x=ui.heroX(),depth=ui.depth('hero'),hp=ui.state().hero.hp,count=attacks(ui);assert.equal(depth,2);assert.equal(sceneSnapshot(ui).phase,'wave-out');assert.equal(sceneSnapshot(ui).opacity,0);assert.equal(sceneSnapshot(ui).resultHidden,true);
+ ui.runFor(.3);assert.ok(ui.heroX()>x);assert.equal(ui.depth('hero'),depth);assert.equal(ui.node('[data-fighter="hero"]').dataset.motion,'walk');assert.ok(ui.node('#player-sprite').draws.at(-1).src.endsWith('-walk.png'));assert.ok(ui.node('#player-sprite').draws.at(-1).crop[0]>=64);
+ assert.equal(attacks(ui),count);assert.equal(ui.state().hero.hp,hp);assert.equal(sceneSnapshot(ui).opacity,0);
+ ui.runFor(.4);assert.ok(sceneSnapshot(ui).opacity>0&&sceneSnapshot(ui).opacity<1);assert.equal(attacks(ui),count);assert.equal(ui.depth('hero'),depth);
+ runFramesUntil(ui,()=>ui.state().waveIndex===1,2);
+ assert.equal(sceneSnapshot(ui).phase,'wave-in');assert.equal(sceneSnapshot(ui).opacity,1,'a fully black frame conceals the spawn reset');
+ const spawned=ui.events.find(event=>event.type==='wave'&&event.waveIndex===1),age=ui.state().elapsed-spawned.at;
+ assert.ok(age>=0&&age<=.016+1e-6,'only the remaining piece of the last RAF frame may advance the fresh wave');
+ const home=800*.18,size=ui.node('[data-fighter="hero"]').offsetWidth,progress=size*.85*age;
+ almost(ui.heroX(),home+progress,1e-6,'the covered new wave consumes exactly its post-spawn frame remainder');
+ const targetX=actorX(ui,'archer2'),goal=targetX-size*.23-ui.node('[data-fighter="archer2"]').offsetWidth*.34;
+ almost(ui.depth('hero'),3+(1-3)*progress/(goal-home),1e-6,'new movement begins at the reset depth behind the black frame');
+ assert.equal(ui.state().hero.hp,hp);assert.equal(wallet(ui),5);
+ ui.runFor(.2);assert.ok(sceneSnapshot(ui).opacity>0&&sceneSnapshot(ui).opacity<1);ui.runFor(.3);assertFadeCleared(ui);
+ const upper=html.slice(html.indexOf('<section class="adventure"'),html.indexOf('<section class="lower-placeholder"'));
+ assert.ok(upper.includes('id="scene-fade"'));assert.equal((html.match(/id="scene-fade"/g)||[]).length,1);assert.ok(!html.slice(html.indexOf('<section class="lower-placeholder"')).includes('id="scene-fade"'));
+ const css=fs.readFileSync(path.join(dist,'game.css'),'utf8'),fadeRule=css.match(/\.scene-fade\{([^}]*)\}/)?.[1]||'';
+ assert.match(fadeRule,/position:absolute/);assert.match(fadeRule,/inset:0/);assert.match(fadeRule,/z-index:20/);
+ assert.ok(!/\.battlefield\.is-between-waves \.fighter\{[^}]*opacity:0/.test(css),'the outgoing hero must not vanish through the old blanket opacity rule');
+});
+
+test('victory walks on before its result appears, while defeat stays still and reveals the exact defeat title',async()=>{
+ const win=createHarness({weapon:'sword',outfit:'militia'});await win.loadAllImages();win.runUntil(()=>win.state().phase==='victory');
+ const x=win.heroX(),depth=win.depth('hero'),hp=win.state().hero.hp,count=attacks(win);assert.equal(wallet(win),20);assert.equal(sceneSnapshot(win).resultHidden,true);
+ win.runFor(.3);assert.ok(win.heroX()>x);assert.equal(win.depth('hero'),depth);assert.equal(win.node('[data-fighter="hero"]').dataset.motion,'walk');assert.equal(sceneSnapshot(win).phase,'victory');assert.equal(sceneSnapshot(win).resultHidden,true);
+ win.runFor(1.1);assert.equal(sceneSnapshot(win).opacity,1);assert.equal(sceneSnapshot(win).resultHidden,false);assert.match(win.node('#result-title').textContent,/^Победа!?$/);assert.equal(attacks(win),count);assert.equal(win.state().hero.hp,hp);assert.equal(wallet(win),20);
+ win.runUntil(()=>win.runCount===2,1);assert.equal(win.state().hero.hp,200);assert.equal(wallet(win),20);assertFadeCleared(win);
+ const loss=createHarness({weapon:'wand',outfit:'acolyte',magic:'fire',combatOptions:{heroMaxHp:8,heroDamage:100}});await loss.loadAllImages();loss.runUntil(()=>loss.state().phase==='defeat');
+ const corpse={x:loss.heroX(),depth:loss.depth('hero')},coins=wallet(loss);assert.ok(coins>0&&coins<20);assert.equal(loss.node('#result-title').textContent,'Поражение');assert.equal(sceneSnapshot(loss).resultHidden,true);
+ loss.runFor(.3);assert.equal(loss.heroX(),corpse.x);assert.equal(loss.depth('hero'),corpse.depth);assert.notEqual(loss.node('[data-fighter="hero"]').dataset.motion,'walk');assert.ok(sceneSnapshot(loss).opacity>0&&sceneSnapshot(loss).opacity<1);
+ loss.runFor(.3);assert.equal(sceneSnapshot(loss).opacity,1);assert.equal(sceneSnapshot(loss).resultHidden,false);assert.equal(loss.state().hero.hp,0);assert.equal(wallet(loss),coins);
+ loss.runUntil(()=>loss.runCount===2,3);assert.equal(loss.state().hero.hp,8);assert.equal(wallet(loss),coins);assertFadeCleared(loss);
+});
+
+test('auto, modal and visibility pauses freeze walk-on, fade opacity and result reveal on the same active animation clock',async()=>{
+ const ui=createHarness({weapon:'sword',outfit:'militia'});await ui.loadAllImages();ui.runUntil(()=>ui.state().phase==='intermission');ui.runFor(.7);
+ assert.ok(sceneSnapshot(ui).opacity>0&&sceneSnapshot(ui).opacity<1);ui.node('#auto-button').click();const stopped=fullSnapshot(ui);ui.runFor(3);assert.deepEqual(fullSnapshot(ui),stopped);
+ ui.node('#auto-button').click();ui.runFor(.1);ui.node('#profile-button').click();const modal=fullSnapshot(ui);ui.runFor(3);assert.deepEqual(fullSnapshot(ui),modal);
+ ui.node('#game-dialog').close();ui.runFor(.2);ui.document.hidden=true;ui.document.dispatch('visibilitychange');const hidden=fullSnapshot(ui);ui.runFor(3);assert.deepEqual(fullSnapshot(ui),hidden);
+ ui.document.hidden=false;ui.document.dispatch('visibilitychange');runFramesUntil(ui,()=>ui.state().waveIndex===1,2);ui.runFor(.2);
+ assert.equal(sceneSnapshot(ui).phase,'wave-in');assert.ok(sceneSnapshot(ui).opacity>0&&sceneSnapshot(ui).opacity<1);
+ ui.node('#auto-button').click();const arriving=fullSnapshot(ui);ui.runFor(3);assert.deepEqual(fullSnapshot(ui),arriving);ui.node('#auto-button').click();ui.runFor(.5);assertFadeCleared(ui);assert.equal(wallet(ui),5);
+ const terminal=createHarness({weapon:'bow',outfit:'wanderer'});await terminal.loadAllImages();terminal.runUntil(()=>terminal.state().phase==='victory');terminal.runFor(.7);assert.equal(sceneSnapshot(terminal).resultHidden,true);
+ terminal.node('#auto-button').click();const beforeReveal=fullSnapshot(terminal);terminal.runFor(3);assert.deepEqual(fullSnapshot(terminal),beforeReveal);assert.equal(sceneSnapshot(terminal).resultHidden,true);
+ terminal.node('#auto-button').click();terminal.runFor(.8);assert.equal(terminal.state().phase,'victory');assert.equal(sceneSnapshot(terminal).resultHidden,false);assert.equal(wallet(terminal),20);
+});
+
+test('reduced motion keeps transitions without walking and manual replay clears fade layers without leaking another RAF loop',async()=>{
+ const ui=createHarness({weapon:'bow',outfit:'wanderer',reducedMotion:true});await ui.loadAllImages();const home=ui.heroX();ui.runUntil(()=>ui.state().phase==='intermission');
+ assert.equal(sceneSnapshot(ui).phase,'wave-out');assert.equal(sceneSnapshot(ui).opacity,1);assert.equal(ui.heroX(),home);assert.notEqual(ui.node('[data-fighter="hero"]').dataset.motion,'walk');
+ ui.runFor(.3);assert.equal(ui.heroX(),home);assert.equal(sceneSnapshot(ui).opacity,1);assert.equal(wallet(ui),5);
+ ui.runUntil(()=>ui.state().waveIndex===1,2);assert.equal(sceneSnapshot(ui).phase,'wave-in');assert.equal(sceneSnapshot(ui).opacity,1);ui.runFor(.5);assertFadeCleared(ui);
+ ui.runUntil(()=>ui.state().phase==='victory');assert.equal(sceneSnapshot(ui).opacity,1);assert.equal(sceneSnapshot(ui).resultHidden,false);assert.equal(wallet(ui),20);
+ ui.node('#replay-button').click();assert.equal(ui.runCount,2);assert.equal(ui.state().hero.hp,200);assert.equal(ui.state().waveIndex,0);assertFadeCleared(ui);assert.equal(ui.statusCanvases().length,0);assert.equal(ui.spells().length,0);assert.equal(wallet(ui),20);
+ ui.runFor(.4);assertFadeCleared(ui);assert.equal(ui.runCount,2);assert.ok(ui.node('#player-sprite').draws.every(draw=>draw.crop[0]===0));
 });

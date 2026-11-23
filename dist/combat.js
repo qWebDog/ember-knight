@@ -11,7 +11,8 @@
   const CLOSE_MAGIC_INTERVAL = .8 * TICKS;
   const COUNTER_DELAY = .3 * TICKS;
   const COUNTER_DURATION = .36 * TICKS;
-  const INTERMISSION = .7 * TICKS;
+  const intermissionDuration = 1.4;
+  const INTERMISSION = Math.round(intermissionDuration * TICKS);
   const KILL_REWARD = 5;
   const statusTiming = Object.freeze({duration:.5,burnTickInterval:.25,burnDamage:1});
   const STATUS_DURATION = Math.round(statusTiming.duration*TICKS);
@@ -245,5 +246,5 @@
     restart();
     return {getState,advance,pause,resume,restart,get state(){return getState();}};
   }
-  return {createBattle,magicTiming,closeMagicTiming,statusTiming};
+  return {createBattle,magicTiming,closeMagicTiming,statusTiming,intermissionDuration};
 });

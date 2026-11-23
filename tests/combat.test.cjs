@@ -1,7 +1,7 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const {createBattle:createDefaultBattle} = require('../dist/combat.js');
+const {createBattle:createDefaultBattle,intermissionDuration} = require('../dist/combat.js');
 
 // Focused mechanic regressions retain the original three-enemy party as a
 // test-local encounter fixture, retaining its original archer cadence. Production default-wave behavior is tested below.
@@ -453,16 +453,18 @@ test('magic launch, impact and range-gated flight queues are invariant to elapse
 });
 
 test('default encounter exposes only one wave at a time: one archer, two archers, then one orc', () => {
+  assert.equal(intermissionDuration,1.4);
   const battle=createDefaultBattle();
   assert.deepEqual(battle.state.enemies.map(enemy=>[enemy.id,enemy.type,enemy.hp]),[['archer1','archer',60]]);
   assert.deepEqual([battle.state.waveIndex,battle.state.waveNumber,battle.state.waveCount,battle.state.completedWaves,battle.state.totalEnemies],[0,1,3,0,4]);
   const first=battle.advance(6);
   assert.equal(battle.state.phase,'intermission');assert.equal(battle.state.reward,5);assert.equal(battle.state.defeatedCount,1);
+  assert.equal(battle.state.intermissionRemaining,intermissionDuration);
   assert.deepEqual(battle.state.enemies.map(enemy=>enemy.id),['archer1']);assert.equal(battle.state.targetId,null);
   assert.ok(first.some(event=>event.type==='wave_clear'&&event.waveNumber===1&&event.at===6));
-  assert.deepEqual(battle.advance(.699999),[]);assert.equal(battle.state.waveNumber,1);
+  assert.deepEqual(battle.advance(1.399999),[]);assert.equal(battle.state.waveNumber,1);
   const spawned=battle.advance(.000001).find(event=>event.type==='wave');
-  assert.ok(spawned);assert.equal(spawned.at,6.7);assert.equal(spawned.waveNumber,2);
+  assert.ok(spawned);assert.equal(spawned.at,7.4);assert.equal(spawned.waveNumber,2);
   assert.deepEqual(spawned.enemies.map(enemy=>[enemy.id,enemy.type]),[['archer2','archer'],['archer3','archer']]);
   assert.equal(battle.state.hero.hp,179,'hero health carries across the boundary');
   spawned.enemies[0].hp=-999;assert.equal(battle.state.enemies[0].hp,60,'wave event snapshots do not expose engine state');
@@ -497,14 +499,15 @@ test('kill rewards survive defeat even when the next wave has only been partly d
   }
 });
 
-test('pause and resume preserve an intermission remainder and no actors attack during its seven tenths', () => {
+test('pause and resume preserve an exact intermission remainder and no actors attack during its 1.4 seconds', () => {
   const battle=createDefaultBattle();battle.advance(6.2);
-  assert.equal(battle.state.phase,'intermission');assert.equal(battle.state.intermissionRemaining,.5);
-  const paused=battle.pause();assert.equal(paused.phase,'paused');assert.equal(paused.intermissionRemaining,.5);
+  assert.equal(battle.state.phase,'intermission');assert.equal(battle.state.intermissionRemaining,1.2);
+  const paused=battle.pause();assert.equal(paused.phase,'paused');assert.equal(paused.intermissionRemaining,1.2);
   assert.deepEqual(battle.advance(50),[]);assert.deepEqual(battle.state,paused);
   assert.equal(battle.resume().phase,'intermission');
-  assert.deepEqual(battle.advance(.499999),[]);assert.equal(battle.state.waveNumber,1);
-  const events=battle.advance(.000001);assert.equal(events.length,1);assert.equal(events[0].type,'wave');assert.equal(events[0].at,6.7);
+  assert.deepEqual(battle.advance(1.199999),[]);assert.equal(battle.state.waveNumber,1);
+  assert.equal(battle.state.intermissionRemaining,.000001);
+  const events=battle.advance(.000001);assert.equal(events.length,1);assert.equal(events[0].type,'wave');assert.equal(events[0].at,7.4);
   assert.equal(battle.state.hero.hp,179);assert.equal(battle.state.phase,'running');
 });
 
@@ -529,8 +532,8 @@ test('wave boundaries clear old magic flights instead of applying damage to the 
   const cleared=battle.advance(4.65),spell=cleared.find(event=>event.type==='cast'&&event.sourceId==='mage');
   assert.ok(spell);assert.equal(spell.impactAt,4.7);assert.equal(battle.state.phase,'intermission');assert.equal(battle.state.reward,15);
   const hp=battle.state.hero.hp;
-  const transition=battle.advance(.7);assert.equal(battle.state.hero.hp,hp);assert.deepEqual(transition.map(event=>event.type),['wave']);
-  assert.equal(transition[0].at,5.35);assert.deepEqual(battle.state.enemies.map(enemy=>enemy.id),['nextArcher']);
+  const transition=battle.advance(1.4);assert.equal(battle.state.hero.hp,hp);assert.deepEqual(transition.map(event=>event.type),['wave']);
+  assert.equal(transition[0].at,6.05);assert.deepEqual(battle.state.enemies.map(enemy=>enemy.id),['nextArcher']);
   const tail=battle.advance(100);assert.ok(!tail.some(event=>event.castId===spell.castId));
   assert.equal(battle.state.phase,'victory');assert.equal(battle.state.reward,20);assert.equal(battle.state.hero.hp,hp);
 });
@@ -538,13 +541,13 @@ test('wave boundaries clear old magic flights instead of applying damage to the 
 test('wave boundaries discard queued sword counters and old regular cadence before resetting the next combo', () => {
   const createFixture=encounterFixture([[{id:'orc',type:'orc'}],[{id:'nextArcher',type:'archer'}]]);
   const battle=createFixture({heroWeapon:'sword',heroDamage:8.75,heroMaxHp:1000});
-  const events=battle.advance(17.2);
+  const events=battle.advance(17.9);
   assert.ok(events.some(event=>event.type==='block'&&event.at===14.4));
   assert.ok(events.some(event=>event.type==='wave_clear'&&event.at===15.45));
-  const spawn=events.find(event=>event.type==='wave');assert.equal(spawn.at,16.15);
+  const spawn=events.find(event=>event.type==='wave');assert.equal(spawn.at,16.85);
   assert.ok(!events.some(event=>event.counter&&event.at>=15.45));
   const next=events.find(event=>event.type==='attack'&&event.sourceId==='hero'&&event.at>15.45);
-  assert.equal(next.at,17.2);assert.equal(next.targetId,'nextArcher');assert.equal(next.comboStep,1);assert.equal(next.variant,'halfslash');
+  assert.equal(next.at,17.9);assert.equal(next.targetId,'nextArcher');assert.equal(next.comboStep,1);assert.equal(next.variant,'halfslash');
 });
 
 test('archers keep firing during an approach and range gates do not stall an intermission spawn', () => {
@@ -554,8 +557,8 @@ test('archers keep firing during an approach and range gates do not stall an int
   assert.equal(battle.state.hero.hp,186);assert.equal(battle.state.enemies[0].hp,60);assert.equal(battle.state.elapsed,4);
   assert.equal(battle.advance(1.2)[0].at,5.2);
   const separate=createDefaultBattle();separate.advance(6);
-  const spawn=separate.advance(.7,{heroCanAttack:false,orcCanAttack:false});assert.equal(spawn[0].type,'wave');assert.equal(spawn[0].at,6.7);
-  assert.equal(separate.advance(1.2)[0].at,7.9);
+  const spawn=separate.advance(1.4,{heroCanAttack:false,orcCanAttack:false});assert.equal(spawn[0].type,'wave');assert.equal(spawn[0].at,7.4);
+  assert.equal(separate.advance(1.2)[0].at,8.6);
 });
 
 test('default waves, per-kill rewards and intermissions are invariant to large, fixed and irregular advances', () => {
@@ -714,7 +717,7 @@ test('a burn kill grants five gold once and clears its effect, queued spell and 
   assert.deepEqual(death,{type:'death',id:'archer1',unitType:'archer',reward:5,totalReward:5,at:2.6});
   assert.equal(events.filter(event=>event.type==='death').length,1);assert.equal(battle.state.reward,5);assert.equal(battle.state.phase,'intermission');
   assert.equal(battle.state.enemies[0].status,null);assert.equal(battle.state.totalDefeated,1);
-  const spawn=battle.advance(.7);assert.deepEqual(spawn.map(event=>event.type),['wave']);assert.equal(spawn[0].at,3.3);
+  const spawn=battle.advance(1.4);assert.deepEqual(spawn.map(event=>event.type),['wave']);assert.equal(spawn[0].at,4);
   assert.ok(battle.state.enemies.every(enemy=>enemy.hp===60&&enemy.status===null));
   const rest=battle.advance(100);assert.equal(battle.state.reward,20);assert.equal(battle.state.phase,'victory');
   assert.ok(!rest.some(event=>event.targetId==='archer1'));assert.equal(rest.filter(event=>event.type==='end').length,1);
