@@ -24,7 +24,8 @@
   const loadout = loadouts?.selection(character) || null;
   const starterWeapon = loadout ? loadouts.weapon(loadout.weapon) : null;
   const starterOutfit = loadout ? loadouts.outfit(loadout.weapon,loadout.outfit) : null;
-  const heroMagic = loadouts?.magicSelection(character);
+  // Every Mage casts both elements, even with an old saved magic value.
+  const heroMagic = starterWeapon?.id==='wand'?'both':null;
   // Do not apply Warrior upgrades to Mage spells. Gold stays shared in one
   // atomic progression record; only the selected class's ranks affect combat.
   const progression = window.EmberProgression.createStore({storage:progressionStorage,classId:starterWeapon?.id||'sword'});
@@ -700,7 +701,7 @@
     actor.bar.querySelector('i').style.width = `${unit.hp / unit.maxHp * 100}%`;
     actor.bar.setAttribute('aria-valuenow',unit.hp);
     actor.bar.setAttribute('aria-valuemax',unit.maxHp);
-    actor.element.setAttribute('aria-label', `${unit.name}${id === 'hero' && loadout ? `, ${starterWeapon.name}, наряд ${starterOutfit.name}, ${loadouts.color(loadout.outfitColor).name}${heroMagic?`, магия ${loadouts.magic(heroMagic).name}`:''}` : ''}: ${unit.hp} из ${unit.maxHp} здоровья`);
+    actor.element.setAttribute('aria-label', `${unit.name}${id === 'hero' && loadout ? `, ${starterWeapon.name}, наряд ${starterOutfit.name}, ${loadouts.color(loadout.outfitColor).name}${starterWeapon?.id==='wand'?', огонь и лёд':''}` : ''}: ${unit.hp} из ${unit.maxHp} здоровья`);
     drawStatus(actor,unit,state);
   }
   function prepareWave(state) {
@@ -1183,7 +1184,7 @@
     $('#sprite-credits').hidden=!profile;
     if (!dialog.open) dialog.showModal(); syncPause();
   }
-  $('#profile-button').addEventListener('click', () => openInfo('ТВОЙ ГЕРОЙ',name,`Уровень ${level} · Сила ${battle.getState().hero.damage} · ${skinNames[skinIds.indexOf(skin)]} оттенок кожи. ${loadout ? `${starterWeapon.name} · наряд «${starterOutfit.name}», ${loadouts.color(loadout.outfitColor).name.toLowerCase()} цвет.${heroMagic?` Магия: ${loadouts.magic(heroMagic).name}.`:''}` : 'Без класса, брони и оружия.'} Максимум здоровья: ${battle.getState().hero.maxHp}.`,true));
+  $('#profile-button').addEventListener('click', () => openInfo('ТВОЙ ГЕРОЙ',name,`Уровень ${level} · Сила ${battle.getState().hero.damage} · ${skinNames[skinIds.indexOf(skin)]} оттенок кожи. ${loadout ? `${starterWeapon.name} · наряд «${starterOutfit.name}», ${loadouts.color(loadout.outfitColor).name.toLowerCase()} цвет.${starterWeapon?.id==='wand'?' Магия: огонь и лёд.':''}` : 'Без класса, брони и оружия.'} Максимум здоровья: ${battle.getState().hero.maxHp}.`,true));
   document.querySelectorAll('[data-info]').forEach(button=>button.addEventListener('click',()=>openInfo(...information[button.dataset.info]())));
   dialog.querySelectorAll('.dialog-close,.dialog-action').forEach(button=>button.addEventListener('click',()=>dialog.close()));
   dialog.addEventListener('close',syncPause);
