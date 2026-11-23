@@ -204,10 +204,8 @@
     try {
       let idle;
       if (loadout) {
-        const [swordSprites,classSprites]=await Promise.all([
-          swordEquipment?swordEquipment.load(equipment.getState()):Promise.resolve(null),
-          classEquipment?classEquipment.load(equipment.getState()):Promise.resolve(null)
-        ]);
+        const swordSprites=swordEquipment?await swordEquipment.load(equipment.getState()):null;
+        const classSprites=classEquipment?await classEquipment.load(equipment.getState()):null;
         if(swordSprites)loadedSwordSprites=swordSprites;
         if(classSprites)loadedClassSprites=classSprites;
         const walk = classSprites?.walk||swordSprites?.walk||await loadImage(loadouts.path(loadout,skin,'walk'));
