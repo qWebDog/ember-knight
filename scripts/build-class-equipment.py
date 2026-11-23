@@ -219,13 +219,14 @@ def prefetch():
                     for part in all_ordered(kind,anim,skin,colour,look):
                         required.add(part[4])
             for item in ('basic','iron','royal'):
-                for item_layer in helmet_layer(kind,item,anim,'sand'):
+                for item_layer in helmet_layer(kind,item,anim,'sand')+armour_layer(kind,item,anim):
                     required.add(item_layer[4])
+            for item in ('basic','steel','royal'):
                 for item_layer in accessory_layer(kind,item,anim):
                     required.add(item_layer[4])
-                for item_layer in weapon_layers(kind,('basic','steel','ember')[('basic','iron','royal').index(item)],anim)[0]+weapon_layers(kind,('basic','steel','ember')[('basic','iron','royal').index(item)],anim)[1]:
-                    required.add(item_layer[4])
-                for item_layer in armour_layer(kind,item,anim):
+            for item in ('basic','steel','ember'):
+                back,front=weapon_layers(kind,item,anim)
+                for item_layer in back+front:
                     required.add(item_layer[4])
     with ThreadPoolExecutor(max_workers=10) as pool:
         list(pool.map(source,sorted(required)))
