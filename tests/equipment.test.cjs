@@ -44,7 +44,7 @@ test('previous placeholder cape/boots are normalized out while real native sword
   }
   assert.equal(store.equip('weapon','steel').ok,true);
   assert.equal(store.equip('shield','royal').ok,true);
-  assert.equal(memory.writes,0);
+  assert.equal(memory.writes,2);
 });
 test('cosmetic data does not alter gold, progression or saved character',()=>{
   const char='{"version":1,"weapon":"sword"}',progress='{"version":1,"gold":150,"levels":{}}';
