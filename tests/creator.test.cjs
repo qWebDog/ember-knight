@@ -48,13 +48,14 @@ test('creation follows skin→weapon→clothing color and saves the single match
 test('all hero classes use one fixed preview zoom, centered in the same stage',async()=>{
  const ui=harness();await ui.load();
  const canvas=ui.node('#hero');
- function assertViewport(expectedTile){
+ function assertViewport(expectedTile,klass='skin'){
    assert.equal(canvas.width,128);
    assert.equal(canvas.height,128);
    assert.deepEqual([canvas.style.width,canvas.style.height,canvas.style.left,canvas.style.top],
      ['200%','200%','-50%','-50%']);
-   const frame=canvas.draws.at(-1),inset=(128-expectedTile)/2;
-   assert.deepEqual(frame.destination,[inset,inset,expectedTile,expectedTile]);
+   const frame=canvas.draws.at(-1),displayTile=klass==='wand'?52:expectedTile;
+   const dx=(128-displayTile)/2,dy=(128-expectedTile)/2+expectedTile-displayTile;
+   assert.deepEqual(frame.destination,[dx,dy,displayTile,displayTile]);
    assert.equal(frame.crop[2],expectedTile);
    assert.equal(frame.crop[3],expectedTile);
  }
@@ -62,9 +63,11 @@ test('all hero classes use one fixed preview zoom, centered in the same stage',a
  ui.node('#create-button').click();await ui.load();
  for(const [klass,tile]of [['sword',64],['bow',128],['wand',64],['bow',128],['wand',64],['sword',64]]){
    ui.node('weapon:'+klass).click();await ui.load();
-   assertViewport(tile);
+   assertViewport(tile,klass);
    assert.ok(canvas.draws.at(-1).src.includes('/'+klass+'/'));
  }
+ assert.equal(html.includes('src="app.js?v=20261123-mage-size-2"'),true,
+   'creator must bypass cached old preview renderer on iPhone');
 });
 test('all eighteen weapon and clothing-color choices preview, rotate and retain the independent skin',async()=>{
  const sets={sword:'militia',bow:'wanderer',wand:'acolyte'};
