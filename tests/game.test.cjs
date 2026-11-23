@@ -791,8 +791,10 @@ test('ranged spells use off-row target coordinates and keep aiming correctly aft
  const angle=assertActualSpellRay(ui,spell);ui.node('#auto-button').click();const elapsed=ui.state().elapsed;
  ui.resizeField(1000,44);ui.frame(0);const resizedAngle=assertActualSpellRay(ui,spell);assert.ok(Math.abs(resizedAngle-angle)>.1);assert.equal(ui.state().elapsed,elapsed);assert.equal(spell.dataset.phase,'flight');
  assert.equal(ui.depth('hero'),3);assert.equal(ui.depth('archer1'),2);almost(roadCenterSource(ui),1028);
- ui.node('#auto-button').click();enterWaveExactly(ui,2);ui.runFor(2.6);
- const startDepth=ui.depth('orc'),home=ui.heroX();assert.equal(startDepth,4);
+ ui.node('#auto-button').click();enterWaveExactly(ui,2);
+ assert.equal(ui.depth('orc'),4,'the orc waits motionless during wave entrance');
+ ui.runFor(2.6);
+ const startDepth=ui.depth('orc'),home=ui.heroX();assert.ok(startDepth<=4&&startDepth>3);
  ui.runFor(.4);assert.equal(ui.heroX(),home);assert.equal(ui.depth('hero'),3);assert.ok(ui.depth('orc')<4&&ui.depth('orc')>3);assert.equal(ui.node('[data-fighter="orc"]').dataset.motion,'walk');
  ui.runUntil(()=>ui.inMeleeRange());almost(ui.footY('hero'),ui.footY('orc'),.01);assert.equal(ui.depth('orc'),3);
 });
