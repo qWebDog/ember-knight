@@ -15,6 +15,11 @@
   const INTERMISSION = Math.round(intermissionDuration * TICKS);
   const KILL_REWARD = 5;
   const WOLF_MAX_HP = 70;
+  // Five short timed bursts make a breath, not five instant hit events.
+  // Spread the old 12-damage fireball over five 3-HP tongues (15 per volley).
+  const dragonBreath=Object.freeze({bursts:5,spacing:.26,damage:3,flight:.21,afterglow:.33});
+  const DRAGON_BREATH_SPACING=Math.round(dragonBreath.spacing*TICKS);
+  const DRAGON_BREATH_FLIGHT=Math.round(dragonBreath.flight*TICKS);
   const statusTiming = Object.freeze({duration:.5,burnTickInterval:.25,burnDamage:1});
   const STATUS_DURATION = Math.round(statusTiming.duration*TICKS);
   const BURN_INTERVAL = Math.round(statusTiming.burnTickInterval*TICKS);
@@ -57,7 +62,7 @@
     };
     const sword = options.heroWeapon === 'sword' && config.projectile === 'melee';
     let phase, pausedFrom, elapsed, remainder, hero, enemies, nextHero, nextEnemies, reward;
-    let comboIndex, meleeHits, heroBusyUntil, pendingCounters, pendingImpacts;
+    let comboIndex, meleeHits, heroBusyUntil, pendingCounters, pendingImpacts, pendingBreaths;
     let waveIndex, completedWaves, defeatedCount, nextWaveAt;
     let companion,companionEverSummoned;
     function currentEnemyTarget(){
@@ -104,7 +109,7 @@
     function spawnWave(index) {
       waveIndex = index; phase = 'running'; pausedFrom = null; nextWaveAt = null;
       enemies = activeWaves[index].map(unit => ({...archetypes[unit.type],...unit,hp:archetypes[unit.type].maxHp,status:null}));
-      comboIndex = 0; meleeHits = 0; heroBusyUntil = elapsed; pendingCounters = []; pendingImpacts = [];
+      comboIndex = 0; meleeHits = 0; heroBusyUntil = elapsed; pendingCounters = []; pendingImpacts = []; pendingBreaths = [];
       nextHero = elapsed + heroTicks(sword ? swordSteps[0].interval : HERO_INTERVAL);
       nextEnemies = enemies.map(enemy => elapsed + Math.round(enemy.interval * TICKS));
     }
@@ -171,11 +176,12 @@
       defeatedCount++;reward+=KILL_REWARD;target.status=null;
       pendingCounters=pendingCounters.filter(counter=>counter.targetId!==target.id);
       pendingImpacts=pendingImpacts.filter(impact=>impact.targetId!==target.id);
+      pendingBreaths=pendingBreaths.filter(breath=>breath.sourceId!==target.id);
       events.push({type:'death',id:target.id,unitType:target.type,
         reward:KILL_REWARD,totalReward:reward,at});
       if(enemies.some(enemy=>enemy.hp>0))return events;
       completedWaves++;
-      pendingCounters=[];pendingImpacts=[];
+      pendingCounters=[];pendingImpacts=[];pendingBreaths=[];
       enemies.forEach(enemy=>{enemy.status=null;});
       events.push({type:'wave_clear',waveIndex,waveNumber:waveIndex+1,at});
       if(waveIndex===activeWaves.length-1){
@@ -241,17 +247,18 @@
           events.push({type:'death',id:target.id,unitType:target.type || (target.id==='companion'?'companion':'hero'),reward:enemy ? KILL_REWARD : 0,totalReward:reward,at:elapsed/TICKS});
           pendingCounters = pendingCounters.filter(counter => counter.targetId !== target.id);
           pendingImpacts = pendingImpacts.filter(impact => impact.targetId !== target.id);
+          pendingBreaths = pendingBreaths.filter(breath => breath.sourceId !== target.id);
         }
       }
       function end(result) {
-        phase = result; pausedFrom = null; pendingCounters = []; pendingImpacts = []; nextWaveAt = null;
+        phase = result; pausedFrom = null; pendingCounters = []; pendingImpacts = []; pendingBreaths = []; nextWaveAt = null;
         enemies.forEach(enemy => { enemy.status = null; });
         // Rewards belong to individual deaths; terminal events never grant a second bonus.
         events.push({type:'end',result,reward:0,totalReward:reward,at:elapsed/TICKS});
       }
       function clearWave() {
         completedWaves++;
-        pendingCounters = []; pendingImpacts = [];
+        pendingCounters = []; pendingImpacts = []; pendingBreaths = [];
         enemies.forEach(enemy => { enemy.status = null; });
         events.push({type:'wave_clear',waveIndex,waveNumber:waveIndex+1,at:elapsed/TICKS});
         if (waveIndex === activeWaves.length-1) end('victory');
@@ -261,6 +268,23 @@
         const type = magic === 'fire' ? 'burn' : 'freeze';
         target.status = {type,sourceId:'hero',startedAt:elapsed,endsAt:elapsed+STATUS_DURATION,nextTick:elapsed+BURN_INTERVAL};
         events.push({type:'status',status:type,sourceId:'hero',targetId:target.id,at:elapsed/TICKS,duration:statusTiming.duration,endsAt:target.status.endsAt/TICKS});
+      }
+      function dragonPulse(sourceId,burstIndex){
+        const defender=currentEnemyTarget();
+        const hitAt=elapsed+DRAGON_BREATH_FLIGHT;
+        const castAt=elapsed/TICKS;
+        const castId=`${sourceId}:breath:${elapsed}:${burstIndex}`;
+        events.push({
+          type:'cast',sourceId,targetId:defender.id,projectile:'breath',
+          breath:true,burstIndex,burstCount:dragonBreath.bursts,magic:'fire',
+          at:castAt,impactAt:hitAt/TICKS,castId,
+          appearDuration:0,flightDuration:dragonBreath.flight,
+          impactDuration:dragonBreath.afterglow,animationDuration:.43,
+          castInterval:archetypes.dragon.interval
+        });
+        pendingImpacts.push({sourceId,targetId:defender.id,damage:dragonBreath.damage,
+          magic:'fire',at:hitAt,castAt,castId,breath:true,burstIndex});
+        pendingImpacts.sort((a,b)=>a.at-b.at);
       }
       function cast(sourceId,target,damage,magic) {
         const close = sourceId === 'hero' && availability?.heroCloseRange === true;
@@ -283,6 +307,7 @@
         let next = heroCanAttack ? nextHero : Infinity;
         if (heroCanAttack && pendingCounters.length) next = Math.min(next,pendingCounters[0].at);
         if (pendingImpacts.length) next = Math.min(next,pendingImpacts[0].at);
+        if (pendingBreaths.length) next = Math.min(next,pendingBreaths[0].at);
         enemies.forEach((enemy,index) => {
           if (enemy.hp <= 0) return;
           if ((enemy.type !== 'orc' || orcCanAttack) && enemyCanAttack(enemy.id) && !frozen(enemy)) next = Math.min(next,nextEnemies[index]);
@@ -327,11 +352,24 @@
           if (enemy.status && enemy.status.endsAt <= next) enemy.status = null;
         }
         if (phase !== 'running') continue;
+        // Subsequent breath pulses select the currently living defender at
+        // their emission time. If the wolf falls, later tongues aim at hero.
+        while(pendingBreaths.length&&pendingBreaths[0].at===next){
+          const pulse=pendingBreaths.shift();
+          const dragon=enemies.find(enemy=>enemy.id===pulse.sourceId&&enemy.hp>0);
+          if(!dragon)continue;
+          if(frozen(dragon)){
+            pendingBreaths=pendingBreaths.filter(other=>other.sourceId!==dragon.id);
+            continue;
+          }
+          dragonPulse(dragon.id,pulse.index);
+        }
         while (pendingImpacts.length && pendingImpacts[0].at === next) {
           const impact = pendingImpacts.shift(),target = impact.targetId === 'hero' ? hero
             : impact.targetId === 'companion' ? companion : enemies.find(enemy => enemy.id === impact.targetId);
           if (!target || target.hp <= 0) continue;
-          hit(impact.sourceId,target,impact.damage,'magic',{magic:impact.magic,impact:true,castAt:impact.castAt,castId:impact.castId});
+          hit(impact.sourceId,target,impact.damage,'magic',{magic:impact.magic,impact:true,castAt:impact.castAt,castId:impact.castId,
+            breath:Boolean(impact.breath),burstIndex:impact.burstIndex});
           if (impact.sourceId === 'hero' && target.id !== 'hero' && target.hp > 0 && ['fire','ice'].includes(impact.magic)) applyStatus(target,impact.magic);
           if (hero.hp === 0) { end('defeat'); break; }
           if (enemies.every(enemy => enemy.hp === 0)) { clearWave(); break; }
@@ -346,7 +384,12 @@
             const blockedDamage = damage*.5; damage -= blockedDamage; blocked = true;
             events.push({type:'block',sourceId:enemy.id,targetId:'hero',blockedDamage,at:elapsed/TICKS});
           }
-          if (enemy.projectile === 'magic') cast(enemy.id,defender,damage,enemy.type==='dragon'?'fire':'shadow');
+          if(enemy.type==='dragon'){
+            dragonPulse(enemy.id,0);
+            for(let index=1;index<dragonBreath.bursts;index++)
+              pendingBreaths.push({sourceId:enemy.id,at:elapsed+DRAGON_BREATH_SPACING*index,index});
+            pendingBreaths.sort((a,b)=>a.at-b.at||a.index-b.index);
+          }else if (enemy.projectile === 'magic') cast(enemy.id,defender,damage,'shadow');
           else hit(enemy.id,defender,damage,enemy.projectile,enemy.type === 'archer' ? {animationDuration:.6} : undefined);
           nextEnemies[index] += Math.round(enemy.interval*TICKS);
           if (hero.hp === 0) { end('defeat'); break; }
@@ -360,5 +403,5 @@
     return {getState,getArrowSchedule,advance,pause,resume,restart,updateHeroStats,
       setCompanionEnabled,companionStrike,get state(){return getState();}};
   }
-  return {createBattle,magicTiming,closeMagicTiming,statusTiming,intermissionDuration};
+  return {createBattle,magicTiming,closeMagicTiming,statusTiming,intermissionDuration,dragonBreath};
 });
