@@ -15,9 +15,10 @@
   const INTERMISSION = Math.round(intermissionDuration * TICKS);
   const KILL_REWARD = 5;
   const WOLF_MAX_HP = 70;
-  // Five short timed bursts make a breath, not five instant hit events.
-  // Spread the old 12-damage fireball over five 3-HP tongues (15 per volley).
-  const dragonBreath=Object.freeze({bursts:5,spacing:.26,damage:3,flight:.21,afterglow:.33});
+  // The dragon releases five SEPARATE fire-magic projectiles like the
+  // Mage's spell, never a continuous jet. Each has its own launch, flight,
+  // engine hit and short impact animation.
+  const dragonBreath=Object.freeze({bursts:5,spacing:.26,damage:3,flight:.42,afterglow:.22});
   const DRAGON_BREATH_SPACING=Math.round(dragonBreath.spacing*TICKS);
   const DRAGON_BREATH_FLIGHT=Math.round(dragonBreath.flight*TICKS);
   const statusTiming = Object.freeze({duration:.5,burnTickInterval:.25,burnDamage:1});
