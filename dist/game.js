@@ -88,6 +88,15 @@
   let heroX = null, fieldWidth = null, moving = false, heroMoving = false;
   let walkDistance = 0, walkDirection = 3, activeTime = 0;
   let sceneTransition = null;
+  // The hero enters from the left edge only at the start of a battle.
+  // Wave transitions retain their existing fade-and-reset choreography.
+  const heroEntranceDuration=.75;
+  let heroEntrance=null;
+  function beginHeroEntrance(){
+    heroEntrance={elapsed:0};
+    walkDistance=0;walkDirection=3;heroMoving=moving=false;
+    actors.hero.lastKey=null;
+  }
   const waveExitDuration=window.EmberCombat.intermissionDuration||1.4;
   arena.dataset.transition='';sceneFade.dataset.opacity='0';sceneFade.style.opacity='0';
   let pairContacted = false, previousSeparation = null, contactTarget = null, previousTargetSeparation = null;
@@ -267,6 +276,7 @@
       if(equipmentArt)try{await equipmentArt.prepareLook(equipment.getState(),equipment.getColors());}
       catch{$('#status').textContent='Не удалось загрузить часть LPC-экипировки.';}
       ready = true;
+      beginHeroEntrance();
       updateMovement(0,battle.getState());
       $('#status').textContent = 'Бой готов: один лучник, два лучника, затем орк.';
       render(battle.getState()); equipmentUI?.refreshPreview(); syncPause();
@@ -287,7 +297,7 @@
     autoButton.setAttribute('aria-pressed', String(auto));
     autoButton.setAttribute('aria-label', `${ended?'Автоповтор':'Автобой'} ${auto ? 'включён' : 'приостановлен'}`);
     $('#auto-label').textContent = auto ? 'ВКЛ' : 'ВЫКЛ';
-    $('#battle-state').textContent = !ready ? assetError ? 'Ошибка загрузки' : 'Загрузка боя' : !auto ? 'Пауза' : state.phase === 'victory' ? 'Победа · 3/3' : state.phase === 'defeat' ? 'Поражение' : state.phase==='intermission' ? 'Следующая волна…' : moving ? 'Подход к цели' : `Волна ${state.waveNumber}/${state.waveCount}`;
+    $('#battle-state').textContent = !ready ? assetError ? 'Ошибка загрузки' : 'Загрузка боя' : !auto ? 'Пауза' : state.phase === 'victory' ? 'Победа · 3/3' : state.phase === 'defeat' ? 'Поражение' : state.phase==='intermission' ? 'Следующая волна…' : heroEntrance ? 'Выход на арену' : moving ? 'Подход к цели' : `Волна ${state.waveNumber}/${state.waveCount}`;
     if(ended) updateCountdown();
   }
   function updateCountdown() {
@@ -551,6 +561,27 @@
     for(const id of Object.keys(enemyDefinitions))actors[id].moving=false;
     let usedTime=0;
     const canMove=(state.phase==='running'||(state.phase==='paused'&&state.completedWaves===state.waveIndex))&&state.hero.hp>0;
+    if(heroEntrance){
+      // Use battlefield-relative coordinates to keep the intro at the same
+      // percentage through a rotation/resize. No CSS transform blur.
+      const from=-width*.05;
+      const previousX=heroX;
+      if(reducedMotion.matches){
+        heroEntrance=null;heroX=home;
+      }else{
+        usedTime=canMove?Math.min(dt,Math.max(0,heroEntranceDuration-heroEntrance.elapsed)):0;
+        heroEntrance.elapsed=Math.min(heroEntranceDuration,heroEntrance.elapsed+usedTime);
+        heroX=from+(home-from)*(heroEntrance.elapsed/heroEntranceDuration);
+        if(usedTime>0)walkDistance+=Math.abs(heroX-previousX)/heroSize;
+        walkDirection=3;
+        moving=heroMoving=canMove&&heroEntrance.elapsed<heroEntranceDuration;
+        if(heroEntrance.elapsed>=heroEntranceDuration-1e-8)heroEntrance=null;
+      }
+      actors.hero.element.style.left=`${heroX}px`;
+      for(const id of Object.keys(enemyDefinitions))actors[id].element.style.left=`${actors[id].x}px`;
+      projectFormation();
+      return usedTime;
+    }
     const melee=state.enemies.find(enemy=>enemy.type==='orc'&&enemy.hp>0);
     if(canMove&&melee){
       const enemy=actors[melee.id],enemySize=enemy.element.offsetWidth;
@@ -699,11 +730,21 @@
       if(before.phase==='intermission'){
         advance(step,{heroCanAttack:Boolean(ranged),orcCanAttack:false});
       }else{
-        const beforeRange=attackAvailability(before);
-        const walkTime=updateMovement(step,before);
-        battle.resume();
-        if(walkTime>0)advance(walkTime,beforeRange);
-        if(step>walkTime)advance(step-walkTime,attackAvailability(battle.getState()));
+        // Entrance is presentation-only: the combat clock and cooldowns do not
+        // advance until the character visibly reaches the battle position.
+        let entryTime=0;
+        if(heroEntrance){
+          entryTime=updateMovement(step,before);
+          if(!heroEntrance&&entryTime<step)updateControls();
+        }
+        const remainingCombat=step-entryTime;
+        if(!heroEntrance&&remainingCombat>1e-7){
+          const beforeRange=attackAvailability(before);
+          const walkTime=updateMovement(remainingCombat,before);
+          battle.resume();
+          if(walkTime>0)advance(walkTime,beforeRange);
+          if(remainingCombat>walkTime)advance(remainingCombat-walkTime,attackAvailability(battle.getState()));
+        }
       }
       const after=battle.getState();
       syncFrozenActors(after);updateMovement(0,after);
@@ -733,7 +774,8 @@
     battle.restart();if(startAuto)auto=true;
     activeTime=0;restartRemaining=null;resultSummary='';paidDeaths.clear();creditedRunGold=0;
     clearSceneTransition();
-    prepareWave(battle.getState());resultPanel.hidden=true;lastFrameTime=null;
+    prepareWave(battle.getState());beginHeroEntrance();updateMovement(0,battle.getState());
+    resultPanel.hidden=true;lastFrameTime=null;
     if(startAuto)try{localStorage.setItem('ember.combat.auto.v1','on');}catch{}
     render(battle.getState());syncPause();$('#status').textContent='Битва 1–1. Волна 1: один лучник.';
   }
