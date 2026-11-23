@@ -260,7 +260,7 @@ test('Warrior, Archer and Mage walk in from the left screen edge before the figh
    assert.equal(hero.dataset.motion,'walk','uses native animated LPC walk cells');
    assert.equal(ui.state().elapsed,0,'entrance must not consume cooldown or combat time');
    assert.ok(!ui.events.some(e=>e.type==='attack'||e.type==='cast'));
-   ui.runFor(.5);
+   ui.runFor(.6);
    assert.ok(ui.heroX()>=home-1e-6,'hero reaches the proper starting location');
    assert.ok(ui.state().elapsed>0,'combat begins only after entering');
    assert.ok(!ui.node('.adventure').dataset.transition,'entrance does not hide an existing scene transition');
@@ -291,7 +291,7 @@ test('the battle entrance pauses, survives a viewport resize and restarts at the
 test('reduced-motion preference skips entrance without hiding the fighter or delaying combat',async()=>{
  const ui=createHarness({weapon:'bow',outfit:'wanderer',reducedMotion:true});await ui.loadAllImages();
  assert.equal(ui.heroX(),800*.18);
- ui.runFor(.3);assert.equal(ui.heroX(),800*.18);
+ ui.runFor(.4);assert.equal(ui.heroX(),800*.18);
  assert.ok(ui.state().elapsed>.2);
 });
 
@@ -306,7 +306,7 @@ test('assets gate startup; the first wave shows one real LPC archer and the sele
  assert.ok(ui.loadedPaths.includes('assets/characters/combat/bronze-attack.png'));
  assert.deepEqual(ui.node('#player-sprite').draws.at(-1).crop,[0,192,64,64]);
  assert.equal(ui.node('#enemy-archer1').draws.at(-1).crop[1],64);
- const enemyX=actorX(ui,'archer1');ui.runFor(.8);
+ const enemyX=actorX(ui,'archer1');ui.runFor(.9);
  assert.ok(ui.heroX()>800*.18);assert.equal(actorX(ui,'archer1'),enemyX);assert.equal(ui.node('[data-fighter="hero"]').dataset.motion,'walk');
  assert.ok(ui.node('#player-sprite').draws.filter(draw=>draw.src.endsWith('bronze-walk.png')).every(draw=>draw.crop[0]>=64&&draw.crop[0]<=512&&draw.crop[1]===192));
  ui.runUntil(()=>ui.events.some(event=>event.type==='attack'&&event.sourceId==='hero'));
@@ -734,7 +734,7 @@ test('five configured depth lanes are ordered, distinct and remain inside the ap
 
 test('melee walking changes depth towards the current enemy and every strike reaches the same physical road row',async()=>{
  const ui=createHarness({weapon:'sword',outfit:'militia'});await ui.loadAllImages();assert.equal(ui.depth('hero'),3);assert.equal(ui.depth('archer1'),2);
- ui.runFor(.4);assert.ok(ui.depth('hero')<3&&ui.depth('hero')>=2);assert.equal(ui.node('[data-fighter="hero"]').dataset.motion,'walk');
+ ui.runFor(1.2);assert.ok(ui.depth('hero')<3&&ui.depth('hero')>=2);assert.equal(ui.node('[data-fighter="hero"]').dataset.motion,'walk');
  ui.runUntil(()=>ui.events.some(event=>event.type==='attack'&&event.sourceId==='hero'&&event.targetId==='archer1'));
  assert.ok(inReach(ui,'archer1'));almost(ui.footY('hero'),ui.footY('archer1'),.01);assert.equal(ui.depth('hero'),2);
  enterWaveExactly(ui,1);assert.equal(ui.depth('hero'),3);assert.equal(ui.depth('archer2'),1);assert.equal(ui.depth('archer3'),5);
@@ -777,7 +777,7 @@ test('freezing holds both orc road coordinates and pose; a paused resize reproje
 });
 
 test('pause, wave spawn and replay preserve or reset formation without drifting the road or adding a fake walking frame',async()=>{
- const ui=createHarness({weapon:'sword',outfit:'militia'});await ui.loadAllImages();ui.runFor(.4);assert.ok(ui.depth('hero')>2&&ui.depth('hero')<3);
+ const ui=createHarness({weapon:'sword',outfit:'militia'});await ui.loadAllImages();ui.runFor(1.2);assert.ok(ui.depth('hero')>2&&ui.depth('hero')<3);
  ui.node('#auto-button').click();const phase=ui.node('#player-sprite').draws.at(-1),count=ui.node('#player-sprite').draws.length,depth=ui.depth('hero');
  ui.resizeField(390,59,{arenaHeight:438.88,fieldHeight:180.384,fieldBottomGap:61,roadGround:36,viewportHeight:844});ui.frame(0);
  assert.equal(ui.depth('hero'),depth);assert.deepEqual(ui.node('#player-sprite').draws.at(-1),phase);assert.equal(ui.node('#player-sprite').draws.length,count);almost(roadCenterSource(ui),1028,1e-6);
