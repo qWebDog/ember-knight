@@ -11,9 +11,9 @@ function storage(seed={}){
   const map=new Map(Object.entries(seed));let writes=0;
   return {map,get writes(){return writes;},getItem:k=>map.get(k)??null,setItem(k,v){writes++;map.set(k,String(v));}};
 }
-test('only helmet and armor are enabled; six separate slots remain available for future content',()=>{
+test('helmet, armor, weapon and shield are enabled; cape and boots await native animation assets',()=>{
   assert.deepEqual(slots.map(s=>s.id),['helmet','armor','weapon','shield','cape','boots']);
-  assert.deepEqual(supportedSlots,['helmet','armor']);
+  assert.deepEqual(supportedSlots,['helmet','armor','weapon','shield']);
   for(const slot of slots){
     const items=catalog[slot.id];
     assert.equal(items.length,3);
@@ -34,14 +34,16 @@ test('each enabled slot equips independently and survives reloading',()=>{
   assert.equal(store.equip('helmet','none').ok,true);
   assert.equal(store.getState().armor,'royal');
 });
-test('old fake cosmetics are normalized out and cannot be equipped again',()=>{
+test('previous placeholder cape/boots are normalized out while real native sword/shield choices remain valid',()=>{
   const previous={version:1,byClass:{sword:{...defaults,helmet:'iron',armor:'royal',weapon:'ember',shield:'steel',cape:'red',boots:'royal'}}};
   const memory=storage({[key]:JSON.stringify(previous)});
   const store=createStore({storage:memory,classId:'sword'});
-  assert.deepEqual(store.getState(),{...defaults,helmet:'iron',armor:'royal'});
-  for(const [slot,id]of [['weapon','ember'],['shield','steel'],['cape','red'],['boots','iron']]){
+  assert.deepEqual(store.getState(),{...defaults,helmet:'iron',armor:'royal',weapon:'ember',shield:'steel'});
+  for(const [slot,id]of [['cape','red'],['boots','iron']]){
     assert.equal(store.equip(slot,id).reason,'unsupported');
   }
+  assert.equal(store.equip('weapon','steel').ok,true);
+  assert.equal(store.equip('shield','royal').ok,true);
   assert.equal(memory.writes,0);
 });
 test('cosmetic data does not alter gold, progression or saved character',()=>{
@@ -72,7 +74,7 @@ test('storage failures never grant equipment and bad values are rejected',()=>{
   assert.equal(denied.getState().helmet,'none');
 });
 test('native LPC image files are present and have compatible frames and four directions',()=>{
-  for(const slot of supportedSlots)for(const id of ['iron','royal'])for(const [animation,frames] of Object.entries(animations)){
+  for(const slot of ['helmet','armor'])for(const id of ['iron','royal'])for(const [animation,frames] of Object.entries(animations)){
     const relative=art.imagePath(slot,id,animation),full=path.join(dist,relative),png=fs.readFileSync(full);
     assert.equal(png.subarray(1,4).toString(),'PNG',relative);
     const width=png.readUInt32BE(16),height=png.readUInt32BE(20);
