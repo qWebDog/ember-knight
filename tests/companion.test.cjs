@@ -11,14 +11,14 @@ function harness(){
  }});
  const draws=[],ctx={clearRect(){},drawImage:(...args)=>draws.push(args)};
  const canvas={width:64,height:64,getContext:()=>ctx};
- const element={hidden:true,style:{setProperty(name,value){this[name]=value}},
+ const element={hidden:true,dataset:{},style:{setProperty(name,value){this[name]=value}},
   querySelector:selector=>selector==='canvas'?canvas:null};
  const loadPaths=[];
  const art={src:wolf.path,width:640,height:384};
  const actor=wolf.create({element,store,loadImage:async src=>{loadPaths.push(src);return art;}});
  return {draws,ctx,canvas,element,actor,store,loadPaths};
 }
-test('original commissioned CC BY 4.0 wolf sheet is embedded with proper attribution',()=>{
+test('wolf includes the original 640×384 CC BY 4.0 atlas and attribution',()=>{
  const file=fs.readFileSync(path.join(dist,wolf.path));
  assert.equal(file.subarray(1,4).toString(),'PNG');
  assert.equal(file.readUInt32BE(16),640);
@@ -30,42 +30,81 @@ test('original commissioned CC BY 4.0 wolf sheet is embedded with proper attribu
  assert.match(credits,/creativecommons.org\/licenses\/by\/4.0/);
  assert.equal(wolf.sprite.tile,64);
 });
-test('companion stays hidden unless selected, uses original frames, and follows the hero',async()=>{
+test('wolf uses individually cropped half-height side strips, never two animation rows at once',()=>{
+ assert.deepEqual(wolf.frameAt(0,false,false,3),{
+  sx:320,sy:56,sw:64,sh:40,dx:0,dy:24,dw:64,dh:40,mode:'idle',frame:0
+ });
+ assert.deepEqual(wolf.frameAt(.1,true,false,3),{
+  sx:384,sy:96,sw:64,sh:32,dx:0,dy:32,dw:64,dh:32,mode:'walk',frame:1
+ });
+ assert.equal(wolf.frameAt(.1,true,false,1).sy,288,'left walk has its own native row');
+ assert.equal(wolf.frameAt(.4,true,false,3).sx,576,'walk cycle includes fifth frame');
+ assert.equal(wolf.frameAt(.5,true,false,3).sx,320,'walk cycle loops seamlessly');
+ assert.equal(wolf.frameAt(.5,true,true,3).sy,56,'reduced motion uses standing pose');
+ for(const side of ['right','left'])for(const name of ['idle','walk','run','bite','howl','die']){
+  const direction=side==='right'?3:1,rect=wolf.frameAt(99,false,false,direction,name);
+  assert.ok(rect.sx>=0&&rect.sy>=0&&rect.sx+rect.sw<=640&&rect.sy+rect.sh<=384,side+' '+name);
+  assert.equal(rect.dy+rect.dh,64,'every action stands on the same ground plane');
+ }
+ assert.equal(wolf.frameAt(.25,false,false,3,'run').sy,128);
+ assert.equal(wolf.frameAt(.25,false,false,3,'bite').sy,160);
+ assert.equal(wolf.frameAt(.5,false,false,3,'howl').sy,56);
+ assert.equal(wolf.frameAt(9,false,false,3,'die').frame,3,'death freezes on the final frame');
+ assert.equal(wolf.frameAt(9,false,false,1,'die').sy,192);
+ assert.equal(wolf.frameAt(9,false,false,1,'bite').sy,352);
+});
+test('companion follows the hero, faces right and left, and stands still when not moving',async()=>{
  const h=harness();await h.actor.load();
  assert.equal(h.actor.loaded(),true);
  assert.equal(h.actor.render({time:.125,x:120}),false);
  assert.equal(h.element.hidden,true);
  assert.equal(h.store.equip('companion','wolf').ok,true);
  assert.equal(h.actor.render({time:0,x:160,heroSize:64,depth:4,laneStep:9,moving:true,alive:true}),true);
- assert.equal(h.element.hidden,false);
  assert.equal(h.element.style.left,'106.88px');
  assert.equal(h.element.style['--lane-offset'],'9px');
- assert.deepEqual(h.draws.at(-1).slice(1,5),[320,0,64,64]);
- h.actor.render({time:.125,x:170,heroSize:64,depth:4,laneStep:9,moving:true});
- assert.deepEqual(h.draws.at(-1).slice(1,5),[384,0,64,64]);
- const before=h.draws.length;
- h.actor.render({time:.125,x:185,heroSize:64,depth:4,laneStep:9,moving:true});
- assert.equal(h.draws.length,before,'paused active time freezes walk frame');
- h.actor.render({time:.5,x:185,moving:true,reducedMotion:true});
- assert.deepEqual(h.draws.at(-1).slice(1,5),[320,0,64,64]);
- assert.equal(h.actor.render({x:120,alive:false}),false);
+ assert.deepEqual(h.draws.at(-1).slice(1),[320,96,64,32,0,32,64,32]);
+ h.actor.render({time:.1,x:170,direction:1,heroSize:64,depth:4,laneStep:9,moving:true});
+ assert.deepEqual(h.draws.at(-1).slice(1),[384,288,64,32,0,32,64,32]);
+ assert.equal(h.element.dataset.facing,'left');
+ h.actor.render({time:.2,x:185,moving:false,direction:3});
+ assert.deepEqual(h.draws.at(-1).slice(1),[320,56,64,40,0,24,64,40]);
+ const count=h.draws.length;
+ h.actor.render({time:.3,x:185,moving:false,direction:3});
+ assert.equal(h.draws.length,count,'stationary wolf does not walk in place');
+ h.actor.render({time:5.4,x:185,moving:false,direction:3});
+ assert.equal(h.element.dataset.motion,'howl','after resting the wolf howls occasionally');
+ h.actor.render({time:6.9,x:185,moving:false,direction:3});
+ assert.equal(h.element.dataset.motion,'idle','howl ends and standing pose returns');
+ assert.equal(h.actor.render({time:7,x:185,alive:false}),false);
  assert.equal(h.element.hidden,true);
  assert.equal(h.store.equip('companion','none').ok,true);
- assert.equal(h.actor.render({time:2}),false);
+ assert.equal(h.actor.render({time:8}),false);
 });
-test('equipment portrait paints equipped wolf without modifying the class sprite',async()=>{
+test('companion fall uses its one-shot death animation without altering gameplay',async()=>{
+ const h=harness();await h.actor.load();h.store.equip('companion','wolf');
+ assert.equal(h.actor.render({time:12,action:'die',actionAge:.375,alive:false}),true);
+ assert.deepEqual(h.draws.at(-1).slice(1),[512,0,64,32,0,32,64,32]);
+ assert.equal(h.element.dataset.motion,'die');
+ h.actor.render({time:20,action:'die',actionAge:20,alive:false});
+ assert.equal(h.draws.length,1,'death pose stays on its last frame once it ends');
+});
+test('equipment portrait preserves side and front/back wolf proportions',async()=>{
  const h=harness();await h.actor.load();
  assert.equal(h.actor.paintPreview(h.ctx,{row:2}),false);
  h.store.equip('companion','wolf');
  assert.equal(h.actor.paintPreview(h.ctx,{row:2}),true);
- assert.deepEqual(h.draws.at(-1).slice(1),[0,0,64,64,40,36,24,24]);
+ assert.deepEqual(h.draws.at(-1).slice(1),[5,65,23,63,44,30,12,30]);
+ assert.equal(h.actor.paintPreview(h.ctx,{row:0}),true);
+ assert.deepEqual(h.draws.at(-1).slice(1),[163,65,23,63,44,30,12,30]);
  assert.equal(h.actor.paintPreview(h.ctx,{row:1}),true);
- assert.deepEqual(h.draws.at(-1).slice(1),[320,0,64,64,40,36,24,24]);
+ assert.deepEqual(h.draws.at(-1).slice(1),[320,248,64,40,35,40,29,18]);
+ assert.equal(h.actor.paintPreview(h.ctx,{row:3}),true);
+ assert.deepEqual(h.draws.at(-1).slice(1),[320,56,64,40,35,40,29,18]);
  const savedCount=h.loadPaths.length;await h.actor.load();
  assert.equal(h.loadPaths.length,savedCount,'sprite loading is cached');
 });
-test('a failed sprite load never leaves partial equipment or rejects the battle itself',async()=>{
- const save=new Map(),store=gear.createStore({classId:'wand',storage:{getItem:key=>save.get(key)||null,setItem:(key,val)=>save.set(key,String(val))}});
+test('failed sprite load leaves companion selection unchanged and cannot block the battle',async()=>{
+ const saved=new Map(),store=gear.createStore({classId:'wand',storage:{getItem:key=>saved.get(key)||null,setItem:(key,val)=>saved.set(key,String(val))}});
  const element={querySelector:()=>({getContext:()=>({clearRect(){},drawImage(){}})}),style:{setProperty(){}},hidden:true};
  const actor=wolf.create({element,store,loadImage:async()=>{throw Error('offline')}});
  await assert.rejects(actor.load(),/offline/);
@@ -73,15 +112,19 @@ test('a failed sprite load never leaves partial equipment or rejects the battle 
  assert.equal(store.getState().companion,'none');
  assert.equal(actor.render({x:100}),false);
 });
-test('battle scene and UI expose a dedicated companion without replacing the hero or stopping combat',()=>{
+test('game invokes the corrected wolf animation controller and exposes class companion slot',()=>{
  const html=fs.readFileSync(path.join(dist,'index.html'),'utf8');
  const js=fs.readFileSync(path.join(dist,'game.js'),'utf8');
  const ui=fs.readFileSync(path.join(dist,'equipment-ui.js'),'utf8');
+ const css=fs.readFileSync(path.join(dist,'equipment.css'),'utf8');
  assert.match(html,/data-equipment-slot="companion"/);
  assert.doesNotMatch(html,/data-equipment-slot="boots"/);
  assert.match(html,/id="companion-wolf"/);
- assert.match(html,/src="companion.js\?v=wolf-companion-1"/);
+ assert.match(html,/src="companion.js\?v=wolf-animations-2"/);
  assert.match(js,/companion\?\.render\(/);
+ assert.match(js,/direction:walkDirection/);
+ assert.match(js,/action:state\.phase==='defeat'\?'die':null/);
  assert.match(js,/if\(slot==='companion'\)/);
  assert.match(ui,/paintCompanion\?\.\(ctx,pose\)/);
+ assert.match(css,/background:url\('assets\/companions\/wolf\.png'\) -160px -28px\/320px 192px/);
 });

@@ -761,7 +761,11 @@
     companion?.render({
       time:activeTime,x:heroX??0,heroSize:actors.hero.element.offsetWidth,
       depth:actors.hero.depth,laneStep,
-      moving:heroMoving||Boolean(heroEntrance)||sceneTransition?.phase==='wave-out',
+      moving:heroMoving,
+      direction:walkDirection,
+      // A wolf's fall on defeat is visual only; it never loses its equipment.
+      action:state.phase==='defeat'?'die':null,
+      actionAge:sceneTransition?.phase==='defeat'?Math.max(0,activeTime-sceneTransition.at):0,
       reducedMotion:reducedMotion.matches,alive:state.hero.hp>0
     });
     $('#hero-vital').textContent = `${state.hero.hp} / ${state.hero.maxHp} HP`;
