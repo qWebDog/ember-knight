@@ -55,7 +55,7 @@
         if(destroyed)return;
         const result=store.equip(selected,item.id);
         if(result.ok){
-          $('[data-equipment-message]').textContent=result.unchanged?'Уже надето':item.name+' надето. Внешность обновлена.';
+          $('[data-equipment-message]').textContent=result.unchanged?'Уже надето':'Предмет «'+item.name+'» выбран. Внешность обновлена.';
           if(!result.unchanged)onEquip?.(result.state,selected,item.id);
           render();
         }else $('[data-equipment-message]').textContent=result.reason==='storage'?'Не удалось сохранить экипировку.':'Предмет недоступен.';
