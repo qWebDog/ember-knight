@@ -461,6 +461,7 @@ test('gait follows travelled distance and paused resizes preserve archer contact
 test('the last-wave orc walks towards melee and ranged heroes, then uses native attack tiles only in range',async()=>{
  for(const options of [{},{weapon:'bow',outfit:'wanderer'}]){
   const ui=createHarness(options);await ui.loadAllImages();ui.runUntil(()=>ui.state().waveIndex===2);
+  ui.runFor(2.6); // Let the last wave's walk-in finish before pursuing.
   const h=ui.heroX(),o=ui.orcX(),start=ui.events.length;ui.runFor(.5);
   assert.ok(ui.orcX()<o);if(options.weapon)assert.equal(ui.heroX(),h);else assert.ok(ui.heroX()>h);
   assert.equal(ui.node('[data-fighter="orc"]').dataset.motion,'walk');
@@ -552,7 +553,7 @@ test('reduced motion keeps the three-wave combat and rewards while suppressing a
 
 test('distant skeletons really shoot at 1.8 and 3.6 seconds with a shorter native shooting pose',async()=>{
  const ui=createHarness({fieldWidth:3200});await ui.loadAllImages();
- ui.runUntil(()=>ui.events.some(event=>event.type==='attack'&&event.sourceId==='archer1'),3);
+ ui.runUntil(()=>ui.events.some(event=>event.type==='attack'&&event.sourceId==='archer1'),6);
  const first=ui.events.find(event=>event.type==='attack'&&event.sourceId==='archer1');
  assert.equal(first.at,1.8);assert.equal(first.animationDuration,.6);
  assert.equal(ui.node('[data-fighter="archer1"]').dataset.motion,'attack');
@@ -568,7 +569,7 @@ test('distant skeletons really shoot at 1.8 and 3.6 seconds with a shorter nativ
 test('both wand schools accelerate only when the orc reaches them; queued far spells and paused fast spells keep their own timing',async()=>{
  for(const magic of ['fire','ice']){
   const ui=createHarness({weapon:'wand',outfit:'acolyte',magic});await ui.loadAllImages();ui.runUntil(()=>ui.state().waveIndex===2);
-  const home=ui.heroX();runFramesUntil(ui,()=>ui.inMeleeRange(),20);assert.equal(ui.heroX(),home);
+  ui.runFor(2.6);const home=ui.heroX();runFramesUntil(ui,()=>ui.inMeleeRange(),20);assert.equal(ui.heroX(),home);
   const contactTime=ui.state().elapsed;
   const queuedFar=ui.events.filter(event=>event.type==='cast'&&event.targetId==='orc'&&event.appearDuration===.42&&event.impactAt>contactTime).at(-1);
   assert.ok(queuedFar,'a far spell was already launched before contact');
@@ -595,7 +596,7 @@ test('far wand casts and the hero bow keep their original cadence, including bow
  for(const [weapon,outfit]of [['wand','acolyte'],['bow','wanderer']]){
   const ui=createHarness({weapon,outfit,magic:'fire'});await ui.loadAllImages();
   const type=weapon==='wand'?'cast':'attack';
-  ui.runUntil(()=>ui.events.filter(event=>event.type===type&&event.sourceId==='hero').length>=3,5);
+  ui.runUntil(()=>ui.events.filter(event=>event.type===type&&event.sourceId==='hero').length>=3,9);
   const first=ui.events.filter(event=>event.type===type&&event.sourceId==='hero').slice(0,3);
   assert.deepEqual(first.map(event=>event.at),[1.2,2.4,3.6]);
   if(weapon==='wand'){
@@ -790,7 +791,8 @@ test('ranged spells use off-row target coordinates and keep aiming correctly aft
  const angle=assertActualSpellRay(ui,spell);ui.node('#auto-button').click();const elapsed=ui.state().elapsed;
  ui.resizeField(1000,44);ui.frame(0);const resizedAngle=assertActualSpellRay(ui,spell);assert.ok(Math.abs(resizedAngle-angle)>.1);assert.equal(ui.state().elapsed,elapsed);assert.equal(spell.dataset.phase,'flight');
  assert.equal(ui.depth('hero'),3);assert.equal(ui.depth('archer1'),2);almost(roadCenterSource(ui),1028);
- ui.node('#auto-button').click();enterWaveExactly(ui,2);const startDepth=ui.depth('orc'),home=ui.heroX();assert.equal(startDepth,4);
+ ui.node('#auto-button').click();enterWaveExactly(ui,2);ui.runFor(2.6);
+ const startDepth=ui.depth('orc'),home=ui.heroX();assert.equal(startDepth,4);
  ui.runFor(.4);assert.equal(ui.heroX(),home);assert.equal(ui.depth('hero'),3);assert.ok(ui.depth('orc')<4&&ui.depth('orc')>3);assert.equal(ui.node('[data-fighter="orc"]').dataset.motion,'walk');
  ui.runUntil(()=>ui.inMeleeRange());almost(ui.footY('hero'),ui.footY('orc'),.01);assert.equal(ui.depth('orc'),3);
 });
