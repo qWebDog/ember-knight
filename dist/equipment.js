@@ -106,15 +106,21 @@
   // Every item portrait is an actual transparent icon extracted from the
   // matching native LPC sprite layer during the Pages build.
   const iconColors=Object.freeze(['sand','forest','blue','red','purple','gray']);
-  function itemIconPath(classId,slot,itemId,outfitColor='sand'){
+  function itemIconPath(classId,slot,itemId,outfitColor='sand',dye='original'){
     if(!['sword','bow','wand'].includes(classId))return null;
     const itemCatalog=classId==='sword'?catalog:classId==='bow'?rangerCatalog:mageCatalog;
     if(!Object.prototype.hasOwnProperty.call(itemCatalog,slot)
       ||!itemCatalog[slot].some(item=>item.id===itemId))return null;
     if(!['helmet','armor','weapon','shield','cape'].includes(slot))return null;
     const colored=(slot==='armor'&&itemId==='basic'&&classId!=='bow')
-      ||(slot==='helmet'&&itemId==='basic'&&classId!=='sword');
+      ||(slot==='helmet'&&itemId==='basic'&&classId!=='sword')
+      ||(slot==='cape'&&itemId!=='none');
     const color=iconColors.includes(outfitColor)?outfitColor:'sand';
+    if(dyeSlots.includes(slot)&&dyeIds.includes(dye)&&dye!=='original'
+      &&itemId!=='none'){
+      return 'assets/equipment/icons/dyes/'+classId+'/'+slot+'/'+itemId
+        +(colored?'/'+color:'/')+dye+'.png';
+    }
     return 'assets/equipment/icons/'+classId+'/'+slot+'/'+itemId
       +(colored?'/'+color:'')+'.png';
   }
