@@ -141,7 +141,7 @@ test('battle and equipment panel route every class to the correct LPC engine',()
   const html=fs.readFileSync(path.join(dist,'index.html'),'utf8');
   const ui=fs.readFileSync(path.join(dist,'equipment-ui.js'),'utf8');
   const builder=fs.readFileSync(path.join(__dirname,'../scripts/build-class-equipment.py'),'utf8');
-  assert.match(html,/src="class-equipment.js"/);
+  assert.match(html,/src="class-equipment.js(?:\?v=[^"]+)?"/);
   assert.match(source,/window\.EmberClassEquipment\.create/);
   assert.match(source,/classEquipment\.load\(nextLook\)/);
   assert.match(source,/applyClassSprites\(loadedClassSprites\)/);
