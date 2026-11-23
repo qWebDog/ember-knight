@@ -75,13 +75,13 @@
       if(variants.cape.includes(equipped?.cape))jobs.push(ensure('cape',equipped.cape));
       // Native front shield pixels must be repainted over the armor.
       // Native sword pixels must be repainted over both armor and helmet.
-      if(variants.armor.includes(equipped?.armor)
-        &&(equipped.armor!=='basic'||dyes.armor&&dyes.armor!=='original')){
+      if((variants.armor.includes(equipped?.armor)
+        &&(equipped.armor!=='basic'||dyes.armor&&dyes.armor!=='original'))||variants.cape.includes(equipped?.cape)){
         jobs.push(ensure('shield',equipped.shield));
       }
       if((variants.armor.includes(equipped?.armor)&&
           (equipped.armor!=='basic'||dyes.armor&&dyes.armor!=='original'))
-          ||variants.helmet.includes(equipped?.helmet)){
+          ||variants.helmet.includes(equipped?.helmet)||variants.cape.includes(equipped?.cape)){
         jobs.push(ensure('weapon',equipped.weapon));
       }
       await Promise.all(jobs);
@@ -108,7 +108,7 @@
       const col=Math.min(frame,geometry.frames-1);
       const worn=pose.equipped,withArmor=variants.armor.includes(worn.armor)
         &&(worn.armor!=='basic'||pose.colors?.armor&&pose.colors.armor!=='original');
-      const withHelmet=variants.helmet.includes(worn.helmet);
+      const withHelmet=variants.helmet.includes(worn.helmet),withCape=variants.cape.includes(worn.cape);
       let count=0;
       function drawLayer(slot,id){
         const path=imagePath(slot,id,animation,outfitColor,'fg');
@@ -127,9 +127,9 @@
       // helmet z130, sword foreground z140-150.
       if(withArmor)drawLayer('armor',worn.armor);
       if(variants.cape.includes(worn.cape))drawLayer('cape',worn.cape);
-      if(withArmor)drawLayer('shield',worn.shield);
+      if(withArmor||withCape)drawLayer('shield',worn.shield);
       if(withHelmet)drawLayer('helmet',worn.helmet);
-      if(withArmor||withHelmet)drawLayer('weapon',worn.weapon);
+      if(withArmor||withHelmet||withCape)drawLayer('weapon',worn.weapon);
       return count;
     }
     return Object.freeze({
