@@ -46,19 +46,73 @@
       {id:'royal',name:'Рыцарские сапоги',detail:'Золотая отделка',tone:'#d0a04c'}
     ].map(Object.freeze))
   });
+  // Ranged/magic use the same four independent storage keys. The shield key
+  // represents their class accessory (quiver or sash), never an off-hand shield.
+  const rangerCatalog=Object.freeze({...catalog,
+    helmet:Object.freeze([
+      {id:'none',name:'Лесной капюшон',detail:'Исходный LPC-капюшон',tone:'#61774d'},
+      {id:'iron',name:'Бацинет',detail:'Родной LPC · walk и shoot',tone:'#a1b3bb'},
+      {id:'royal',name:'Большой шлем',detail:'Родной LPC · walk и shoot',tone:'#bdad80'}
+    ].map(Object.freeze)),
+    armor:Object.freeze([
+      {id:'basic',name:'Походная рубаха',detail:'Исходный наряд',tone:'#55726a'},
+      {id:'iron',name:'Кожаная броня',detail:'LPC · walk и shoot',tone:'#7a6042'},
+      {id:'royal',name:'Пластинчатая броня',detail:'LPC · walk и shoot',tone:'#9cb5bc'}
+    ].map(Object.freeze)),
+    weapon:Object.freeze([
+      {id:'basic',name:'Светлый лук',detail:'Исходный LPC-лук',tone:'#bca67b'},
+      {id:'steel',name:'Тёмный лук',detail:'Оригинальный LPC · dark',tone:'#594638'},
+      {id:'ember',name:'Золотой лук',detail:'Оригинальный LPC · gold',tone:'#d8ae52'}
+    ].map(Object.freeze)),
+    shield:Object.freeze([
+      {id:'basic',name:'Походный колчан',detail:'Исходный LPC-колчан',tone:'#78604a'},
+      {id:'steel',name:'Тёмный колчан',detail:'Перекраска LPC-слоя',tone:'#52616f'},
+      {id:'royal',name:'Алый колчан',detail:'Перекраска LPC-слоя',tone:'#ac5951'}
+    ].map(Object.freeze))
+  });
+  const mageCatalog=Object.freeze({...catalog,
+    helmet:Object.freeze([
+      {id:'none',name:'Капюшон послушника',detail:'Исходный LPC-капюшон',tone:'#75548c'},
+      {id:'iron',name:'Синяя шляпа мага',detail:'Оригинальный LPC · blue',tone:'#6174a6'},
+      {id:'royal',name:'Фиолетовая шляпа',detail:'Оригинальный LPC · purple',tone:'#8862b4'}
+    ].map(Object.freeze)),
+    armor:Object.freeze([
+      {id:'basic',name:'Одеяние послушника',detail:'Исходная одежда',tone:'#8c6f98'},
+      {id:'iron',name:'Кожаная защита',detail:'Оригинальный LPC-доспех',tone:'#80614f'},
+      {id:'royal',name:'Магический жилет',detail:'Оригинальный LPC-жилет',tone:'#4d70a8'}
+    ].map(Object.freeze)),
+    weapon:Object.freeze([
+      {id:'basic',name:'Простая палочка',detail:'Исходная LPC-палочка',tone:'#87634d'},
+      {id:'steel',name:'Лазурная палочка',detail:'Перекраска LPC-слоя',tone:'#619ed0'},
+      {id:'ember',name:'Янтарная палочка',detail:'Перекраска LPC-слоя',tone:'#cd963d'}
+    ].map(Object.freeze)),
+    shield:Object.freeze([
+      {id:'basic',name:'Тёмный пояс',detail:'Исходный LPC-пояс',tone:'#504653'},
+      {id:'steel',name:'Синий пояс',detail:'LPC · палитра navy',tone:'#526c9b'},
+      {id:'royal',name:'Золотой пояс',detail:'LPC · палитра yellow',tone:'#d7ad54'}
+    ].map(Object.freeze))
+  });
+  const catalogs=Object.freeze({sword:catalog,bow:rangerCatalog,wand:mageCatalog});
+  const supportedByClass=Object.freeze({sword:supportedSlots,bow:Object.freeze(['helmet','armor','weapon','shield']),wand:Object.freeze(['helmet','armor','weapon','shield'])});
+  const slotNames=Object.freeze({sword:Object.freeze({shield:'Щит'}),bow:Object.freeze({shield:'Колчан'}),wand:Object.freeze({shield:'Пояс'})});
+  function catalogForClass(classId){return catalogs[classId]||catalog;}
+  function supportedForClass(classId){return supportedByClass[classId]||supportedSlots;}
+  function slotLabel(classId,slot){return slotNames[classId]?.[slot]||slots.find(item=>item.id===slot)?.name||slot;}
   const defaults=Object.freeze(Object.fromEntries(slots.map(slot=>[slot.id,catalog[slot.id][0].id])));
-  function normalizeLook(input){
+  function defaultsForClass(classId){const items=catalogForClass(classId);return Object.fromEntries(slots.map(slot=>[slot.id,items[slot.id][0].id]));}
+  function normalizeLook(input,classId='sword'){
     const out={};
+    const items=catalogForClass(classId),allowed=supportedForClass(classId);
     for(const slot of slots){
       const selected=input?.[slot.id];
-      out[slot.id]=supportedSlots.includes(slot.id)&&catalog[slot.id].some(item=>item.id===selected)?selected:defaults[slot.id];
+      out[slot.id]=allowed.includes(slot.id)&&items[slot.id].some(item=>item.id===selected)?selected:items[slot.id][0].id;
     }
     return out;
   }
   function normalize(value){
     const byClass={};
     if(value?.version===1&&value.byClass&&typeof value.byClass==='object'){
-      for(const id of ['sword','bow','wand'])byClass[id]=normalizeLook(value.byClass[id]);
+      for(const id of ['sword','bow','wand'])byClass[id]=normalizeLook(value.byClass[id],id);
     }
     return {version:1,byClass};
   }
@@ -75,14 +129,14 @@
     }
     let current=read();
     function state(){
-      return {...normalizeLook(current.byClass[classId])};
+      return {...normalizeLook(current.byClass[classId],classId)};
     }
     function equip(slot,id){
-      if(classId!=='sword')return {ok:false,reason:'class'};
-      if(!Object.prototype.hasOwnProperty.call(catalog,slot)||!catalog[slot].some(item=>item.id===id))return {ok:false,reason:'invalid'};
-      if(!supportedSlots.includes(slot))return {ok:false,reason:'unsupported'};
+      const items=catalogForClass(classId);
+      if(!Object.prototype.hasOwnProperty.call(items,slot)||!items[slot].some(item=>item.id===id))return {ok:false,reason:'invalid'};
+      if(!supportedForClass(classId).includes(slot))return {ok:false,reason:'unsupported'};
       const fresh=read();
-      const before=normalizeLook(fresh.byClass[classId]);
+      const before=normalizeLook(fresh.byClass[classId],classId);
       if(before[slot]===id)return {ok:true,unchanged:true,state:{...before}};
       const next={...before,[slot]:id};
       fresh.byClass[classId]=next;
@@ -98,7 +152,7 @@
       if(typeof callback!=='function')throw new TypeError('Invalid listener');
       listeners.add(callback);return ()=>listeners.delete(callback);
     }
-    return Object.freeze({classId,enabled:classId==='sword',getState:state,equip,subscribe});
+    return Object.freeze({classId,enabled:true,getState:state,equip,subscribe});
   }
-  return Object.freeze({slots,catalog,defaults,supportedSlots,key,normalizeLook,createStore});
+  return Object.freeze({slots,catalog,defaults,supportedSlots,catalogs,catalogForClass,supportedForClass,slotLabel,defaultsForClass,key,normalizeLook,createStore});
 });
