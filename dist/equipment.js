@@ -4,6 +4,9 @@
 (function(root,factory){'use strict';const api=factory(root);if(typeof module==='object'&&module.exports)module.exports=api;if(root)root.EmberEquipment=api;})(typeof window!=='undefined'?window:null,function(root){
   'use strict';
   const key='ember.equipment.v1';
+  const dyeKey='ember.equipment.colors.v1';
+  const dyeSlots=Object.freeze(['helmet','armor','cape']);
+  const dyeIds=Object.freeze(['original','sand','forest','blue','red','purple','gray']);
   const slots=Object.freeze([
     {id:'helmet',name:'Шлем',icon:'helm'},
     {id:'armor',name:'Броня',icon:'armor'},
@@ -13,7 +16,7 @@
     {id:'boots',name:'Обувь',icon:'boots'}
   ].map(Object.freeze));
   // Helms/armor use original LPC pose overlays; swords/shields are fully recomposed native LPC sheets.
-  const supportedSlots=Object.freeze(['helmet','armor','weapon','shield']);
+  const supportedSlots=Object.freeze(['helmet','armor','weapon','shield','cape']);
   const catalog=Object.freeze({
     helmet:Object.freeze([
       {id:'none',name:'Без шлема',detail:'Открытая голова',tone:'#78867d'},
@@ -37,8 +40,8 @@
     ].map(Object.freeze)),
     cape:Object.freeze([
       {id:'none',name:'Без плаща',detail:'Без дополнительного плаща',tone:'#737b69'},
-      {id:'red',name:'Багряный плащ',detail:'Тёмно-красная ткань',tone:'#a74348'},
-      {id:'purple',name:'Сумеречный плащ',detail:'Фиолетовая ткань',tone:'#7b5ba4'}
+      {id:'tattered',name:'Потрёпанный плащ',detail:'LPC · полный набор анимаций',tone:'#a74348'},
+      {id:'solid',name:'Прямой плащ',detail:'LPC · полный набор анимаций',tone:'#7b5ba4'}
     ].map(Object.freeze)),
     boots:Object.freeze([
       {id:'basic',name:'Дорожные сапоги',detail:'Исходная обувь',tone:'#81634b'},
@@ -49,6 +52,10 @@
   // Ranged/magic use the same four independent storage keys. The shield key
   // represents their class accessory (quiver or sash), never an off-hand shield.
   const rangerCatalog=Object.freeze({...catalog,
+    cape:Object.freeze([
+      {id:'tattered',name:'Дорожный плащ',tone:'#5c805c'},
+      {id:'solid',name:'Прямой плащ',tone:'#af6c77'}
+    ].map(Object.freeze)),
     helmet:Object.freeze([
       {id:'basic',name:'Лесной капюшон',detail:'Исходный LPC-капюшон',tone:'#61774d'},
       {id:'iron',name:'Бацинет',detail:'Родной LPC · walk и shoot',tone:'#a1b3bb'},
@@ -71,6 +78,10 @@
     ].map(Object.freeze))
   });
   const mageCatalog=Object.freeze({...catalog,
+    cape:Object.freeze([
+      {id:'tattered',name:'Плащ послушника',tone:'#8c69b0'},
+      {id:'solid',name:'Прямой плащ',tone:'#af6c77'}
+    ].map(Object.freeze)),
     helmet:Object.freeze([
       {id:'basic',name:'Капюшон послушника',detail:'Исходный LPC-капюшон',tone:'#75548c'},
       {id:'iron',name:'Синяя шляпа мага',detail:'Оригинальный LPC · blue',tone:'#6174a6'},
@@ -100,7 +111,7 @@
     const itemCatalog=classId==='sword'?catalog:classId==='bow'?rangerCatalog:mageCatalog;
     if(!Object.prototype.hasOwnProperty.call(itemCatalog,slot)
       ||!itemCatalog[slot].some(item=>item.id===itemId))return null;
-    if(!['helmet','armor','weapon','shield'].includes(slot))return null;
+    if(!['helmet','armor','weapon','shield','cape'].includes(slot))return null;
     const colored=(slot==='armor'&&itemId==='basic'&&classId!=='bow')
       ||(slot==='helmet'&&itemId==='basic'&&classId!=='sword');
     const color=iconColors.includes(outfitColor)?outfitColor:'sand';
@@ -163,11 +174,40 @@
       for(const callback of [...listeners])try{callback({...next},slot,id);}catch{}
       return {ok:true,unchanged:false,state:{...next}};
     }
+    function getColor(slot,itemId=state()[slot]){
+      if(!dyeSlots.includes(slot)||!catalogForClass(classId)[slot]?.some(x=>x.id===itemId))return 'original';
+      try{
+        const saved=JSON.parse(storage?.getItem?.(dyeKey)||'null');
+        const color=saved?.byClass?.[classId]?.[slot]?.[itemId];
+        return dyeIds.includes(color)?color:'original';
+      }catch{return 'original';}
+    }
+    function getColors(look=state(),overrideSlot=null,overrideColor=null){
+      return Object.fromEntries(dyeSlots.map(slot=>[slot,
+        slot===overrideSlot&&dyeIds.includes(overrideColor)?overrideColor:getColor(slot,look[slot])
+      ]));
+    }
+    function setColor(slot,color,itemId=state()[slot]){
+      if(!dyeSlots.includes(slot)||!catalogForClass(classId)[slot]?.some(x=>x.id===itemId)||!dyeIds.includes(color))return {ok:false,reason:'invalid'};
+      if((slot==='helmet'&&itemId==='none')||(slot==='cape'&&itemId==='none'))return {ok:false,reason:'unsupported'};
+      if(getColor(slot,itemId)===color)return {ok:true,unchanged:true};
+      try{
+        const saved=JSON.parse(storage?.getItem?.(dyeKey)||'null');
+        const next=saved&&typeof saved==='object'?saved:{version:1,byClass:{}};
+        if(!next.byClass||typeof next.byClass!=='object')next.byClass={};
+        const current=next.byClass[classId]||{};
+        next.byClass[classId]={...current,[slot]:{...(current[slot]||{}),[itemId]:color}};
+        next.version=1;
+        if(typeof storage?.setItem!=='function')throw Error('Storage unavailable');
+        storage.setItem(dyeKey,JSON.stringify(next));
+      }catch{return {ok:false,reason:'storage'};}
+      return {ok:true,unchanged:false};
+    }
     function subscribe(callback){
       if(typeof callback!=='function')throw new TypeError('Invalid listener');
       listeners.add(callback);return ()=>listeners.delete(callback);
     }
-    return Object.freeze({classId,enabled:true,getState:state,equip,subscribe});
+    return Object.freeze({classId,enabled:true,getState:state,equip,getColor,getColors,setColor,subscribe});
   }
-  return Object.freeze({slots,catalog,defaults,supportedSlots,catalogs,catalogForClass,supportedForClass,slotLabel,defaultsForClass,itemIconPath,key,normalizeLook,createStore});
+  return Object.freeze({slots,catalog,defaults,supportedSlots,catalogs,catalogForClass,supportedForClass,slotLabel,defaultsForClass,itemIconPath,key,dyeKey,dyeSlots,dyeIds,normalizeLook,createStore});
 });
