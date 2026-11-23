@@ -172,3 +172,16 @@ test('actual game portrait hints afford swipes while allowing vertical scrolling
   assert.match(source,/pointercancel/);
   assert.match(source,/lostpointercapture/);
 });
+
+test('the sixth companion sector is selectable only for the Archer',()=>{
+ for(const classId of ['sword','wand','bow']){
+   const h=setup(classId),slot=h.slotNodes.find(el=>el.dataset.equipmentSlot==='companion');
+   assert.ok(slot,'companion sector is present even when unavailable');
+   assert.equal(slot.disabled,classId!=='bow');
+   assert.equal(h.controller.select('companion'),classId==='bow');
+   if(classId==='bow'){
+     assert.deepEqual(h.items.children.map(node=>node.getAttribute('data-equipment-item')),['none','wolf']);
+   }
+   h.cleanup();
+ }
+});

@@ -13,11 +13,11 @@ function storage(seed={}){
 }
 test('five wearable slots and the new companion slot are all available',()=>{
   assert.deepEqual(slots.map(s=>s.id),['helmet','armor','weapon','shield','cape','companion']);
-  assert.deepEqual(supportedSlots,['helmet','armor','weapon','shield','cape','companion']);
+  assert.deepEqual(supportedSlots,['helmet','armor','weapon','shield','cape']);
   for(const slot of slots){
     const items=catalog[slot.id];
-    assert.equal(items.length,slot.id==='companion'?2:3);
-    assert.equal(new Set(items.map(item=>item.id)).size,slot.id==='companion'?2:3);
+    assert.equal(items.length,slot.id==='companion'?1:3);
+    assert.equal(new Set(items.map(item=>item.id)).size,slot.id==='companion'?1:3);
     assert.equal(defaults[slot.id],items[0].id);
   }
 });
@@ -187,22 +187,30 @@ test('the game uses native LPC animation atlases, not synthetic equipment drawin
   assert.match(renderer,/if\(withArmor\|\|withHelmet\|\|withCape\)drawLayer\('weapon',worn\.weapon\)/);
 });
 
-test('wolf companion replaces old boots and has separate persistent slots for each class',()=>{
- const mem=storage({[key]:JSON.stringify({version:1,byClass:{sword:{boots:'royal'},bow:{boots:'basic'},wand:{boots:'iron'}}})});
+test('wolf is exclusive to Archer; legacy Warrior/Mage wolves cannot be equipped or restored',()=>{
+ const mem=storage({[key]:JSON.stringify({version:1,byClass:{
+   sword:{boots:'royal',companion:'wolf'},
+   bow:{boots:'basic',companion:'wolf'},
+   wand:{boots:'iron',companion:'wolf'}
+ }})});
  const warrior=createStore({storage:mem,classId:'sword'});
  const archer=createStore({storage:mem,classId:'bow'});
  const mage=createStore({storage:mem,classId:'wand'});
- for(const store of [warrior,archer,mage]){
-   assert.equal(store.getState().companion,'none');
-   assert.equal(Object.hasOwn(store.getState(),'boots'),false);
-   assert.equal(store.equip('companion','wolf').ok,true);
-   assert.equal(store.getState().companion,'wolf');
+ assert.equal(warrior.getState().companion,'none');
+ assert.equal(mage.getState().companion,'none');
+ assert.equal(archer.getState().companion,'wolf');
+ assert.equal(Object.hasOwn(archer.getState(),'boots'),false);
+ assert.deepEqual(require('../dist/equipment.js').supportedForClass('bow'),
+   ['helmet','armor','weapon','shield','cape','companion']);
+ for(const store of [warrior,mage]){
+   assert.equal(store.equip('companion','wolf').ok,false);
+   assert.equal(store.equip('companion','wolf').reason,'invalid');
+   assert.equal(store.equip('companion','none').reason,'unsupported');
  }
- assert.equal(createStore({storage:mem,classId:'sword'}).getState().companion,'wolf');
+ assert.equal(archer.equip('companion','none').ok,true);
+ assert.equal(archer.equip('companion','wolf').ok,true);
  assert.equal(createStore({storage:mem,classId:'bow'}).getState().companion,'wolf');
- assert.equal(createStore({storage:mem,classId:'wand'}).getState().companion,'wolf');
- assert.equal(warrior.equip('companion','none').ok,true);
  assert.equal(createStore({storage:mem,classId:'sword'}).getState().companion,'none');
- assert.equal(createStore({storage:mem,classId:'bow'}).getState().companion,'wolf');
- assert.equal(warrior.equip('companion','dragon').reason,'invalid');
+ assert.equal(createStore({storage:mem,classId:'wand'}).getState().companion,'none');
+ assert.equal(archer.equip('companion','dragon').reason,'invalid');
 });

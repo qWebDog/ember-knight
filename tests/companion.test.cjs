@@ -120,11 +120,57 @@ test('game invokes the corrected wolf animation controller and exposes class com
  assert.match(html,/data-equipment-slot="companion"/);
  assert.doesNotMatch(html,/data-equipment-slot="boots"/);
  assert.match(html,/id="companion-wolf"/);
- assert.match(html,/src="companion.js\?v=wolf-animations-2"/);
+ assert.match(html,/src="companion.js\?v=wolf-ranger-combat-3"/);
  assert.match(js,/companion\?\.render\(/);
  assert.match(js,/direction:walkDirection/);
  assert.match(js,/action:state\.phase==='defeat'\?'die':null/);
  assert.match(js,/if\(slot==='companion'\)/);
  assert.match(ui,/paintCompanion\?\.\(ctx,pose\)/);
  assert.match(css,/background:url\('assets\/companions\/wolf\.png'\) -160px -28px\/320px 192px/);
+});
+
+test('Archer wolf runs to the enemy before starting its own timed bite',async()=>{
+ const h=harness();await h.actor.load();h.store.equip('companion','wolf');
+ const target={id:'archer1',x:460,width:64,depth:2,hp:60};
+ let hit=null,time=0,sawRun=false,sawBite=false;
+ for(let i=0;i<80&&!hit;i++,time=Math.round((time+.1)*1000)/1000){
+   hit=h.actor.advance({dt:.1,time,phase:'running',heroX:150,heroSize:64,heroDepth:3,target});
+   const pose=h.actor.getPose();
+   sawRun ||= pose.motion==='run';sawBite ||= pose.motion==='bite';
+   h.actor.render({time,x:150,heroSize:64,laneStep:8});
+ }
+ assert.equal(sawRun,true);assert.equal(sawBite,true);
+ assert.deepEqual(hit,{targetId:'archer1',damage:7});
+ assert.ok(time>2.0,'wolf cannot strike from Archer spawn position');
+ assert.ok(Math.abs(h.actor.getPose().depth-target.depth)<.05);
+ const before=h.actor.getPose();
+ assert.equal(h.actor.advance({dt:.1,time,phase:'paused',heroX:150,heroSize:64,heroDepth:3,target}),null);
+ assert.equal(h.actor.getPose().x,before.x);
+ const aborted=h.actor.advance({dt:.1,time:time+.1,phase:'running',heroX:150,heroSize:64,heroDepth:3,target:null});
+ assert.equal(aborted,null,'a dead target never receives a second bite');
+ assert.equal(h.actor.getPose().biteTarget,null);
+ let returned=false;
+ for(let n=0;n<40;n++){
+   h.actor.advance({dt:.1,time:time+.2+n*.1,phase:'intermission',heroX:150,heroSize:64,heroDepth:3});
+   if(Math.abs(h.actor.getPose().x-(150-64*.83))<1.1){returned=true;break;}
+ }
+ assert.equal(returned,true,'wolf runs back to Archer after the wave');
+ h.actor.reset();assert.equal(h.actor.getPose().x,null);
+ h.store.equip('companion','none');
+ assert.equal(h.actor.advance({dt:3,time:15,heroX:150,target}),null);
+ assert.equal(h.actor.render({time:15,x:150}),false);
+});
+
+test('Wolf is unusable on Warrior and Mage even from migrated save data',async()=>{
+ for(const classId of ['sword','wand']){
+   const saved=new Map([['ember.equipment.v1',JSON.stringify({version:1,byClass:{[classId]:{companion:'wolf'}}})]]);
+   const store=gear.createStore({classId,storage:{getItem:key=>saved.get(key)||null,setItem:(key,value)=>saved.set(key,value)}});
+   const element={hidden:true,style:{setProperty(){}},dataset:{},querySelector:()=>({getContext:()=>({clearRect(){},drawImage(){}})})};
+   const wolfActor=wolf.create({element,store,loadImage:async()=>({width:640,height:384})});
+   await wolfActor.load();
+   assert.equal(store.getState().companion,'none');
+   assert.equal(store.equip('companion','wolf').ok,false);
+   assert.equal(wolfActor.advance({dt:1,time:1,heroX:150,target:{id:'archer1',x:250,width:64,depth:2,hp:60}}),null);
+   assert.equal(wolfActor.render({time:1,x:150}),false);
+ }
 });

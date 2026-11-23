@@ -52,6 +52,9 @@
     let phase, pausedFrom, elapsed, remainder, hero, enemies, nextHero, nextEnemies, reward;
     let comboIndex, meleeHits, heroBusyUntil, pendingCounters, pendingImpacts;
     let waveIndex, completedWaves, defeatedCount, nextWaveAt;
+    // Companion ownership is gated by the permanent Archer class and can be
+    // changed live by equipment without rescheduling the Archer's next arrow.
+    let companionEnabled=config.projectile==='arrow'&&options.companionEnabled===true;
     function heroTicks(base) { return Math.max(1,Math.round(base/config.attackSpeed)); }
     // Pure read-only shot schedule for sprite anticipation. Existing engine
     // attack ticks, damage, rewards and cooldowns stay exactly unchanged.
@@ -124,6 +127,43 @@
     function reserveCounter(targetId) {
       pendingCounters.push({targetId,at:counterSlot(elapsed + heroTicks(COUNTER_DELAY))});
       pendingCounters.sort((a,b) => a.at-b.at);
+    }
+    function setCompanionEnabled(enabled) {
+      companionEnabled=config.projectile==='arrow'&&enabled===true;
+      return companionEnabled;
+    }
+    // The wolf's bite lands only after the sprite reaches its impact frame.
+    // This explicit hit API intentionally does not alter hero cooldowns,
+    // enemy attack cadence, or the deterministic advance() schedule.
+    function companionStrike(targetId,baseDamage) {
+      const events=[];
+      if(!companionEnabled||phase!=='running'||hero.hp<=0
+        ||!Number.isFinite(baseDamage)||baseDamage<=0)return events;
+      const target=enemies.find(enemy=>enemy.id===targetId&&enemy.hp>0);
+      if(!target)return events;
+      const damage=Math.max(1,Math.floor(baseDamage-target.armor));
+      target.hp=Math.max(0,target.hp-damage);
+      const at=elapsed/TICKS;
+      events.push({type:'attack',sourceId:'companion',targetId:target.id,
+        damage,hp:target.hp,at,projectile:'bite',animationDuration:5/12});
+      if(target.hp!==0)return events;
+      defeatedCount++;reward+=KILL_REWARD;target.status=null;
+      pendingCounters=pendingCounters.filter(counter=>counter.targetId!==target.id);
+      pendingImpacts=pendingImpacts.filter(impact=>impact.targetId!==target.id);
+      events.push({type:'death',id:target.id,unitType:target.type,
+        reward:KILL_REWARD,totalReward:reward,at});
+      if(enemies.some(enemy=>enemy.hp>0))return events;
+      completedWaves++;
+      pendingCounters=[];pendingImpacts=[];
+      enemies.forEach(enemy=>{enemy.status=null;});
+      events.push({type:'wave_clear',waveIndex,waveNumber:waveIndex+1,at});
+      if(waveIndex===waveTemplates.length-1){
+        phase='victory';pausedFrom=null;nextWaveAt=null;
+        events.push({type:'end',result:'victory',reward:0,totalReward:reward,at});
+      }else{
+        phase='intermission';nextWaveAt=elapsed+INTERMISSION;
+      }
+      return events;
     }
     function updateHeroStats(stats = {}) {
       const oldSpeed = config.attackSpeed;
@@ -292,7 +332,8 @@
       return events;
     }
     restart();
-    return {getState,getArrowSchedule,advance,pause,resume,restart,updateHeroStats,get state(){return getState();}};
+    return {getState,getArrowSchedule,advance,pause,resume,restart,updateHeroStats,
+      setCompanionEnabled,companionStrike,get state(){return getState();}};
   }
   return {createBattle,magicTiming,closeMagicTiming,statusTiming,intermissionDuration};
 });

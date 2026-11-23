@@ -975,3 +975,66 @@ test('live stat updates remain deterministic through gates, pause, waves and irr
     assert.deepEqual(small,whole);assert.deepEqual(irregular,whole);assert.equal(whole.state.phase,'victory');assert.equal(whole.state.reward,20);
   }
 });
+
+test('Archer wolf bite is an independent engine event and never shifts arrow timing',()=>{
+ const battle=createDefaultBattle({heroWeapon:'bow',heroProjectile:'arrow',companionEnabled:true});
+ const nextShot=battle.getArrowSchedule().find(e=>e.sourceId==='hero').at;
+ assert.equal(nextShot,1.2);
+ const wolf=battle.companionStrike('archer1',7);
+ assert.equal(wolf.length,1);
+ assert.deepEqual([wolf[0].type,wolf[0].sourceId,wolf[0].targetId,wolf[0].projectile,wolf[0].damage],
+   ['attack','companion','archer1','bite',7]);
+ assert.equal(battle.state.enemies[0].hp,53);
+ assert.equal(battle.getArrowSchedule().find(e=>e.sourceId==='hero').at,nextShot);
+ const events=battle.advance(1.2);
+ assert.equal(events.filter(e=>e.type==='attack'&&e.sourceId==='hero').length,1);
+ assert.equal(events.find(e=>e.sourceId==='hero').at,1.2);
+ assert.equal(battle.state.enemies[0].hp,41);
+ assert.equal(battle.getArrowSchedule().find(e=>e.sourceId==='hero').at,2.4);
+ battle.pause();
+ assert.deepEqual(battle.companionStrike('archer1',7),[]);
+ assert.equal(battle.state.enemies[0].hp,41);
+ battle.resume();
+ assert.equal(battle.setCompanionEnabled(false),false);
+ assert.deepEqual(battle.companionStrike('archer1',7),[]);
+ assert.equal(battle.state.enemies[0].hp,41);
+});
+test('Wolf cannot be activated for Warrior or Mage or while Archer has not equipped it',()=>{
+ for(const options of [{heroWeapon:'sword',heroProjectile:'melee'},
+   {heroWeapon:'wand',heroProjectile:'magic',heroMagic:'ice'},
+   {heroWeapon:'bow',heroProjectile:'arrow'}]){
+   const battle=createDefaultBattle({...options,companionEnabled:false});
+   assert.deepEqual(battle.companionStrike('archer1',9),[]);
+   const allowed=battle.setCompanionEnabled(true);
+   assert.equal(allowed,options.heroWeapon==='bow');
+   if(allowed){assert.equal(battle.companionStrike('invalid',9).length,0);
+     assert.equal(battle.companionStrike('archer1',NaN).length,0);
+     assert.equal(battle.companionStrike('archer1',-3).length,0);}
+   else assert.deepEqual(battle.companionStrike('archer1',9),[]);
+ }
+});
+test('Wolf kills enemies once, advances waves, preserves rewards and never duplicates victory',()=>{
+ const battle=createDefaultBattle({heroWeapon:'bow',heroProjectile:'arrow',companionEnabled:true});
+ let a=battle.companionStrike('archer1',100);
+ assert.deepEqual(a.map(e=>e.type),['attack','death','wave_clear']);
+ assert.equal(battle.state.phase,'intermission');
+ assert.equal(battle.state.reward,5);assert.equal(battle.state.completedWaves,1);
+ assert.deepEqual(battle.companionStrike('archer1',100),[]);
+ battle.advance(intermissionDuration);
+ assert.equal(battle.state.phase,'running');assert.equal(battle.state.waveIndex,1);
+ a=battle.companionStrike('archer2',100);
+ assert.deepEqual(a.map(e=>e.type),['attack','death']);
+ a=battle.companionStrike('archer3',100);
+ assert.deepEqual(a.map(e=>e.type),['attack','death','wave_clear']);
+ assert.equal(battle.state.reward,15);
+ battle.advance(intermissionDuration);
+ assert.equal(battle.state.waveIndex,2);
+ a=battle.companionStrike('orc',100);
+ assert.equal(a[0].damage,97,'wolf bite respects armor on the Orc');
+ assert.deepEqual(a.map(e=>e.type),['attack','death','wave_clear','end']);
+ assert.equal(battle.state.phase,'victory');
+ assert.equal(battle.state.reward,20);
+ assert.equal(battle.state.defeatedCount,4);
+ assert.deepEqual(battle.companionStrike('orc',100),[]);
+ assert.deepEqual(battle.advance(10),[]);
+});

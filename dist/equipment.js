@@ -16,7 +16,8 @@
     {id:'companion',name:'Компаньон',icon:'paw'}
   ].map(Object.freeze));
   // Helms/armor use original LPC pose overlays; swords/shields are fully recomposed native LPC sheets.
-  const supportedSlots=Object.freeze(['helmet','armor','weapon','shield','cape','companion']);
+  const supportedSlots=Object.freeze(['helmet','armor','weapon','shield','cape']);
+  const archerSlots=Object.freeze([...supportedSlots,'companion']);
   const catalog=Object.freeze({
     helmet:Object.freeze([
       {id:'none',name:'Без шлема',detail:'Открытая голова',tone:'#78867d'},
@@ -44,13 +45,17 @@
       {id:'solid',name:'Прямой плащ',detail:'LPC · полный набор анимаций',tone:'#7b5ba4'}
     ].map(Object.freeze)),
     companion:Object.freeze([
-      {id:'none',name:'Без компаньона',detail:'Герой путешествует один',tone:'#738476'},
-      {id:'wolf',name:'Волк',detail:'Оригинальный анимированный LPC-волк',tone:'#866653'}
+      {id:'none',name:'Без компаньона',detail:'Доступно только лучнику',tone:'#738476'}
     ].map(Object.freeze))
   });
-  // Ranged/magic use class-specific cosmetics and the same companion slot. The shield key
+  // Only the Archer can recruit the combat wolf; the slot stays visibly
+  // unavailable for Warrior and Mage. The shield key
   // represents their class accessory (quiver or sash), never an off-hand shield.
   const rangerCatalog=Object.freeze({...catalog,
+    companion:Object.freeze([
+      {id:'none',name:'Без компаньона',detail:'Нет помощника',tone:'#738476'},
+      {id:'wolf',name:'Боевой волк',detail:'Подбегает к врагам и кусает их, пока лучник стреляет',tone:'#866653'}
+    ].map(Object.freeze)),
     cape:Object.freeze([
       {id:'tattered',name:'Дорожный плащ',tone:'#5c805c'},
       {id:'solid',name:'Прямой плащ',tone:'#af6c77'}
@@ -124,7 +129,7 @@
       +(colored?'/'+color:'')+'.png';
   }
   const catalogs=Object.freeze({sword:catalog,bow:rangerCatalog,wand:mageCatalog});
-  const supportedByClass=Object.freeze({sword:supportedSlots,bow:Object.freeze(['helmet','armor','weapon','shield','cape','companion']),wand:Object.freeze(['helmet','armor','weapon','shield','cape','companion'])});
+  const supportedByClass=Object.freeze({sword:supportedSlots,bow:archerSlots,wand:supportedSlots});
   const slotNames=Object.freeze({sword:Object.freeze({shield:'Щит'}),bow:Object.freeze({shield:'Колчан'}),wand:Object.freeze({shield:'Пояс'})});
   function catalogForClass(classId){return catalogs[classId]||catalog;}
   function supportedForClass(classId){return supportedByClass[classId]||supportedSlots;}
@@ -214,5 +219,5 @@
     }
     return Object.freeze({classId,enabled:true,getState:state,equip,getColor,getColors,setColor,subscribe});
   }
-  return Object.freeze({slots,catalog,defaults,supportedSlots,catalogs,catalogForClass,supportedForClass,slotLabel,defaultsForClass,itemIconPath,key,dyeKey,dyeSlots,dyeIds,normalizeLook,createStore});
+  return Object.freeze({slots,catalog,defaults,supportedSlots,archerSlots,catalogs,catalogForClass,supportedForClass,slotLabel,defaultsForClass,itemIconPath,key,dyeKey,dyeSlots,dyeIds,normalizeLook,createStore});
 });

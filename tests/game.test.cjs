@@ -12,8 +12,12 @@ const combatSource = fs.readFileSync(path.join(dist, 'combat.js'), 'utf8');
 
 // The real game controller and combat engine run together. Only browser surfaces,
 // image decoding and the animation clock are replaced; no combat logic is mocked.
-function createHarness({skin = 'bronze', preference, search = '', weapon, outfit, outfitColor, magic, reducedMotion = false, fieldWidth = 800, modelSize = 64, arenaHeight = 400, fieldHeight = 180, fieldBottomGap = 62, roadGround = 36, viewportHeight = 800, combatOptions = {}, savedProgression, legacyGold, storageBlocked = false} = {}) {
+function createHarness({skin = 'bronze', preference, search = '', weapon, outfit, outfitColor, magic, reducedMotion = false, fieldWidth = 800, modelSize = 64, arenaHeight = 400, fieldHeight = 180, fieldBottomGap = 62, roadGround = 36, viewportHeight = 800, combatOptions = {}, savedProgression, legacyGold, storageBlocked = false, wolfEquipped = false} = {}) {
   const storage = new Map([['ember.character.v1', JSON.stringify({version:1, skin, name:'Тестовый герой', level:1,weapon,outfit,outfitColor,magic})]]);
+  if (wolfEquipped) storage.set('ember.equipment.v1',
+    JSON.stringify({version:1,byClass:{
+      sword:{companion:'wolf'},bow:{companion:'wolf'},wand:{companion:'wolf'}
+    }}));
   if (preference) storage.set('ember.combat.auto.v1', preference);
   if (savedProgression) storage.set('ember.progress.v1', JSON.stringify(savedProgression));
   if (legacyGold !== undefined) storage.set('ember.test.gold.v1', String(legacyGold));
@@ -46,6 +50,7 @@ function createHarness({skin = 'bronze', preference, search = '', weapon, outfit
     click() { if (!this.disabled) this.dispatch('click'); }
     setAttribute(name, value) { this.attributes[name] = String(value); }
     querySelector(selector) {
+      if(this.selector==='#companion-wolf'&&selector==='canvas')return node('companion:canvas');
       if (this.actor) {
         if (selector === 'canvas') return node(this.actor === 'hero' ? '#player-sprite' : `#enemy-${this.actor}`);
         if (selector === '.healthbar') return node(`healthbar:${this.actor}`);
@@ -142,12 +147,26 @@ function createHarness({skin = 'bronze', preference, search = '', weapon, outfit
   vm.runInContext(fs.readFileSync(path.join(dist,'loadouts.js'),'utf8'), context, {filename:'loadouts.js'});
   vm.runInContext(combatSource, context, {filename:'combat.js'});
   vm.runInContext(fs.readFileSync(path.join(dist,'progression.js'),'utf8'), context, {filename:'progression.js'});
+  if(wolfEquipped){
+    window.localStorage={
+      getItem:key=>storage.get(key)??null,
+      setItem:(key,value)=>storage.set(key,String(value))
+    };
+    vm.runInContext(fs.readFileSync(path.join(dist,'equipment.js'),'utf8'),context,{filename:'equipment.js'});
+    vm.runInContext(fs.readFileSync(path.join(dist,'companion.js'),'utf8'),context,{filename:'companion.js'});
+  }
   const createBattle = window.EmberCombat.createBattle;
   window.EmberCombat.createBattle = options => {
     battle = createBattle({...options,...combatOptions});
     const advance = battle.advance;
     battle.advance = (seconds, availability) => {
       const emitted = advance(seconds, availability);
+      events.push(...JSON.parse(JSON.stringify(emitted)));
+      return emitted;
+    };
+    const strike=battle.companionStrike;
+    battle.companionStrike=(...args)=>{
+      const emitted=strike(...args);
       events.push(...JSON.parse(JSON.stringify(emitted)));
       return emitted;
     };
@@ -1031,4 +1050,39 @@ test('Archer has independent live arrow upgrades and cannot spend Warrior or Mag
  assert.equal(restored.state().hero.damage,14);
  assert.equal(restored.state().hero.maxHp,220);
  assert.equal(restored.state().hero.attackSpeed,1.05);
+});
+
+test('equipped Archer wolf runs into melee and hits while the Archer keeps firing arrows',async()=>{
+ const ui=createHarness({weapon:'bow',outfit:'wanderer',wolfEquipped:true,
+   combatOptions:{heroDamage:2,heroMaxHp:750}});
+ await ui.loadAllImages();
+ ui.runUntil(()=>ui.events.some(e=>e.type==='attack'&&e.sourceId==='companion'),25);
+ const hit=ui.events.find(e=>e.type==='attack'&&e.sourceId==='companion');
+ assert.equal(hit.projectile,'bite');
+ assert.equal(hit.damage,7);
+ assert.equal(hit.targetId,'archer1');
+ assert.ok(hit.at>1.5,'wolf must travel and complete bite wind-up before damaging the enemy');
+ const arrows=ui.events.filter(e=>e.type==='attack'&&e.sourceId==='hero'&&e.projectile==='arrow');
+ assert.ok(arrows.length>=2,'Archer must keep shooting during companion travel');
+ assert.equal(arrows[0].at,1.2,'wolf must not shift the first arrow attack tick');
+ assert.equal(arrows[1].at,2.4,'wolf must not shift the second arrow attack tick');
+ const wolfNode=ui.node('#companion-wolf');
+ assert.equal(wolfNode.hidden,false);
+ assert.ok(wolfNode.motionHistory.includes('run'));
+ assert.ok(wolfNode.motionHistory.includes('bite'));
+ assert.ok(Number.parseFloat(wolfNode.style.left)>ui.heroX(),'wolf visibly ran ahead of the archer');
+ const prior=ui.state(),priorBites=ui.events.filter(e=>e.sourceId==='companion').length;
+ ui.node('#auto-button').click();
+ ui.runFor(2);
+ assert.equal(ui.state().elapsed,prior.elapsed,'combat pauses');
+ assert.equal(ui.events.filter(e=>e.sourceId==='companion').length,priorBites,'wolf cannot bite on pause');
+});
+test('legacy saved wolf is ignored for Warrior and Mage in the live game',async()=>{
+ for(const options of [{weapon:'sword',outfit:'wanderer'},{weapon:'wand',outfit:'acolyte',magic:'fire'}]){
+   const ui=createHarness({...options,wolfEquipped:true});
+   await ui.loadAllImages();
+   ui.runFor(12);
+   assert.equal(ui.node('#companion-wolf').hidden,true);
+   assert.equal(ui.events.some(e=>e.sourceId==='companion'),false);
+ }
 });

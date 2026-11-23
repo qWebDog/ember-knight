@@ -12,7 +12,8 @@ function fullPath(kind,color,skin,pose,suffix){
 test('Archer gets original animated bow and quiver, Mage a wand and belt',()=>{
   const archer=eq.catalogForClass('bow'),mage=eq.catalogForClass('wand');
   assert.deepEqual(eq.supportedForClass('bow'),['helmet','armor','weapon','shield','cape','companion']);
-  assert.deepEqual(eq.supportedForClass('wand'),['helmet','armor','weapon','shield','cape','companion']);
+  assert.deepEqual(eq.supportedForClass('wand'),['helmet','armor','weapon','shield','cape']);
+  assert.deepEqual(eq.supportedForClass('sword'),['helmet','armor','weapon','shield','cape']);
   assert.equal(eq.slotLabel('bow','shield'),'Колчан');
   assert.equal(eq.slotLabel('wand','shield'),'Пояс');
   assert.equal(eq.slotLabel('sword','shield'),'Щит');
