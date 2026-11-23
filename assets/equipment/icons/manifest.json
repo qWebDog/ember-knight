@@ -1,0 +1,398 @@
+{
+  "source": "Original Universal LPC equipment PNGs, same pin as generators",
+  "iconSize": 64,
+  "icons": [
+    {
+      "class": "sword",
+      "slot": "helmet",
+      "item": "none",
+      "color": null,
+      "path": "assets/equipment/icons/sword/helmet/none.png"
+    },
+    {
+      "class": "sword",
+      "slot": "helmet",
+      "item": "iron",
+      "color": null,
+      "path": "assets/equipment/icons/sword/helmet/iron.png"
+    },
+    {
+      "class": "sword",
+      "slot": "helmet",
+      "item": "royal",
+      "color": null,
+      "path": "assets/equipment/icons/sword/helmet/royal.png"
+    },
+    {
+      "class": "sword",
+      "slot": "armor",
+      "item": "basic",
+      "color": "sand",
+      "path": "assets/equipment/icons/sword/armor/basic/sand.png"
+    },
+    {
+      "class": "sword",
+      "slot": "armor",
+      "item": "basic",
+      "color": "forest",
+      "path": "assets/equipment/icons/sword/armor/basic/forest.png"
+    },
+    {
+      "class": "sword",
+      "slot": "armor",
+      "item": "basic",
+      "color": "blue",
+      "path": "assets/equipment/icons/sword/armor/basic/blue.png"
+    },
+    {
+      "class": "sword",
+      "slot": "armor",
+      "item": "basic",
+      "color": "red",
+      "path": "assets/equipment/icons/sword/armor/basic/red.png"
+    },
+    {
+      "class": "sword",
+      "slot": "armor",
+      "item": "basic",
+      "color": "purple",
+      "path": "assets/equipment/icons/sword/armor/basic/purple.png"
+    },
+    {
+      "class": "sword",
+      "slot": "armor",
+      "item": "basic",
+      "color": "gray",
+      "path": "assets/equipment/icons/sword/armor/basic/gray.png"
+    },
+    {
+      "class": "sword",
+      "slot": "armor",
+      "item": "iron",
+      "color": null,
+      "path": "assets/equipment/icons/sword/armor/iron.png"
+    },
+    {
+      "class": "sword",
+      "slot": "armor",
+      "item": "royal",
+      "color": null,
+      "path": "assets/equipment/icons/sword/armor/royal.png"
+    },
+    {
+      "class": "sword",
+      "slot": "weapon",
+      "item": "basic",
+      "color": null,
+      "path": "assets/equipment/icons/sword/weapon/basic.png"
+    },
+    {
+      "class": "sword",
+      "slot": "weapon",
+      "item": "steel",
+      "color": null,
+      "path": "assets/equipment/icons/sword/weapon/steel.png"
+    },
+    {
+      "class": "sword",
+      "slot": "weapon",
+      "item": "ember",
+      "color": null,
+      "path": "assets/equipment/icons/sword/weapon/ember.png"
+    },
+    {
+      "class": "sword",
+      "slot": "shield",
+      "item": "basic",
+      "color": null,
+      "path": "assets/equipment/icons/sword/shield/basic.png"
+    },
+    {
+      "class": "sword",
+      "slot": "shield",
+      "item": "steel",
+      "color": null,
+      "path": "assets/equipment/icons/sword/shield/steel.png"
+    },
+    {
+      "class": "sword",
+      "slot": "shield",
+      "item": "royal",
+      "color": null,
+      "path": "assets/equipment/icons/sword/shield/royal.png"
+    },
+    {
+      "class": "bow",
+      "slot": "helmet",
+      "item": "basic",
+      "color": "sand",
+      "path": "assets/equipment/icons/bow/helmet/basic/sand.png"
+    },
+    {
+      "class": "bow",
+      "slot": "helmet",
+      "item": "basic",
+      "color": "forest",
+      "path": "assets/equipment/icons/bow/helmet/basic/forest.png"
+    },
+    {
+      "class": "bow",
+      "slot": "helmet",
+      "item": "basic",
+      "color": "blue",
+      "path": "assets/equipment/icons/bow/helmet/basic/blue.png"
+    },
+    {
+      "class": "bow",
+      "slot": "helmet",
+      "item": "basic",
+      "color": "red",
+      "path": "assets/equipment/icons/bow/helmet/basic/red.png"
+    },
+    {
+      "class": "bow",
+      "slot": "helmet",
+      "item": "basic",
+      "color": "purple",
+      "path": "assets/equipment/icons/bow/helmet/basic/purple.png"
+    },
+    {
+      "class": "bow",
+      "slot": "helmet",
+      "item": "basic",
+      "color": "gray",
+      "path": "assets/equipment/icons/bow/helmet/basic/gray.png"
+    },
+    {
+      "class": "bow",
+      "slot": "helmet",
+      "item": "iron",
+      "color": null,
+      "path": "assets/equipment/icons/bow/helmet/iron.png"
+    },
+    {
+      "class": "bow",
+      "slot": "helmet",
+      "item": "royal",
+      "color": null,
+      "path": "assets/equipment/icons/bow/helmet/royal.png"
+    },
+    {
+      "class": "bow",
+      "slot": "armor",
+      "item": "basic",
+      "color": null,
+      "path": "assets/equipment/icons/bow/armor/basic.png"
+    },
+    {
+      "class": "bow",
+      "slot": "armor",
+      "item": "iron",
+      "color": null,
+      "path": "assets/equipment/icons/bow/armor/iron.png"
+    },
+    {
+      "class": "bow",
+      "slot": "armor",
+      "item": "royal",
+      "color": null,
+      "path": "assets/equipment/icons/bow/armor/royal.png"
+    },
+    {
+      "class": "bow",
+      "slot": "weapon",
+      "item": "basic",
+      "color": null,
+      "path": "assets/equipment/icons/bow/weapon/basic.png"
+    },
+    {
+      "class": "bow",
+      "slot": "weapon",
+      "item": "steel",
+      "color": null,
+      "path": "assets/equipment/icons/bow/weapon/steel.png"
+    },
+    {
+      "class": "bow",
+      "slot": "weapon",
+      "item": "ember",
+      "color": null,
+      "path": "assets/equipment/icons/bow/weapon/ember.png"
+    },
+    {
+      "class": "bow",
+      "slot": "shield",
+      "item": "basic",
+      "color": null,
+      "path": "assets/equipment/icons/bow/shield/basic.png"
+    },
+    {
+      "class": "bow",
+      "slot": "shield",
+      "item": "steel",
+      "color": null,
+      "path": "assets/equipment/icons/bow/shield/steel.png"
+    },
+    {
+      "class": "bow",
+      "slot": "shield",
+      "item": "royal",
+      "color": null,
+      "path": "assets/equipment/icons/bow/shield/royal.png"
+    },
+    {
+      "class": "wand",
+      "slot": "helmet",
+      "item": "basic",
+      "color": "sand",
+      "path": "assets/equipment/icons/wand/helmet/basic/sand.png"
+    },
+    {
+      "class": "wand",
+      "slot": "helmet",
+      "item": "basic",
+      "color": "forest",
+      "path": "assets/equipment/icons/wand/helmet/basic/forest.png"
+    },
+    {
+      "class": "wand",
+      "slot": "helmet",
+      "item": "basic",
+      "color": "blue",
+      "path": "assets/equipment/icons/wand/helmet/basic/blue.png"
+    },
+    {
+      "class": "wand",
+      "slot": "helmet",
+      "item": "basic",
+      "color": "red",
+      "path": "assets/equipment/icons/wand/helmet/basic/red.png"
+    },
+    {
+      "class": "wand",
+      "slot": "helmet",
+      "item": "basic",
+      "color": "purple",
+      "path": "assets/equipment/icons/wand/helmet/basic/purple.png"
+    },
+    {
+      "class": "wand",
+      "slot": "helmet",
+      "item": "basic",
+      "color": "gray",
+      "path": "assets/equipment/icons/wand/helmet/basic/gray.png"
+    },
+    {
+      "class": "wand",
+      "slot": "helmet",
+      "item": "iron",
+      "color": null,
+      "path": "assets/equipment/icons/wand/helmet/iron.png"
+    },
+    {
+      "class": "wand",
+      "slot": "helmet",
+      "item": "royal",
+      "color": null,
+      "path": "assets/equipment/icons/wand/helmet/royal.png"
+    },
+    {
+      "class": "wand",
+      "slot": "armor",
+      "item": "basic",
+      "color": "sand",
+      "path": "assets/equipment/icons/wand/armor/basic/sand.png"
+    },
+    {
+      "class": "wand",
+      "slot": "armor",
+      "item": "basic",
+      "color": "forest",
+      "path": "assets/equipment/icons/wand/armor/basic/forest.png"
+    },
+    {
+      "class": "wand",
+      "slot": "armor",
+      "item": "basic",
+      "color": "blue",
+      "path": "assets/equipment/icons/wand/armor/basic/blue.png"
+    },
+    {
+      "class": "wand",
+      "slot": "armor",
+      "item": "basic",
+      "color": "red",
+      "path": "assets/equipment/icons/wand/armor/basic/red.png"
+    },
+    {
+      "class": "wand",
+      "slot": "armor",
+      "item": "basic",
+      "color": "purple",
+      "path": "assets/equipment/icons/wand/armor/basic/purple.png"
+    },
+    {
+      "class": "wand",
+      "slot": "armor",
+      "item": "basic",
+      "color": "gray",
+      "path": "assets/equipment/icons/wand/armor/basic/gray.png"
+    },
+    {
+      "class": "wand",
+      "slot": "armor",
+      "item": "iron",
+      "color": null,
+      "path": "assets/equipment/icons/wand/armor/iron.png"
+    },
+    {
+      "class": "wand",
+      "slot": "armor",
+      "item": "royal",
+      "color": null,
+      "path": "assets/equipment/icons/wand/armor/royal.png"
+    },
+    {
+      "class": "wand",
+      "slot": "weapon",
+      "item": "basic",
+      "color": null,
+      "path": "assets/equipment/icons/wand/weapon/basic.png"
+    },
+    {
+      "class": "wand",
+      "slot": "weapon",
+      "item": "steel",
+      "color": null,
+      "path": "assets/equipment/icons/wand/weapon/steel.png"
+    },
+    {
+      "class": "wand",
+      "slot": "weapon",
+      "item": "ember",
+      "color": null,
+      "path": "assets/equipment/icons/wand/weapon/ember.png"
+    },
+    {
+      "class": "wand",
+      "slot": "shield",
+      "item": "basic",
+      "color": null,
+      "path": "assets/equipment/icons/wand/shield/basic.png"
+    },
+    {
+      "class": "wand",
+      "slot": "shield",
+      "item": "steel",
+      "color": null,
+      "path": "assets/equipment/icons/wand/shield/steel.png"
+    },
+    {
+      "class": "wand",
+      "slot": "shield",
+      "item": "royal",
+      "color": null,
+      "path": "assets/equipment/icons/wand/shield/royal.png"
+    }
+  ]
+}

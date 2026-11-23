@@ -92,6 +92,21 @@
       {id:'royal',name:'Золотой пояс',detail:'LPC · палитра yellow',tone:'#d7ad54'}
     ].map(Object.freeze))
   });
+  // Every item portrait is an actual transparent icon extracted from the
+  // matching native LPC sprite layer during the Pages build.
+  const iconColors=Object.freeze(['sand','forest','blue','red','purple','gray']);
+  function itemIconPath(classId,slot,itemId,outfitColor='sand'){
+    if(!['sword','bow','wand'].includes(classId))return null;
+    const itemCatalog=classId==='sword'?catalog:classId==='bow'?rangerCatalog:mageCatalog;
+    if(!Object.prototype.hasOwnProperty.call(itemCatalog,slot)
+      ||!itemCatalog[slot].some(item=>item.id===itemId))return null;
+    if(!['helmet','armor','weapon','shield'].includes(slot))return null;
+    const colored=(slot==='armor'&&itemId==='basic'&&classId!=='bow')
+      ||(slot==='helmet'&&itemId==='basic'&&classId!=='sword');
+    const color=iconColors.includes(outfitColor)?outfitColor:'sand';
+    return 'assets/equipment/icons/'+classId+'/'+slot+'/'+itemId
+      +(colored?'/'+color:'')+'.png';
+  }
   const catalogs=Object.freeze({sword:catalog,bow:rangerCatalog,wand:mageCatalog});
   const supportedByClass=Object.freeze({sword:supportedSlots,bow:Object.freeze(['helmet','armor','weapon','shield']),wand:Object.freeze(['helmet','armor','weapon','shield'])});
   const slotNames=Object.freeze({sword:Object.freeze({shield:'Щит'}),bow:Object.freeze({shield:'Колчан'}),wand:Object.freeze({shield:'Пояс'})});
@@ -154,5 +169,5 @@
     }
     return Object.freeze({classId,enabled:true,getState:state,equip,subscribe});
   }
-  return Object.freeze({slots,catalog,defaults,supportedSlots,catalogs,catalogForClass,supportedForClass,slotLabel,defaultsForClass,key,normalizeLook,createStore});
+  return Object.freeze({slots,catalog,defaults,supportedSlots,catalogs,catalogForClass,supportedForClass,slotLabel,defaultsForClass,itemIconPath,key,normalizeLook,createStore});
 });

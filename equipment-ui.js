@@ -3,7 +3,7 @@
  */
 (function(root,factory){'use strict';const api=factory(root);if(typeof module==='object'&&module.exports)module.exports=api;if(root)root.EmberEquipmentUI=api;})(typeof window!=='undefined'?window:null,function(host){
   'use strict';
-  function mount({root,store,getSprite,loadItem,paintItem,onEquip}={}){
+  function mount({root,store,getSprite,loadItem,paintItem,onEquip,outfitColor='sand'}={}){
     if(!root||!store||!host?.EmberEquipment)throw new TypeError('Equipment panel and store required');
     const data=host.EmberEquipment;
     const catalogue=data.catalogForClass(store.classId);
@@ -41,15 +41,21 @@
       button.setAttribute('data-equipment-item',item.id);
       button.setAttribute('aria-pressed',String(current===item.id));
       button.disabled=!store.enabled||busy||!enabledSlots.includes(slot);
-      const swatch=items.ownerDocument.createElement('span');
-      swatch.className='equipment-item-swatch';
-      swatch.style.backgroundColor=item.tone;
+      const artwork=items.ownerDocument.createElement('span');
+      artwork.className='equipment-item-art';
+      const image=items.ownerDocument.createElement('img');
+      image.className='equipment-item-image';
+      image.src=data.itemIconPath(store.classId,slot,item.id,outfitColor);
+      image.alt='';
+      image.loading='lazy';
+      image.decoding='async';
+      artwork.append(image);
       const label=items.ownerDocument.createElement('span');
       label.className='equipment-item-copy';
       const name=items.ownerDocument.createElement('strong');name.textContent=item.name;
-      const description=items.ownerDocument.createElement('small');
-      description.textContent=current===item.id?'Надето':item.detail;
-      label.append(name,description);button.append(swatch,label);
+      label.append(name);
+      button.append(artwork,label);
+      button.setAttribute('aria-label',item.name+(current===item.id?' (надето)':''));
       button.addEventListener('click',async()=>{
         if(destroyed||busy||!store.enabled||!enabledSlots.includes(slot))return;
         if(store.getState()[slot]===item.id){message('Этот предмет уже надет.');return;}

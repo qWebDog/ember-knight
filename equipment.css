@@ -24,10 +24,11 @@
 .equipment-item{flex:0 0 146px;display:flex;gap:7px;align-items:center;min-width:0;padding:6px 8px;border:1px solid #546b55;border-radius:5px;background:linear-gradient(#223b2e,#172c22);color:#dedfc7;text-align:left;cursor:pointer}
 .equipment-item.is-equipped{border-color:#d3ac5f;background:linear-gradient(#495a35,#283b29);box-shadow:inset 0 0 5px #a9a35a33}
 .equipment-item:disabled{opacity:.5;cursor:default}
-.equipment-item-swatch{flex:0 0 28px;width:28px;height:28px;border:2px solid #c2ac80;border-radius:5px;box-shadow:inset 0 -7px 0 #0003,0 1px 0 #080f0e}
+.equipment-item-art{flex:0 0 38px;width:38px;height:38px;display:grid;place-items:center;overflow:hidden;border:1px solid #8b977775;border-radius:5px;background:radial-gradient(circle at 50% 40%,#41574375,#172c22);box-shadow:inset 0 1px 5px #0b2118}
+.equipment-item-image{display:block;width:100%;height:100%;object-fit:contain;image-rendering:pixelated}
 .equipment-item-copy{min-width:0;display:flex;flex-direction:column;gap:2px}
 .equipment-item-copy strong{font:700 10px/13px Manrope,Arial,sans-serif;white-space:normal}
-.equipment-item-copy small{font:500 9px/12px Manrope,Arial,sans-serif;color:#b7c3a5}
+.equipment-item-copy{justify-content:center}
 .equipment-panel .skills-tabs{min-height:0;align-self:stretch}
 .equipment-panel [data-equipment-message]{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
 .equipment-unsupported{position:absolute;left:15px;right:15px;top:47px;z-index:3;padding:12px;border:1px solid #8a7953;border-radius:6px;background:#15291ff5;color:#e4c88f;font-size:12px;text-align:center}
@@ -37,7 +38,7 @@
  .equipment-slot{padding:3px 2px;gap:1px;font-size:10px;line-height:12px}
  .equipment-slot strong{font-size:10px;line-height:12px}.equipment-slot-icon{font-size:15px;line-height:16px}
  .equipment-slot [data-equipment-slot-name]{font-size:8px;line-height:11px}
- .equipment-item{flex-basis:132px;padding:5px 6px;gap:5px}.equipment-item-swatch{width:23px;height:23px;flex-basis:23px}
+ .equipment-item{flex-basis:132px;padding:5px 6px;gap:5px}.equipment-item-art{width:31px;height:31px;flex-basis:31px}
 }
 @media(orientation:portrait) and (max-height:700px){
  .equipment-panel{grid-template-rows:26px minmax(0,1fr) 80px 31px;gap:3px;padding:5px 11px}
