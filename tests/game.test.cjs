@@ -1379,3 +1379,60 @@ test('dragon visibly descends toward wolf before claw strike and climbs back up 
  ui.runUntil(()=>ui.events.some(e=>e.type==='cast'&&e.sourceId==='dragon'),8);
  assert.ok(ui.events.some(e=>e.sourceId==='dragon'&&e.breath&&e.targetId==='hero'));
 });
+
+test('Red Dragon keeps jaws open continuously across all five fireballs, then closes between salvos',async()=>{
+ const ui=createHarness({weapon:'bow',outfit:'wanderer',dragonBoss:true,wolfEquipped:false,
+   combatOptions:{heroDamage:300,heroMaxHp:1800}});
+ await ui.loadAllImages();
+ ui.runUntil(()=>ui.state().waveIndex===3,45);
+ ui.battle.updateHeroStats({heroDamage:1});
+ const body=ui.node('[data-fighter="dragon"]');
+ const sprite=ui.node('#enemy-dragon');
+ const casts=()=>ui.events.filter(e=>e.type==='cast'&&e.sourceId==='dragon');
+ ui.runUntil(()=>casts().length===1,13);
+ assert.equal(body.dataset.motion,'breath','dragon opens its mouth at first fireball');
+ assert.equal(body.dataset.breathing,'true');
+ assert.deepEqual(sprite.draws.at(-1).crop.slice(0,2),[0,483]);
+ const historyStart=body.motionHistory.length;
+ // Pause partway through a salvo. The jaw must not snap closed during pause.
+ ui.node('#auto-button').click();
+ const elapsed=ui.state().elapsed;
+ ui.runFor(.7);
+ assert.equal(ui.state().elapsed,elapsed);
+ assert.equal(body.dataset.motion,'breath','paused dragon retains open mouth');
+ ui.node('#auto-button').click();
+ for(let i=2;i<=5;i++){
+   ui.runUntil(()=>casts().length>=i,4);
+   assert.equal(body.dataset.motion,'breath',
+     'all dragon shots are released with the same open-mouth pose');
+   assert.equal(body.dataset.breathing,'true');
+   assert.deepEqual(sprite.draws.at(-1).crop.slice(0,2),[0,483],
+     'a new cast never restarts the closed-mouth flight sprite');
+ }
+ assert.ok(body.motionHistory.slice(historyStart).every(m=>m==='breath'),
+   'no closed-mouth flying or hit frame between five successive fireballs');
+ ui.runFor(.1);
+ assert.equal(body.dataset.motion,'breath',
+   'dragon keeps mouth open briefly after launching the last fireball');
+ ui.runFor(.25);
+ assert.equal(body.dataset.breathing,'false',
+   'dragon ends the open-mouth pose after the completed salvo');
+ assert.equal(body.dataset.motion,'fly',
+   'normal flight resumes in the gap before the next salvo');
+ assert.equal(casts().length,5,'no sixth shot is triggered by the new pose');
+});
+
+test('Red Dragon never holds open-mouth fire pose for claw attacks on living wolf',async()=>{
+ const ui=createHarness({weapon:'bow',outfit:'wanderer',dragonBoss:true,wolfEquipped:true,
+   combatOptions:{heroDamage:300,heroMaxHp:1800}});
+ await ui.loadAllImages();
+ ui.runUntil(()=>ui.state().waveIndex===3,45);
+ ui.battle.updateHeroStats({heroDamage:1});
+ ui.runUntil(()=>ui.events.some(e=>e.type==='attack'&&e.sourceId==='dragon'
+   &&e.projectile==='claw'),20);
+ const body=ui.node('[data-fighter="dragon"]');
+ assert.equal(body.dataset.breathing,'false');
+ assert.notEqual(body.dataset.motion,'breath');
+ assert.ok(!ui.events.some(e=>e.type==='cast'&&e.sourceId==='dragon'),
+   'wolf attacks are claw-only, without fire or held open-mouth magic');
+});
