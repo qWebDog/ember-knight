@@ -43,7 +43,16 @@
   function create({element,store,loadImage}={}){
     const canvas=element?.querySelector?.('canvas')||null;
     let image=null,inflight=null,lastKey=null,idleSince=null;
+    let position=null,actorDepth=3,facing=3,motion='idle',engaged=false;
+    let biteStarted=null,biteTarget=null,biteLanded=false,nextBiteAt=0;
+    const biteImpact=3/12, biteDuration=5/12, biteInterval=1.25, biteDamage=7;
+    const active=()=>store?.classId==='bow'&&store?.getState()?.companion==='wolf';
     function loaded(){return Boolean(image);}
+    function reset(){
+      position=null;actorDepth=3;facing=3;motion='idle';engaged=false;
+      idleSince=null;biteStarted=null;biteTarget=null;biteLanded=false;nextBiteAt=0;
+      lastKey=null;
+    }
     function load(){
       if(image)return Promise.resolve(image);
       if(inflight)return inflight;
@@ -57,28 +66,96 @@
       }).catch(error=>{inflight=null;throw error;});
       return inflight;
     }
+    // The caller supplies authoritative enemy coordinates from the same
+    // snapshot the Archer fires at. This controller only decides pursuit,
+    // bite-frame timing and when to request an engine-confirmed hit.
+    function advance({dt=0,time=0,phase='running',entering=false,heroAlive=true,
+      heroX=0,heroSize=64,heroDepth=3,target=null,reducedMotion=false}={}){
+      if(!active()||!image||!Number.isFinite(heroX)){
+        if(position!==null)reset();
+        return null;
+      }
+      const size=Math.max(48,heroSize),home=heroX-size*.83;
+      if(position===null){position=home;actorDepth=heroDepth;facing=3;motion='idle';}
+      if(!heroAlive||phase==='defeat'){motion='die';return null;}
+      if(entering){
+        // The hero enters each wave over ~2.5 seconds; the wolf walks in
+        // beside them and never strikes before the battle clock starts.
+        position=home;actorDepth=heroDepth;facing=3;motion='walk';engaged=false;
+        biteStarted=null;biteTarget=null;biteLanded=false;return null;
+      }
+      if(phase==='paused')return null;
+      const attacking=phase==='running'&&target&&Number.isFinite(target.x)&&Number.isFinite(target.width)
+        &&target.hp>0;
+      const destination=attacking?target.x-(target.width*.32+size*.18):home;
+      const destDepth=attacking?target.depth:heroDepth;
+      engaged=Boolean(attacking);
+      if(biteTarget&&(!attacking||target.id!==biteTarget)){
+        biteStarted=null;biteTarget=null;biteLanded=false;
+      }
+      const gap=destination-position,remaining=Math.abs(gap);
+      // An Orc can walk toward the Archer mid-bite. If it leaves reach,
+      // abandon the swing; no phantom damage or transfer to a new target.
+      if(biteTarget&&remaining>size*.35){
+        biteStarted=null;biteTarget=null;biteLanded=false;
+      }
+      if(biteTarget){
+        motion='bite';
+        const age=Math.max(0,time-biteStarted);
+        if(age>=biteDuration){
+          biteStarted=null;biteTarget=null;biteLanded=false;motion='idle';
+          return null;
+        }
+        if(!biteLanded&&age>=biteImpact){
+          biteLanded=true;
+          return {targetId:biteTarget,damage:biteDamage};
+        }
+        return null;
+      }
+      if(remaining>1||Math.abs(actorDepth-destDepth)>.04){
+        const speed=Math.max(120,size*(attacking?2.75:2));
+        const travel=reducedMotion?remaining:Math.min(remaining,Math.max(0,dt)*speed);
+        position+=Math.sign(gap)*travel;
+        const fraction=remaining>0?Math.min(1,travel/remaining):1;
+        actorDepth+=(destDepth-actorDepth)*fraction;
+        if(remaining<=1)actorDepth=destDepth;
+        if(remaining>1)facing=gap>=0?3:1;
+        motion=remaining>size*.45?'run':'walk';
+        idleSince=null;
+        return null;
+      }
+      position=destination;actorDepth=destDepth;
+      motion='idle';
+      if(attacking&&time>=nextBiteAt){
+        facing=destination<=target.x?3:1;
+        biteStarted=time;biteTarget=target.id;biteLanded=false;
+        nextBiteAt=time+biteInterval;motion='bite';idleSince=null;
+      }
+      return null;
+    }
     function render({time=0,x=0,heroSize=64,depth=3,laneStep=0,moving=false,
       direction=3,action=null,actionAge=0,reducedMotion=false,alive=true}={}){
-      if(!element||!canvas||!image||store?.getState()?.companion!=='wolf'||(!alive&&action!=='die')){
+      if(!element||!canvas||!image||!active()||(!alive&&action!=='die')){
         if(element)element.hidden=true;
-        idleSince=null;
         return false;
       }
       element.hidden=false;
       const size=Math.max(48,heroSize);
-      element.style.left=`${x-size*.83}px`;
-      element.style.setProperty('--lane-offset',`${(depth-3)*laneStep}px`);
-      element.style.zIndex=String(Math.round(100+(depth-1)*100-1));
-      if(moving||action){idleSince=null;}
+      element.style.left=`${position??(x-size*.83)}px`;
+      element.style.setProperty('--lane-offset',`${((position===null?depth:actorDepth)-3)*laneStep}px`);
+      element.style.zIndex=String(Math.round(100+((position===null?depth:actorDepth)-1)*100-1));
+      const face=position===null?direction:facing;
+      const animation=action||(position===null?(moving?'walk':'idle'):motion);
+      if(animation!=='idle'){idleSince=null;}
       else if(idleSince===null||time<idleSince){idleSince=time;}
-      // Once settled, the wolf occasionally howls, but remains still between
-      // howls instead of freezing forever in a running pose.
       const idleAge=idleSince===null?0:Math.max(0,time-idleSince);
       const cycle=idleAge>=5?(idleAge-5)%10:-1;
-      const naturalHowl=!moving&&!action&&!reducedMotion&&cycle>=0&&cycle<.75;
-      const mode=action||(moving?'walk':naturalHowl?'howl':'idle');
-      const age=action?Math.max(0,actionAge):naturalHowl?cycle:time;
-      const rect=frameAt(age,moving,reducedMotion,direction,mode);
+      const howl=animation==='idle'&&!engaged&&!reducedMotion&&cycle>=0&&cycle<.75;
+      const mode=howl?'howl':animation;
+      const age=action?Math.max(0,actionAge):
+        mode==='bite'&&biteStarted!==null?Math.max(0,time-biteStarted):
+        howl?cycle:time;
+      const rect=frameAt(age,mode==='walk'||mode==='run',reducedMotion,face,mode);
       const key=`${rect.sx}:${rect.sy}:${rect.sh}`;
       if(lastKey!==key){
         const ctx=canvas.getContext('2d');
@@ -90,11 +167,11 @@
         lastKey=key;
       }
       element.dataset.motion=rect.mode;
-      element.dataset.facing=direction===1?'left':'right';
+      element.dataset.facing=face===1?'left':'right';
       return true;
     }
     function paintPreview(ctx,pose){
-      if(!image||store?.getState()?.companion!=='wolf'||!ctx)return false;
+      if(!image||!active()||!ctx)return false;
       const row=pose?.row??2;
       // Original forward/backward wolf cells are only 23×63, packed every
       // 32px. Side cells are 64×40. Preserve their aspect ratios.
@@ -107,7 +184,8 @@
       }
       return true;
     }
-    return Object.freeze({load,loaded,render,paintPreview});
+    return Object.freeze({load,loaded,reset,advance,render,paintPreview,
+      getPose:()=>({x:position,depth:actorDepth,facing,motion,engaged,biteStarted,biteTarget})});
   }
   return Object.freeze({path,sprite,strips,frameAt,create});
 });

@@ -68,7 +68,9 @@
   $('#player-name').textContent = name;
   $('.fighter-name').textContent = name;
   $('#level-badge').textContent = level;
-  const battle = window.EmberCombat.createBattle({heroName:name,heroProjectile:starterWeapon?.projectile,heroWeapon:starterWeapon?.id,heroMagic,...progression.getStats()});
+  const battle = window.EmberCombat.createBattle({heroName:name,heroProjectile:starterWeapon?.projectile,heroWeapon:starterWeapon?.id,heroMagic,
+    companionEnabled:equipment?.classId==='bow'&&equipment.getState().companion==='wolf',
+    ...progression.getStats()});
   battle.pause();
   let ready = false, assetError = false, lastFrameTime = null, restartRemaining = null, resultSummary = '';
   const paidDeaths = new Set();
@@ -84,7 +86,8 @@
     const element = document.querySelector(`[data-fighter="${id}"]`);
     actors[id] = {element, canvas:element.querySelector('canvas'), bar:element.querySelector('.healthbar'), images:{}, animation:null, hitAt:-10, blockAt:-10, lastKey:null,statusCanvas:null,statusKey:null,frozenPose:null,poseAnimation:null,poseAge:100,defaultLane:3,...enemyDefinitions[id],depth:enemyDefinitions[id]?.defaultLane||3,x:null,distance:0,direction:1,moving:false};
   }
-  // The wolf is an optional visual companion, never another combat actor.
+  // The Archer's equipped wolf is an independent melee attacker. Its bite
+  // reaches the engine at the source animation's impact frame.
   const companion=window.EmberCompanion?.create({
     element:$('#companion-wolf'),store:equipment,loadImage
   });
@@ -215,6 +218,10 @@
       paintBack:(ctx,pose)=>equipmentArt?.drawBack(ctx,pose),
       paintCompanion:(ctx,pose)=>companion?.paintPreview(ctx,pose),
       onEquip:(_look,slot)=>{
+        if(slot==='companion'){
+          battle.setCompanionEnabled?.(equipment.classId==='bow'&&equipment.getState().companion==='wolf');
+          companion?.reset();
+        }
         if(slot!=='companion'&&classEquipment&&loadedClassSprites)applyClassSprites(loadedClassSprites);
         if((slot==='weapon'||slot==='shield')&&loadedSwordSprites)applySwordSprites(loadedSwordSprites);
         actors.hero.lastKey=null;
@@ -464,7 +471,7 @@
       } else if (event.type === 'attack') {
         // Visual bow wind-up already began before impact. Do not restart it
         // at the moment the arrow reaches its target.
-        if (!event.impact&&!event.dot&&event.projectile!=='arrow')
+        if (!event.impact&&!event.dot&&event.projectile!=='arrow'&&event.sourceId!=='companion')
           actors[event.sourceId].animation = {at:activeTime,duration:event.animationDuration || .66,variant:event.variant,heavy:event.heavy,counter:event.counter};
         if (event.impact) {
           pendingIceImpacts.delete(event.castId);
@@ -573,6 +580,7 @@
     pendingIceImpacts.clear();
     cuedArrows.clear();
     heroX=null;fieldWidth=null;walkDistance=0;walkDirection=3;moving=heroMoving=false;
+    companion?.reset();
     pairContacted=false;previousSeparation=null;contactTarget=null;previousTargetSeparation=null;
     for(const actor of Object.values(actors)){
       clearStatus(actor);actor.poseAnimation=null;actor.poseAge=100;
@@ -720,7 +728,10 @@
       if (age+1e-6 >= effect.duration || reducedMotion.matches) { effect.element.remove(); effects.splice(i,1); continue; }
       if(effect.type==='arrow'&&age<0){effect.element.hidden=true;effect.element.style.visibility='hidden';continue;}
       if(effect.type==='arrow'){effect.element.hidden=false;effect.element.style.visibility='visible';}
-      const target = actors[effect.targetId].element.getBoundingClientRect(), source = actors[effect.sourceId].element.getBoundingClientRect();
+      const sourceElement=effect.sourceId==='companion'?$('#companion-wolf'):actors[effect.sourceId]?.element;
+      const targetElement=actors[effect.targetId]?.element;
+      if(!sourceElement||!targetElement){effect.element.remove();effects.splice(i,1);continue;}
+      const target = targetElement.getBoundingClientRect(), source = sourceElement.getBoundingClientRect();
       const p = Math.max(0,age/effect.duration), tx=target.left+target.width/2-field.left, ty=target.top+target.height*.4-field.top;
       if (effect.type === 'spell') {
         const phase=effect.landed?'impact':age+1e-6<effect.appearDuration?'appear':'flight';
@@ -833,6 +844,26 @@
       remaining-=step;
     }
   }
+  function updateCompanionCombat(dt) {
+    if(!companion)return;
+    const state=battle.getState();
+    const target=state.targetId&&actors[state.targetId];
+    const unit=state.enemies.find(enemy=>enemy.id===state.targetId);
+    const bite=companion.advance({
+      dt,time:activeTime,phase:state.phase,
+      entering:Boolean(heroEntrance),heroAlive:state.hero.hp>0,
+      heroX:heroX??0,heroSize:actors.hero.element.offsetWidth,
+      heroDepth:actors.hero.depth,reducedMotion:reducedMotion.matches,
+      target:target&&unit?{id:unit.id,x:target.x,width:target.element.offsetWidth,
+        depth:target.depth,hp:unit.hp}:null
+    });
+    // This hit is confirmed by the combat engine, which owns HP, death
+    // rewards, wave transitions and victory. No Archer shot is delayed.
+    if(bite){
+      const events=battle.companionStrike?.(bite.targetId,bite.damage)||[];
+      handleEvents(events);
+    }
+  }
   function tick(timestamp) {
     if(lastFrameTime===null)lastFrameTime=timestamp;
     const dt=Math.min(.1,Math.max(0,(timestamp-lastFrameTime)/1000));lastFrameTime=timestamp;
@@ -847,6 +878,7 @@
       }else{
         advanceBattleFrame(dt);
       }
+      updateCompanionCombat(dt);
     }
     if(ready)render(battle.getState());
     window.requestAnimationFrame(tick);
