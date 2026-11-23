@@ -60,21 +60,15 @@
     const d=previewDescriptor,tile=d.tile||64,origin=d.origin||0,cell=step===0?frame:0;
     if(canvas.width!==tile){canvas.width=tile;canvas.height=tile;}
     const ctx=canvas.getContext('2d');ctx.clearRect(0,0,tile,tile);ctx.imageSmoothingEnabled=false;
-    // Never shrink LPC pixels inside a low-resolution canvas.
-    // Keep all 64 source pixels of the Mage and reduce only its CSS display
-    // box. At high-DPI mobile resolutions this retains the fine outlines
-    // instead of resampling a 64px tile into a destructive 32px bitmap.
+    // Preserve native LPC pixels, using one consistent scale for every class.
+    // The Archer's 128px tile includes a 32px origin margin; the Mage's 64px
+    // tile needs the same display scale as the Warrior, not half its size.
     ctx.drawImage(previewImage,cell*tile,direction*tile,tile,tile,0,0,tile,tile);
-    if(step>0&&weapon==='wand'){
-      // Keep full-resolution LPC pixels and the existing visual size.
-      // Anchor the smaller Mage canvas to the bottom of the stage so its
-      // feet stand on the same ground as the Warrior and Archer.
-      canvas.style.width='50%';canvas.style.height='50%';
-      canvas.style.left='25%';canvas.style.top='50%';
-    }else{
-      canvas.style.width=`${tile/64*100}%`;canvas.style.height=`${tile/64*100}%`;
-      canvas.style.left=`${-origin/64*100}%`;canvas.style.top=`${-origin/64*100}%`;
-    }
+    canvas.style.width=`${tile/64*100}%`;canvas.style.height=`${tile/64*100}%`;
+    canvas.style.left=`${-origin/64*100}%`;
+    // Mage feet sit about three source pixels higher in its 64px walk tile.
+    // A small offset aligns its ground line without shrinking the character.
+    canvas.style.top=step>0&&weapon==='wand'?'4.6875%':`${-origin/64*100}%`;
     const description=step===0?'без экипировки':`${catalogue.weapon(weapon).name}, наряд ${outfit().name}, ${catalogue.color(rememberedColors[weapon]).name}${magicChoice()?`, стихия ${magicChoice().name}`:''}`;
     canvas.setAttribute('aria-label',`Странник: ${description}. Цвет кожи: ${skins.find(s=>s.id===selected).label}. ${directionNames[direction]}.`);
   }

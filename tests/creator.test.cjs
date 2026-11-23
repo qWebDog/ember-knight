@@ -45,7 +45,7 @@ test('creation follows skin→weapon→clothing color and saves the single match
  assert.equal(ui.node('#success-dialog').open,true);assert.match(ui.node('#saved-loadout').textContent,/Странник.*Бордовый/);
  ui.node('#start-adventure').click();assert.equal(ui.window.location.href,'./');
 });
-test('Mage stays half display size but retains all native 64px sprite detail; other classes unchanged',async()=>{
+test('all three creator classes share the same native-pixel preview scale and grounded feet',async()=>{
  const ui=harness();await ui.load();
  const canvas=ui.node('#hero');
  // Step 1 (skin) still uses the original unmodified sprite.
@@ -61,22 +61,18 @@ test('Mage stays half display size but retains all native 64px sprite detail; ot
    assert.deepEqual(draw.crop.slice(2),[tile,tile]);
    assert.deepEqual(draw.destination,[0,0,tile,tile],
      kind+' must draw the source sprite at full native pixel resolution');
-   if(kind==='wand'){
-     assert.equal(canvas.style.width,'50%');
-     assert.equal(canvas.style.height,'50%');
-     assert.equal(canvas.style.left,'25%');
-     assert.equal(canvas.style.top,'50%');
-     // Mage canvas is 50% tall and starts at 50%: bottom aligned to stage.
-     assert.equal(parseFloat(canvas.style.top)+parseFloat(canvas.style.height),100);
-   }else{
-     assert.equal(canvas.style.width,`${tile/64*100}%`);
-     assert.equal(canvas.style.height,`${tile/64*100}%`);
-     assert.equal(canvas.style.left,`${-origin/64*100}%`);
-     assert.equal(canvas.style.top,`${-origin/64*100}%`);
-   }
+   // Different atlas tile sizes must display the same number of screen
+   // pixels for each native LPC source pixel across every class switch.
+   assert.equal(canvas.style.width,`${tile/64*100}%`);
+   assert.equal(canvas.style.height,`${tile/64*100}%`);
+   assert.equal(canvas.style.left,`${-origin/64*100}%`);
+   assert.equal(parseFloat(canvas.style.width)/tile,100/64);
+   assert.equal(canvas.style.top,kind==='wand'?'4.6875%':`${-origin/64*100}%`);
+   if(kind==='wand')assert.equal(canvas.style.width,'100%',
+     'Mage must not be displayed at half the Warrior size');
  }
- assert.ok(html.includes('src="app.js?v=20261123-mage-ground-8"'),
-   'force mobile browser to load the full-resolution Mage preview');
+ assert.ok(html.includes('src="app.js?v=20261123-equal-hero-scale-9"'),
+   'force mobile browsers to load the consistent class preview scale');
 });
 test('all eighteen weapon and clothing-color choices preview, rotate and retain the independent skin',async()=>{
  const sets={sword:'militia',bow:'wanderer',wand:'acolyte'};
