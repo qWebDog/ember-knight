@@ -9,10 +9,13 @@
     const catalogue=data.catalogForClass(store.classId);
     const enabledSlots=data.supportedForClass(store.classId);
     const $=selector=>root.querySelector(selector);
-    const items=$('#equipment-items'),preview=$('#equipment-preview');
+    const items=$('#equipment-items'),preview=$('#equipment-preview'),portrait=$('.equipment-portrait');
     const slotNodes=[...root.querySelectorAll('[data-equipment-slot]')];
     const classes={sword:'ВОИН',bow:'ЛУЧНИК',wand:'МАГ'};
-    let selected='helmet',destroyed=false,busy=false;
+    let selected='helmet',destroyed=false,busy=false,orientation=0,gesture=null;
+    // Universal LPC row order: back=0, left=1, front=2, right=3.
+    // Rotation order is front -> left -> back -> right -> front.
+    const directions=Object.freeze([{row:2,name:'спереди'},{row:1,name:'слева'},{row:0,name:'сзади'},{row:3,name:'справа'}]);
     const handlers=[];
     const listen=(el,type,fn)=>{el.addEventListener(type,fn);handlers.push(()=>el.removeEventListener(type,fn));};
     $('[data-equipment-class]').textContent=classes[store.classId]||'ГЕРОЙ';
@@ -20,6 +23,32 @@
     const unsupported=$('#equipment-unsupported');
     if(unsupported)unsupported.hidden=store.enabled;
     function message(text){$('[data-equipment-message]').textContent=text;}
+    function rotate(step){
+      if(destroyed)return false;
+      orientation=(orientation+step+directions.length)%directions.length;
+      paintPreview();
+      return true;
+    }
+    if(portrait){
+      listen(portrait,'pointerdown',event=>{
+        if(event.isPrimary===false||(event.pointerType==='mouse'&&event.button!==0)||gesture)return;
+        gesture={id:event.pointerId,x:event.clientX,y:event.clientY};
+        try{if(event.pointerId!==undefined)portrait.setPointerCapture?.(event.pointerId);}catch{}
+      });
+      listen(portrait,'pointerup',event=>{
+        if(!gesture||gesture.id!==event.pointerId)return;
+        const dx=event.clientX-gesture.x,dy=event.clientY-gesture.y;
+        gesture=null;
+        if(Math.abs(dx)>=24&&Math.abs(dx)>Math.abs(dy)*1.2)rotate(dx<0?1:-1);
+      });
+      listen(portrait,'pointercancel',()=>{gesture=null;});
+      listen(portrait,'lostpointercapture',()=>{gesture=null;});
+      listen(portrait,'keydown',event=>{
+        if(event.key!=='ArrowLeft'&&event.key!=='ArrowRight')return;
+        event.preventDefault?.();
+        rotate(event.key==='ArrowLeft'?1:-1);
+      });
+    }
     function paintPreview(){
       if(destroyed||!preview||typeof getSprite!=='function')return;
       const descriptor=getSprite();
@@ -29,9 +58,10 @@
       preview.width=64;preview.height=64;
       ctx.imageSmoothingEnabled=false;
       ctx.clearRect(0,0,64,64);
-      const tile=descriptor.tile||64,origin=descriptor.origin||0;
-      ctx.drawImage(descriptor.image,origin,tile*2+origin,64,64,0,0,64,64);
-      if(store.enabled)paintItem?.(ctx,{equipped:store.getState(),row:2,frame:0,kind:'idle',tile:64,origin:0});
+      const tile=descriptor.tile||64,origin=descriptor.origin||0,row=directions[orientation].row;
+      ctx.drawImage(descriptor.image,origin,tile*row+origin,64,64,0,0,64,64);
+      if(store.enabled)paintItem?.(ctx,{equipped:store.getState(),row,frame:0,kind:'idle',tile:64,origin:0});
+      preview.setAttribute('aria-label','Текущий облик героя '+directions[orientation].name+'. Проведи влево или вправо для поворота.');
     }
     function createItemButton(item,current){
       const slot=selected;
@@ -100,7 +130,7 @@
     for(const button of slotNodes)listen(button,'click',()=>select(button.dataset.equipmentSlot));
     const unsubscribe=store.subscribe(()=>{if(!destroyed)render();});
     render();
-    return {render,select,refreshPreview:paintPreview,destroy(){
+    return {render,select,refreshPreview:paintPreview,getDirection:()=>directions[orientation].row,destroy(){
       if(destroyed)return;destroyed=true;unsubscribe();
       for(const remove of handlers)remove();
     }};
