@@ -20,6 +20,9 @@
   if (new URLSearchParams(window.location.search).get('battle') === 'test') auto = true;
   const loadouts = window.EmberLoadouts;
   const arrowSprite = 'assets/projectiles/arrow.png';
+  // The 13-frame LPC bow releases at frame 9. Flight ends at the original
+  // engine hit time, so damage and combat cooldowns remain unchanged.
+  const arrowReleaseFrame=9,arrowPoseFrames=13,arrowFlightDuration=.28;
   const loadout = loadouts?.selection(character) || null;
   const starterWeapon = loadout ? loadouts.weapon(loadout.weapon) : null;
   const starterOutfit = loadout ? loadouts.outfit(loadout.weapon,loadout.outfit) : null;
@@ -80,6 +83,7 @@
     actors[id] = {element, canvas:element.querySelector('canvas'), bar:element.querySelector('.healthbar'), images:{}, animation:null, hitAt:-10, blockAt:-10, lastKey:null,statusCanvas:null,statusKey:null,frozenPose:null,poseAnimation:null,poseAge:100,defaultLane:3,...enemyDefinitions[id],depth:enemyDefinitions[id]?.defaultLane||3,x:null,distance:0,direction:1,moving:false};
   }
   const effects = [];
+  const cuedArrows=new Map();
   const spellImages = {};
   const pendingIceImpacts = new Map();
   let statusImage = null;
@@ -354,8 +358,8 @@
     $('#status').textContent = auto ? 'Бой продолжается' : 'Бой приостановлен';
   });
   document.addEventListener('visibilitychange', syncPause);
-  function addEffect(type, sourceId, targetId, text, at) {
-    if (reducedMotion.matches) return;
+  function addEffect(type, sourceId, targetId, text, at,options={}) {
+    if (reducedMotion.matches) return null;
     const element = document.createElement(type === 'arrow' ? 'img' : 'span');
     if (type === 'arrow') {
       element.src = arrowSprite; element.alt = ''; element.draggable = false;
@@ -364,7 +368,18 @@
     const floating = ['damage','heavy','counter','block','coin'].includes(type);
     element.className = floating ? `damage-number ${type}-number ${targetId === 'hero' && type !== 'block' ? 'enemy-damage' : ''}` : `projectile ${type}`;
     element.setAttribute('aria-hidden','true'); if (text) element.textContent = text;
-    battlefield.appendChild(element); effects.push({element,type,floating,sourceId,targetId,at:activeTime,duration:type==='coin'?.65:floating ? .85 : .38});
+    if(type==='arrow'){
+      element.hidden=true;
+      element.dataset.source=sourceId;
+      element.dataset.target=targetId;
+      element.dataset.releaseAt=String(at);
+      element.dataset.impactAt=String(at+(options.duration||arrowFlightDuration));
+    }
+    const effect={element,type,floating,sourceId,targetId,
+      at:options.at??activeTime,
+      duration:options.duration??(type==='coin'?.65:floating?.85:.38)};
+    battlefield.appendChild(element);effects.push(effect);
+    return effect;
   }
   function addSpell(event) {
     if (reducedMotion.matches) return;
@@ -432,7 +447,10 @@
         actors[event.sourceId].animation={at:event.at,duration:event.animationDuration||.66};
         addSpell(event);
       } else if (event.type === 'attack') {
-        if (!event.impact&&!event.dot) actors[event.sourceId].animation = {at:activeTime,duration:event.animationDuration || (event.projectile === 'arrow' ? .9 : .66),variant:event.variant,heavy:event.heavy,counter:event.counter};
+        // Visual bow wind-up already began before impact. Do not restart it
+        // at the moment the arrow reaches its target.
+        if (!event.impact&&!event.dot&&event.projectile!=='arrow')
+          actors[event.sourceId].animation = {at:activeTime,duration:event.animationDuration || .66,variant:event.variant,heavy:event.heavy,counter:event.counter};
         if (event.impact) {
           pendingIceImpacts.delete(event.castId);
           const spell=effects.find(effect=>effect.type==='spell'&&effect.castId===event.castId);
@@ -440,7 +458,6 @@
         }
         if(!event.dot)actors[event.targetId].hitAt = activeTime;
         addEffect(event.counter ? 'counter' : event.heavy ? 'heavy' : 'damage',event.sourceId,event.targetId,event.counter ? `Ответ −${event.damage}` : `−${event.damage}`,event.at);
-        if (!event.dot&&event.projectile === 'arrow') addEffect('arrow',event.sourceId,event.targetId,null,event.at);
       } else if(event.type==='status'){
         syncFrozenActors(battle.getState());
       } else if (event.type === 'block') {
@@ -539,6 +556,7 @@
   function prepareWave(state) {
     removeEffects(()=>false);
     pendingIceImpacts.clear();
+    cuedArrows.clear();
     heroX=null;fieldWidth=null;walkDistance=0;walkDirection=3;moving=heroMoving=false;
     pairContacted=false;previousSeparation=null;contactTarget=null;previousTargetSeparation=null;
     for(const actor of Object.values(actors)){
