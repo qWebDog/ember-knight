@@ -732,8 +732,10 @@
         // Exact shared stopping distance with the wolf's pursuit logic:
         // wolf.destination = enemy.x - (enemySize*.32 + wolfSize*.18).
         // Different distances make both actors endlessly walk past contact.
+        const wolfContact=window.EmberCompanion?.contact||{enemy:.56,companion:.18};
         const separation=state.enemyTargetId==='companion'
-          ?enemySize*.32+heroSize*.18:heroSize*.23+enemySize*.34;
+          ?enemySize*wolfContact.enemy+heroSize*wolfContact.companion
+          :heroSize*.23+enemySize*.34;
         const goalX=defenderX+separation;
         const gap=goalX-enemy.x;
         if(isFrozen(unit,state))continue;
@@ -974,8 +976,10 @@
     const defenderDepth=state.enemyTargetId==='companion'?pose?.depth??actors.hero.depth:actors.hero.depth;
     const enemyCanAttack=wolfBattle?Object.fromEntries(state.enemies.map(enemy=>{
       const actor=actors[enemy.id],size=actor.element.offsetWidth;
+      const wolfContact=window.EmberCompanion?.contact||{enemy:.56,companion:.18};
       const reach=state.enemyTargetId==='companion'
-        ?size*.32+heroSize*.18+.01:heroSize*.23+size*.34+.01;
+        ?size*wolfContact.enemy+heroSize*wolfContact.companion+.01
+        :heroSize*.23+size*.34+.01;
       return [enemy.id,Boolean(enemy.hp>0
         &&(enemy.type==='dragon'&&state.enemyTargetId==='hero'
           ||Math.abs(actor.x-defenderX)<=reach)
@@ -1055,7 +1059,10 @@
       dt,time:companionTime,phase:state.phase,
       entering:Boolean(heroEntrance),heroAlive:state.hero.hp>0,
       companionAlive:Boolean(state.companion?.hp>0),
-      heroX:heroX??0,heroSize:actors.hero.element.offsetWidth,
+      heroX:heroX??0,
+      // Resting point must never follow the hero's wave-exit movement.
+      anchorX:battlefield.clientWidth*(window.innerWidth>700?.18:.22),
+      heroSize:actors.hero.element.offsetWidth,
       heroDepth:actors.hero.depth,reducedMotion:reducedMotion.matches,
       target:target&&unit?{id:unit.id,x:target.x,width:target.element.offsetWidth,
         depth:target.depth,hp:unit.hp}:null

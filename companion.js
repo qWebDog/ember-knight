@@ -7,6 +7,9 @@
   'use strict';
   const path='assets/companions/wolf.png',tile=64;
   const sprite=Object.freeze({width:640,height:384,tile});
+  // Shared with the battlefield movement and enemy range check.
+  // Keep the wolf's head outside even a 2x Orc sprite when biting.
+  const contact=Object.freeze({enemy:.56,companion:.18});
   // This wolf is NOT a 10×6 grid of full 64px-high animation frames:
   // side-facing actions share 64px rows as separate 32–40px-high strips.
   // Each strip starts at x=320; left-facing artwork is in the lower half.
@@ -70,12 +73,17 @@
     // snapshot the Archer fires at. This controller only decides pursuit,
     // bite-frame timing and when to request an engine-confirmed hit.
     function advance({dt=0,time=0,phase='running',entering=false,heroAlive=true,companionAlive=true,
-      heroX=0,heroSize=64,heroDepth=3,target=null,reducedMotion=false}={}){
+      heroX=0,anchorX=null,heroSize=64,heroDepth=3,target=null,reducedMotion=false}={}){
       if(!active()||!image||!Number.isFinite(heroX)){
         if(position!==null)reset();
         return null;
       }
-      const size=Math.max(48,heroSize),home=heroX-size*.83;
+      const size=Math.max(48,heroSize);
+      // During wave-out/victory the hero keeps walking to the right for
+      // the fade, but the wolf must run back to the STATIC Archer position.
+      // The hero's live x is used only for entering the battlefield.
+      const restingX=Number.isFinite(anchorX)?anchorX:heroX;
+      const home=(entering?heroX:restingX)-size*.83;
       if(position===null){position=home;actorDepth=heroDepth;facing=3;motion='idle';}
       if(!companionAlive||!heroAlive||phase==='defeat'){
         motion='die';biteStarted=null;biteTarget=null;biteLanded=false;return null;
@@ -89,7 +97,8 @@
       if(phase==='paused')return null;
       const attacking=phase==='running'&&target&&Number.isFinite(target.x)&&Number.isFinite(target.width)
         &&target.hp>0;
-      const destination=attacking?target.x-(target.width*.32+size*.18):home;
+      const destination=attacking
+        ?target.x-(target.width*contact.enemy+size*contact.companion):home;
       const destDepth=attacking?target.depth:heroDepth;
       engaged=Boolean(attacking);
       if(biteTarget&&(!attacking||target.id!==biteTarget)){
@@ -145,7 +154,10 @@
       const size=Math.max(48,heroSize);
       element.style.left=`${position??(x-size*.83)}px`;
       element.style.setProperty('--lane-offset',`${((position===null?depth:actorDepth)-3)*laneStep}px`);
-      element.style.zIndex=String(Math.round(100+((position===null?depth:actorDepth)-1)*100-1));
+      // Equal-depth enemies formerly covered the wolf by one z-index.
+      // Keep the biting wolf just in front so its muzzle stays visible.
+      const layer=Math.round(100+((position===null?depth:actorDepth)-1)*100);
+      element.style.zIndex=String(layer+(engaged?6:-1));
       const face=position===null?direction:facing;
       const animation=action||(position===null?(moving?'walk':'idle'):motion);
       if(animation!=='idle'){idleSince=null;}
@@ -189,5 +201,5 @@
     return Object.freeze({load,loaded,reset,advance,render,paintPreview,
       getPose:()=>({x:position,depth:actorDepth,facing,motion,engaged,biteStarted,biteTarget})});
   }
-  return Object.freeze({path,sprite,strips,frameAt,create});
+  return Object.freeze({path,sprite,contact,strips,frameAt,create});
 });
