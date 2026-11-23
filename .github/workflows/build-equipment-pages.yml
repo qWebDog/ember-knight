@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - main
+      - feature/equipment-item-icons
   workflow_dispatch:
 permissions:
   contents: write
@@ -36,12 +37,16 @@ jobs:
         run: python scripts/build-equipment-variants.py
       - name: Build independently wearable Archer and Mage LPC layers
         run: python scripts/build-class-equipment.py
+      - name: Build genuine LPC item thumbnails
+        run: python scripts/build-equipment-icons.py
       - name: Verify all game and equipment tests
         env:
           EMBER_SWORD_PACKS_BUILT: '1'
           EMBER_CLASS_LAYERS_BUILT: '1'
+          EMBER_EQUIPMENT_ICONS_BUILT: '1'
         run: node --test tests/*.test.cjs
       - name: Publish complete dist folder to gh-pages
+        if: github.ref == 'refs/heads/main'
         shell: bash
         run: |
           set -euo pipefail

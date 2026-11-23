@@ -168,6 +168,7 @@
     };
     equipmentUI=window.EmberEquipmentUI.mount({
       root:equipmentPanel,store:equipment,
+      outfitColor:loadout?.outfitColor||'sand',
       getSprite:()=>actors.hero.images.idle,
       loadItem:async(slot,id)=>{
         const nextLook={...equipment.getState(),[slot]:id};
