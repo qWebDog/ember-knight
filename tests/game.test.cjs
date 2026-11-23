@@ -73,6 +73,15 @@ function createHarness({skin = 'bronze', preference, search = '', weapon, outfit
       }};
     }
     getBoundingClientRect() {
+      // Model the actual responsive CSS dimensions of the original dragon
+      // atlas. The flame origin is anchored to this canvas, not the fighter.
+      if(this.selector==='#enemy-dragon'){
+        const actor=node('[data-fighter="dragon"]').getBoundingClientRect();
+        const width=window.innerWidth>700?164:127;
+        const height=width*161/205,bottom=actor.bottom-(window.innerWidth>700?7:4);
+        const left=actor.left+actor.width/2-width/2;
+        return {left,top:bottom-height,right:left+width,bottom,width,height};
+      }
       const parsed = Number.parseFloat(this.style.left),centerX = Number.isFinite(parsed)?parsed:this.offsetLeft;
       if (this.actor) {
         const width=this.offsetWidth,field=node('.battlefield').getBoundingClientRect();
@@ -251,7 +260,8 @@ function createHarness({skin = 'bronze', preference, search = '', weapon, outfit
     if(nextModelSize)for(const id of actorIds)node(`[data-fighter="${id}"]`).offsetWidth=nextModelSize;
     resizeCallbacks.forEach(callback => callback());
   }
-  return {node, storage, get skillMount(){return skillMount;}, get progression(){return skillMount.store;}, loadedPaths, document, state, events, actorIds, enemyIds, restartStates, get runCount(){return restarts+1;}, loadNextImage, loadAllImages, runFor, runUntil, frame, heroX, orcX, footY, depth, inMeleeRange, spells, spellState, statusCanvases, statusState, visualState, resizeField};
+  return {node,storage,get battle(){return battle;},
+    get skillMount(){return skillMount;}, get progression(){return skillMount.store;}, loadedPaths, document, state, events, actorIds, enemyIds, restartStates, get runCount(){return restarts+1;}, loadNextImage, loadAllImages, runFor, runUntil, frame, heroX, orcX, footY, depth, inMeleeRange, spells, spellState, statusCanvases, statusState, visualState, resizeField};
 }
 function runFramesUntil(ui, condition, maxSeconds=5) {
   for(let count=0;!condition() && count<Math.ceil(maxSeconds*1000/16);count++)ui.frame(16);
@@ -1212,4 +1222,42 @@ test('animated Red Dragon boss appears after the old three waves with flapping w
  assert.equal(ui.state().phase,'victory');
  assert.equal(ui.state().reward,25);
  assert.equal(ui.events.filter(e=>e.type==='death'&&e.id==='dragon').length,1);
+});
+
+test('dragon hovers at fixed x and breathes a five-pulse stream from its animated mouth, never throwing fireballs',async()=>{
+ const ui=createHarness({weapon:'bow',outfit:'wanderer',dragonBoss:true,wolfEquipped:true,
+   combatOptions:{heroDamage:300,heroMaxHp:1800}});
+ await ui.loadAllImages();
+ ui.runUntil(()=>ui.state().waveIndex===3,45);
+ ui.battle.updateHeroStats({heroDamage:1});
+ const dragonActor=ui.node('[data-fighter="dragon"]');
+ const center=Number.parseFloat(dragonActor.style.left);
+ ui.runFor(.7);
+ assert.equal(Number.parseFloat(dragonActor.style.left),center,
+   'dragon must keep hovering instead of pursuing the wolf');
+ assert.ok(ui.node('#enemy-dragon').draws.length>=4,'wings flap in place');
+ ui.runUntil(()=>ui.events.some(e=>e.type==='cast'&&e.sourceId==='dragon'),12);
+ ui.runFor(.1);
+ const breaths=ui.node('.battlefield').children.filter(e=>e.className==='dragon-breath');
+ assert.ok(breaths.length>=1,'a connected fire tongue must appear');
+ const flame=breaths[0],mouth=ui.node('#enemy-dragon').getBoundingClientRect();
+ const src=require('../dist/dragon.js').mouthAt(mouth,{frame:12,direction:'left'});
+ const actualX=Number.parseFloat(flame.style.left);
+ const actualY=Number.parseFloat(flame.style.top);
+ const arena=ui.node('.battlefield').getBoundingClientRect();
+ assert.ok(Math.abs(actualX-(src.x-arena.left))<10,'flame begins at mouth, not body center');
+ assert.ok(Math.abs(actualY-(src.y-arena.top))<10,'fire must leave from mouth height');
+ assert.ok(Number.parseFloat(flame.style.width)>0,'the connected jet grows toward the enemy');
+ assert.equal(flame.dataset.source,'dragon');
+ assert.ok(['exhale','flare'].includes(flame.dataset.phase));
+ assert.ok(ui.node('.battlefield').children.every(e=>!(
+   e.className==='spell-projectile'&&e.dataset.source==='dragon')),
+   'the old detached throwing projectile must never be spawned for dragon');
+ const firstX=Number.parseFloat(dragonActor.style.left);
+ ui.runUntil(()=>ui.events.filter(e=>e.type==='cast'&&e.sourceId==='dragon').length>=5,10);
+ const volley=ui.events.filter(e=>e.type==='cast'&&e.sourceId==='dragon').slice(0,5);
+ assert.deepEqual(volley.map(e=>e.burstIndex),[0,1,2,3,4]);
+ assert.equal(Number.parseFloat(dragonActor.style.left),firstX,'flame volley cannot slide dragon toward target');
+ const hit=ui.events.filter(e=>e.type==='attack'&&e.sourceId==='dragon');
+ assert.ok(hit.length>=4,'fire tongues produce real engine-confirmed hits');
 });

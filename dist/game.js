@@ -416,6 +416,23 @@
     battlefield.appendChild(element);effects.push(effect);
     return effect;
   }
+  // A dragon exhales a connected jet of fire starting at its visible
+  // muzzle. Never use the generic detached magic-orb projectile.
+  function addDragonBreath(event){
+    if(reducedMotion.matches)return;
+    const element=document.createElement('div');
+    element.className='dragon-breath';
+    element.dataset.source='dragon';
+    element.dataset.target=event.targetId;
+    element.dataset.burst=String(event.burstIndex);
+    element.setAttribute('aria-hidden','true');
+    battlefield.appendChild(element);
+    effects.push({element,type:'dragon-breath',sourceId:'dragon',targetId:event.targetId,
+      castId:event.castId,at:event.at,impactAt:event.impactAt,
+      flightDuration:event.flightDuration,afterglow:event.impactDuration,
+      duration:event.flightDuration+event.impactDuration,
+      burstIndex:event.burstIndex,landed:false});
+  }
   function addSpell(event) {
     if (reducedMotion.matches) return;
     const magic=event.sourceId==='hero'?(event.magic==='ice'?'ice':'fire')
@@ -481,7 +498,8 @@
       if (event.type === 'cast') {
         if(event.sourceId==='hero'&&event.magic==='ice')pendingIceImpacts.set(event.castId,{at:event.impactAt,targetId:event.targetId});
         actors[event.sourceId].animation={at:event.at,duration:event.animationDuration||.66};
-        addSpell(event);
+        if(event.breath&&event.sourceId==='dragon')addDragonBreath(event);
+        else addSpell(event);
       } else if (event.type === 'attack') {
         // Visual bow wind-up already began before impact. Do not restart it
         // at the moment the arrow reaches its target.
@@ -489,7 +507,7 @@
           actors[event.sourceId].animation = {at:activeTime,duration:event.animationDuration || .66,variant:event.variant,heavy:event.heavy,counter:event.counter};
         if (event.impact) {
           pendingIceImpacts.delete(event.castId);
-          const spell=effects.find(effect=>effect.type==='spell'&&effect.castId===event.castId);
+          const spell=effects.find(effect=>(effect.type==='spell'||effect.type==='dragon-breath')&&effect.castId===event.castId);
           if(spell){spell.landed=true;spell.impactAt=event.at;spell.duration=event.at-spell.at+spell.impactDuration;}
         }
         if(!event.dot){
@@ -558,6 +576,8 @@
     const kind=hit?'hit':attack?'attack':unit.hp>0?'fly':'idle';
     const frame=window.EmberDragon.frameAt(hit?activeTime-actor.hitAt:attack?age:companionTime,
       kind,'left',reducedMotion.matches);
+    actor.dragonFrame=frame;
+    actor.element.style.setProperty('--dragon-hover',`${Math.sin(companionTime*3.1)*2}px`);
     const key=`${frame.direction}:${frame.frame}:${kind}`;
     if(actor.lastKey!==key){
       const geometry=window.EmberDragon.sheet;
@@ -567,6 +587,7 @@
       actor.lastKey=key;
     }
     actor.element.dataset.motion=kind;
+    actor.element.dataset.facing='left';
     actor.element.classList.toggle('is-defeated',unit.hp<=0);
     actor.element.classList.toggle('is-target',unit.id===state.targetId);
     actor.element.classList.toggle('is-hit',!ended&&hit);
@@ -693,6 +714,7 @@
       for(const unit of state.enemies){
         if(unit.hp<=0)continue;
         const enemy=actors[unit.id];
+        if(unit.type==='dragon')continue; // Fire breath has long-range reach: hover, never chase.
         const enemySize=enemy.element.offsetWidth;
         // Exact shared stopping distance with the wolf's pursuit logic:
         // wolf.destination = enemy.x - (enemySize*.32 + wolfSize*.18).
@@ -832,6 +854,31 @@
       if(!sourceElement||!targetElement){effect.element.remove();effects.splice(i,1);continue;}
       const target = targetElement.getBoundingClientRect(), source = sourceElement.getBoundingClientRect();
       const p = Math.max(0,age/effect.duration), tx=target.left+target.width/2-field.left, ty=target.top+target.height*.4-field.top;
+      if(effect.type==='dragon-breath'){
+        const dragon=actors.dragon;
+        const canvas=dragon?.canvas;
+        if(!canvas||!dragon.dragonFrame){
+          effect.element.remove();effects.splice(i,1);continue;
+        }
+        // The mouth is measured on the rendered (scaled, floating) canvas,
+        // not a generic 28%-of-fighter projectile origin. As the head moves
+        // through each original attack frame, the flame remains attached.
+        const mouth=window.EmberDragon.mouthAt(canvas.getBoundingClientRect(),dragon.dragonFrame);
+        const sx=mouth.x-field.left,sy=mouth.y-field.top;
+        const dx=tx-sx,dy=target.top+target.height*.52-field.top-sy;
+        const distance=Math.hypot(dx,dy);
+        const growth=Math.min(1,Math.max(.035,(age+.012)/effect.flightDuration));
+        const linger=Math.min(1,Math.max(0,(effect.duration-age)/effect.afterglow));
+        const angle=Math.atan2(dy,dx)*180/Math.PI;
+        effect.element.style.left=`${sx}px`;
+        effect.element.style.top=`${sy}px`;
+        effect.element.style.width=`${Math.max(2,distance*growth)}px`;
+        effect.element.style.height=`${Math.max(12,22+6*Math.sin(age*32+effect.burstIndex))}px`;
+        effect.element.style.transform=`translateY(-50%) rotate(${angle}deg) scaleY(${.7+.3*linger})`;
+        effect.element.style.opacity=String(age<=effect.flightDuration?1:linger);
+        effect.element.dataset.phase=age<effect.flightDuration?'exhale':'flare';
+        continue;
+      }
       if (effect.type === 'spell') {
         const phase=effect.landed?'impact':age+1e-6<effect.appearDuration?'appear':'flight';
         const row=phase==='appear'?0:phase==='flight'?1:2;
@@ -910,7 +957,7 @@
       const reach=state.enemyTargetId==='companion'
         ?size*.32+heroSize*.18+.01:heroSize*.23+size*.34+.01;
       return [enemy.id,Boolean(enemy.hp>0
-        &&Math.abs(actor.x-defenderX)<=reach
+        &&(enemy.type==='dragon'||Math.abs(actor.x-defenderX)<=reach)
         &&Math.abs(actor.depth-defenderDepth)<=.06)];
     })):undefined;
     return {
@@ -925,7 +972,7 @@
         const actor=actors[enemy.id],size=actor.element.offsetWidth;
         const reach=heroSize*.23+size*.34+.01;
         return [enemy.id,Boolean(enemy.hp>0
-          &&Math.abs(actor.x-heroX)<=reach
+          &&(enemy.type==='dragon'||Math.abs(actor.x-heroX)<=reach)
           &&Math.abs(actor.depth-actors.hero.depth)<=.06)];
       })):undefined
     };
