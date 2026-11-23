@@ -3,16 +3,17 @@ const test=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const path=require('node:path');
-const {slots,catalog,defaults,key,createStore}=require('../dist/equipment.js');
+const {slots,catalog,defaults,supportedSlots,key,createStore}=require('../dist/equipment.js');
 const art=require('../dist/equipment-art.js');
-
+const dist=path.resolve(__dirname,'../dist');
+const animations={walk:9,slash:6,halfslash:6,backslash:13,combat_idle:1};
 function storage(seed={}){
   const map=new Map(Object.entries(seed));let writes=0;
   return {map,get writes(){return writes;},getItem:k=>map.get(k)??null,setItem(k,v){writes++;map.set(k,String(v));}};
 }
-
-test('equipment is six independent slots, with three distinct choices per slot',()=>{
-  assert.deepEqual(slots.map(slot=>slot.id),['helmet','armor','weapon','shield','cape','boots']);
+test('only helmet and armor are enabled; six separate slots remain available for future content',()=>{
+  assert.deepEqual(slots.map(s=>s.id),['helmet','armor','weapon','shield','cape','boots']);
+  assert.deepEqual(supportedSlots,['helmet','armor']);
   for(const slot of slots){
     const items=catalog[slot.id];
     assert.equal(items.length,3);
@@ -20,92 +21,106 @@ test('equipment is six independent slots, with three distinct choices per slot',
     assert.equal(defaults[slot.id],items[0].id);
   }
 });
-
-test('equipping a helmet preserves five other slots and persists when reloaded',()=>{
-  const memory=storage(),store=createStore({storage:memory,classId:'sword'}),events=[];
-  store.subscribe((state,slot,id)=>events.push({state,slot,id}));
+test('each enabled slot equips independently and survives reloading',()=>{
+  const memory=storage(),store=createStore({storage:memory,classId:'sword'});
   assert.deepEqual(store.getState(),defaults);
-  const helmet=store.equip('helmet','iron');
-  assert.equal(helmet.ok,true);
-  assert.deepEqual(store.getState(),{...defaults,helmet:'iron'});
-  assert.equal(memory.writes,1);
-  assert.equal(events.length,1);assert.equal(events[0].slot,'helmet');
+  assert.equal(store.equip('helmet','iron').ok,true);
   assert.equal(store.equip('armor','royal').ok,true);
   assert.deepEqual(store.getState(),{...defaults,helmet:'iron',armor:'royal'});
-  const reboot=createStore({storage:memory,classId:'sword'});
-  assert.deepEqual(reboot.getState(),{...defaults,helmet:'iron',armor:'royal'});
+  assert.equal(memory.writes,2);
+  assert.deepEqual(createStore({storage:memory,classId:'sword'}).getState(),store.getState());
   assert.equal(store.equip('helmet','iron').unchanged,true);
-  assert.equal(memory.writes,2,'equipping the same item again must not write');
+  assert.equal(memory.writes,2);
+  assert.equal(store.equip('helmet','none').ok,true);
+  assert.equal(store.getState().armor,'royal');
 });
-
-test('wardrobe changes do not spend coins or alter character or progression saves',()=>{
-  const character='{"version":1,"weapon":"sword"}',progress='{"version":1,"gold":150,"levels":{}}';
-  const memory=storage({'ember.character.v1':character,'ember.progress.v1':progress});
+test('old fake cosmetics are normalized out and cannot be equipped again',()=>{
+  const previous={version:1,byClass:{sword:{...defaults,helmet:'iron',armor:'royal',weapon:'ember',shield:'steel',cape:'red',boots:'royal'}}};
+  const memory=storage({[key]:JSON.stringify(previous)});
   const store=createStore({storage:memory,classId:'sword'});
-  for(const [slot,id]of [['helmet','royal'],['cape','purple'],['weapon','ember'],['shield','steel'],['boots','royal']]){
-    assert.equal(store.equip(slot,id).ok,true);
+  assert.deepEqual(store.getState(),{...defaults,helmet:'iron',armor:'royal'});
+  for(const [slot,id]of [['weapon','ember'],['shield','steel'],['cape','red'],['boots','iron']]){
+    assert.equal(store.equip(slot,id).reason,'unsupported');
   }
-  assert.equal(memory.map.get('ember.character.v1'),character);
-  assert.equal(memory.map.get('ember.progress.v1'),progress);
-  assert.equal(JSON.parse(memory.map.get(key)).byClass.sword.cape,'purple');
+  assert.equal(memory.writes,0);
 });
-
-test('class data is separate and unsupported class choices are disabled for now',()=>{
+test('cosmetic data does not alter gold, progression or saved character',()=>{
+  const char='{"version":1,"weapon":"sword"}',progress='{"version":1,"gold":150,"levels":{}}';
+  const memory=storage({'ember.character.v1':char,'ember.progress.v1':progress});
+  const store=createStore({storage:memory,classId:'sword'});
+  assert.equal(store.equip('helmet','royal').ok,true);
+  assert.equal(store.equip('armor','iron').ok,true);
+  assert.equal(memory.map.get('ember.character.v1'),char);
+  assert.equal(memory.map.get('ember.progress.v1'),progress);
+  assert.equal(JSON.parse(memory.map.get(key)).byClass.sword.armor,'iron');
+});
+test('other classes remain selectable, but cannot fit warrior-only sprites',()=>{
   const memory=storage(),warrior=createStore({storage:memory,classId:'sword'});
   warrior.equip('helmet','royal');
-  const ranger=createStore({storage:memory,classId:'bow'});
-  const mage=createStore({storage:memory,classId:'wand'});
+  const ranger=createStore({storage:memory,classId:'bow'}),mage=createStore({storage:memory,classId:'wand'});
   assert.equal(ranger.enabled,false);assert.equal(mage.enabled,false);
   assert.equal(ranger.equip('helmet','iron').reason,'class');
-  assert.equal(mage.equip('weapon','steel').ok,false);
+  assert.equal(mage.equip('armor','royal').ok,false);
   assert.equal(warrior.getState().helmet,'royal');
-  assert.equal(ranger.getState().helmet,'none');
 });
-
-test('unknown item, unavailable storage and corrupt states are safe',()=>{
-  const memory=storage({[key]:'invalid-json'});
-  const store=createStore({storage:memory,classId:'sword'});
+test('storage failures never grant equipment and bad values are rejected',()=>{
+  const memory=storage({[key]:'invalid-json'}),store=createStore({storage:memory,classId:'sword'});
   assert.deepEqual(store.getState(),defaults);
-  assert.equal(store.equip('helmet','not-a-helm').reason,'invalid');
-  assert.equal(memory.writes,0);
-  const inaccessible={getItem(){return null;},setItem(){throw Error('blocked');}};
-  const broken=createStore({storage:inaccessible,classId:'sword'});
-  assert.equal(broken.equip('helmet','iron').reason,'storage');
-  assert.equal(broken.getState().helmet,'none');
+  assert.equal(store.equip('helmet','unknown').reason,'invalid');
+  const denied=createStore({classId:'sword',storage:{getItem(){return null;},setItem(){throw Error('blocked');}}});
+  assert.equal(denied.equip('helmet','iron').reason,'storage');
+  assert.equal(denied.getState().helmet,'none');
 });
-
-test('cosmetic renderer draws cape behind and item overlays in front without changing attack sprites',()=>{
-  const calls=[];
-  const ctx={save(){calls.push('save');},restore(){calls.push('restore');},translate(){},
-    scale(){},fillRect(){calls.push('rect');},beginPath(){},moveTo(){},lineTo(){},closePath(){},fill(){calls.push('fill');}};
-  const pose={row:3,frame:2,kind:'attack',origin:32,tile:128,equipped:{
-    helmet:'royal',armor:'iron',weapon:'ember',shield:'steel',cape:'red',boots:'iron'
-  }};
-  art.drawBack(ctx,pose);
-  const back=calls.length;assert.ok(back>2);
-  art.drawFront(ctx,pose);
-  assert.ok(calls.length>back+10);
-  assert.equal(calls.filter(x=>x==='save').length,calls.filter(x=>x==='restore').length);
-  assert.doesNotThrow(()=>art.drawFront(ctx,{...pose,row:1,kind:'walk',frame:5}));
-  assert.doesNotThrow(()=>art.drawFront(ctx,{...pose,equipped:defaults}));
+test('native LPC image files are present and have compatible frames and four directions',()=>{
+  for(const slot of supportedSlots)for(const id of ['iron','royal'])for(const [animation,frames] of Object.entries(animations)){
+    const relative=art.imagePath(slot,id,animation),full=path.join(dist,relative),png=fs.readFileSync(full);
+    assert.equal(png.subarray(1,4).toString(),'PNG',relative);
+    const width=png.readUInt32BE(16),height=png.readUInt32BE(20);
+    assert.equal(height,4*64,relative);
+    assert.equal(width%64,0,relative);
+    assert.ok(width>=frames*64,relative+' must contain '+frames+' cells');
+  }
 });
-
-test('the game has one independent equipment panel with six slots, and loads its dependencies',()=>{
-  const dist=path.join(__dirname,'../dist');
+test('official LPC layers follow exact same frame, direction and 128px origin as warrior pose',async()=>{
+  const requested=[];
+  const viewer=art.create({loadImage:async src=>{
+    requested.push(src);
+    const file=fs.readFileSync(path.join(dist,src));
+    return {src,width:file.readUInt32BE(16),height:file.readUInt32BE(20),naturalWidth:file.readUInt32BE(16),naturalHeight:file.readUInt32BE(20)};
+  }});
+  const worn={...defaults,helmet:'iron',armor:'royal'};
+  await viewer.prepareLook(worn);
+  assert.equal(requested.length,10,'5 animations for each selected item');
+  const cases=[
+    [{kind:'walk',variant:null,row:3,frame:5,tile:64,origin:0},'walk',5,3,0],
+    [{kind:'attack',variant:'slash',row:1,frame:4,tile:128,origin:32},'slash',4,1,32],
+    [{kind:'attack',variant:'halfslash',row:3,frame:2,tile:128,origin:32},'halfslash',2,3,32],
+    [{kind:'attack',variant:'backslash',row:0,frame:12,tile:128,origin:32},'backslash',12,0,32],
+    [{kind:'block',variant:null,row:2,frame:0,tile:64,origin:0},'combat_idle',0,2,0],
+    [{kind:'idle',variant:null,row:2,frame:0,tile:64,origin:0},'walk',0,2,0]
+  ];
+  for(const [pose,mode,frame,row,origin] of cases){
+    const calls=[];
+    const ctx={drawImage:(img,...geometry)=>calls.push({src:img.src,geometry})};
+    assert.equal(viewer.draw(ctx,{...pose,equipped:worn}),2);
+    assert.equal(calls.length,2);
+    assert.ok(calls[0].src.endsWith('/armor/royal/'+mode+'.png'));
+    assert.ok(calls[1].src.endsWith('/helmet/iron/'+mode+'.png'));
+    for(const call of calls)assert.deepEqual(call.geometry,[frame*64,row*64,64,64,origin,origin,64,64]);
+  }
+  assert.equal(viewer.draw({drawImage(){throw Error('Unexpected');}},{row:2,frame:0,tile:64,kind:'idle',equipped:defaults}),0);
+  assert.equal(viewer.draw({drawImage(){throw Error('Unexpected');}},{row:4,frame:0,tile:64,kind:'walk',equipped:worn}),0);
+  await viewer.prepareLook(worn);assert.equal(requested.length,10,'cached sheets should not reload');
+});
+test('the game uses native LPC animation atlases, not synthetic equipment drawings',()=>{
   const html=fs.readFileSync(path.join(dist,'index.html'),'utf8');
   const game=fs.readFileSync(path.join(dist,'game.js'),'utf8');
-  const css=fs.readFileSync(path.join(dist,'equipment.css'),'utf8');
+  const renderer=fs.readFileSync(path.join(dist,'equipment-art.js'),'utf8');
   assert.match(html,/id="equipment-panel"[^>]*hidden/);
   assert.equal((html.match(/data-equipment-slot="(?:helmet|armor|weapon|shield|cape|boots)"/g)||[]).length,6);
-  assert.match(html,/id="open-equipment-tab"/);
-  assert.match(html,/id="back-skills-tab"/);
-  for(const name of ['equipment.js','equipment-art.js','equipment-ui.js']){
-    assert.ok(html.indexOf('src="'+name+'"')<html.indexOf('src="game.js"'));
-  }
-  assert.match(game,/showLowerPanel\('equipment'\)/);
-  assert.match(game,/equipmentUI\?\.refreshPreview\(\)/);
-  assert.match(game,/art\.drawBack\(ctx,pose\)/);
-  assert.match(game,/art\.drawFront\(ctx,pose\)/);
-  assert.match(css,/\.equipment-panel\[hidden\],\.skills-panel\[hidden\]/);
-  assert.match(css,/overscroll-behavior-x:contain/);
+  assert.match(game,/equipmentArt\.draw\(ctx,pose\)/);
+  assert.match(game,/variant:attacking\?\(actor\.animation\?\.variant\|\|'slash'\)/);
+  assert.match(game,/equipmentArt\.prepareLook\(equipment\.getState\(\)\)/);
+  assert.doesNotMatch(renderer,/fillRect\(|lineTo\(/);
+  assert.match(renderer,/ctx\.drawImage\(image,col\*frameSize,row\*frameSize/);
 });
