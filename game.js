@@ -20,6 +20,9 @@
   if (new URLSearchParams(window.location.search).get('battle') === 'test') auto = true;
   const loadouts = window.EmberLoadouts;
   const arrowSprite = 'assets/projectiles/arrow.png';
+  // The 13-frame LPC bow releases at frame 9. Flight ends at the original
+  // engine hit time, so damage and combat cooldowns remain unchanged.
+  const arrowReleaseFrame=9,arrowPoseFrames=13,arrowFlightDuration=.28;
   const loadout = loadouts?.selection(character) || null;
   const starterWeapon = loadout ? loadouts.weapon(loadout.weapon) : null;
   const starterOutfit = loadout ? loadouts.outfit(loadout.weapon,loadout.outfit) : null;
@@ -80,6 +83,7 @@
     actors[id] = {element, canvas:element.querySelector('canvas'), bar:element.querySelector('.healthbar'), images:{}, animation:null, hitAt:-10, blockAt:-10, lastKey:null,statusCanvas:null,statusKey:null,frozenPose:null,poseAnimation:null,poseAge:100,defaultLane:3,...enemyDefinitions[id],depth:enemyDefinitions[id]?.defaultLane||3,x:null,distance:0,direction:1,moving:false};
   }
   const effects = [];
+  const cuedArrows=new Map();
   const spellImages = {};
   const pendingIceImpacts = new Map();
   let statusImage = null;
@@ -354,8 +358,8 @@
     $('#status').textContent = auto ? 'Бой продолжается' : 'Бой приостановлен';
   });
   document.addEventListener('visibilitychange', syncPause);
-  function addEffect(type, sourceId, targetId, text, at) {
-    if (reducedMotion.matches) return;
+  function addEffect(type, sourceId, targetId, text, at,options={}) {
+    if (reducedMotion.matches) return null;
     const element = document.createElement(type === 'arrow' ? 'img' : 'span');
     if (type === 'arrow') {
       element.src = arrowSprite; element.alt = ''; element.draggable = false;
@@ -364,7 +368,18 @@
     const floating = ['damage','heavy','counter','block','coin'].includes(type);
     element.className = floating ? `damage-number ${type}-number ${targetId === 'hero' && type !== 'block' ? 'enemy-damage' : ''}` : `projectile ${type}`;
     element.setAttribute('aria-hidden','true'); if (text) element.textContent = text;
-    battlefield.appendChild(element); effects.push({element,type,floating,sourceId,targetId,at:activeTime,duration:type==='coin'?.65:floating ? .85 : .38});
+    if(type==='arrow'){
+      element.hidden=true;element.style.visibility='hidden';
+      element.dataset.source=sourceId;
+      element.dataset.target=targetId;
+      element.dataset.releaseAt=String(at);
+      element.dataset.impactAt=String(at+(options.duration||arrowFlightDuration));
+    }
+    const effect={element,type,floating,sourceId,targetId,
+      at:options.at??activeTime,
+      duration:options.duration??(type==='coin'?.65:floating?.85:.38)};
+    battlefield.appendChild(element);effects.push(effect);
+    return effect;
   }
   function addSpell(event) {
     if (reducedMotion.matches) return;
@@ -432,7 +447,10 @@
         actors[event.sourceId].animation={at:event.at,duration:event.animationDuration||.66};
         addSpell(event);
       } else if (event.type === 'attack') {
-        if (!event.impact&&!event.dot) actors[event.sourceId].animation = {at:activeTime,duration:event.animationDuration || (event.projectile === 'arrow' ? .9 : .66),variant:event.variant,heavy:event.heavy,counter:event.counter};
+        // Visual bow wind-up already began before impact. Do not restart it
+        // at the moment the arrow reaches its target.
+        if (!event.impact&&!event.dot&&event.projectile!=='arrow')
+          actors[event.sourceId].animation = {at:activeTime,duration:event.animationDuration || .66,variant:event.variant,heavy:event.heavy,counter:event.counter};
         if (event.impact) {
           pendingIceImpacts.delete(event.castId);
           const spell=effects.find(effect=>effect.type==='spell'&&effect.castId===event.castId);
@@ -440,7 +458,6 @@
         }
         if(!event.dot)actors[event.targetId].hitAt = activeTime;
         addEffect(event.counter ? 'counter' : event.heavy ? 'heavy' : 'damage',event.sourceId,event.targetId,event.counter ? `Ответ −${event.damage}` : `−${event.damage}`,event.at);
-        if (!event.dot&&event.projectile === 'arrow') addEffect('arrow',event.sourceId,event.targetId,null,event.at);
       } else if(event.type==='status'){
         syncFrozenActors(battle.getState());
       } else if (event.type === 'block') {
@@ -505,7 +522,7 @@
     const descriptor = attacking && actor.images.attacks?.[actor.animation.variant] || actor.images[kind];
     const row = walking ? id === 'hero' ? walkDirection : actor.direction : descriptor.row;
     const tile = descriptor.tile || 64, origin = descriptor.origin || 0;
-    const cell = walking ? 1 + Math.floor((distance / .75 % 1) * 8) : attacking ? Math.min(descriptor.frames-1,Math.floor(age / actor.animation.duration * descriptor.frames)) : Number.isInteger(descriptor.still) ? descriptor.still : id === 'hero' && auto && unit.hp > 0 && !ended && !reducedMotion.matches ? Math.floor(activeTime / .65) % 2 : 0;
+    const cell = walking ? 1 + Math.floor((distance / .75 % 1) * 8) : attacking ? Math.min(descriptor.frames-1,Math.floor((age+(actor.animation?.arrowCue?1e-6:0)) / actor.animation.duration * descriptor.frames)) : Number.isInteger(descriptor.still) ? descriptor.still : id === 'hero' && auto && unit.hp > 0 && !ended && !reducedMotion.matches ? Math.floor(activeTime / .65) % 2 : 0;
     const key = `${kind}-${descriptor.image.src}-${cell}-${row}-${tile}-${origin}`;
     if (!frozen&&actor.lastKey !== key) {
       actor.canvas.width = tile; actor.canvas.height = tile;
@@ -539,6 +556,7 @@
   function prepareWave(state) {
     removeEffects(()=>false);
     pendingIceImpacts.clear();
+    cuedArrows.clear();
     heroX=null;fieldWidth=null;walkDistance=0;walkDirection=3;moving=heroMoving=false;
     pairContacted=false;previousSeparation=null;contactTarget=null;previousTargetSeparation=null;
     for(const actor of Object.values(actors)){
@@ -651,11 +669,42 @@
     projectFormation();
     return usedTime;
   }
+  function cueArrowShots(state){
+    if(!ready||!auto||dialog.open||document.hidden||reducedMotion.matches
+      ||heroEntrance||state.phase!=='running'
+      ||sceneTransition&&sceneTransition.phase!=='wave-in')return;
+    const shots=battle.getArrowSchedule?.()||[];
+    const valid=new Set(shots.map(shot=>shot.sourceId+':'+shot.targetId+':'+shot.at.toFixed(6)));
+    for(const [key,effect] of cuedArrows){
+      if(valid.has(key)||activeTime+1e-6>=effect.at+effect.duration)continue;
+      effect.element.remove();
+      const i=effects.indexOf(effect);if(i>=0)effects.splice(i,1);
+      const shooter=actors[effect.sourceId];
+      if(shooter.animation?.arrowCue===key){shooter.animation=null;shooter.lastKey=null;}
+      cuedArrows.delete(key);
+    }
+    for(const shot of shots){
+      const source=actors[shot.sourceId],target=actors[shot.targetId];
+      if(!source?.images.attack||!target||!shot.animationDuration)continue;
+      const key=shot.sourceId+':'+shot.targetId+':'+shot.at.toFixed(6);
+      if(cuedArrows.has(key))continue;
+      const releaseAt=shot.at-arrowFlightDuration;
+      const startAt=releaseAt-shot.animationDuration*arrowReleaseFrame/arrowPoseFrames;
+      if(activeTime+1e-6<startAt||activeTime>shot.at)continue;
+      source.animation={at:startAt,duration:shot.animationDuration,arrowCue:key};
+      source.lastKey=null;
+      const effect=addEffect('arrow',shot.sourceId,shot.targetId,null,releaseAt,
+        {at:releaseAt,duration:arrowFlightDuration});
+      if(effect)cuedArrows.set(key,effect);
+    }
+  }
   function renderEffects(state) {
     const field = battlefield.getBoundingClientRect();
     for (let i=effects.length-1;i>=0;i--) {
       const effect = effects[i], age = activeTime - effect.at;
       if (age+1e-6 >= effect.duration || reducedMotion.matches) { effect.element.remove(); effects.splice(i,1); continue; }
+      if(effect.type==='arrow'&&age<0){effect.element.hidden=true;effect.element.style.visibility='hidden';continue;}
+      if(effect.type==='arrow'){effect.element.hidden=false;effect.element.style.visibility='visible';}
       const target = actors[effect.targetId].element.getBoundingClientRect(), source = actors[effect.sourceId].element.getBoundingClientRect();
       const p = Math.max(0,age/effect.duration), tx=target.left+target.width/2-field.left, ty=target.top+target.height*.4-field.top;
       if (effect.type === 'spell') {
@@ -692,6 +741,7 @@
   }
   function render(state) {
     renderSceneTransition(state);
+    cueArrowShots(state);
     for (const id of Object.keys(actors)) drawActor(id,state);
     $('#hero-vital').textContent = `${state.hero.hp} / ${state.hero.maxHp} HP`;
     const waves = document.querySelectorAll('.wave');
