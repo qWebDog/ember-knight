@@ -182,7 +182,9 @@ def write_icon(class_id,slot,item,color):
 if __name__=='__main__':
     for class_id in CLASSES:
         for slot,items in SLOTS.items():
-            if class_id!='sword' and slot=='cape':
+            if class_id!='sword' and slot=='helmet':
+                ids=('basic','iron','royal')
+            elif class_id!='sword' and slot=='cape':
                 ids=('tattered','solid')
             else:
                 ids=items
