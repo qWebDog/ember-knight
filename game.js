@@ -488,7 +488,23 @@
     for (const event of events) {
       if (event.type === 'cast') {
         if(event.sourceId==='hero'&&event.magic==='ice')pendingIceImpacts.set(event.castId,{at:event.impactAt,targetId:event.targetId});
-        actors[event.sourceId].animation={at:event.at,duration:event.animationDuration||.66};
+        const caster=actors[event.sourceId];
+        if(event.sourceId==='dragon'&&event.breath){
+          // One five-shot salvo must have ONE sustained open-jaw pose.
+          // Individual pulse events may not restart/close the mouth.
+          const spacing=window.EmberCombat.dragonBreath.spacing;
+          const holdAfterLastShot=.22;
+          if(event.burstIndex===0||!Number.isFinite(caster.breathUntil)
+            ||event.at>caster.breathUntil){
+            caster.breathStartedAt=event.at;
+            caster.breathUntil=event.at+
+              (Math.max(1,event.burstCount)-1)*spacing+holdAfterLastShot;
+          }else{
+            caster.breathUntil=Math.max(caster.breathUntil,event.at+holdAfterLastShot);
+          }
+        }else{
+          caster.animation={at:event.at,duration:event.animationDuration||.66};
+        }
         addSpell(event);
       } else if (event.type === 'attack') {
         // Visual bow wind-up already began before impact. Do not restart it
@@ -526,6 +542,8 @@
           // dragon-generated damage numbers may outlive the dragon sprite.
           removeEffects(effect=>effect.sourceId!=='dragon');
           actors.dragon.animation=null;
+          actors.dragon.breathUntil=-1;
+          actors.dragon.breathStartedAt=null;
         }
         for(const [id,impact]of pendingIceImpacts)if(impact.targetId===event.id)pendingIceImpacts.delete(id);
         removeEffects(effect=>effect.type!=='spell'||effect.targetId!==event.id||effect.landed);
@@ -596,9 +614,19 @@
     const age=actor.animation?activeTime-actor.animation.at:999;
     const ended=state.phase==='defeat'||state.phase==='victory';
     const hit=activeTime-actor.hitAt<.17;
+    const breathing=unit.hp>0&&!ended
+      &&(state.phase==='running'||state.phase==='paused')
+      &&state.enemyTargetId==='hero'
+      &&Number.isFinite(actor.breathUntil)
+      &&activeTime+1e-7<actor.breathUntil;
     const attack=!ended&&unit.hp>0&&age>=0&&age<(actor.animation?.duration||0);
-    const kind=hit?'hit':attack?'attack':unit.hp>0?'fly':'idle';
-    const frame=window.EmberDragon.frameAt(hit?activeTime-actor.hitAt:attack?age:companionTime,
+    // Breath overrides flapping, hit reactions and the gaps between casts.
+    // The dragon keeps its actual open-mouth sprite until the last fireball
+    // is emitted, then resumes its normal flying pose.
+    const kind=breathing?'breath':hit?'hit':attack?'attack':unit.hp>0?'fly':'idle';
+    const frame=window.EmberDragon.frameAt(breathing?
+      activeTime-(actor.breathStartedAt??activeTime)
+      :hit?activeTime-actor.hitAt:attack?age:companionTime,
       kind,'left',reducedMotion.matches);
     actor.dragonFrame=frame;
     // Hover/dive transform is set above; never overwrite it with idle bob.
@@ -611,6 +639,7 @@
       actor.lastKey=key;
     }
     actor.element.dataset.motion=kind;
+    actor.element.dataset.breathing=breathing?'true':'false';
     actor.element.dataset.facing='left';
     actor.element.classList.toggle('is-defeated',unit.hp<=0);
     actor.element.classList.toggle('is-target',unit.id===state.targetId);
@@ -687,7 +716,10 @@
       actor.x=null;actor.distance=0;actor.moving=false;actor.direction=1;
       actor.depth=actor.defaultLane;
       actor.animation=null;actor.hitAt=-10;actor.blockAt=-10;actor.lastKey=null;
-      if(actor.type==='dragon'){actor.dive=0;actor.diveClock=null;}
+      if(actor.type==='dragon'){
+        actor.dive=0;actor.diveClock=null;
+        actor.breathStartedAt=null;actor.breathUntil=-1;
+      }
     }
     beginHeroEntrance();
     updateMovement(0,state);

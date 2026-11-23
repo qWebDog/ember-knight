@@ -21,12 +21,17 @@
     }));
     return Object.fromEntries(entries);
   }
+  // Frame 12 from the original Red Dragon attack strip has the jaw held
+  // open. Do not cycle into flying/closed-mouth frames between fireballs.
+  const openMouthFrame=12;
   function frameAt(time=0,kind='fly',direction='left',reducedMotion=false){
     const facing=Object.hasOwn(sheets,direction)?direction:'left';
     const age=Math.max(0,Number.isFinite(time)?time:0);
-    const normalized=reducedMotion?'idle':['fly','attack','hit'].includes(kind)?kind:'idle';
+    const normalized=kind==='breath'?'breath':reducedMotion?'idle'
+      :['fly','attack','hit'].includes(kind)?kind:'idle';
     let index;
-    if(normalized==='fly')index=Math.floor(age*9)%8;
+    if(normalized==='breath')index=openMouthFrame;
+    else if(normalized==='fly')index=Math.floor(age*9)%8;
     else if(normalized==='attack')index=12+Math.min(3,Math.floor(age*9));
     else if(normalized==='hit')index=9+Math.min(2,Math.floor(age*12));
     else index=2;
@@ -67,5 +72,5 @@
       0,0,sheet.frameWidth,sheet.frameHeight);
     return true;
   }
-  return Object.freeze({path,sheets,sheet,muzzleLeft,load,frameAt,mouthAt,draw});
+  return Object.freeze({path,sheets,sheet,openMouthFrame,muzzleLeft,load,frameAt,mouthAt,draw});
 });
