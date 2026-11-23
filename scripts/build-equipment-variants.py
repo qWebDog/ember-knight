@@ -19,6 +19,7 @@ PROJECT = Path(__file__).resolve().parents[1]
 SCRIPTS = PROJECT / 'scripts'
 ROOT = PROJECT / 'dist/assets/characters/loadouts'
 OUTPUT = PROJECT / 'dist/assets/equipment/sword-packs'
+FRONT = PROJECT / 'dist/assets/equipment/front-layers'
 CACHE = PROJECT / '.cache/lpc'
 REV = '86a3719ee4a7e2e9fb27c7c152e29a741d3e930a'
 BASE = ('https://raw.githubusercontent.com/LiberatedPixelCup/'
@@ -152,6 +153,47 @@ def compose(body, gear, frames, tile):
     output.alpha_composite(sheet_layers(front, frames, tile))
     return output
 
+def build_foreground_layers():
+    """Sparse native LPC foreground atlases with their original zPos.
+
+    Armor is z60, heater shield foreground z110/115, helmet z130,
+    and arming-sword foreground z140/150. Repainting just the actual
+    front-layer pixels after a torso overlay restores the correct depth
+    without producing 3×3×3×3×36×5 full-image combinations.
+    """
+    written = 0
+    for _, animation, frames, tile in POSES:
+        for weapon in WEAPONS:
+            gear = equipment_layers(animation, weapon, 'basic')
+            top = [(z, im, st) for z, im, st in gear if z >= 140]
+            if not top:
+                raise ValueError(f'Missing native sword foreground: {weapon}/{animation}')
+            dest = FRONT / 'weapon' / weapon
+            dest.mkdir(parents=True, exist_ok=True)
+            sheet_layers(top, frames, tile).save(dest / f'{animation}.png', optimize=True)
+            written += 1
+        for shield in SHIELDS:
+            gear = equipment_layers(animation, 'basic', shield)
+            top = [(z, im, st) for z, im, st in gear if 110 <= z < 130]
+            if not top:
+                raise ValueError(f'Missing native shield foreground: {shield}/{animation}')
+            dest = FRONT / 'shield' / shield
+            dest.mkdir(parents=True, exist_ok=True)
+            sheet_layers(top, frames, tile).save(dest / f'{animation}.png', optimize=True)
+            written += 1
+    if written != 30:
+        raise ValueError(f'Expected 30 LPC front-layer atlases; got {written}')
+    (FRONT / 'CREDITS.md').write_text(
+        'Foreground layers for official Universal LPC arming sword and original '
+        'heater shield. Sources: https://github.com/LiberatedPixelCup/'
+        'Universal-LPC-Spritesheet-Character-Generator at commit ' + REV +
+        '. Source artwork and license attribution are detailed in '
+        'dist/assets/characters/loadouts/CREDITS.txt. Shield colors are '
+        'recolorings of the original heater shape; the underlying '
+        'pose geometry and direction frames are unchanged.\n')
+    print(f'READY {written} original LPC sword/shield foreground atlases', flush=True)
+
+
 def build(color, skin):
     written = 0
     for outa, animation, frames, tile in POSES:
@@ -200,6 +242,7 @@ def prefetch():
 
 if __name__ == '__main__':
     prefetch()
+    build_foreground_layers()
     colors = ('sand',) if args.quick else COLORS.keys()
     skins = ('light',) if args.quick else SKINS
     count = 0
