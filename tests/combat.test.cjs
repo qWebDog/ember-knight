@@ -12,6 +12,8 @@ function encounterFixture(waves,{slowFlight=false,legacyArcher=true,closeInterva
   const declaration=/  const waveTemplates = \[\n[\s\S]*?\n  \];/;
   assert.ok(declaration.test(source));
   source=source.replace(declaration,'  const waveTemplates = '+JSON.stringify(waves)+';');
+  // Historical fixed-timestamp fixtures retain their original Orc cadence.
+  const legacyOrc="damage:6,interval:1.5,armor:3";assert.ok(source.includes(legacyOrc));source=source.replace(legacyOrc,"damage:6,interval:2.4,armor:3");
   if(legacyArcher){const anchor="archer:{name:'Скелет-лучник',maxHp:60,damage:7,interval:1.8,armor:0,projectile:'arrow'}";assert.ok(source.includes(anchor));source=source.replace(anchor,anchor.replace('interval:1.8','interval:3.1'));}
   if(slowFlight){const anchor='flightDuration:.48';assert.ok(source.includes(anchor));source=source.replace(anchor,'flightDuration:2.4');}
   if(closeInterval!==undefined){const anchor='const CLOSE_MAGIC_INTERVAL = .8 * TICKS;';assert.ok(source.includes(anchor));source=source.replace(anchor,'const CLOSE_MAGIC_INTERVAL = '+closeInterval+' * TICKS;');}
@@ -538,9 +540,9 @@ test('new wave timers and sword combo reset at spawn while hero health and earne
   }
   const orcSpawn=spawns.find(event=>event.waveNumber===3);
   const orcHits=events.filter(event=>event.type==='attack'&&event.sourceId==='orc');
-  assert.equal(Math.round((orcHits[0].at-orcSpawn.at)*1000000),2400000);assert.equal(orcHits[0].damage,6);
+  assert.equal(Math.round((orcHits[0].at-orcSpawn.at)*1000000),1500000);assert.equal(orcHits[0].damage,6);
   assert.equal(orcHits[1].damage,3);assert.equal(events.filter(event=>event.type==='block')[0].at,orcHits[1].at);
-  assert.equal(battle.state.reward,20);assert.equal(battle.state.hero.hp,105);
+  assert.equal(battle.state.reward,20);assert.equal(battle.state.hero.hp,200-events.filter(e=>e.type==='attack'&&e.targetId==='hero').reduce((sum,e)=>sum+e.damage,0));
 });
 
 test('wave boundaries clear old magic flights instead of applying damage to the next wave', () => {
@@ -1146,4 +1148,17 @@ test('legacy single-spell combat fixtures remain supported without player elemen
    assert.ok(shots.length>=3);
    assert.ok(shots.every(e=>e.magic===magic));
  }
+});
+
+test('live Orc attacks every 1.5 seconds after contact without banking attacks while travelling',()=>{
+ const battle=createDefaultBattle({heroDamage:500,heroMaxHp:1000});
+ for(let i=0;i<200&&battle.state.waveIndex!==2;i++)battle.advance(.1);
+ assert.equal(battle.state.waveIndex,2);
+ battle.updateHeroStats({heroDamage:1});
+ const travel=battle.advance(4,{heroCanAttack:false,orcCanAttack:false});
+ assert.ok(!travel.some(e=>e.type==='attack'&&e.sourceId==='orc'));
+ const hits=battle.advance(6,{heroCanAttack:false,orcCanAttack:true}).filter(e=>e.type==='attack'&&e.sourceId==='orc');
+ assert.equal(hits.length,4);
+ for(let i=1;i<hits.length;i++)assert.ok(Math.abs(hits[i].at-hits[i-1].at-1.5)<1e-8);
+ assert.ok(hits.every(e=>e.damage===6));
 });

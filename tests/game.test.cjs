@@ -144,8 +144,13 @@ function createHarness({skin = 'bronze', preference, search = '', weapon, outfit
     set src(value) {
       this.path = value;
       const data = fs.readFileSync(path.join(dist, value));
-      assert.equal(data.subarray(1,4).toString(), 'PNG');
-      this.width = this.naturalWidth = data.readUInt32BE(16); this.height = this.naturalHeight = data.readUInt32BE(20);
+      if(value.endsWith('skeleton-walk.svg')){
+        const svg=data.toString('utf8');assert.match(svg,/<svg[^>]+width="576"[^>]+height="256"/);
+        this.width=this.naturalWidth=576;this.height=this.naturalHeight=256;
+      }else{
+        assert.equal(data.subarray(1,4).toString(), 'PNG');
+        this.width = this.naturalWidth = data.readUInt32BE(16); this.height = this.naturalHeight = data.readUInt32BE(20);
+      }
       pendingImages.push(this); loadedPaths.push(value);
     }
     get src() { return this.path; }
@@ -1299,7 +1304,7 @@ test('hovering dragon hits equipped wolf with claws, not with persistent fire',a
    &&e.projectile==='claw'),18);
  const claw=ui.events.find(e=>e.sourceId==='dragon'&&e.projectile==='claw');
  assert.equal(claw.targetId,'companion');
- assert.equal(claw.damage,12);
+ assert.equal(claw.damage,24);
  assert.ok(ui.state().companion.hp<ui.state().companion.maxHp);
  assert.equal(ui.events.filter(e=>e.type==='cast'&&e.sourceId==='dragon').length,0,
    'no fireball or fire breath may be aimed at a living wolf');
@@ -1476,4 +1481,23 @@ test('a Mage with a legacy saved ice choice actually alternates both spells auto
  assert.equal(JSON.parse(ui.storage.get('ember.character.v1')).magic,'ice',
    'the old character save remains intact until explicitly edited');
  assert.ok(!ui.actorIds.includes('mage'),'no new NPC is introduced');
+});
+
+test('skeleton uses distinct distance-driven walk frames while pursuing the wolf',async()=>{
+ const ui=createHarness({weapon:'bow',outfit:'wanderer',wolfEquipped:true,combatOptions:{heroDamage:1,heroMaxHp:1500,companionMaxHp:1500}});
+ await ui.loadAllImages();
+ const actor=ui.node('[data-fighter="archer1"]'),canvas=ui.node('#enemy-archer1');
+ const gait=new Set();let previous=actorX(ui,'archer1');
+ for(let i=0;i<100;i++){
+   ui.frame(100);
+   const x=actorX(ui,'archer1'),draw=canvas.draws.at(-1),dx=x-previous;
+   if(Math.abs(dx)>.001&&actor.dataset.motion==='walk'){
+     assert.ok(draw.src.endsWith('skeleton-walk.svg'));
+     assert.equal(draw.crop[1],dx<0?64:192);
+     gait.add(draw.crop[0]);
+   }
+   previous=x;
+   if(gait.size>=3)break;
+ }
+ assert.ok(gait.size>=3,'skeleton legs change frame while physically walking');
 });

@@ -18,7 +18,7 @@
   // The dragon releases five SEPARATE fire-magic projectiles like the
   // Mage's spell, never a continuous jet. Each has its own launch, flight,
   // engine hit and short impact animation.
-  const dragonBreath=Object.freeze({bursts:5,spacing:.26,damage:3,flight:.42,afterglow:.22});
+  const dragonBreath=Object.freeze({bursts:5,spacing:.26,damage:6,flight:.42,afterglow:.22});
   const DRAGON_BREATH_SPACING=Math.round(dragonBreath.spacing*TICKS);
   const DRAGON_BREATH_FLIGHT=Math.round(dragonBreath.flight*TICKS);
   const statusTiming = Object.freeze({duration:.5,burnTickInterval:.25,burnDamage:1});
@@ -32,10 +32,10 @@
     {variant:'backslash', interval:1.35 * TICKS, animationDuration:.91, heavy:true}
   ];
   const archetypes = {
-    orc:{name:'Орк-щитоносец',maxHp:100,damage:6,interval:2.4,armor:3,projectile:'melee'},
+    orc:{name:'Орк-щитоносец',maxHp:100,damage:6,interval:1.5,armor:3,projectile:'melee'},
     archer:{name:'Скелет-лучник',maxHp:60,damage:7,interval:1.8,armor:0,projectile:'arrow'},
     mage:{name:'Могильный колдун',maxHp:65,damage:10,interval:3.8,armor:0,projectile:'magic'},
-    dragon:{name:'Красный дракон',maxHp:180,damage:12,interval:2.8,armor:3,projectile:'magic'}
+    dragon:{name:'Красный дракон',maxHp:180,damage:24,interval:2.8,armor:3,projectile:'magic'}
   };
   const waveTemplates = [
     [{id:'archer1',type:'archer'}],

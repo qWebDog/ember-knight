@@ -259,7 +259,23 @@
       "sourcePreset": "credits/skeleton/preset.json",
       "credits": "credits/skeleton/CREDITS.txt",
       "license": "OGA-BY 3.0",
-      "sha256": "72e9481e0f905c114cfd88ef814bc06f6e734e8b6bfc1a28eb151e330da8aa12"
+      "sha256": "72e9481e0f905c114cfd88ef814bc06f6e734e8b6bfc1a28eb151e330da8aa12",
+      "walk": {
+        "sheet": "skeleton-walk.svg",
+        "width": 576,
+        "height": 256,
+        "frames": 9,
+        "frameWidth": 64,
+        "frameHeight": 64,
+        "directionsUsed": [
+          "west",
+          "east"
+        ],
+        "source": "skeleton-left.png",
+        "license": "CC-BY-SA 3.0",
+        "credits": "credits/skeleton/CREDITS.txt",
+        "animation": "articulated side-facing walk"
+      }
     },
     {
       "id": "mage",

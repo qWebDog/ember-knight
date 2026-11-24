@@ -85,7 +85,7 @@ test('red dragon strikes the wolf with claws rather than fire',()=>{
  assert.equal(battle.state.enemyTargetId,'companion');
  const events=battle.advance(2.8,{enemyCanAttack:{dragon:true},orcCanAttack:true});
  assert.ok(events.some(e=>e.type==='attack'&&e.sourceId==='dragon'
-   &&e.targetId==='companion'&&e.projectile==='claw'&&e.damage===12));
+   &&e.targetId==='companion'&&e.projectile==='claw'&&e.damage===24));
  assert.equal(events.filter(e=>e.type==='cast'&&e.sourceId==='dragon').length,0);
 });
 test('published HTML mounts dragon before game, adds boss actor, and scales atlas without slicing 64px tiles',()=>{
@@ -93,7 +93,7 @@ test('published HTML mounts dragon before game, adds boss actor, and scales atla
  const game=fs.readFileSync(path.join(dist,'game.js'),'utf8');
  const css=fs.readFileSync(path.join(dist,'game.css'),'utf8');
  assert.ok(html.includes('src="dragon.js?v=dragon-open-mouth-5"'));
- assert.ok(html.indexOf('src="dragon.js?v=dragon-open-mouth-5"')<html.indexOf('src="game.js?v=mage-dual-1"'));
+ assert.ok(html.indexOf('src="dragon.js?v=dragon-open-mouth-5"')<html.indexOf('src="game.js?v=enemy-gait-balance-1"'));
  assert.ok(html.includes('data-fighter="dragon"'));
  assert.ok(html.includes('id="enemy-dragon"'));
  assert.ok(html.includes('1/4'));
