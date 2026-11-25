@@ -414,7 +414,7 @@ test('auto, dialogs and visibility freeze both battle motion and the intermissio
  const ui=createHarness();await ui.loadAllImages();ui.runFor(.4);
  ui.node('#auto-button').click();const paused=fullSnapshot(ui);ui.runFor(4);assert.deepEqual(fullSnapshot(ui),paused);
  ui.node('#auto-button').click();ui.runFor(.2);assert.ok(ui.heroX()>paused.actors[0].x);
- ui.node('#profile-button').click();const dialog=fullSnapshot(ui);ui.runFor(3);assert.deepEqual(fullSnapshot(ui),dialog);
+ ui.node('info:gold').click();const dialog=fullSnapshot(ui);ui.runFor(3);assert.deepEqual(fullSnapshot(ui),dialog);
  ui.node('#game-dialog').close();ui.runFor(.2);ui.document.hidden=true;ui.document.dispatch('visibilitychange');
  const hidden=fullSnapshot(ui);ui.runFor(4);assert.deepEqual(fullSnapshot(ui),hidden);
  ui.document.hidden=false;ui.document.dispatch('visibilitychange');ui.runUntil(()=>ui.state().phase==='intermission');
@@ -444,7 +444,7 @@ test('victory countdown uses active visible time and can be paused without block
  const ui=createHarness({weapon:'bow',outfit:'wanderer'});await ui.loadAllImages();ui.runUntil(()=>ui.state().phase==='victory');
  ui.node('#auto-button').click();const end=ui.state();ui.runFor(5);assert.equal(ui.runCount,1);assert.deepEqual(ui.state(),end);assert.equal(wallet(ui),20);
  assert.ok(ui.node('#result-copy').textContent.includes('паузе'));
- ui.node('#auto-button').click();ui.runFor(.3);ui.node('#profile-button').click();ui.runFor(5);assert.equal(ui.runCount,1);
+ ui.node('#auto-button').click();ui.runFor(.3);ui.node('info:gold').click();ui.runFor(5);assert.equal(ui.runCount,1);
  ui.node('#game-dialog').close();ui.runFor(.3);ui.document.hidden=true;ui.document.dispatch('visibilitychange');ui.runFor(5);assert.equal(ui.runCount,1);
  ui.document.hidden=false;ui.document.dispatch('visibilitychange');ui.runUntil(()=>ui.runCount===2,3);assert.equal(wallet(ui),20);assert.equal(ui.state().hero.hp,200);
 });
@@ -650,7 +650,7 @@ test('a single Mage animates both fire and ice spells with independent impact ti
 test('auto, dialog and hidden states freeze actual appearance, flight and impact canvases',async()=>{
  const ui=createHarness({weapon:'wand',outfit:'acolyte',magic:'ice'});await ui.loadAllImages();ui.runUntil(()=>ui.spells().length>0);const spell=ui.spells()[0];
  ui.node('#auto-button').click();const appearance=fullSnapshot(ui);ui.runFor(2);assert.deepEqual(fullSnapshot(ui),appearance);
- ui.node('#auto-button').click();runFramesUntil(ui,()=>spell.dataset.phase==='flight');ui.node('#profile-button').click();const flight=fullSnapshot(ui);ui.runFor(2);assert.deepEqual(fullSnapshot(ui),flight);
+ ui.node('#auto-button').click();runFramesUntil(ui,()=>spell.dataset.phase==='flight');ui.node('info:gold').click();const flight=fullSnapshot(ui);ui.runFor(2);assert.deepEqual(fullSnapshot(ui),flight);
  ui.node('#game-dialog').close();runFramesUntil(ui,()=>spell.dataset.phase==='impact');ui.document.hidden=true;ui.document.dispatch('visibilitychange');const impact=fullSnapshot(ui);ui.runFor(2);assert.deepEqual(fullSnapshot(ui),impact);
  ui.document.hidden=false;ui.document.dispatch('visibilitychange');runFramesUntil(ui,()=>!ui.spells().includes(spell));assertSpellCells(spell,'fire');
 });
@@ -658,7 +658,7 @@ test('auto, dialog and hidden states freeze actual appearance, flight and impact
 test('the winning impact finishes before automatic restart and manual replay clears remaining effects',async()=>{
  const ui=createHarness({weapon:'wand',outfit:'acolyte',magic:'ice'});await ui.loadAllImages();runFramesUntil(ui,()=>ui.state().phase==='victory',120);
  const state=ui.state(),events=ui.events.length,landed=ui.spells();assert.ok(landed.length>0);assert.ok(landed.every(element=>element.dataset.phase==='impact'));
- ui.node('#profile-button').click();const held=ui.spellState();ui.runFor(1);assert.deepEqual(ui.spellState(),held);ui.node('#game-dialog').close();
+ ui.node('info:gold').click();const held=ui.spellState();ui.runFor(1);assert.deepEqual(ui.spellState(),held);ui.node('#game-dialog').close();
  runFramesUntil(ui,()=>ui.spells().length===0,1);for(const spell of landed)assert.deepEqual([...new Set(spell.draws.filter(draw=>draw.crop[1]===128).map(draw=>draw.crop[0]/64))].sort((a,b)=>a-b),[0,1,2,3,4,5]);
  assert.deepEqual(ui.state(),state);assert.equal(ui.events.length,events);assert.equal(wallet(ui),20);assert.equal(ui.runCount,1);
  ui.runUntil(()=>!ui.node('#battle-result').hidden,2);ui.node('#replay-button').click();assert.equal(ui.runCount,2);assert.equal(ui.spells().length,0);assert.equal(wallet(ui),20);assert.equal(ui.state().hero.hp,200);
@@ -997,7 +997,7 @@ test('victory walks on before its result appears, while defeat stays still and r
 test('auto, modal and visibility pauses freeze walk-on, fade opacity and result reveal on the same active animation clock',async()=>{
  const ui=createHarness({weapon:'sword',outfit:'militia'});await ui.loadAllImages();ui.runUntil(()=>ui.state().phase==='intermission');ui.runFor(.7);
  assert.ok(sceneSnapshot(ui).opacity>0&&sceneSnapshot(ui).opacity<1);ui.node('#auto-button').click();const stopped=fullSnapshot(ui);ui.runFor(3);assert.deepEqual(fullSnapshot(ui),stopped);
- ui.node('#auto-button').click();ui.runFor(.1);ui.node('#profile-button').click();const modal=fullSnapshot(ui);ui.runFor(3);assert.deepEqual(fullSnapshot(ui),modal);
+ ui.node('#auto-button').click();ui.runFor(.1);ui.node('info:gold').click();const modal=fullSnapshot(ui);ui.runFor(3);assert.deepEqual(fullSnapshot(ui),modal);
  ui.node('#game-dialog').close();ui.runFor(.2);ui.document.hidden=true;ui.document.dispatch('visibilitychange');const hidden=fullSnapshot(ui);ui.runFor(3);assert.deepEqual(fullSnapshot(ui),hidden);
  ui.document.hidden=false;ui.document.dispatch('visibilitychange');runFramesUntil(ui,()=>ui.state().waveIndex===1,2);ui.runFor(.2);
  assert.equal(sceneSnapshot(ui).phase,'wave-in');assert.ok(sceneSnapshot(ui).opacity>0&&sceneSnapshot(ui).opacity<1);
@@ -1634,4 +1634,14 @@ test('Mage empty talent HUD is truthful; other classes keep their existing contr
  for(let i=0;i<3;i++)assert.equal(mage.node('#battle-talent-slot-'+i).dataset.empty,'true');
  const warrior=createHarness({weapon:'sword',outfit:'militia'});await warrior.loadAllImages();
  assert.equal(warrior.node('#battle-talents').hidden,true);assert.equal(warrior.node('#legacy-battle-abilities').hidden,false);
+});
+
+test('Hero profile opens without freezing battle and generic info still pauses it',async()=>{
+ const ui=createHarness();await ui.loadAllImages();ui.runFor(.2);
+ const before=fullSnapshot(ui);ui.node('#profile-button').click();
+ assert.equal(ui.node('#game-dialog').open,true);assert.equal(ui.node('#game-dialog').dataset.mode,'hero');
+ ui.runFor(.6);assert.notDeepEqual(fullSnapshot(ui),before);
+ ui.node('#game-dialog').close();ui.node('info:gold').click();
+ assert.equal(ui.node('#game-dialog').dataset.mode,'info');assert.equal(ui.node('#equipment-panel').hidden,true);
+ const held=fullSnapshot(ui);ui.runFor(.5);assert.deepEqual(fullSnapshot(ui),held);ui.node('#game-dialog').close();
 });

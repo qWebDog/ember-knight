@@ -169,7 +169,7 @@ test('actual game portrait hints afford swipes while allowing vertical scrolling
   assert.match(css,/\.equipment-portrait\{[^}]*touch-action:pan-y/);
   assert.match(css,/\.equipment-portrait canvas\{[^}]*image-rendering:pixelated/);
   assert.match(html,/equipment-ui\.js\?v=panel-selection-1/);
-  assert.match(html,/equipment\.css\?v=panel-selection-1/);
+  assert.match(html,/equipment\.css\?v=hero-equipment-1/);
   assert.match(source,/pointercancel/);
   assert.match(source,/lostpointercapture/);
 });

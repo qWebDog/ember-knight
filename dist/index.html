@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#14231f">
 <title>EMBER — Приключение</title><meta name="description" content="Твой путь начинается в Забытом лесу. EMBER — пиксельная idle RPG.">
-<link rel="stylesheet" href="game.css?v=talent-hud-1"><link rel="stylesheet" href="skills.css?v=mage-icons-1"><link rel="stylesheet" href="equipment.css?v=panel-selection-1"><script src="https://telegram.org/js/telegram-web-app.js"></script><script src="loadouts.js" defer></script><script src="progression.js?v=mage-talents-1" defer></script><script src="combat.js?v=mage-talents-1" defer></script><script src="skills-ui.js?v=panel-selection-1" defer></script><script src="equipment.js?v=wolf-ranger-combat-3" defer></script><script src="companion.js?v=wolf-flight-fix-3" defer></script><script src="sword-equipment.js" defer></script><script src="class-equipment.js?v=gear-dyes-1" defer></script><script src="equipment-art.js?v=gear-dyes-1" defer></script><script src="equipment-dye.js?v=gear-dyes-1" defer></script><script src="equipment-ui.js?v=panel-selection-1" defer></script><script src="dragon.js?v=dragon-open-mouth-5" defer></script><link rel="stylesheet" href="talents.css?v=talent-icons-1"><script src="talents-ui.js?v=talent-icons-1" defer></script><script src="game.js?v=panel-selection-1" defer></script>
+<link rel="stylesheet" href="game.css?v=talent-hud-1"><link rel="stylesheet" href="skills.css?v=mage-icons-1"><link rel="stylesheet" href="equipment.css?v=hero-equipment-1"><script src="https://telegram.org/js/telegram-web-app.js"></script><script src="loadouts.js" defer></script><script src="progression.js?v=mage-talents-1" defer></script><script src="combat.js?v=mage-talents-1" defer></script><script src="skills-ui.js?v=panel-selection-1" defer></script><script src="equipment.js?v=wolf-ranger-combat-3" defer></script><script src="companion.js?v=wolf-flight-fix-3" defer></script><script src="sword-equipment.js" defer></script><script src="class-equipment.js?v=gear-dyes-1" defer></script><script src="equipment-art.js?v=gear-dyes-1" defer></script><script src="equipment-dye.js?v=gear-dyes-1" defer></script><script src="equipment-ui.js?v=panel-selection-1" defer></script><script src="dragon.js?v=dragon-open-mouth-5" defer></script><link rel="stylesheet" href="talents.css?v=talent-icons-1"><script src="talents-ui.js?v=talent-icons-1" defer></script><script src="game.js?v=hero-equipment-1" defer></script>
 </head>
 <body>
 <svg class="svg-defs" xmlns="http://www.w3.org/2000/svg"><defs>
@@ -38,7 +38,7 @@
 <div class="battle-landscape" aria-hidden="true"></div><div class="landscape-shade" aria-hidden="true"></div>
 <div class="scene-fade" id="scene-fade" data-phase="" aria-hidden="true"></div>
 <header class="hud">
-<button class="profile" id="profile-button" aria-label="Профиль героя"><span class="avatar"><canvas id="avatar" width="32" height="32" aria-hidden="true"></canvas><span id="level-badge">1</span></span><span class="profile-info"><strong id="player-name">Странник</strong><span class="power"><svg><use href="#swords"/></svg><b>12</b><span>СИЛА</span></span></span></button>
+<button class="profile" id="profile-button" aria-haspopup="dialog" aria-label="Профиль и экипировка героя"><span class="avatar"><canvas id="avatar" width="32" height="32" aria-hidden="true"></canvas><span id="level-badge">1</span></span><span class="profile-info"><strong id="player-name">Странник</strong><span class="power"><svg><use href="#swords"/></svg><b>12</b><span>СИЛА</span></span></span></button>
 <div class="wallet"><button class="currency gold" data-info="gold" aria-label="Золото: 0"><svg><use href="#coin"/></svg><strong>0</strong><span class="currency-plus">+</span></button><button class="currency crystals" data-info="crystals" aria-label="Кристаллы: 0"><svg><use href="#gem"/></svg><strong>0</strong><span class="currency-plus">+</span></button></div>
 </header>
 <div class="stage-heading"><p>ЗАБЫТЫЙ ЛЕС · БИТВА 1–1</p><h1>Волна <span id="wave-number">1/4</span></h1><div class="stage-progress" aria-label="Первая из четырёх волн"><span class="progress-line"></span><span class="wave current"></span><span class="wave"></span><span class="wave"></span><span class="wave"></span></div></div>
@@ -82,12 +82,20 @@
     <div class="skill-detail-copy"><div class="skill-detail-meta"><span data-skill-category>Атака</span><span data-skill-rank>Уровень 0/5</span></div><h3 data-skill-name>Сила удара</h3><p data-skill-benefit>Следующий уровень: +2 к урону</p></div>
     <button type="button" class="skill-upgrade" id="skill-upgrade" data-upgrade="power" disabled><span data-skill-upgrade-label>Не хватает монет</span><span class="skill-price" data-skill-price-wrap><svg aria-hidden="true"><use href="#coin"/></svg><b data-skill-price>10</b></span></button>
   </div>
-  <nav class="skills-tabs" aria-label="Развитие героя"><button type="button" class="skills-tab is-active" data-skill-tab="skills" aria-current="page"><svg aria-hidden="true"><use href="#swords"/></svg><span>Навыки</span></button><button type="button" class="skills-tab" id="open-equipment-tab" data-skill-tab="equipment" aria-label="Открыть экипировку"><svg aria-hidden="true"><use href="#skill-shield"/></svg><span>Экипировка</span></button><button type="button" class="skills-tab" id="open-talents-tab" data-skill-tab="talents" disabled aria-label="Таланты — скоро"><svg aria-hidden="true"><use href="#bolt"/></svg><span>Таланты</span></button><button type="button" class="skills-tab" data-skill-tab="relics" disabled aria-label="Реликвии — скоро"><svg aria-hidden="true"><use href="#gem"/></svg><span>Реликвии</span></button></nav>
+  <nav class="skills-tabs" aria-label="Развитие героя"><button type="button" class="skills-tab is-active" data-skill-tab="skills" aria-current="page"><svg aria-hidden="true"><use href="#swords"/></svg><span>Навыки</span></button><button type="button" class="skills-tab" id="open-talents-tab" data-skill-tab="talents" disabled aria-label="Таланты — скоро"><svg aria-hidden="true"><use href="#bolt"/></svg><span>Таланты</span></button><button type="button" class="skills-tab" data-skill-tab="relics" disabled aria-label="Реликвии — скоро"><svg aria-hidden="true"><use href="#gem"/></svg><span>Реликвии</span></button></nav>
   <span class="sr-only" data-skill-message role="status" aria-live="polite"></span>
 </section>
 
+<section id="talents-panel" class="talents-panel" aria-label="Таланты мага" hidden>
+ <header class="talent-heading"><h2>Таланты мага</h2><span id="talent-points"></span></header>
+ <div class="talent-scroll"><div id="talent-slots" class="talent-slots"></div><p id="talent-pending" class="talent-note"></p><div class="talent-grid" id="talent-grid"></div></div>
+ <div class="talent-detail"><strong id="talent-name"></strong><p id="talent-description"></p><p id="talent-warning" class="talent-note" role="status"></p><div class="talent-actions"><button type="button" id="talent-action" hidden disabled></button><button type="button" id="talent-reset">Сброс · 100 зол.</button></div></div>
+ <nav class="skills-tabs" aria-label="Развитие героя"><button type="button" class="skills-tab" id="talent-skills-tab"><svg><use href="#swords"/></svg><span>Навыки</span></button><button type="button" class="skills-tab is-active" aria-current="page"><svg><use href="#mage-mana"/></svg><span>Таланты</span></button><button type="button" class="skills-tab" disabled><svg><use href="#gem"/></svg><span>Реликвии</span></button></nav>
+</section>
+</main>
+<dialog id="game-dialog" aria-labelledby="dialog-title"><button class="dialog-close" aria-label="Закрыть"><svg><use href="#close"/></svg></button><p class="dialog-eyebrow" id="dialog-eyebrow">EMBER</p><h2 id="dialog-title"></h2><p id="dialog-copy"></p>
 <section class="equipment-panel" id="equipment-panel" aria-label="Экипировка героя" hidden>
-  <header class="equipment-heading"><h2>Экипировка</h2><span class="equipment-class" data-equipment-class>ВОИН</span></header>
+  <header class="equipment-heading"><h3>Экипировка</h3><span class="equipment-class" data-equipment-class>ВОИН</span></header>
   <div class="equipment-dashboard">
     <div class="equipment-portrait" tabindex="0" role="group" aria-label="Поворот героя свайпом влево или вправо"><canvas id="equipment-preview" width="64" height="64" role="img" aria-label="Текущий облик героя спереди"></canvas><span class="equipment-rotate-hint" aria-hidden="true">↔ Повернуть</span></div>
     <div class="equipment-slots" role="group" aria-label="Отдельные слоты снаряжения">
@@ -103,22 +111,9 @@
     <div class="equipment-inventory-heading"><strong data-equipment-category>Шлем</strong><div class="equipment-dyes" id="equipment-dyes" role="group" aria-label="Цвет выбранного предмета" hidden></div></div>
     <div class="equipment-items" id="equipment-items" role="group" aria-label="Предметы выбранного слота"></div>
   </div>
-  <nav class="skills-tabs" aria-label="Развитие героя">
-    <button type="button" class="skills-tab" id="back-skills-tab" data-skill-tab="skills"><svg aria-hidden="true"><use href="#swords"/></svg><span>Навыки</span></button>
-    <button type="button" class="skills-tab is-active" data-skill-tab="equipment" aria-current="page"><svg aria-hidden="true"><use href="#skill-shield"/></svg><span>Экипировка</span></button>
-    <button type="button" class="skills-tab" id="gear-talents-tab" disabled aria-label="Таланты — скоро"><svg aria-hidden="true"><use href="#bolt"/></svg><span>Таланты</span></button>
-    <button type="button" class="skills-tab" disabled aria-label="Реликвии — скоро"><svg aria-hidden="true"><use href="#gem"/></svg><span>Реликвии</span></button>
-  </nav>
   <div class="equipment-unsupported" id="equipment-unsupported" hidden>В этой версии примерка доступна Воину. Экипировка Лучника и Мага появится позже.</div>
   <span data-equipment-message role="status" aria-live="polite"></span>
 </section>
-<section id="talents-panel" class="talents-panel" aria-label="Таланты мага" hidden>
- <header class="talent-heading"><h2>Таланты мага</h2><span id="talent-points"></span></header>
- <div class="talent-scroll"><div id="talent-slots" class="talent-slots"></div><p id="talent-pending" class="talent-note"></p><div class="talent-grid" id="talent-grid"></div></div>
- <div class="talent-detail"><strong id="talent-name"></strong><p id="talent-description"></p><p id="talent-warning" class="talent-note" role="status"></p><div class="talent-actions"><button type="button" id="talent-action" hidden disabled></button><button type="button" id="talent-reset">Сброс · 100 зол.</button></div></div>
- <nav class="skills-tabs" aria-label="Развитие героя"><button type="button" class="skills-tab" id="talent-skills-tab"><svg><use href="#swords"/></svg><span>Навыки</span></button><button type="button" class="skills-tab" id="talent-gear-tab"><svg><use href="#skill-shield"/></svg><span>Экипировка</span></button><button type="button" class="skills-tab is-active" aria-current="page"><svg><use href="#mage-mana"/></svg><span>Таланты</span></button><button type="button" class="skills-tab" disabled><svg><use href="#gem"/></svg><span>Реликвии</span></button></nav>
-</section>
-</main>
-<dialog id="game-dialog"><button class="dialog-close" aria-label="Закрыть"><svg><use href="#close"/></svg></button><p class="dialog-eyebrow" id="dialog-eyebrow">EMBER</p><h2 id="dialog-title"></h2><p id="dialog-copy"></p><a class="dialog-link" id="profile-link" href="create.html" hidden>Изменить облик</a><button class="dialog-action">Понятно</button><a id="sprite-credits" class="sprite-credits" href="assets/CREDITS.txt" target="_blank" rel="noopener" hidden>Авторы спрайтов LPC</a></dialog>
+<a class="dialog-link" id="profile-link" href="create.html" hidden>Изменить облик</a><button class="dialog-action">Понятно</button><a id="sprite-credits" class="sprite-credits" href="assets/CREDITS.txt" target="_blank" rel="noopener" hidden>Авторы спрайтов LPC</a></dialog>
 <div class="sr-only" role="status" id="status"></div>
 </body></html>

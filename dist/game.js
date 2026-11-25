@@ -5,6 +5,7 @@
   const skinNames = ['Светлый','Тёплый','Оливковый','Бронзовый','Смуглый','Тёмный'];
   const telegram = window.Telegram?.WebApp;
   const arena = $('.adventure'), battlefield = $('.battlefield'), dialog = $('#game-dialog');
+  const dialogPausesBattle=()=>dialog.open&&dialog.dataset.mode!=='hero';
   const autoButton = $('#auto-button'), resultPanel = $('#battle-result'), sceneFade = $('#scene-fade');
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   let character = null, auto = true, wallet = 0;
@@ -221,15 +222,14 @@
   let equipmentUI=null,talentUI=null;
   const talentPanel=$('#talents-panel');
   const showLowerPanel=mode=>{
-    $('#equipment-panel').hidden=mode!=='equipment';$('#skills-panel').hidden=mode!=='skills';
+    $('#skills-panel').hidden=mode!=='skills';
     if(talentPanel)talentPanel.hidden=mode!=='talents';
-    if(mode==='equipment')equipmentUI?.open();if(mode==='skills')skillUI?.open?.();if(mode==='talents')talentUI?.open();
+    if(mode==='skills')skillUI?.open?.();if(mode==='talents')talentUI?.open();
   };
   if(starterWeapon?.id==='wand'&&window.EmberTalentPanel&&talentPanel){
     talentUI=window.EmberTalentPanel.mount({root:talentPanel,store:progression,battle});
-    for(const id of ['open-talents-tab','gear-talents-tab']){const tab=$('#'+id);tab.disabled=false;tab.setAttribute('aria-label','Таланты');tab.addEventListener('click',()=>showLowerPanel('talents'));}
+    for(const id of ['open-talents-tab']){const tab=$('#'+id);tab.disabled=false;tab.setAttribute('aria-label','Таланты');tab.addEventListener('click',()=>showLowerPanel('talents'));}
     $('#talent-skills-tab').addEventListener('click',()=>showLowerPanel('skills'));
-    $('#talent-gear-tab').addEventListener('click',()=>showLowerPanel('equipment'));
   }
   const equipmentPanel=$('#equipment-panel'),skillsPanel=$('#skills-panel');
   if(equipment&&window.EmberEquipmentUI&&equipmentPanel&&skillsPanel){
@@ -274,8 +274,6 @@
         equipmentUI?.refreshPreview();
       }
     });
-    $('#open-equipment-tab')?.addEventListener('click',()=>showLowerPanel('equipment'));
-    $('#back-skills-tab')?.addEventListener('click',()=>showLowerPanel('skills'));
   }
   function loadImage(path) {
     return new Promise((resolve,reject) => { const image = new Image(); image.onload = () => resolve(image); image.onerror = () => reject(new Error(path)); image.src = path; });
@@ -374,7 +372,7 @@
   function updateControls() {
     const state = battle.getState(), ended = ['victory','defeat'].includes(state.phase);
     renderBattleTalents(state);
-    arena.classList.toggle('is-paused', !ready || !auto || dialog.open || document.hidden);
+    arena.classList.toggle('is-paused', !ready || !auto || dialogPausesBattle() || document.hidden);
     battlefield.classList.toggle('is-between-waves',state.phase==='intermission'||(state.phase==='paused'&&state.completedWaves>state.waveIndex));
     autoButton.disabled = !ready;
     autoButton.classList.toggle('active', auto);
@@ -428,7 +426,7 @@
     if(transition.phase==='victory'||transition.phase==='defeat')resultPanel.hidden=opacity<.85;
   }
   function syncPause() {
-    if (ready && auto && !document.hidden && !dialog.open) battle.resume(); else battle.pause();
+    if (ready && auto && !document.hidden && !dialogPausesBattle()) battle.resume(); else battle.pause();
     lastFrameTime = null; updateControls();
   }
   autoButton.addEventListener('click', () => {
@@ -1035,7 +1033,7 @@
     return usedTime;
   }
   function cueArrowShots(state){
-    if(!ready||!auto||dialog.open||document.hidden||reducedMotion.matches
+    if(!ready||!auto||dialogPausesBattle()||document.hidden||reducedMotion.matches
       ||heroEntrance||state.phase!=='running'
       ||sceneTransition&&sceneTransition.phase!=='wave-in')return;
     const shots=battle.getArrowSchedule?.()||[];
@@ -1354,7 +1352,7 @@
   function tick(timestamp) {
     if(lastFrameTime===null)lastFrameTime=timestamp;
     const dt=Math.min(.1,Math.max(0,(timestamp-lastFrameTime)/1000));lastFrameTime=timestamp;
-    if(ready&&auto&&!document.hidden&&!dialog.open){
+    if(ready&&auto&&!document.hidden&&!dialogPausesBattle()){
       // Advance visuals even while the combat simulation is held for entry.
       // Freeze this clock whenever automatic play, visibility or a modal
       // pauses the game, so bites remain synced to their actual frames.
@@ -1397,12 +1395,16 @@
     fire: () => ['УМЕНИЕ','Внутренний огонь','Откроется на 10 уровне. Сила, которую ещё предстоит пробудить.']
   };
   function openInfo(eyebrow,title,copy,profile=false) {
+    dialog.dataset.mode=profile?'hero':'info';
+    equipmentPanel.hidden=!profile||!equipmentUI;
     $('#dialog-eyebrow').textContent=eyebrow; $('#dialog-title').textContent=title; $('#dialog-copy').textContent=copy;
     const link=$('#profile-link'); link.hidden=!profile; link.textContent=character?'Изменить облик':'Создать героя';
     $('#sprite-credits').hidden=!profile;
-    if (!dialog.open) dialog.showModal(); syncPause();
+    if (!dialog.open) dialog.showModal();
+    if(profile)equipmentUI?.open();
+    syncPause();
   }
-  $('#profile-button').addEventListener('click', () => openInfo('ТВОЙ ГЕРОЙ',name,`Уровень ${level} · Сила ${battle.getState().hero.damage} · ${skinNames[skinIds.indexOf(skin)]} оттенок кожи. ${loadout ? `${starterWeapon.name} · наряд «${starterOutfit.name}», ${loadouts.color(loadout.outfitColor).name.toLowerCase()} цвет.${starterWeapon?.id==='wand'?' Магия: огонь и лёд.':''}` : 'Без класса, брони и оружия.'} Максимум здоровья: ${battle.getState().hero.maxHp}.`,true));
+  $('#profile-button').addEventListener('click', () => openInfo('ТВОЙ ГЕРОЙ',name,`Уровень ${starterWeapon?.id==='wand'?progression.getTalents().level:level} · Сила ${battle.getState().hero.damage} · ${skinNames[skinIds.indexOf(skin)]} оттенок кожи. ${loadout ? `${starterWeapon.name} · наряд «${starterOutfit.name}», ${loadouts.color(loadout.outfitColor).name.toLowerCase()} цвет.${starterWeapon?.id==='wand'?' Магия: огонь и лёд.':''}` : 'Без класса, брони и оружия.'} Максимум здоровья: ${battle.getState().hero.maxHp}.`,true));
   document.querySelectorAll('[data-info]').forEach(button=>button.addEventListener('click',()=>openInfo(...information[button.dataset.info]())));
   dialog.querySelectorAll('.dialog-close,.dialog-action').forEach(button=>button.addEventListener('click',()=>dialog.close()));
   dialog.addEventListener('close',syncPause);

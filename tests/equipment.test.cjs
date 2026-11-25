@@ -214,3 +214,5 @@ test('wolf is exclusive to Archer; legacy Warrior/Mage wolves cannot be equipped
  assert.equal(createStore({storage:mem,classId:'wand'}).getState().companion,'none');
  assert.equal(archer.equip('companion','dragon').reason,'invalid');
 });
+
+test('Equipment is inside the hero dialog and is no longer a lower navigation tab',()=>{const html=fs.readFileSync(path.join(dist,'index.html'),'utf8');const main=html.match(/<main[^>]*>[\s\S]*?<\/main>/)[0],dialog=html.match(/<dialog id="game-dialog"[^>]*>[\s\S]*?<\/dialog>/)[0];assert.doesNotMatch(main,/id="equipment-panel"|data-skill-tab="equipment"|id="talent-gear-tab"/);assert.match(dialog,/id="equipment-panel"/);assert.equal((dialog.match(/data-equipment-slot="/g)||[]).length,6);assert.doesNotMatch(dialog,/class="skills-tabs"/);});
