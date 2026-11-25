@@ -1554,3 +1554,27 @@ test('approved mage effect sheets are raster PNGs with real palette transparency
   assert.ok(transparent,skill+' contains transparent pixels');
  }
 });
+
+test('Mage resonance portal is in front of the caster and releases a delayed elemental echo',async()=>{
+ const ui=createHarness({weapon:'wand',outfit:'acolyte',magic:'fire',combatOptions:{heroDamage:1,heroMaxHp:10000,heroEchoRank:5}});
+ await ui.loadAllImages();
+ ui.runUntil(()=>ui.events.some(e=>e.type==='mageSkill'&&e.skill==='echo'),20);
+ const resonance=ui.events.find(e=>e.type==='mageSkill'&&e.skill==='echo');
+ const shot=ui.events.find(e=>e.type==='cast'&&e.echo);
+ const primary=ui.events.find(e=>e.type==='cast'&&e.castId+':echo'===shot.castId);
+ assert.ok(primary);assert.equal(shot.magic,primary.magic);
+ assert.ok(Math.abs(shot.at-(primary.at+primary.appearDuration+.18))<1e-7);
+ assert.ok(Math.abs(shot.impactAt-primary.impactAt-.18)<1e-7);
+ assert.equal(shot.appearDuration,0);assert.equal(shot.flightDuration,primary.flightDuration);
+ const field=ui.node('.battlefield');
+ const portal=field.children.find(el=>el.className==='mage-advanced-effect'&&el.dataset.skill==='echo');
+ const projectile=field.children.find(el=>el.className==='spell-projectile'&&el.dataset.echo==='true');
+ assert.ok(portal&&projectile);assert.equal(projectile.hidden,true);
+ const hero=ui.node('[data-fighter="hero"]').getBoundingClientRect(),bounds=field.getBoundingClientRect();
+ assert.ok(Math.abs(parseFloat(portal.style.left)-(hero.left+hero.width*.88-bounds.left))<1);
+ assert.ok(portal.draws.some(d=>d.src.endsWith('mage-echo.png')&&d.crop[2]===64));
+ ui.runUntil(()=>!projectile.hidden,2);
+ assert.equal(projectile.dataset.phase,'flight');
+ assert.ok(portal.draws.some(d=>d.crop[0]===192||d.crop[0]===256));
+ ui.runFor(.6);assert.ok(!field.children.includes(portal));
+});

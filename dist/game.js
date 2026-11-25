@@ -438,7 +438,7 @@
       :event.sourceId==='dragon'?'fire':'shadow';
     const element=document.createElement('canvas');
     element.width=64; element.height=64; element.className='spell-projectile';
-    element.dataset.magic=magic; if(event.shards)element.dataset.shards='true';if(event.echo){element.dataset.echo='true';element.style.opacity='.65';} element.dataset.source=event.sourceId; element.dataset.target=event.targetId;
+    element.dataset.magic=magic; if(event.shards)element.dataset.shards='true';if(event.echo){element.dataset.echo='true';element.hidden=true;element.style.visibility='hidden';} element.dataset.source=event.sourceId; element.dataset.target=event.targetId;
     if(event.breath&&event.sourceId==='dragon'){
       // Each pulse is one independent fire spell, exactly like a Mage orb,
       // spawned from the dragon's visible mouth rather than body centre.
@@ -447,7 +447,7 @@
     }
     element.setAttribute('aria-hidden','true'); battlefield.appendChild(element);
     effects.push({element,type:'spell',sourceId:event.sourceId,targetId:event.targetId,magic,image:event.shards&&mageEffects.shards?mageEffects.shards:spellImages[magic],shards:Boolean(event.shards&&mageEffects.shards),
-      castId:event.castId,at:event.at,impactAt:event.impactAt,appearDuration:event.appearDuration,
+      castId:event.castId,at:event.at,impactAt:event.impactAt,appearDuration:event.appearDuration,echo:Boolean(event.echo),
       flightDuration:event.flightDuration,impactDuration:event.impactDuration,
       duration:event.appearDuration+event.flightDuration+event.impactDuration,
       dragonVolley:Boolean(event.breath&&event.sourceId==='dragon'),
@@ -554,7 +554,10 @@
     const element=document.createElement('canvas');element.width=mageEffectTile;element.height=mageEffectTile;element.className='mage-advanced-effect';
     element.dataset.skill=event.skill;element.dataset.target=event.targetId;element.setAttribute('aria-hidden','true');
     battlefield.appendChild(element);
-    effects.push({type:'mage-advanced',element,row,sourceId:event.sourceId,targetId:event.targetId,at:event.at,duration:event.skill==='archmage'?.9:.6,lastKey:null});
+    const resonance=event.skill==='echo'&&Number.isFinite(event.echoReleaseAt);
+    effects.push({type:'mage-advanced',element,row,sourceId:event.sourceId,targetId:event.targetId,at:event.at,
+      resonance,releaseAt:event.releaseAt,echoReleaseAt:event.echoReleaseAt,
+      duration:resonance?event.echoReleaseAt-event.at+.24:event.skill==='archmage'?.9:.6,lastKey:null});
   }
   function handleEvents(events) {
     for (const event of events) {
@@ -1039,9 +1042,21 @@
       if (age+1e-6 >= effect.duration || reducedMotion.matches) { effect.element.remove(); effects.splice(i,1); continue; }
       if(effect.type==='mage-advanced'){
         const actor=actors[effect.targetId]?.element;if(!actor){effect.element.remove();effects.splice(i,1);continue;}
-        const bounds=actor.getBoundingClientRect(),frame=Math.min(5,Math.max(0,Math.floor(age/effect.duration*6)));
-        effect.element.style.left=(bounds.left+bounds.width/2-field.left)+'px';effect.element.style.top=(bounds.top+bounds.height/2-field.top)+'px';
-        effect.element.style.width=effect.element.style.height=(bounds.width*(effect.row===2?2.7:1.9))+'px';effect.element.dataset.frame=String(frame);
+        const bounds=actor.getBoundingClientRect();
+        let frame=Math.min(5,Math.max(0,Math.floor(age/effect.duration*6)));
+        if(effect.resonance){
+          // Align with the projectile origin at the tip of the Mage's weapon.
+          // Frame 2 is the primary release, frame 3 the actual echo release.
+          const release=effect.releaseAt-effect.at,echo=effect.echoReleaseAt-effect.at;
+          frame=age+1e-6<release?(age<release/2?0:1):age+1e-6<echo?2:3+Math.min(2,Math.max(0,Math.floor((age-echo+1e-6)/.08)));
+          effect.element.style.left=(bounds.left+bounds.width*.88-field.left)+'px';
+          effect.element.style.top=(bounds.top+bounds.height*.67-field.top)+'px';
+          effect.element.style.width=effect.element.style.height=(bounds.width*1.15)+'px';
+        }else{
+          effect.element.style.left=(bounds.left+bounds.width/2-field.left)+'px';effect.element.style.top=(bounds.top+bounds.height/2-field.top)+'px';
+          effect.element.style.width=effect.element.style.height=(bounds.width*(effect.row===2?2.7:1.9))+'px';
+        }
+        effect.element.dataset.frame=String(frame);
         if(effect.lastKey!==frame){const ctx=effect.element.getContext('2d');ctx.clearRect(0,0,mageEffectTile,mageEffectTile);ctx.imageSmoothingEnabled=false;ctx.drawImage(mageEffects.advanced[effect.row],frame*mageEffectTile,0,mageEffectTile,mageEffectTile,0,0,mageEffectTile,mageEffectTile);effect.lastKey=frame;}
         continue;
       }
@@ -1051,6 +1066,7 @@
         if(effect.lastKey!==frame){const ctx=effect.element.getContext('2d');ctx.clearRect(0,0,64,64);ctx.imageSmoothingEnabled=false;ctx.drawImage(mageEffects.impact,frame*64,row*64,64,64,0,0,64,64);effect.lastKey=frame;}
         continue;
       }
+      if(effect.echo){effect.element.hidden=age<0;effect.element.style.visibility=age<0?'hidden':'visible';if(age<0)continue;}
       if(effect.type==='arrow'&&age<0){effect.element.hidden=true;effect.element.style.visibility='hidden';continue;}
       if(effect.type==='arrow'){effect.element.hidden=false;effect.element.style.visibility='visible';}
       const sourceElement=effect.sourceId==='companion'?$('#companion-wolf'):actors[effect.sourceId]?.element;
