@@ -1508,3 +1508,14 @@ test('mage shield is rendered as separate actor-local overlay and shard spell us
  const ui=createHarness({weapon:'wand',outfit:'acolyte',combatOptions:{heroDamage:1,heroSphereRank:1,heroShardRank:1,heroBurnRank:1,heroMaxHp:1000}});await ui.loadAllImages();
  const hero=ui.node('[data-fighter="hero"]');assert.ok(hero.children.some(el=>el.className==='mage-sphere'));ui.runUntil(()=>ui.events.some(e=>e.type==='cast'&&e.shards),15);assert.ok(ui.spells().some(el=>el.dataset.shards==='true'));ui.runUntil(()=>ui.events.some(e=>e.type==='sphere'&&e.broken),20);assert.ok(hero.children.some(el=>el.className==='mage-sphere'&&Number(el.dataset.frame)>=8));ui.runFor(.7);assert.ok(!hero.children.some(el=>el.className==='mage-sphere'));
 });
+
+test('arcane sphere atlas has separate transparent durability and hit frames, and keeps centered layout',async()=>{
+ const ui=createHarness({weapon:'wand',outfit:'acolyte',combatOptions:{heroDamage:1,heroSphereRank:2,heroMaxHp:1000}});await ui.loadAllImages();
+ const hero=ui.node('[data-fighter="hero"]'),shield=()=>hero.children.find(el=>el.className==='mage-sphere');
+ assert.ok(ui.loadedPaths.includes('assets/magic/mage-sphere-v2.svg'));assert.equal(shield().width,128);assert.equal(shield().height,128);assert.ok(Number(shield().dataset.frame)<4);
+ ui.runUntil(()=>ui.events.some(e=>e.type==='sphere'),20);assert.ok(Number(shield().dataset.hitFrame)>=12);assert.ok(shield().draws.some(d=>d.crop[0]>=12*128));
+ ui.runUntil(()=>ui.state().hero.sphere.hp<=15,20);assert.ok(Number(shield().dataset.frame)>=4&&Number(shield().dataset.frame)<6);
+ ui.runUntil(()=>ui.state().hero.sphere.hp<=7,20);assert.ok(Number(shield().dataset.frame)>=6&&Number(shield().dataset.frame)<8);
+ ui.runUntil(()=>ui.events.some(e=>e.type==='sphere'&&e.broken),20);assert.ok(Number(shield().dataset.frame)>=8&&Number(shield().dataset.frame)<12);ui.runFor(.7);assert.ok(!shield());
+ const css=fs.readFileSync(path.join(dist,'game.css'),'utf8');assert.match(css,/canvas\.mage-sphere\{[^}]*width:150%;height:150%;left:-25%;top:-25%/);
+});
