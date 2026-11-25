@@ -31,6 +31,7 @@ function setup(classId='sword'){
   const document={createElement:node};
   const map={
     '#equipment-items':node(),
+    '.equipment-inventory':node(),
     '#equipment-preview':node('canvas'),
     '.equipment-portrait':node(),
     '[data-equipment-class]':node(),
@@ -80,7 +81,7 @@ function setup(classId='sword'){
     portrait.fire('pointerdown',{pointerId:id,isPrimary:true,pointerType:'touch',clientX:150,clientY:100});
     portrait.fire('pointerup',{pointerId:id,clientX:150+dx,clientY:100+dy});
   }
-  return {controller,canvas,portrait,store,slotNodes,items:map['#equipment-items'],swipe,
+  return {controller,canvas,portrait,store,slotNodes,items:map['#equipment-items'],inventory:map['.equipment-inventory'],swipe,
     poses:()=>overlayPoses,root,cleanup:()=>controller.destroy()};
 }
 
@@ -167,8 +168,8 @@ test('actual game portrait hints afford swipes while allowing vertical scrolling
   assert.match(html,/equipment-rotate-hint/);
   assert.match(css,/\.equipment-portrait\{[^}]*touch-action:pan-y/);
   assert.match(css,/\.equipment-portrait canvas\{[^}]*image-rendering:pixelated/);
-  assert.match(html,/equipment-ui\.js\?v=wolf-companion-1/);
-  assert.match(html,/equipment\.css\?v=wolf-animations-2/);
+  assert.match(html,/equipment-ui\.js\?v=panel-selection-1/);
+  assert.match(html,/equipment\.css\?v=panel-selection-1/);
   assert.match(source,/pointercancel/);
   assert.match(source,/lostpointercapture/);
 });
@@ -185,3 +186,5 @@ test('the sixth companion sector is selectable only for the Archer',()=>{
    h.cleanup();
  }
 });
+
+test('Equipment opens without a selected sector and preserves equipped items and portrait',()=>{for(const classId of ['sword','bow','wand']){const h=setup(classId);assert.equal(h.root.dataset.selected,'');assert.equal(h.items.children.length,0);assert.equal(h.inventory.hidden,true);assert.ok(h.slotNodes.every(n=>n.getAttribute('aria-pressed')==='false'));const before=h.store.getState();h.controller.select('armor');assert.equal(h.inventory.hidden,false);assert.ok(h.items.children.length>0);h.swipe(-43,0);h.controller.open();assert.equal(h.root.dataset.selected,'');assert.equal(h.items.children.length,0);assert.equal(h.inventory.hidden,true);assert.equal(h.controller.getDirection(),1);assert.deepEqual(h.store.getState(),before);h.cleanup();}});

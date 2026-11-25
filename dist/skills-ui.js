@@ -84,14 +84,14 @@
       });
     }
     const upgrade=$('#skill-upgrade');
-    let selected=activeIds[0],destroyed=false;
+    let selected=null,destroyed=false;
     const removers=[];
     function render() {
       if(destroyed)return;
-      const state=store.getState(),entry=activeDetails[selected],quote=store.quote(selected);
+      const state=store.getState(),entry=selected?activeDetails[selected]:null;
       $('[data-skill-gold]').textContent=String(state.gold);
       $('[data-skill-hero-level]').textContent=String(mage&&store.getTalents?store.getTalents().level:Number.isInteger(heroLevel)&&heroLevel>0?heroLevel:1);
-      root.dataset.selected=selected;root.dataset.ready='true';
+      root.dataset.selected=selected||'';root.dataset.ready='true';
       for(const node of nodes){
         const id=node.dataset.skillId,item=activeDetails[id];if(!item)continue;
         const rank=store.quote(id),active=id===selected;
@@ -104,6 +104,9 @@
         node.dataset.level=String(rank.level);
         node.querySelector('[data-skill-node-rank]').textContent=`${rank.level}/${rank.maxLevel}`;
       }
+      $('#skill-detail').hidden=!entry;
+      if(!entry){upgrade.disabled=true;upgrade.dataset.upgrade='';return;}
+      const quote=store.quote(selected);
       $('#skill-detail').dataset.branch=entry.branch;
       $('[data-skill-category]').textContent=entry.category;
       $('[data-skill-name]').textContent=entry.name;
@@ -118,6 +121,7 @@
       $('[data-skill-price]').textContent=quote.cost===null?'':String(quote.cost);
       upgrade.setAttribute('aria-label',quote.reason==='locked'?`Требуется ${requirementLabel(selected)}`:quote.reason==='max'?`${entry.name}: максимальный уровень`:`Улучшить ${entry.name} за ${quote.cost} монет${quote.canBuy?'':', не хватает монет'}`);
     }
+    function open(){if(destroyed)return;selected=null;$('[data-skill-message]').textContent='';render();}
     function select(id) {
       if(!Object.prototype.hasOwnProperty.call(activeDetails,id)||destroyed)return false;
       selected=id;render();return true;
@@ -125,7 +129,7 @@
     function listen(element,event,handler){element.addEventListener(event,handler);removers.push(()=>element.removeEventListener(event,handler));}
     for(const node of nodes)listen(node,'click',()=>select(node.dataset.skillId));
     listen(upgrade,'click',()=>{
-      if(destroyed)return;
+      if(destroyed||!selected)return;
       const result=store.purchase(selected);
       render();
       $('[data-skill-message]').textContent=result.ok?`${activeDetails[selected].name}: уровень ${store.quote(selected).level}. Потрачено ${result.spent} монет.`:result.reason==='storage'?'Не удалось сохранить улучшение. Попробуй ещё раз.':result.reason==='max'?'Навык уже улучшен до максимума.':'Недостаточно монет.';
@@ -136,7 +140,7 @@
     });
     const unsubscribe=store.subscribe(render);
     render();
-    return {render,select,destroy(){if(destroyed)return;destroyed=true;for(const remove of removers)remove();if(typeof unsubscribe==='function')unsubscribe();}};
+    return {render,select,open,destroy(){if(destroyed)return;destroyed=true;for(const remove of removers)remove();if(typeof unsubscribe==='function')unsubscribe();}};
   }
   return Object.freeze({mount});
 });

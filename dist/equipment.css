@@ -73,3 +73,9 @@
 .companion-item-wolf{display:block;width:32px;height:20px;flex:none;background:url('assets/companions/wolf.png') -160px -28px/320px 192px no-repeat;image-rendering:pixelated}
 .companion-item-empty{display:grid;place-items:center;width:30px;height:30px;flex:none;border:1px dashed #8d997e;border-radius:50%}
 .companion-item-empty:before{content:'×';font:600 22px/1 Arial,sans-serif;color:#9eaa98}
+
+.equipment-inventory[hidden]{display:none!important}
+@media (orientation:portrait),(min-height:601px){.equipment-panel[data-selected=""]{grid-template-rows:42px minmax(0,1fr) 42px}}
+@media(max-width:700px) and (orientation:portrait){.equipment-panel[data-selected=""]{grid-template-rows:32px minmax(0,1fr) 40px}}
+@media(orientation:portrait) and (max-height:700px){.equipment-panel[data-selected=""]{grid-template-rows:26px minmax(0,1fr) 31px}}
+@media(orientation:landscape) and (max-height:600px){.equipment-panel[data-selected=""] .equipment-dashboard{grid-column:1/-1;grid-template-columns:minmax(70px,25%) minmax(0,1fr)}}

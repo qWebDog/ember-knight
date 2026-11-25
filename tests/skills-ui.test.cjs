@@ -81,13 +81,13 @@ test('earned gold unlocks the correct purchase and rank, price and wallet restor
 });
 
 test('a maximum rank cannot charge again and locked future skills never change the save',()=>{
- const ui=createPanel({gold:1000,levels:{power:4}});assert.equal(ui.node('[data-skill-price]').textContent,'50');ui.upgrade();assert.equal(ui.store.getState().gold,950);assert.equal(ui.node('[data-skill-id="power"]').dataset.level,'5');assert.equal(ui.node('[data-skill-rank]').textContent,'Уровень 5/5');assert.match(ui.node('[data-skill-benefit]').textContent,/\+10 к урону · Максимум/);assert.equal(ui.node('#skill-upgrade').disabled,true);assert.equal(ui.node('[data-skill-price-wrap]').hidden,true);assert.equal(ui.node('[data-skill-upgrade-label]').textContent,'Максимум');
+ const ui=createPanel({gold:1000,levels:{power:4}});ui.clickSkill('power');assert.equal(ui.node('[data-skill-price]').textContent,'50');ui.upgrade();assert.equal(ui.store.getState().gold,950);assert.equal(ui.node('[data-skill-id="power"]').dataset.level,'5');assert.equal(ui.node('[data-skill-rank]').textContent,'Уровень 5/5');assert.match(ui.node('[data-skill-benefit]').textContent,/\+10 к урону · Максимум/);assert.equal(ui.node('#skill-upgrade').disabled,true);assert.equal(ui.node('[data-skill-price-wrap]').hidden,true);assert.equal(ui.node('[data-skill-upgrade-label]').textContent,'Максимум');
  const saved=ui.storage.get('ember.progress.v1');ui.upgrade();for(const node of ui.root.querySelectorAll('[data-skill-future]'))node.click();assert.equal(ui.storage.get('ember.progress.v1'),saved);assert.equal(ui.store.getState().gold,950);
 });
 
 test('failed storage keeps displayed coins and rank intact; destroying the panel removes subscriptions and handlers',()=>{
- const ui=createPanel({gold:20,blocked:true});assert.equal(ui.node('#skill-upgrade').disabled,false);ui.upgrade();assert.equal(ui.store.getState().gold,20);assert.equal(ui.store.getState().levels.power,0);assert.equal(ui.node('[data-skill-gold]').textContent,'20');assert.equal(ui.node('[data-skill-rank]').textContent,'Уровень 0/5');assert.match(ui.node('[data-skill-message]').textContent,/Не удалось сохранить/);assert.equal(JSON.parse(ui.storage.get('ember.progress.v1')).gold,20);
- const live=createPanel({gold:20});live.controller.destroy();live.controller.destroy();live.store.awardGold(5);assert.equal(live.node('[data-skill-gold]').textContent,'20');live.clickSkill('tempo');live.upgrade();assert.equal(live.root.dataset.selected,'power');assert.equal(live.store.getState().gold,25);assert.equal(live.store.getState().levels.power,0);assert.equal(live.controller.select('tempo'),false);
+ const ui=createPanel({gold:20,blocked:true});ui.clickSkill('power');assert.equal(ui.node('#skill-upgrade').disabled,false);ui.upgrade();assert.equal(ui.store.getState().gold,20);assert.equal(ui.store.getState().levels.power,0);assert.equal(ui.node('[data-skill-gold]').textContent,'20');assert.equal(ui.node('[data-skill-rank]').textContent,'Уровень 0/5');assert.match(ui.node('[data-skill-message]').textContent,/Не удалось сохранить/);assert.equal(JSON.parse(ui.storage.get('ember.progress.v1')).gold,20);
+ const live=createPanel({gold:20});live.controller.destroy();live.controller.destroy();live.store.awardGold(5);assert.equal(live.node('[data-skill-gold]').textContent,'20');live.clickSkill('tempo');live.upgrade();assert.equal(live.root.dataset.selected,'');assert.equal(live.store.getState().gold,25);assert.equal(live.store.getState().levels.power,0);assert.equal(live.controller.select('tempo'),false);
 });
 
 test('the panel stays in the lower viewport grid with compact portrait and landscape containment rules',()=>{
@@ -97,7 +97,7 @@ test('the panel stays in the lower viewport grid with compact portrait and lands
  assert.match(css,/@media\(max-width:700px\)/);assert.match(css,/@media\(orientation:portrait\) and \(max-height:700px\)/);assert.ok(/@media\(orientation:landscape\) and \(max-height:600px\)\{\s*\.skills-panel\{[^}]*grid-template-columns:minmax\(0,[\d.]+fr\) minmax\(0,[\d.]+fr\)/.test(css),'compact landscape must place the tree and detail in two flexible columns');assert.doesNotMatch(base,/overflow(?:-y)?:\s*(?:auto|scroll)/);const treeRules=[...css.matchAll(/\.skills-tree\{([^}]*)\}/g)].map(match=>match[1]).join(';');assert.match(treeRules,/overflow-y:auto/);assert.match(treeRules,/overflow-x:hidden/);assert.match(treeRules,/overscroll-behavior:contain/);
  const gameScript=html.search(/src="game\.js(?:\?[^"]*)?"/);
  assert.ok(gameScript>=0,'game script must be present');
- for(const dependency of ['progression.js?v=mage-talents-1','skills-ui.js?v=mage-talents-1']){
+ for(const dependency of ['progression.js?v=mage-talents-1','skills-ui.js?v=panel-selection-1']){
    const dependencyIndex=html.indexOf(`src="${dependency}"`);
    assert.ok(dependencyIndex>=0&&dependencyIndex<gameScript,
      'the dependencies must load before the game mounts the panel');
@@ -207,3 +207,5 @@ test('mage branch depth and parents match the progression catalog; only elements
   for(let i=0;i<ids.length-1;i++){ui.clickSkill(ids[i+1]);assert.equal(ui.node('#skill-upgrade').disabled,true);ui.clickSkill(ids[i]);for(let n=0;n<3;n++)ui.upgrade();ui.clickSkill(ids[i+1]);assert.equal(ui.node('#skill-upgrade').disabled,false);}
  }
 });
+
+test('All skill trees open unselected, keep ranks, and do not reselect on gold updates',()=>{for(const classId of ['sword','bow','wand']){const ui=createPanel({classId,gold:100});assert.equal(ui.root.dataset.selected,'');assert.equal(ui.node('#skill-detail').hidden,true);assert.equal(ui.node('#skill-upgrade').disabled,true);assert.equal(ui.root.querySelectorAll('[aria-pressed="true"]').length,0);const id=ui.store.catalog[0].id;ui.clickSkill(id);assert.equal(ui.node('#skill-detail').hidden,false);ui.upgrade();ui.controller.open();assert.equal(ui.root.dataset.selected,'');assert.equal(ui.node('#skill-detail').hidden,true);ui.store.awardGold(5);assert.equal(ui.root.dataset.selected,'');assert.equal(ui.store.quote(id).level,1);}});

@@ -69,3 +69,10 @@
 .skills-panel[data-hero-class="wand"] [data-skill-id="chaos"]{color:#ffc28a}
 .skills-panel[data-hero-class="wand"] .skill-future.is-locked:before{opacity:1}
 @media(max-width:700px){.skills-panel[data-hero-class="wand"] .skill-branch h3{font-size:12px;letter-spacing:0}}
+
+/* With no selection, the tree uses the space otherwise reserved for details. */
+.skill-detail[hidden]{display:none!important}
+@media (orientation:portrait),(min-height:601px){.skills-panel[data-selected=""]{grid-template-rows:44px minmax(0,1fr) 42px}}
+@media(max-width:700px) and (orientation:portrait){.skills-panel[data-selected=""]{grid-template-rows:44px minmax(0,1fr) 42px}}
+@media(orientation:portrait) and (max-height:700px){.skills-panel[data-selected=""]{grid-template-rows:24px minmax(0,1fr) 32px}}
+@media(orientation:landscape) and (max-height:600px){.skills-panel[data-selected=""] .skills-tree{grid-column:1/-1;max-width:850px}}
