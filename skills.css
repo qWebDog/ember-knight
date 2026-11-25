@@ -122,8 +122,6 @@
 .skills-panel[data-hero-class="bow"] .skill-branch{min-height:258px}
 .skills-panel[data-hero-class="bow"] .skill-children{grid-template-rows:repeat(4,36px)}
 .skills-panel[data-hero-class="bow"] .skill-future[data-skill-depth="4"]{grid-row:4}
-.skills-panel[data-hero-class="bow"] [data-skill-id="piercing"],.skills-panel[data-hero-class="bow"] [data-skill-id="explosive"]{grid-column:1!important}
-.skills-panel[data-hero-class="bow"] [data-skill-id="poison"],.skills-panel[data-hero-class="bow"] [data-skill-id="barbed"]{grid-column:2!important}
 .skills-panel[data-hero-class="bow"] [data-branch="attack"] .skill-children:before{top:84px}
 
 .skill-future[data-archer-slot][hidden]{display:none!important}
@@ -150,15 +148,16 @@
 .skills-panel[data-hero-class="bow"] [data-skill-id="barbed"] svg use,
 .skills-panel[data-hero-class="bow"][data-selected="barbed"] .skill-detail-icon svg use{opacity:0}
 
-/* Marksmanship V opens all four independent arrow types. */
-.skills-panel[data-hero-class="bow"] [data-branch="attack"] .skill-fork{visibility:visible}
-.skills-panel[data-hero-class="bow"] [data-branch="attack"] [data-skill-depth="0"].skill-future:before{display:none}
-.skills-panel[data-hero-class="bow"] [data-skill-id="piercing"],.skills-panel[data-hero-class="bow"] [data-skill-id="poison"]{grid-row:1}
-.skills-panel[data-hero-class="bow"] [data-skill-id="explosive"],.skills-panel[data-hero-class="bow"] [data-skill-id="barbed"]{grid-row:2}
-.skills-panel[data-hero-class="bow"] [data-skill-id="doubleShot"]{grid-row:3}
-.skills-panel[data-hero-class="bow"] [data-skill-id="arrowRain"]{grid-row:4}
-.skills-panel[data-hero-class="bow"] [data-branch="attack"] [data-skill-id="doubleShot"]:before{display:block;height:6px}
-.skills-panel[data-hero-class="bow"] [data-branch="attack"] [data-skill-id="arrowRain"]:before{display:block}
-
-/* The second visual row is also unlocked directly by Marksmanship V, not by the first arrow row. */
-.skills-panel[data-hero-class="bow"] [data-skill-id="explosive"]:before,.skills-panel[data-hero-class="bow"] [data-skill-id="barbed"]:before{display:none}
+/* Archer: one shared gate, four independent arrow slots, any two rank III unlock Double Shot. */
+.skills-panel[data-hero-class="bow"] [data-branch="attack"] .skill-fork{width:50%;visibility:visible;border-bottom:0}
+.skills-panel[data-hero-class="bow"] [data-branch="attack"] .skill-children{grid-template-areas:"piercing poison" "explosive barbed" "doubleShot doubleShot" "arrowRain arrowRain";grid-template-rows:repeat(4,36px);background:linear-gradient(var(--branch),var(--branch)) center top/1px 48px no-repeat,linear-gradient(var(--branch),var(--branch)) center 0/50% 1px no-repeat,linear-gradient(var(--branch),var(--branch)) center 48px/50% 1px no-repeat}
+.skills-panel[data-hero-class="bow"] [data-branch="attack"] .skill-children:before{top:84px;height:12px;border-top:0}
+.skills-panel[data-hero-class="bow"] [data-branch="attack"] .skill-future[data-arrow-slot]{width:34px;height:30px}
+.skills-panel[data-hero-class="bow"] [data-branch="attack"] .skill-future[data-arrow-slot="1"]{grid-area:piercing!important}
+.skills-panel[data-hero-class="bow"] [data-branch="attack"] .skill-future[data-arrow-slot="2"]{grid-area:poison!important}
+.skills-panel[data-hero-class="bow"] [data-branch="attack"] .skill-future[data-arrow-slot="3"]{grid-area:explosive!important}
+.skills-panel[data-hero-class="bow"] [data-branch="attack"] .skill-future[data-arrow-slot="4"]{grid-area:barbed!important}
+.skills-panel[data-hero-class="bow"] [data-branch="attack"] .skill-future[data-arrow-slot="5"]{grid-area:doubleShot!important}
+.skills-panel[data-hero-class="bow"] [data-branch="attack"] .skill-future[data-arrow-slot="6"]{grid-area:arrowRain!important}
+.skills-panel[data-hero-class="bow"] [data-branch="attack"] .skill-future[data-arrow-slot="5"]:before{display:block;height:12px}
+.skills-panel[data-hero-class="bow"] [data-branch="attack"] .skill-future[data-arrow-slot="6"]:before{display:block;height:12px}
