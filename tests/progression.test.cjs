@@ -197,7 +197,7 @@ test('Archer branch purchases change arrow stats and never borrow Warrior or Mag
  const saved={version:1,gold:200,levels:{power:4,vitality:3,tempo:2},mageLevels:{sorcery:2,barrier:2,channel:2}};
  const storage=memoryStorage({[storageKey]:JSON.stringify(saved)});
  const archer=createStore({storage,classId:'bow'});
- assert.equal(archer.catalog.length,15);assert.equal(archer.quote('piercing').reason,'locked');
+ assert.equal(archer.catalog.length,15);assert.equal(archer.quote('piercing').canBuy,true);
  assert.deepEqual(archer.getStats(),{heroDamage:12,heroMaxHp:200,heroAttackSpeed:1});
  assert.equal(archer.quote('power').reason,'unknown');
  assert.equal(archer.quote('sorcery').reason,'unknown');
@@ -244,3 +244,5 @@ test('all advanced mage ranks persist, and old shard purchases survive migration
 });
 
 test('Archer arrow prerequisites require both branches at rank III, old endurance is preserved',()=>{const storage=memoryStorage({[storageKey]:JSON.stringify({version:1,gold:1000,levels:{},archerLevels:{marksmanship:3,endurance:2,piercing:3,poison:3,explosive:3,barbed:2}})});const a=createStore({storage,classId:'bow'});assert.equal(a.getStats().heroMaxHp,240);assert.equal(a.quote('doubleShot').reason,'locked');assert.equal(a.purchase('barbed').ok,true);assert.equal(a.quote('doubleShot').canBuy,true);});
+
+test('Each of the four Archer arrow types is independently available and upgradeable to V from a fresh save',()=>{for(const id of ['piercing','poison','explosive','barbed']){const storage=memoryStorage({[storageKey]:JSON.stringify({version:1,gold:1000,levels:{}})});const a=createStore({storage,classId:'bow'});assert.equal(a.quote(id).cost,20);for(let n=1;n<=5;n++){assert.equal(a.purchase(id).ok,true);assert.equal(a.quote(id).level,n);}assert.equal(a.quote(id).reason,'max');assert.equal(a.quote('marksmanship').level,0);for(const other of ['piercing','poison','explosive','barbed'].filter(x=>x!==id))assert.equal(a.quote(other).level,0);assert.equal(a.getStats()['archer_'+id],5);assert.equal(a.getState().gold,800);assert.equal(createStore({storage,classId:'bow'}).quote(id).level,5);assert.equal(a.quote('guardian').reason,'locked');assert.equal(a.quote('retreat').reason,'locked');}});
