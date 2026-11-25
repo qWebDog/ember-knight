@@ -147,7 +147,7 @@
       const target = enemies.find(enemy => enemy.hp > 0);
       const waiting = phase === 'intermission' || (phase === 'paused' && pausedFrom === 'intermission');
       return {
-        ...(mage?{activeTalents:[...activeTalents]}:{}),...(archer&&archerRanks.alpha?{wolfAttackSpeed:elapsed<roarUntil?1+.1*archerRanks.alpha:1}:{}),...(archer?{archerEffects:{dance:elapsed<danceUntil,roar:companionEnabled&&companion?.hp>0&&elapsed<roarUntil}}:{}),phase, elapsed:elapsed / TICKS, hero:{...hero,...(sphere?{sphere:{...sphere}}:{})},
+        ...(mage?{activeTalents:[...activeTalents]}:{}),...(archer&&archerRanks.alpha?{wolfAttackSpeed:elapsed<roarUntil?1+.1*archerRanks.alpha:1}:{}),...(archer&&(archerRanks.arrowDance||archerRanks.alpha)?{archerEffects:{dance:elapsed<danceUntil,roar:companionEnabled&&companion?.hp>0&&elapsed<roarUntil}}:{}),phase, elapsed:elapsed / TICKS, hero:{...hero,...(sphere?{sphere:{...sphere}}:{})},
         companion:companionEnabled?{...companion,alive:companion.hp>0}:null,
         enemyTargetId:currentEnemyTarget().id,
         enemies:enemies.map(({arrowDots,...enemy}) => ({...enemy,status:enemy.status ? {type:enemy.status.type,startedAt:enemy.status.startedAt/TICKS,endsAt:enemy.status.endsAt/TICKS,...(enemy.status.enhanced?{enhanced:true}:{})} : null,alive:enemy.hp > 0})),
