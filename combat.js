@@ -67,8 +67,12 @@
         ['fire','ice'].includes(options.heroMagic)?options.heroMagic:'fire'
     };
     const mage=options.heroWeapon==='wand'&&config.projectile==='magic';
+    const archer=options.heroWeapon==='bow'&&config.projectile==='arrow';
     const rank=value=>Number.isFinite(value)?Math.max(0,Math.min(5,Math.floor(value))):0;
     let burnRank=mage?rank(options.heroBurnRank):0,sphereRank=mage?rank(options.heroSphereRank):0,shardRank=mage?rank(options.heroShardRank):0;
+    const archerRanks=Object.fromEntries(["piercing","poison","explosive","barbed","doubleShot","arrowRain","rendingBite","guardian","alpha","evasion","retreat","arrowDance","wolfBond"].map(id=>[id,archer?rank(options['archer_'+id]):0]));
+    let arrowMeters={},arrowQueue=[],shotCount=0,rainLeft=0,rainAt=0,dodgeMeter=0,retreatAt=0,danceAt=0,danceUntil=0,wolfBites=0,wolfReviveAt=Infinity,roarUntil=0,roarAt=0;
+    const wolfMax=()=>positive(options.companionMaxHp,WOLF_MAX_HP)*(1+.15*archerRanks.wolfBond);
     const advancedKeys=["heroFusionRank","heroChaosRank","heroAbsorptionRank","heroRebirthRank","heroEchoRank","heroOverloadRank","heroArchmageRank"];
     const advanced=Object.fromEntries(advancedKeys.map(key=>[key,mage?rank(options[key]):0]));
     let echoMeter=0,overloadMeter=0,archCount=0,archRemaining=0,reactionCount=0,rebirthUsed=false;
@@ -118,10 +122,10 @@
       const target = enemies.find(enemy => enemy.hp > 0);
       const waiting = phase === 'intermission' || (phase === 'paused' && pausedFrom === 'intermission');
       return {
-        ...(mage?{activeTalents:[...activeTalents]}:{}),phase, elapsed:elapsed / TICKS, hero:{...hero,...(sphere?{sphere:{...sphere}}:{})},
+        ...(mage?{activeTalents:[...activeTalents]}:{}),...(archer&&archerRanks.alpha?{wolfAttackSpeed:elapsed<roarUntil?1+.1*archerRanks.alpha:1}:{}),phase, elapsed:elapsed / TICKS, hero:{...hero,...(sphere?{sphere:{...sphere}}:{})},
         companion:companionEnabled?{...companion,alive:companion.hp>0}:null,
         enemyTargetId:currentEnemyTarget().id,
-        enemies:enemies.map(enemy => ({...enemy,status:enemy.status ? {type:enemy.status.type,startedAt:enemy.status.startedAt/TICKS,endsAt:enemy.status.endsAt/TICKS,...(enemy.status.enhanced?{enhanced:true}:{})} : null,alive:enemy.hp > 0})),
+        enemies:enemies.map(({arrowDots,...enemy}) => ({...enemy,status:enemy.status ? {type:enemy.status.type,startedAt:enemy.status.startedAt/TICKS,endsAt:enemy.status.endsAt/TICKS,...(enemy.status.enhanced?{enhanced:true}:{})} : null,alive:enemy.hp > 0})),
         targetId:target ? target.id : null,
         waveIndex,waveNumber:waveIndex+1,waveCount:activeWaves.length,completedWaves,
         defeatedCount,totalDefeated:defeatedCount,totalEnemies:activeTotalEnemies,reward,
@@ -141,7 +145,8 @@
       hero = {id:'hero',name:config.name,hp:config.maxHp,maxHp:config.maxHp,damage:config.damage,attackSpeed:config.attackSpeed};
       echoMeter=overloadMeter=archCount=archRemaining=reactionCount=echoCount=chaosCount=0;rebirthUsed=false;immuneUntil=0;powerCharged=false;
       sphere=sphereRank?{hp:sphereCapacity(),maxHp:sphereCapacity(),brokenAt:null}:null;
-      const maxHp=positive(options.companionMaxHp,WOLF_MAX_HP);
+      arrowMeters={};arrowQueue=[];shotCount=rainLeft=dodgeMeter=wolfBites=0;rainAt=archerRanks.arrowRain?(33-3*archerRanks.arrowRain)*TICKS:0;retreatAt=0;danceAt=20*TICKS;danceUntil=0;wolfReviveAt=Infinity;roarUntil=0;roarAt=0;
+      const maxHp=wolfMax();
       companion={id:'companion',name:'Боевой волк',hp:companionEnabled?maxHp:0,maxHp};
       companionEverSummoned=companionEnabled;
       spawnWave(0);
@@ -192,13 +197,14 @@
         ||!Number.isFinite(baseDamage)||baseDamage<=0)return events;
       const target=enemies.find(enemy=>enemy.id===targetId&&enemy.hp>0);
       if(!target)return events;
-      const damage=Math.max(1,Math.floor(baseDamage-target.armor));
+      const damage=Math.max(1,Math.floor(baseDamage*(1+.1*archerRanks.wolfBond)-target.armor));
+      if(archerRanks.rendingBite&&++wolfBites%3===0){target.arrowDots??=[];target.arrowDots.push({type:'wolfBleed',sourceId:'companion',damage:Math.max(1,damage*(.2+.1*archerRanks.rendingBite)),at:elapsed+TICKS,left:4});}
       target.hp=Math.max(0,target.hp-damage);
       const at=elapsed/TICKS;
       events.push({type:'attack',sourceId:'companion',targetId:target.id,
         damage,hp:target.hp,at,projectile:'bite',animationDuration:5/12});
       if(target.hp!==0)return events;
-      defeatedCount++;reward+=KILL_REWARD;target.status=null;
+      defeatedCount++;reward+=KILL_REWARD;target.status=null;target.arrowDots=[];
       pendingCounters=pendingCounters.filter(counter=>counter.targetId!==target.id);
       pendingImpacts=pendingImpacts.filter(impact=>
         impact.targetId!==target.id
@@ -221,6 +227,7 @@
     }
     function updateHeroStats(stats = {}) {
       const oldSpeed = config.attackSpeed;
+      if(archer){for(const key of Object.keys(archerRanks))if(stats['archer_'+key]!==undefined)archerRanks[key]=rank(stats['archer_'+key]);companion.maxHp=wolfMax();companion.hp=Math.min(companion.hp,companion.maxHp);}
       if(mage){
         for(const key of advancedKeys)if(stats[key]!==undefined)advanced[key]=rank(stats[key]);
         if(stats.heroBurnRank!==undefined)burnRank=rank(stats.heroBurnRank);
@@ -277,6 +284,11 @@
       }
       function hit(sourceId,target,damage,projectile,metadata) {
         let reflected=0;
+        if(archer&&sourceId!=='hero'&&sourceId!=='companion'&&damage>0){
+          if(target.id==='companion'&&archerRanks.guardian)damage*=1-(.05+.05*archerRanks.guardian);
+          if(elapsed<roarUntil)damage*=1-.05*archerRanks.alpha;
+          if(target.id==='hero'&&!metadata?.dot){dodgeMeter+=archerRanks.evasion*5+(elapsed<danceUntil?10:0);if(dodgeMeter>=100){dodgeMeter-=100;damage=0;events.push({type:'archerSkill',skill:'evasion',sourceId,targetId:'hero',at:elapsed/TICKS});}}
+        }
         if(target.id==='hero'&&elapsed<immuneUntil)damage=0;
         if(target.id==='hero'&&sphere?.hp>0&&damage>0){
           const absorbed=Math.min(sphere.hp,damage);sphere.hp-=absorbed;damage-=absorbed;
@@ -296,6 +308,8 @@
         events.push({type:'attack',sourceId,targetId:target.id,damage,hp:target.hp,at:elapsed/TICKS,projectile,...metadata});
         if (target.hp === 0) {
           const enemy = target.id !== 'hero' && target.id !== 'companion';
+          if(target.id==='companion'&&archerRanks.alpha)wolfReviveAt=elapsed+(24-2*archerRanks.alpha)*TICKS;
+          if(enemy)target.arrowDots=[];
           if (enemy) { const wasBurning=target.status?.type==='burn';defeatedCount++; reward += KILL_REWARD; target.status = null;
             if(sourceId==='hero'&&hasTalent('vampirism'))hero.hp=Math.min(hero.maxHp,hero.hp+hero.maxHp*.05);
             if(sourceId==='hero'&&hasTalent('ash')&&wasBurning){const neighbor=nearby(target).find(e=>e.hp>0);if(neighbor)applyStatus(neighbor,'fire');}
@@ -330,6 +344,33 @@
         else { phase = 'intermission'; nextWaveAt = elapsed + INTERMISSION; }
       }
       function nearby(target){const ids=availability?.nearbyEnemies?.[target.id]||[];return ids.map(id=>enemies.find(e=>e.id===id)).filter(e=>e&&e.id!==target.id&&e.hp>0);}
+      function chooseArrow(){
+        for(const id of ['piercing','poison','explosive','barbed']){
+          const r=archerRanks[id];if(!r)continue;
+          arrowMeters[id]=(arrowMeters[id]||0)+1;
+          if(arrowMeters[id]>=12-2*r){arrowMeters[id]=0;if(!arrowQueue.includes(id))arrowQueue.push(id);}
+        }
+        return arrowQueue.shift()||'normal';
+      }
+      function archerArrow(target,damage,kind,metadata){
+        if(!target||target.hp<=0)return;
+        const r=archerRanks[kind]||0;
+        const armor=kind==='piercing'?target.armor*(1-(.1+.1*r)):target.armor;
+        const dealt=Math.max(1,damage-armor);
+        hit('hero',target,dealt,'arrow',{...metadata,...(kind==='normal'?{}:{arrowType:kind})});
+        if(kind==='piercing'){
+          const others=(availability?.nearbyEnemies?nearby(target):enemies.filter(e=>e!==target&&e.hp>0)).slice(0,2);
+          others.forEach((e,i)=>{if(e.hp>0)hit('hero',e,dealt*Math.pow(.75,i+1),'arrow',{arrowType:kind,dot:true});});
+        }
+        if(kind==='explosive')for(const e of nearby(target))if(e.hp>0)hit('hero',e,damage*(.3+.1*r),'arrow',{arrowType:kind,dot:true});
+        if(target.hp>0&&['poison','barbed'].includes(kind)){
+          target.arrowDots??=[];
+          const existing=target.arrowDots.filter(x=>x.type===kind);
+          const value=kind==='poison'?damage*(.05+.05*r):target.maxHp*(.0025+.0025*r);
+          const dot={type:kind,sourceId:'hero',damage:kind==='barbed'&&target.type==='dragon'?Math.min(value,damage*.3):value,at:elapsed+TICKS,left:kind==='poison'?5:4};
+          if(existing.length>=(kind==='poison'?3:1))Object.assign(existing[0],dot);else target.arrowDots.push(dot);
+        }
+      }
       function applyStatus(target,magic) {
         if(magic==='fire'&&hasTalent('permafrost')&&target.status?.type==='freeze'&&target.status.endsAt>elapsed)return;
         const type = magic === 'fire' ? 'burn' : 'freeze';
@@ -434,13 +475,17 @@
             if(enemy.type==='orc'&&availability?.immediateOrcContact===true&&!orcHasAttacked)nextEnemies[index]=elapsed;
             next = Math.min(next,nextEnemies[index]);
           }
+          for(const dot of enemy.arrowDots||[])next=Math.min(next,dot.at);
           if (enemy.status) {
             next = Math.min(next,enemy.status.endsAt);
             if (enemy.status.type === 'burn') next = Math.min(next,enemy.status.nextTick);
           }
         });
+        if(archer&&companionEnabled&&companion.hp<=0&&archerRanks.alpha)next=Math.min(next,Math.max(elapsed,wolfReviveAt));
         if (next > until) break;
         advanceClock(next);
+        if(archer&&companionEnabled&&companion.hp<=0&&wolfReviveAt<=elapsed&&archerRanks.alpha){companion.hp=companion.maxHp;wolfReviveAt=Infinity;events.push({type:'archerSkill',skill:'wolfRevive',sourceId:'companion',targetId:'companion',at:elapsed/TICKS});}
+        if(archer&&companionEnabled&&companion.hp>0&&archerRanks.alpha&&elapsed>=roarAt){roarUntil=elapsed+5*TICKS;roarAt=elapsed+20*TICKS;events.push({type:'archerSkill',skill:'roar',sourceId:'companion',targetId:'companion',at:elapsed/TICKS});}
         if(hasTalent('regeneration')&&sphere?.hp>0&&sphere.hp<sphere.maxHp&&regenAt===next){sphere.hp=Math.min(sphere.maxHp,sphere.hp+sphere.maxHp*.05);regenAt=elapsed+TICKS;}
         // Ties: hero action, counters, existing status ticks/expiry, impacts, then enemies.
         if (heroCanAttack && nextHero === next) {
@@ -451,8 +496,16 @@
           // an extra attack nor a manual skill toggle is introduced.
           const element=config.magic==='both'
             ?(mageCastIndex++%2===0?'fire':'ice'):config.magic;
-          const interval = config.projectile === 'magic' ? cast('hero',target,Math.max(1,damage-target.armor),element) : heroTicks(HERO_INTERVAL);
-          if (config.projectile !== 'magic') hit('hero',target,Math.max(1,damage-target.armor),config.projectile,metadata);
+          let interval = config.projectile === 'magic' ? cast('hero',target,Math.max(1,damage-target.armor),element) : heroTicks(HERO_INTERVAL);
+          if(archer){
+            if(archerRanks.arrowDance&&elapsed>=danceAt){danceUntil=elapsed+5*TICKS;danceAt=elapsed+20*TICKS;events.push({type:'archerSkill',skill:'arrowDance',sourceId:'hero',targetId:'hero',at:elapsed/TICKS});}
+            if(archerRanks.arrowRain&&!rainLeft&&elapsed>=rainAt){rainLeft=4+archerRanks.arrowRain;rainAt=elapsed+(33-3*archerRanks.arrowRain)*TICKS;}
+            const kind=chooseArrow();shotCount++;
+            archerArrow(target,damage,kind,metadata);
+            if(archerRanks.doubleShot&&shotCount%(14-2*archerRanks.doubleShot)===0){const other=target.hp>0?target:enemies.find(e=>e.hp>0);archerArrow(other,damage*.6,kind,{...metadata,extraArrow:true});}
+            if(rainLeft>0){rainLeft--;if(rainLeft>0)interval=Math.max(1,heroTicks(.9*TICKS));}
+            if(elapsed<danceUntil)interval=Math.max(1,Math.round(interval/(1+.05*archerRanks.arrowDance)));
+          }else if (config.projectile !== 'magic') hit('hero',target,Math.max(1,damage-target.armor),config.projectile,metadata);
           if (sword) {
             heroBusyUntil = elapsed + heroTicks(step.animationDuration*TICKS);
             comboIndex = (comboIndex+1) % swordSteps.length; nextHero += heroTicks(swordSteps[comboIndex].interval);
@@ -470,6 +523,7 @@
         // Resolve the previous burn tick before a same-tick impact refreshes it;
         // the second tick also lands before the effect expires at exactly .5 s.
         for (const enemy of enemies) {
+          if(enemy.hp>0){for(const dot of [...(enemy.arrowDots||[])])if(dot.at===next&&enemy.hp>0){hit(dot.sourceId,enemy,dot.damage,'arrow',{dot:true,arrowType:dot.type});dot.left--;dot.at+=TICKS;}enemy.arrowDots=(enemy.arrowDots||[]).filter(dot=>dot.left>0);if(enemies.every(e=>e.hp===0)){clearWave();break;}}
           const status = enemy.status;
           if (!status || enemy.hp <= 0) continue;
           if (status.type === 'burn' && status.nextTick === next) {
@@ -515,6 +569,7 @@
           const defender=currentEnemyTarget();
           if(enemy.type==='orc')orcHasAttacked=true;
           let damage = enemy.damage,blocked = false;
+          if(archer&&defender.id==='hero'&&enemy.projectile==='melee'&&archerRanks.retreat&&elapsed>=retreatAt&&availability?.heroCanRetreat!==false){retreatAt=elapsed+(14-2*archerRanks.retreat)*TICKS*(elapsed<danceUntil?.5:1);events.push({type:'archerSkill',skill:'retreat',sourceId:'hero',targetId:enemy.id,at:elapsed/TICKS});archerArrow(enemy,config.damage,chooseArrow(),{extraArrow:true});nextEnemies[index]+=Math.round(enemy.interval*TICKS);if(enemies.every(e=>e.hp===0)){clearWave();break;}continue;}
           if (defender.id==='hero' && sword && enemy.projectile === 'melee' && ++meleeHits % 2 === 0) {
             const blockedDamage = damage*.5; damage -= blockedDamage; blocked = true;
             events.push({type:'block',sourceId:enemy.id,targetId:'hero',blockedDamage,at:elapsed/TICKS});
