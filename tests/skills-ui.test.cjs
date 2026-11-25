@@ -209,3 +209,13 @@ test('mage branch depth and parents match the progression catalog; only elements
 });
 
 test('All skill trees open unselected, keep ranks, and do not reselect on gold updates',()=>{for(const classId of ['sword','bow','wand']){const ui=createPanel({classId,gold:100});assert.equal(ui.root.dataset.selected,'');assert.equal(ui.node('#skill-detail').hidden,true);assert.equal(ui.node('#skill-upgrade').disabled,true);assert.equal(ui.root.querySelectorAll('[aria-pressed="true"]').length,0);const id=ui.store.catalog[0].id;ui.clickSkill(id);assert.equal(ui.node('#skill-detail').hidden,false);ui.upgrade();ui.controller.open();assert.equal(ui.root.dataset.selected,'');assert.equal(ui.node('#skill-detail').hidden,true);ui.store.awardGold(5);assert.equal(ui.root.dataset.selected,'');assert.equal(ui.store.quote(id).level,1);}});
+
+test('Mage uses the approved transparent 13-cell battle-effect PNG atlas, with unique positions for all skills and matching detail art',()=>{
+ const png=fs.readFileSync(path.join(dist,'assets/magic/mage-skill-icons-v1.png'));
+ assert.equal(png.subarray(1,4).toString(),'PNG');assert.equal(png.readUInt32BE(16),416);assert.equal(png.readUInt32BE(20),32);assert.ok(png.includes(Buffer.from('tRNS')));
+ const css=fs.readFileSync(path.join(dist,'skills.css'),'utf8');
+ const ids=["sorcery","strongBurn","iceShards","fusion","chaos","barrier","protectiveSphere","absorption","rebirth","channel","echo","overload","archmage"];
+ const ui=createPanel({classId:'wand',gold:100});
+ for(const [i,id] of ids.entries()){assert.ok(css.includes('[data-skill-id="'+id+'"]'));assert.ok(css.includes('[data-selected="'+id+'"] .skill-detail-icon{--mage-icon-position:'+i*100/12+'%}'));ui.clickSkill(id);assert.equal(ui.root.dataset.selected,id);}
+ assert.match(css,/background-size:1300% 100%/);assert.match(html,/skills\.css\?v=mage-icons-1/);
+});

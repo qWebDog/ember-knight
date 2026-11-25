@@ -1,0 +1,21 @@
+{
+  "source": "Approved preview assembled from existing Mage battle sprites; 32px transparent PNG cells, indexed palette (128 colors); no battle assets modified.",
+  "frameWidth": 32,
+  "frameHeight": 32,
+  "columns": 13,
+  "skills": [
+    "sorcery",
+    "strongBurn",
+    "iceShards",
+    "fusion",
+    "chaos",
+    "barrier",
+    "protectiveSphere",
+    "absorption",
+    "rebirth",
+    "channel",
+    "echo",
+    "overload",
+    "archmage"
+  ]
+}

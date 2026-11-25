@@ -76,3 +76,25 @@
 @media(max-width:700px) and (orientation:portrait){.skills-panel[data-selected=""]{grid-template-rows:44px minmax(0,1fr) 42px}}
 @media(orientation:portrait) and (max-height:700px){.skills-panel[data-selected=""]{grid-template-rows:24px minmax(0,1fr) 32px}}
 @media(orientation:landscape) and (max-height:600px){.skills-panel[data-selected=""] .skills-tree{grid-column:1/-1;max-width:850px}}
+
+/* Approved mage skill art: 13 transparent 32px cells in a single PNG, cropped from the original battle effects. Only the Mage tree uses this atlas. */
+.skills-panel[data-hero-class="wand"] [data-skill-id="sorcery"],.skills-panel[data-hero-class="wand"][data-selected="sorcery"] .skill-detail-icon{--mage-icon-position:0%}
+.skills-panel[data-hero-class="wand"] [data-skill-id="strongBurn"],.skills-panel[data-hero-class="wand"][data-selected="strongBurn"] .skill-detail-icon{--mage-icon-position:8.333333333333334%}
+.skills-panel[data-hero-class="wand"] [data-skill-id="iceShards"],.skills-panel[data-hero-class="wand"][data-selected="iceShards"] .skill-detail-icon{--mage-icon-position:16.666666666666668%}
+.skills-panel[data-hero-class="wand"] [data-skill-id="fusion"],.skills-panel[data-hero-class="wand"][data-selected="fusion"] .skill-detail-icon{--mage-icon-position:25%}
+.skills-panel[data-hero-class="wand"] [data-skill-id="chaos"],.skills-panel[data-hero-class="wand"][data-selected="chaos"] .skill-detail-icon{--mage-icon-position:33.333333333333336%}
+.skills-panel[data-hero-class="wand"] [data-skill-id="barrier"],.skills-panel[data-hero-class="wand"][data-selected="barrier"] .skill-detail-icon{--mage-icon-position:41.666666666666664%}
+.skills-panel[data-hero-class="wand"] [data-skill-id="protectiveSphere"],.skills-panel[data-hero-class="wand"][data-selected="protectiveSphere"] .skill-detail-icon{--mage-icon-position:50%}
+.skills-panel[data-hero-class="wand"] [data-skill-id="absorption"],.skills-panel[data-hero-class="wand"][data-selected="absorption"] .skill-detail-icon{--mage-icon-position:58.333333333333336%}
+.skills-panel[data-hero-class="wand"] [data-skill-id="rebirth"],.skills-panel[data-hero-class="wand"][data-selected="rebirth"] .skill-detail-icon{--mage-icon-position:66.66666666666667%}
+.skills-panel[data-hero-class="wand"] [data-skill-id="channel"],.skills-panel[data-hero-class="wand"][data-selected="channel"] .skill-detail-icon{--mage-icon-position:75%}
+.skills-panel[data-hero-class="wand"] [data-skill-id="echo"],.skills-panel[data-hero-class="wand"][data-selected="echo"] .skill-detail-icon{--mage-icon-position:83.33333333333333%}
+.skills-panel[data-hero-class="wand"] [data-skill-id="overload"],.skills-panel[data-hero-class="wand"][data-selected="overload"] .skill-detail-icon{--mage-icon-position:91.66666666666667%}
+.skills-panel[data-hero-class="wand"] [data-skill-id="archmage"],.skills-panel[data-hero-class="wand"][data-selected="archmage"] .skill-detail-icon{--mage-icon-position:100%}
+.skills-panel[data-hero-class="wand"] [data-skill-id] svg,.skills-panel[data-hero-class="wand"] .skill-detail-icon svg{background-image:url('assets/magic/mage-skill-icons-v1.png');background-repeat:no-repeat;background-size:1300% 100%;background-position:var(--mage-icon-position,0%) 50%;image-rendering:pixelated;filter:none}
+.skills-panel[data-hero-class="wand"] [data-skill-id] svg use,.skills-panel[data-hero-class="wand"] .skill-detail-icon svg use{opacity:0}
+.skills-panel[data-hero-class="wand"] .skill-node svg{width:32px;height:32px}
+.skills-panel[data-hero-class="wand"] .skill-future[data-mage-advanced] svg{width:24px;height:24px}
+.skills-panel[data-hero-class="wand"] .skill-detail-icon svg{width:32px;height:32px}
+@media(max-width:700px){.skills-panel[data-hero-class="wand"] .skill-detail-icon svg{width:26px;height:26px}}
+@media(orientation:portrait) and (max-height:700px),(orientation:landscape) and (max-height:600px){.skills-panel[data-hero-class="wand"] .skill-detail:not([hidden]){grid-template-columns:28px minmax(0,1fr) 82px;gap:5px}.skills-panel[data-hero-class="wand"] .skill-detail-icon{display:grid;width:28px;height:28px}.skills-panel[data-hero-class="wand"] .skill-detail-icon svg{width:24px;height:24px}.skills-panel[data-hero-class="wand"] .skill-node svg{width:29px;height:29px}}
