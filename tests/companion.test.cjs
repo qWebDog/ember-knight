@@ -120,7 +120,7 @@ test('game invokes the corrected wolf animation controller and exposes class com
  assert.match(html,/data-equipment-slot="companion"/);
  assert.doesNotMatch(html,/data-equipment-slot="boots"/);
  assert.match(html,/id="companion-wolf"/);
- assert.match(html,/src="companion\.js\?v=wolf-skill-effects-1"/);
+ assert.match(html,/src="companion\.js\?v=wolf-fallen-exit-1"/);
  assert.match(js,/companion\?\.render\(/);
  assert.match(js,/direction:walkDirection/);
  assert.match(js,/action:wolfFallen\|\|wolfDefeatedWithHero\?'die':null/);
@@ -290,4 +290,29 @@ test('revival keeps the fallen wolf position and prevents a bite during its reco
  assert.equal(h.actor.getPose().x,fallen);
  h.actor.advance({...options,dt:.1,time:16.6});h.actor.render({time:16.6,x:150});
  assert.notEqual(h.element.dataset.motion,'revive');
+});
+
+test('fallen wolf never follows hero exit displacement or changes lane or facing',async()=>{
+ const h=harness();await h.actor.load();h.store.equip('companion','wolf');
+ const opts={heroX:150,heroDepth:4,heroSize:64,target:{id:'archer1',x:460,width:64,depth:2,hp:60}};
+ h.actor.advance({...opts,dt:.1,time:0});
+ h.actor.advance({...opts,dt:.5,time:.5});
+ h.actor.advance({...opts,time:1,companionAlive:false});
+ const fallen=h.actor.getPose();
+ for(const phase of ['intermission','victory']){
+  for(let i=0;i<10;i++){
+   const heroX=150+i*12;
+   h.actor.advance({...opts,heroX,phase,exiting:true,companionAlive:false,time:2+i*.1});
+   assert.equal(h.actor.followExit({heroX,heroDepth:1}),false);
+   h.actor.render({time:2+i*.1,x:heroX,depth:1,laneStep:9,action:'die',actionAge:1,alive:false});
+   assert.deepEqual(h.actor.getPose(),fallen);
+   assert.equal(Number.parseFloat(h.element.style.left),fallen.x);
+   assert.equal(h.element.dataset.motion,'die');
+  }
+ }
+ h.actor.startSkill('revive',15);
+ h.actor.advance({...opts,dt:.1,time:15.5});
+ h.actor.render({time:15.5,x:150});
+ assert.equal(h.element.dataset.motion,'revive');
+ assert.equal(h.actor.getPose().x,fallen.x);
 });

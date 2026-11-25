@@ -1744,3 +1744,22 @@ test('Alpha wolf howls with sound waves and revives at its fallen position',asyn
  assert.equal(fx().length,0);
  assert.ok(!ui.events.some(e=>e.type==='attack'&&e.sourceId==='companion'&&e.at>=revived.at&&e.at<revived.at+1.4));
 });
+
+test('dead wolf stays on its death coordinates while Archer exits the wave',async()=>{
+ const ui=createHarness({weapon:'bow',outfit:'wanderer',wolfEquipped:true,
+  combatOptions:{companionMaxHp:7,heroDamage:1,heroMaxHp:10000}});
+ await ui.loadAllImages();
+ ui.runUntil(()=>ui.events.some(e=>e.type==='death'&&e.id==='companion'),25);
+ const wolf=ui.node('#companion-wolf'),fallenX=wolf.style.left,fallenDepth=wolf.style['--lane-offset'],facing=wolf.dataset.facing;
+ ui.battle.updateHeroStats({heroDamage:300});
+ ui.runUntil(()=>ui.state().phase==='intermission',15);
+ const heroX=ui.heroX();
+ for(let i=0;i<10;i++){
+  ui.frame(48);
+  assert.equal(wolf.style.left,fallenX);
+  assert.equal(wolf.style['--lane-offset'],fallenDepth);
+  assert.equal(wolf.dataset.facing,facing);
+  assert.equal(wolf.dataset.motion,'die');
+ }
+ assert.ok(ui.heroX()>heroX+10,'living Archer still walks into the next wave');
+});
