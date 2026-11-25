@@ -455,9 +455,11 @@
   }
   // The sphere's visible rim is radius 50/128 of its 150% overlay.
   // Projectiles aim at that ellipse instead of the hero's body while it exists.
+  const sphereRadius=size=>size*1.5*50/128;
+  const heroMeleeSeparation=(state,heroSize,enemySize)=>(state.hero.sphere?.hp>0?sphereRadius(heroSize):heroSize*.23)+enemySize*.34;
   function barrierContact(target,field,sx,sy){
     const cx=target.left+target.width/2-field.left,cy=target.top+target.height/2-field.top;
-    const rx=target.width*1.5*50/128,ry=target.height*1.5*50/128;
+    const rx=sphereRadius(target.width),ry=sphereRadius(target.height);
     let dx=sx-cx,dy=sy-cy;
     if(Math.hypot(dx,dy)<1e-6){dx=1;dy=0;}
     const scale=1/Math.hypot(dx/rx,dy/ry),x=cx+dx*scale,y=cy+dy*scale;
@@ -589,7 +591,7 @@
         // Visual bow wind-up already began before impact. Do not restart it
         // at the moment the arrow reaches its target.
         if (!event.impact&&!event.dot&&event.projectile!=='arrow'&&event.sourceId!=='companion')
-          actors[event.sourceId].animation = {at:activeTime,duration:event.animationDuration || .66,
+          actors[event.sourceId].animation = {at:event.sourceId==='orc'?event.at:activeTime,duration:event.animationDuration || .66,
             variant:event.variant,heavy:event.heavy,counter:event.counter,swipe:event.dragonSwipe};
         if (event.impact) {
           pendingIceImpacts.delete(event.castId);
@@ -867,11 +869,13 @@
       const defenderX=pose?.x??(wolf?heroX-heroSize*.83:heroX),defenderDepth=pose?.depth??actors.hero.depth;
       const contact=window.EmberCompanion?.contact||{enemy:.56,companion:.18};
       for(const unit of swords){
-        if(isFrozen(unit,state))continue;
         const enemy=actors[unit.id],size=enemy.element.offsetWidth;
-        const separation=wolf?size*contact.enemy+heroSize*contact.companion:heroSize*.23+size*.34;
+        const separation=wolf?size*contact.enemy+heroSize*contact.companion:heroMeleeSeparation(state,heroSize,size);
         const side=enemy.x>=defenderX?1:-1;
-        const goal=defenderX+side*separation,gap=goal-enemy.x;
+        const goal=defenderX+side*separation;
+        if(!wolf&&state.hero.sphere?.hp>0&&Math.abs(enemy.x-defenderX)<separation)enemy.x=goal;
+        if(isFrozen(unit,state))continue;
+        const gap=goal-enemy.x;
         const depthGoal=Math.max(1,Math.min(5,defenderDepth+(unit.id===state.targetId?0:.75)));
         const step=Math.sign(gap)*Math.min(Math.abs(gap),reducedMotion.matches?Math.abs(gap):size*.85*dt);
         const oldDepth=enemy.depth;
@@ -901,8 +905,9 @@
         const wolfContact=window.EmberCompanion?.contact||{enemy:.56,companion:.18};
         const separation=state.enemyTargetId==='companion'
           ?enemySize*wolfContact.enemy+heroSize*wolfContact.companion
-          :heroSize*.23+enemySize*.34;
+          :heroMeleeSeparation(state,heroSize,enemySize);
         const goalX=defenderX+separation;
+        if(state.enemyTargetId!=='companion'&&state.hero.sphere?.hp>0&&enemy.x<goalX)enemy.x=goalX;
         const gap=goalX-enemy.x;
         if(isFrozen(unit,state))continue;
         const speed=enemySize*.85;
@@ -916,7 +921,7 @@
           if(!reducedMotion.matches){
             enemy.distance+=Math.hypot(distance,(enemy.depth-oldDepth)*laneStep)/enemySize;
             if(dt>0){
-              enemy.moving=distance>.001;
+              enemy.moving=distance>.001&&Math.abs(goalX-enemy.x)>.01;
               if(enemy.moving)usedTime=dt;
             }
           }
@@ -938,9 +943,9 @@
     if(canMove&&melee){
       const enemy=actors[melee.id],enemySize=enemy.element.offsetWidth;
       if(ranged)heroX=home;
-      const separation=heroSize*.23+enemySize*.34;
+      const separation=heroMeleeSeparation(state,heroSize,enemySize);
       let gap=enemy.x-heroX-separation;
-      if(gap<0||(pairContacted&&(resized||separation!==previousSeparation))){
+      if(gap<0||(pairContacted&&(resized||(!state.hero.sphere&&separation!==previousSeparation)))){
         if(ranged)enemy.x=heroX+separation;
         else{const middle=(heroX+enemy.x)/2;heroX=middle-separation/2;enemy.x=middle+separation/2;}
         gap=0;
@@ -1198,6 +1203,7 @@
   function attackAvailability(state) {
     const heroSize=actors.hero.element.offsetWidth;
     const inReach=(id,x)=>Math.abs(x-heroX)<=heroSize*.23+actors[id].element.offsetWidth*.34+.01&&Math.abs(actors[id].depth-actors.hero.depth)<=1e-4;
+    const enemyReach=(id,x)=>Math.abs(x-heroX)<=heroMeleeSeparation(state,heroSize,actors[id].element.offsetWidth)+.01&&Math.abs(actors[id].depth-actors.hero.depth)<=1e-4;
     const target=state.targetId;
     const wolfBattle=Boolean(state.companion);
     const pose=state.enemyTargetId==='companion'?companion?.getPose():null;
@@ -1208,7 +1214,7 @@
       const wolfContact=window.EmberCompanion?.contact||{enemy:.56,companion:.18};
       const reach=state.enemyTargetId==='companion'
         ?size*wolfContact.enemy+heroSize*wolfContact.companion+.01
-        :heroSize*.23+size*.34+.01;
+        :heroMeleeSeparation(state,heroSize,size)+.01;
       if(enemy.projectile==='arrow'||(!wolfBattle&&enemy.type!=='swordsman'))return [enemy.id,enemy.hp>0];
       return [enemy.id,Boolean(enemy.hp>0
         &&(enemy.type==='dragon'&&state.enemyTargetId==='hero'
@@ -1222,13 +1228,14 @@
       heroCanAttack:Boolean(target && (ranged || inReach(target,actors[target].x))),
       heroCloseRange:Boolean(target && inReach(target,actors[target].x)),
       orcCanAttack:wolfBattle?Boolean(enemyCanAttack.orc):
-        state.enemies.some(enemy=>enemy.type==='orc'&&enemy.hp>0) && inReach('orc',actors.orc.x),
+        state.enemies.some(enemy=>enemy.type==='orc'&&enemy.hp>0) && enemyReach('orc',actors.orc.x),
+      immediateOrcContact:true,
       enemyCanAttack,
       // A second enemy may act on the same combat tick that the first
       // kills the wolf. It must not strike the hero from the wolf's location.
       enemyCanAttackHero:wolfBattle?Object.fromEntries(state.enemies.map(enemy=>{
         const actor=actors[enemy.id],size=actor.element.offsetWidth;
-        const reach=heroSize*.23+size*.34+.01;
+        const reach=heroMeleeSeparation(state,heroSize,size)+.01;
         if(enemy.projectile==='arrow')return [enemy.id,enemy.hp>0];
         return [enemy.id,Boolean(enemy.hp>0
           &&(enemy.type==='dragon'||Math.abs(actor.x-heroX)<=reach)

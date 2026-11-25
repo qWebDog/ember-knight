@@ -77,7 +77,7 @@
     const sword = options.heroWeapon === 'sword' && config.projectile === 'melee';
     let phase, pausedFrom, elapsed, remainder, hero, enemies, nextHero, nextEnemies, reward;
     let comboIndex, meleeHits, heroBusyUntil, pendingCounters, pendingImpacts, pendingBreaths;
-    let mageCastIndex=0;
+    let mageCastIndex=0,orcHasAttacked=false;
     let waveIndex, completedWaves, defeatedCount, nextWaveAt;
     let companion,companionEverSummoned;
     function currentEnemyTarget(){
@@ -125,7 +125,7 @@
       waveIndex = index; phase = 'running'; pausedFrom = null; nextWaveAt = null;
       enemies = activeWaves[index].map(unit => ({...archetypes[unit.type],...unit,hp:archetypes[unit.type].maxHp,status:null}));
       comboIndex = 0; meleeHits = 0; heroBusyUntil = elapsed; pendingCounters = []; pendingImpacts = []; pendingBreaths = [];
-      mageCastIndex=0;
+      mageCastIndex=0;orcHasAttacked=false;
       nextHero = elapsed + heroTicks(sword ? swordSteps[0].interval : HERO_INTERVAL);
       nextEnemies = enemies.map(enemy => elapsed + Math.round(enemy.interval * TICKS));
     }
@@ -399,7 +399,11 @@
         if (pendingBreaths.length) next = Math.min(next,pendingBreaths[0].at);
         enemies.forEach((enemy,index) => {
           if (enemy.hp <= 0) return;
-          if ((enemy.type !== 'orc' || orcCanAttack) && enemyCanAttack(enemy.id) && !frozen(enemy)) next = Math.min(next,nextEnemies[index]);
+          if ((enemy.type !== 'orc' || orcCanAttack) && enemyCanAttack(enemy.id) && !frozen(enemy)) {
+            // Only the first strike is immediate; subsequent strikes retain normal cooldowns.
+            if(enemy.type==='orc'&&availability?.immediateOrcContact===true&&!orcHasAttacked)nextEnemies[index]=elapsed;
+            next = Math.min(next,nextEnemies[index]);
+          }
           if (enemy.status) {
             next = Math.min(next,enemy.status.endsAt);
             if (enemy.status.type === 'burn') next = Math.min(next,enemy.status.nextTick);
@@ -477,6 +481,7 @@
           const enemy = enemies[index];
           if (enemy.hp <= 0 || nextEnemies[index] !== next || (enemy.type === 'orc' && !orcCanAttack) || !enemyCanAttack(enemy.id) || frozen(enemy)) continue;
           const defender=currentEnemyTarget();
+          if(enemy.type==='orc')orcHasAttacked=true;
           let damage = enemy.damage,blocked = false;
           if (defender.id==='hero' && sword && enemy.projectile === 'melee' && ++meleeHits % 2 === 0) {
             const blockedDamage = damage*.5; damage -= blockedDamage; blocked = true;
