@@ -1212,3 +1212,32 @@ test('Orc first contact is immediate, then normal cooldown without extra hits on
  const resumed=b.advance(interval-.01,{heroCanAttack:false,orcCanAttack:true,immediateOrcContact:true}).filter(e=>e.sourceId==='orc'&&e.type==='attack');
  assert.equal(resumed.length,1);assert.ok(Math.abs(resumed[0].at-contact-interval-.2)<1e-7);
 });
+
+test('Reactive Archer evasion uses an independent 10–50% roll at each eligible incoming arrow',()=>{
+ for(let rank=1;rank<=5;rank++){
+  for(const [roll,expected] of [[rank/10-.001,true],[rank/10,false]]){
+   let rolls=0;
+   const b=createBattle({heroWeapon:'bow',heroProjectile:'arrow',heroDamage:1,heroMaxHp:10000,archer_evasion:rank,dodgeRandom:()=>{rolls++;return roll;}});
+   const events=b.advance(1.8),dodge=events.find(e=>e.skill==='evasion'),hit=events.find(e=>e.type==='attack'&&e.sourceId==='archer1');
+   assert.equal(rolls,1);assert.equal(Boolean(dodge),expected);
+   assert.equal(hit.damage,expected?0:7);
+   if(expected)assert.ok(Math.abs(hit.at-dodge.at-.32)<1e-6);
+  }
+ }
+});
+test('Evasion cooldown is two seconds, no repeat rolls and no immunity to fresh arrows',()=>{
+ let rolls=0;
+ const b=createBattle({heroWeapon:'bow',heroProjectile:'arrow',heroDamage:1,heroMaxHp:10000,archer_evasion:5,dodgeRandom:()=>{rolls++;return 0;}});
+ const events=b.advance(9),dodges=events.filter(e=>e.skill==='evasion'),hits=events.filter(e=>e.type==='attack'&&e.sourceId==='archer1');
+ assert.deepEqual(hits.map(e=>e.damage),[0,7,0,7,0]);assert.equal(rolls,3);
+ assert.ok(dodges.every((e,i)=>i===0||e.at-dodges[i-1].at>=2));
+ const counters=events.filter(e=>e.type==='arrowLaunch'&&e.dodgeShot);
+ assert.equal(counters.length,dodges.length);
+ for(let i=0;i<dodges.length;i++)assert.ok(Math.abs(counters[i].at-dodges[i].at-.355)<1e-6);
+});
+test('Seeded evasion is invariant to frame chunking',()=>{
+ const options={heroWeapon:'bow',heroProjectile:'arrow',heroDamage:1,heroMaxHp:10000,archer_evasion:5,archer_arrowDance:5,dodgeSeed:420};
+ const a=createBattle(options),b=createBattle(options),expected=a.advance(45),actual=[];
+ for(let i=0;i<450;i++)actual.push(...b.advance(.1));
+ assert.deepEqual(actual,expected);assert.deepEqual(b.state,a.state);
+});
