@@ -1,0 +1,23 @@
+{
+  "source": "Approved 15-talent reference, revised to remove non-game character art; individually cropped, 32px square cells with transparent corners and retained original gold frames. Indexed PNG, 32 colors.",
+  "frameWidth": 32,
+  "frameHeight": 32,
+  "columns": 15,
+  "talents": [
+    "shock",
+    "revenge",
+    "doubleEcho",
+    "ash",
+    "lastStand",
+    "chainEcho",
+    "permafrost",
+    "regeneration",
+    "timeWarp",
+    "storm",
+    "vampirism",
+    "powerStack",
+    "cataclysm",
+    "immortality",
+    "absolute"
+  ]
+}
