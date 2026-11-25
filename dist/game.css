@@ -124,3 +124,20 @@ dialog{width:min(380px,calc(100% - 32px));max-height:calc(var(--app-height) - 32
 
 .mage-advanced-effect{position:absolute;transform:translate(-50%,-50%);z-index:603;pointer-events:none;image-rendering:pixelated}.mage-advanced-effect[data-skill="echo"]{z-index:604;pointer-events:none;filter:drop-shadow(0 0 3px #9e58ff88)}
 @media(prefers-reduced-motion:reduce){.mage-advanced-effect{display:none}}
+
+/* Active Mage talents replace the old autoplay / locked ability row. */
+.abilities[hidden],.battle-talents[hidden]{display:none!important}
+.battle-talents{width:clamp(176px,57%,320px);min-width:0;flex:0 1 auto;display:flex;flex-direction:column;align-items:stretch;gap:4px}
+.battle-talents-title{display:flex;align-items:center;justify-content:center;gap:5px;color:#f0d9a6;white-space:nowrap;font-size:clamp(7px,1.8vw,10px);font-weight:700;letter-spacing:.065em;line-height:1.2}
+.battle-talents-title::before,.battle-talents-title::after{content:"";height:1px;flex:1;background:linear-gradient(90deg,transparent,#d9b476)}
+.battle-talents-title::after{transform:scaleX(-1)}
+.battle-talents-title span{padding:2px 7px;background:#20251fe8;border:1px solid #bf9a58;clip-path:polygon(5% 0,95% 0,100% 50%,95% 100%,5% 100%,0 50%);text-shadow:0 1px 2px #000}
+.battle-talents-slots{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.battle-talent-slot{min-width:0;height:clamp(28px,7vw,42px);display:flex;align-items:center;justify-content:center;border:1px solid #c5a064;border-radius:11px;background:linear-gradient(#30392bea,#171f1deb);box-shadow:inset 0 0 5px #c09a4930,0 2px 3px #0007;color:#e7c18a;pointer-events:none}
+.battle-talent-slot svg{width:clamp(19px,5vw,28px);height:clamp(19px,5vw,28px);filter:drop-shadow(0 0 3px currentColor)}
+.battle-talent-slot[data-branch="0"]{color:#f3a45f}.battle-talent-slot[data-branch="1"]{color:#7ebdf5}.battle-talent-slot[data-branch="2"]{color:#cd91f7}
+.battle-talent-empty{display:none;font-size:16px;color:#84917a}
+.battle-talent-slot[data-empty="true"]{border-color:#8c97736b;border-style:dashed;box-shadow:none;background:#1b2923bb}
+.battle-talent-slot[data-empty="true"] svg{display:none}.battle-talent-slot[data-empty="true"] .battle-talent-empty{display:block}
+@media(max-width:365px){.battle-talents{width:55%;min-width:150px}.battle-talents-slots{gap:4px}.battle-talents-title{letter-spacing:.015em}}
+@media(orientation:landscape) and (max-height:600px){.battle-talents{width:220px;gap:2px}.battle-talent-slot{height:28px}.battle-talent-slot svg{width:20px;height:20px}}

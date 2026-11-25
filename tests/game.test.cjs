@@ -1611,3 +1611,27 @@ test('Mixed-wave swordsmen stay outside the active Mage sphere',async()=>{
   ui.frame(100);
  }
 });
+
+test('Mage battle HUD replaces old controls, starts automatically and shows only active wave talents',async()=>{
+ const ui=createHarness({weapon:'wand',outfit:'acolyte',preference:'off',combatOptions:{heroDamage:100,heroMaxHp:2000,heroTalents:['shock','revenge']}});
+ await ui.loadAllImages();
+ assert.equal(ui.node('#legacy-battle-abilities').hidden,true);
+ assert.equal(ui.node('#battle-talents').hidden,false);
+ assert.equal(ui.state().phase,'running');
+ const slot=i=>ui.node('#battle-talent-slot-'+i);
+ assert.equal(slot(0).dataset.talent,'shock');assert.equal(slot(0).dataset.branch,'0');
+ assert.equal(slot(1).dataset.talent,'revenge');assert.equal(slot(1).dataset.branch,'1');
+ assert.equal(slot(2).dataset.empty,'true');
+ ui.battle.setTalents(['doubleEcho']);ui.frame(100);
+ assert.equal(slot(0).dataset.talent,'shock','queued changes must not appear before wave boundary');
+ ui.runUntil(()=>ui.state().waveIndex===1,25);
+ assert.equal(slot(0).dataset.talent,'doubleEcho');assert.equal(slot(0).dataset.branch,'2');
+ assert.equal(ui.node('#battle-talent-icon-0').attributes.href,'#mage-echo');
+ assert.equal(slot(1).dataset.empty,'true');assert.equal(slot(2).dataset.empty,'true');
+});
+test('Mage empty talent HUD is truthful; other classes keep their existing controls',async()=>{
+ const mage=createHarness({weapon:'wand',outfit:'acolyte'});await mage.loadAllImages();
+ for(let i=0;i<3;i++)assert.equal(mage.node('#battle-talent-slot-'+i).dataset.empty,'true');
+ const warrior=createHarness({weapon:'sword',outfit:'militia'});await warrior.loadAllImages();
+ assert.equal(warrior.node('#battle-talents').hidden,true);assert.equal(warrior.node('#legacy-battle-abilities').hidden,false);
+});
