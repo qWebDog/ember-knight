@@ -223,7 +223,7 @@
   const showLowerPanel=mode=>{
     $('#equipment-panel').hidden=mode!=='equipment';$('#skills-panel').hidden=mode!=='skills';
     if(talentPanel)talentPanel.hidden=mode!=='talents';
-    if(mode==='equipment')equipmentUI?.refreshPreview();if(mode==='talents')talentUI?.render();
+    if(mode==='equipment')equipmentUI?.refreshPreview();if(mode==='talents')talentUI?.open();
   };
   if(starterWeapon?.id==='wand'&&window.EmberTalentPanel&&talentPanel){
     talentUI=window.EmberTalentPanel.mount({root:talentPanel,store:progression,battle});
