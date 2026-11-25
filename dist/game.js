@@ -28,7 +28,7 @@
   const heroMagic = starterWeapon?.id==='wand'?'both':null;
   // Do not apply Warrior upgrades to Mage spells. Gold stays shared in one
   // atomic progression record; only the selected class's ranks affect combat.
-  const progression = window.EmberProgression.createStore({storage:progressionStorage,classId:starterWeapon?.id||'sword'});
+  const progression = window.EmberProgression.createStore({storage:progressionStorage,classId:starterWeapon?.id||'sword',heroLevel:character?.level});
   wallet = progression.getState().gold;
   const equipment = window.EmberEquipment?.createStore({classId:starterWeapon?.id||'sword'});
   const dyeEngine=window.EmberEquipmentDye?.create({canvasFactory:()=>document.createElement('canvas')});
@@ -68,12 +68,12 @@
   const level = Number.isInteger(character?.level) ? Math.max(1,Math.min(99,character.level)) : 1;
   $('#player-name').textContent = name;
   $('.fighter-name').textContent = name;
-  $('#level-badge').textContent = level;
+  $('#level-badge').textContent = starterWeapon?.id==='wand'?progression.getTalents().level:level;
   const dragonBoss=Boolean(window.EmberDragon);
   const battle = window.EmberCombat.createBattle({heroName:name,heroProjectile:starterWeapon?.projectile,heroWeapon:starterWeapon?.id,heroMagic,
     dragonBossEnabled:dragonBoss,skeletonSwordsEnabled:true,
     companionEnabled:equipment?.classId==='bow'&&equipment.getState().companion==='wolf',
-    ...progression.getStats()});
+    ...progression.getStats(),heroTalents:starterWeapon?.id==='wand'?progression.getTalents().equipped:[]});
   battle.pause();
   let ready = false, assetError = false, lastFrameTime = null, restartRemaining = null, resultSummary = '';
   const paidDeaths = new Set();
@@ -175,6 +175,10 @@
   progression.subscribe((state,change) => {
     wallet = state.gold;
     updateWallet();
+    if(starterWeapon?.id==='wand'){
+      $('#level-badge').textContent=progression.getTalents().level;
+      if(change?.type==='talents')battle.setTalents(progression.getTalents().equipped);
+    }
     if(change?.type!=='purchase')return;
     const current = battle.getState().hero, stats = progression.getStats();
     const oldSpeed = current.attackSpeed || 1;
@@ -196,15 +200,21 @@
     }
   });
   window.EmberSkillPanel?.mount({root:$('#skills-panel'),store:progression,heroLevel:level,classId:starterWeapon?.id||'sword'});
-  let equipmentUI=null;
+  let equipmentUI=null,talentUI=null;
+  const talentPanel=$('#talents-panel');
+  const showLowerPanel=mode=>{
+    $('#equipment-panel').hidden=mode!=='equipment';$('#skills-panel').hidden=mode!=='skills';
+    if(talentPanel)talentPanel.hidden=mode!=='talents';
+    if(mode==='equipment')equipmentUI?.refreshPreview();if(mode==='talents')talentUI?.render();
+  };
+  if(starterWeapon?.id==='wand'&&window.EmberTalentPanel&&talentPanel){
+    talentUI=window.EmberTalentPanel.mount({root:talentPanel,store:progression,battle});
+    for(const id of ['open-talents-tab','gear-talents-tab']){const tab=$('#'+id);tab.disabled=false;tab.setAttribute('aria-label','Таланты');tab.addEventListener('click',()=>showLowerPanel('talents'));}
+    $('#talent-skills-tab').addEventListener('click',()=>showLowerPanel('skills'));
+    $('#talent-gear-tab').addEventListener('click',()=>showLowerPanel('equipment'));
+  }
   const equipmentPanel=$('#equipment-panel'),skillsPanel=$('#skills-panel');
   if(equipment&&window.EmberEquipmentUI&&equipmentPanel&&skillsPanel){
-    const showLowerPanel=mode=>{
-      const isGear=mode==='equipment';
-      equipmentPanel.hidden=!isGear;
-      skillsPanel.hidden=isGear;
-      if(isGear)equipmentUI?.refreshPreview();
-    };
     equipmentUI=window.EmberEquipmentUI.mount({
       root:equipmentPanel,store:equipment,
       outfitColor:loadout?.outfitColor||'sand',
@@ -563,7 +573,10 @@
   }
   function handleEvents(events) {
     for (const event of events) {
-      if(event.type==='mageSkill'){
+      if(event.type==='talentKnockback'){
+        for(const id of event.targets){const actor=actors[id];if(!actor||actor.x==null)continue;const side=actor.x>=heroX?1:-1;actor.x+=side*actors.hero.element.offsetWidth*.65;actor.moving=false;actor.element.style.left=actor.x+'px';}
+        pairContacted=false;projectFormation();
+      }else if(event.type==='mageSkill'){
         addMageSkillEffect(event);
       }else if(event.type==='sphere'){
         if(event.absorbed>0){sphereHitAt=event.at;shatterBlockedProjectile(event);addEffect('block',event.sourceId,'hero',`Щит −${event.absorbed}`,event.at);}
@@ -631,7 +644,7 @@
         let rewardSaved = true, receivedReward = event.reward;
         if(event.id!=='hero'&&event.reward>0&&!paidDeaths.has(event.id)){
           paidDeaths.add(event.id);
-          const award = progression.awardGold(event.reward);
+          const award = progression.awardGold(event.reward,starterWeapon?.id==='wand'?10:0);
           rewardSaved = award.ok;
           if(award.ok){receivedReward=award.awarded;creditedRunGold+=receivedReward;if(receivedReward>0)addEffect('coin','hero',event.id,`+${receivedReward}`,event.at);}
         }
@@ -642,7 +655,7 @@
         $('#status').textContent=`Волна ${event.waveNumber} пройдена.`;
         updateControls();
       } else if(event.type==='wave'){
-        prepareWave(battle.getState());
+        prepareWave(battle.getState());talentUI?.render();
         // Reset actors under black, then fade while the new entrance walks in.
         // The engine clock is held during the entrance, so the fade follows
         // the local entrance clock instead of relying on combat time.
@@ -1224,7 +1237,7 @@
           ||(actor.dive||0)>=.92))];
     }));
     return {
-      nearbyEnemies:Object.fromEntries(state.enemies.map(a=>[a.id,state.enemies.filter(b=>b.id!==a.id&&Math.hypot(actors[a.id].x-actors[b.id].x,(actors[a.id].depth-actors[b.id].depth)*laneStep)<=heroSize*1.6).map(b=>b.id)])),
+      nearbyEnemies:Object.fromEntries(state.enemies.map(a=>[a.id,state.enemies.filter(b=>b.id!==a.id&&Math.hypot(actors[a.id].x-actors[b.id].x,(actors[a.id].depth-actors[b.id].depth)*laneStep)<=heroSize*1.6).sort((b,c)=>Math.hypot(actors[a.id].x-actors[b.id].x,(actors[a.id].depth-actors[b.id].depth)*laneStep)-Math.hypot(actors[a.id].x-actors[c.id].x,(actors[a.id].depth-actors[c.id].depth)*laneStep)).map(b=>b.id)])),
       heroCanAttack:Boolean(target && (ranged || inReach(target,actors[target].x))),
       heroCloseRange:Boolean(target && inReach(target,actors[target].x)),
       orcCanAttack:wolfBattle?Boolean(enemyCanAttack.orc):
@@ -1342,7 +1355,7 @@
     window.requestAnimationFrame(tick);
   }
   function restartBattle(startAuto) {
-    battle.restart();if(startAuto)auto=true;
+    battle.restart();talentUI?.render();if(startAuto)auto=true;
     activeTime=0;sphereHitAt=-Infinity;sphereDrawKey=null;restartRemaining=null;resultSummary='';paidDeaths.clear();creditedRunGold=0;
     clearSceneTransition();
     prepareWave(battle.getState());

@@ -74,6 +74,13 @@
     let echoMeter=0,overloadMeter=0,archCount=0,archRemaining=0,reactionCount=0,rebirthUsed=false;
     const sphereCapacity=()=>sphereRank?10+10*sphereRank:0;
     let sphere=null;
+    const talentIds=["shock","revenge","doubleEcho","ash","lastStand","chainEcho","permafrost","regeneration","timeWarp","storm","vampirism","powerStack","cataclysm","immortality","absolute"];
+    const normalizeTalents=ids=>mage&&Array.isArray(ids)?[...new Set(ids)].filter(id=>talentIds.includes(id)).slice(0,3):[];
+    let queuedTalents=normalizeTalents(options.heroTalents),activeTalents=[];
+    let echoCount=0,chaosCount=0,powerCharged=false,immuneUntil=0,regenAt=Infinity;
+    const hasTalent=id=>activeTalents.includes(id);
+    function setTalents(ids){queuedTalents=normalizeTalents(ids);return [...queuedTalents];}
+
     const sword = options.heroWeapon === 'sword' && config.projectile === 'melee';
     let phase, pausedFrom, elapsed, remainder, hero, enemies, nextHero, nextEnemies, reward;
     let comboIndex, meleeHits, heroBusyUntil, pendingCounters, pendingImpacts, pendingBreaths;
@@ -111,7 +118,7 @@
       const target = enemies.find(enemy => enemy.hp > 0);
       const waiting = phase === 'intermission' || (phase === 'paused' && pausedFrom === 'intermission');
       return {
-        phase, elapsed:elapsed / TICKS, hero:{...hero,...(sphere?{sphere:{...sphere}}:{})},
+        ...(mage?{activeTalents:[...activeTalents]}:{}),phase, elapsed:elapsed / TICKS, hero:{...hero,...(sphere?{sphere:{...sphere}}:{})},
         companion:companionEnabled?{...companion,alive:companion.hp>0}:null,
         enemyTargetId:currentEnemyTarget().id,
         enemies:enemies.map(enemy => ({...enemy,status:enemy.status ? {type:enemy.status.type,startedAt:enemy.status.startedAt/TICKS,endsAt:enemy.status.endsAt/TICKS,...(enemy.status.enhanced?{enhanced:true}:{})} : null,alive:enemy.hp > 0})),
@@ -125,14 +132,14 @@
       waveIndex = index; phase = 'running'; pausedFrom = null; nextWaveAt = null;
       enemies = activeWaves[index].map(unit => ({...archetypes[unit.type],...unit,hp:archetypes[unit.type].maxHp,status:null}));
       comboIndex = 0; meleeHits = 0; heroBusyUntil = elapsed; pendingCounters = []; pendingImpacts = []; pendingBreaths = [];
-      mageCastIndex=0;orcHasAttacked=false;
+      mageCastIndex=0;orcHasAttacked=false;activeTalents=[...queuedTalents];powerCharged=false;regenAt=sphere?.hp>0?elapsed+3*TICKS:Infinity;
       nextHero = elapsed + heroTicks(sword ? swordSteps[0].interval : HERO_INTERVAL);
       nextEnemies = enemies.map(enemy => elapsed + Math.round(enemy.interval * TICKS));
     }
     function restart() {
       elapsed = 0; remainder = 0; reward = 0; completedWaves = 0; defeatedCount = 0;
       hero = {id:'hero',name:config.name,hp:config.maxHp,maxHp:config.maxHp,damage:config.damage,attackSpeed:config.attackSpeed};
-      echoMeter=overloadMeter=archCount=archRemaining=reactionCount=0;rebirthUsed=false;
+      echoMeter=overloadMeter=archCount=archRemaining=reactionCount=echoCount=chaosCount=0;rebirthUsed=false;immuneUntil=0;powerCharged=false;
       sphere=sphereRank?{hp:sphereCapacity(),maxHp:sphereCapacity(),brokenAt:null}:null;
       const maxHp=positive(options.companionMaxHp,WOLF_MAX_HP);
       companion={id:'companion',name:'Боевой волк',hp:companionEnabled?maxHp:0,maxHp};
@@ -269,22 +276,31 @@
         elapsed = time;
       }
       function hit(sourceId,target,damage,projectile,metadata) {
+        let reflected=0;
+        if(target.id==='hero'&&elapsed<immuneUntil)damage=0;
         if(target.id==='hero'&&sphere?.hp>0&&damage>0){
           const absorbed=Math.min(sphere.hp,damage);sphere.hp-=absorbed;damage-=absorbed;
-          if(sphere.hp===0)sphere.brokenAt=elapsed/TICKS;
+          regenAt=elapsed+3*TICKS;
+          if(hasTalent('revenge')&&sphereRank)reflected=absorbed*.25;
+          if(sphere.hp===0){sphere.brokenAt=elapsed/TICKS;regenAt=Infinity;
+            if(hasTalent('lastStand')&&sphereRank)events.push({type:'talentKnockback',targets:enemies.filter(e=>e.hp>0&&e.projectile==='melee'&&availability?.enemyCanAttack?.[e.id]!==false&&(e.type!=='orc'||orcCanAttack)).map(e=>e.id),at:elapsed/TICKS});
+          }
           events.push({type:'sphere',sourceId,targetId:'hero',absorbed,hp:sphere.hp,maxHp:sphere.maxHp,broken:sphere.hp===0,at:elapsed/TICKS,projectile,...(metadata?.castId?{castId:metadata.castId}:{}),...(metadata?.magic?{magic:metadata.magic}:{})});
         }
         target.hp = Math.max(0,target.hp-damage);
         if(target.id==='hero'&&target.hp===0&&advanced.heroRebirthRank&&!rebirthUsed){
           rebirthUsed=true;target.hp=Math.max(1,Math.floor(target.maxHp*.1*advanced.heroRebirthRank));
+          if(hasTalent('immortality'))immuneUntil=elapsed+2*TICKS;
           events.push({type:'mageSkill',skill:'rebirth',sourceId:'hero',targetId:'hero',at:elapsed/TICKS,hp:target.hp});
         }
         events.push({type:'attack',sourceId,targetId:target.id,damage,hp:target.hp,at:elapsed/TICKS,projectile,...metadata});
         if (target.hp === 0) {
           const enemy = target.id !== 'hero' && target.id !== 'companion';
-          if (enemy) { defeatedCount++; reward += KILL_REWARD; target.status = null;
+          if (enemy) { const wasBurning=target.status?.type==='burn';defeatedCount++; reward += KILL_REWARD; target.status = null;
+            if(sourceId==='hero'&&hasTalent('vampirism'))hero.hp=Math.min(hero.maxHp,hero.hp+hero.maxHp*.05);
+            if(sourceId==='hero'&&hasTalent('ash')&&wasBurning){const neighbor=nearby(target).find(e=>e.hp>0);if(neighbor)applyStatus(neighbor,'fire');}
             if(sourceId==='hero'&&advanced.heroAbsorptionRank&&sphere&&sphere.hp<sphere.maxHp){
-              const restored=Math.min(sphere.maxHp-sphere.hp,4*advanced.heroAbsorptionRank);sphere.hp+=restored;sphere.brokenAt=null;
+              const restored=Math.min(sphere.maxHp-sphere.hp,4*advanced.heroAbsorptionRank);sphere.hp+=restored;sphere.brokenAt=null;if(!Number.isFinite(regenAt))regenAt=elapsed+3*TICKS;
               events.push({type:'mageSkill',skill:'absorption',sourceId:target.id,targetId:'hero',at:elapsed/TICKS,restored});
             }
           }
@@ -297,6 +313,7 @@
             && (target.type!=='dragon'||impact.sourceId !== target.id));
           pendingBreaths = pendingBreaths.filter(breath => breath.sourceId !== target.id);
         }
+        if(reflected>0){const attacker=enemies.find(e=>e.id===sourceId&&e.hp>0);if(attacker)hit('hero',attacker,reflected,'reflection',{dot:true});}
       }
       function end(result) {
         phase = result; pausedFrom = null; pendingCounters = []; pendingImpacts = []; pendingBreaths = []; nextWaveAt = null;
@@ -312,7 +329,9 @@
         if (waveIndex === activeWaves.length-1) end('victory');
         else { phase = 'intermission'; nextWaveAt = elapsed + INTERMISSION; }
       }
+      function nearby(target){const ids=availability?.nearbyEnemies?.[target.id]||[];return ids.map(id=>enemies.find(e=>e.id===id)).filter(e=>e&&e.id!==target.id&&e.hp>0);}
       function applyStatus(target,magic) {
+        if(magic==='fire'&&hasTalent('permafrost')&&target.status?.type==='freeze'&&target.status.endsAt>elapsed)return;
         const type = magic === 'fire' ? 'burn' : 'freeze';
         const enhanced=type==='burn'&&burnRank>0,duration=Math.max(STATUS_DURATION+(enhanced?burnRank*BURN_INTERVAL:0),advanced.heroFusionRank?Math.round(1.55*TICKS):0);
         target.status = {type,sourceId:'hero',startedAt:elapsed,endsAt:elapsed+duration,nextTick:elapsed+BURN_INTERVAL,...(enhanced?{enhanced:true,damage:statusTiming.burnDamage+burnRank}:{})};
@@ -325,14 +344,15 @@
         const damage=advanced.heroFusionRank*4;
         events.push({type:'mageSkill',skill,sourceId:'hero',targetId:target.id,at:elapsed/TICKS});
         if(target.hp>0)hit('hero',target,damage,'reaction',{dot:true,magic});
-        if(skill==='steam'){
+        if(skill==='steam'||hasTalent('shock')){
           const nearby=availability?.nearbyEnemies?.[target.id]||[];
           for(const enemy of enemies)if(enemy.id!==target.id&&enemy.hp>0&&nearby.includes(enemy.id))hit('hero',enemy,Math.max(1,Math.floor(damage*.5)),'reaction',{dot:true,magic});
         }
         reactionCount++;
         if(advanced.heroChaosRank&&reactionCount%3===0){
           events.push({type:'mageSkill',skill:'chaos',sourceId:'hero',targetId:target.id,at:elapsed/TICKS});
-          for(const enemy of enemies)if(enemy.hp>0)hit('hero',enemy,advanced.heroChaosRank*5,'reaction',{dot:true});
+          const extra=hasTalent('cataclysm')&&++chaosCount%3===0?2:1;
+          for(let pulse=0;pulse<extra;pulse++)for(const enemy of enemies)if(enemy.hp>0)hit('hero',enemy,advanced.heroChaosRank*5,'reaction',{dot:true});
         }
       }
       function dragonPulse(sourceId,burstIndex){
@@ -361,22 +381,31 @@
         let interval = sourceId === 'hero' ? heroTicks(close ? CLOSE_MAGIC_INTERVAL : HERO_INTERVAL) : Math.round(enemies.find(enemy=>enemy.id===sourceId).interval*TICKS);
         let echo=false,overloaded=false;
         if(sourceId==='hero'&&mage){
+          const archActive=archRemaining>0;
+          if(powerCharged&&hasTalent('powerStack')){damage=Math.ceil(damage*1.2);powerCharged=false;}
           if(archRemaining>0){interval=Math.max(1,Math.round(interval*(.9-.05*advanced.heroArchmageRank)));archRemaining--;}
           if(advanced.heroArchmageRank&&++archCount%6===0){archRemaining=3;events.push({type:'mageSkill',skill:'archmage',sourceId:'hero',targetId:'hero',at:elapsed/TICKS});}
-          overloadMeter+=advanced.heroOverloadRank*8;if(overloadMeter>=100){overloadMeter-=100;damage=Math.ceil(damage*1.5);overloaded=true;}
+          overloadMeter+=advanced.heroOverloadRank*8;if(overloadMeter>=100){overloadMeter-=100;damage=Math.ceil(damage*1.5);overloaded=true;if(hasTalent('timeWarp'))interval=Math.max(1,Math.round(interval*.5));}
           echoMeter+=advanced.heroEchoRank;if(echoMeter>=10){echoMeter-=10;echo=true;}
+          if(archActive&&hasTalent('absolute')&&advanced.heroArchmageRank)echo=true;
         }
         const delay = Math.round((timing.appearDuration+timing.flightDuration)*TICKS);
         const castAt = elapsed/TICKS,impactTick = elapsed+delay,castId = `${sourceId}:${elapsed}`;
         events.push({type:'cast',sourceId,targetId:target.id,projectile:'magic',magic,at:castAt,...timing,impactAt:impactTick/TICKS,castId,animationDuration:sourceId === 'hero' ? heroTicks((close ? .36 : .66)*TICKS)/TICKS : .66,castInterval:interval/TICKS});
         pendingImpacts.push({sourceId,targetId:target.id,damage,magic,at:impactTick,castAt,castId,overloaded});
         if(echo){
-          const echoAt=impactTick+Math.round(.18*TICKS),echoId=castId+':echo';
-          const releaseAt=castAt+timing.appearDuration,echoReleaseAt=releaseAt+.18;
+          const double=hasTalent('doubleEcho')&&advanced.heroEchoRank&&++echoCount%4===0;
+          if(hasTalent('powerStack')&&advanced.heroEchoRank)powerCharged=true;
+          const alternate=hasTalent('chainEcho')&&advanced.heroEchoRank?nearby(target)[0]:null;
+          const echoTarget=alternate||target;
+          for(let n=1;n<=(double?2:1);n++){
+          const echoAt=impactTick+Math.round(.18*n*TICKS),echoId=castId+':echo'+(n===1?'':':2');
+          const releaseAt=castAt+timing.appearDuration,echoReleaseAt=releaseAt+.18*n;
           // Echo is released from the resonating portal, not charged as a second simultaneous cast.
-          events.push({type:'mageSkill',skill:'echo',sourceId:'hero',targetId:'hero',at:castAt,releaseAt,echoReleaseAt});
-          events.push({type:'cast',sourceId,targetId:target.id,projectile:'magic',magic,echo:true,at:echoReleaseAt,impactAt:echoAt/TICKS,castId:echoId,appearDuration:0,flightDuration:timing.flightDuration,impactDuration:.32,animationDuration:0,castInterval:interval/TICKS});
-          pendingImpacts.push({sourceId,targetId:target.id,damage:Math.max(1,Math.floor(damage*.5)),magic,echo:true,at:echoAt,castAt:echoReleaseAt,castId:echoId});
+          if(n===1)events.push({type:'mageSkill',skill:'echo',sourceId:'hero',targetId:'hero',at:castAt,releaseAt,echoReleaseAt});
+          events.push({type:'cast',sourceId,targetId:echoTarget.id,projectile:'magic',magic,echo:true,at:echoReleaseAt,impactAt:echoAt/TICKS,castId:echoId,appearDuration:0,flightDuration:timing.flightDuration,impactDuration:.32,animationDuration:0,castInterval:interval/TICKS});
+          pendingImpacts.push({sourceId,targetId:echoTarget.id,damage:Math.max(1,Math.floor(damage*.5)),magic,echo:true,at:echoAt,castAt:echoReleaseAt,castId:echoId});
+          }
         }
         if(sourceId==='hero'&&magic==='ice'&&shardRank>0){
           const shardAt=impactTick+Math.round(.12*TICKS),shardId=castId+':shards';
@@ -394,6 +423,7 @@
           continue;
         }
         let next = heroCanAttack ? nextHero : Infinity;
+        if(hasTalent('regeneration')&&sphere?.hp>0&&sphere.hp<sphere.maxHp){if(regenAt<elapsed)regenAt=elapsed;next=Math.min(next,regenAt);}
         if (heroCanAttack && pendingCounters.length) next = Math.min(next,pendingCounters[0].at);
         if (pendingImpacts.length) next = Math.min(next,pendingImpacts[0].at);
         if (pendingBreaths.length) next = Math.min(next,pendingBreaths[0].at);
@@ -411,6 +441,7 @@
         });
         if (next > until) break;
         advanceClock(next);
+        if(hasTalent('regeneration')&&sphere?.hp>0&&sphere.hp<sphere.maxHp&&regenAt===next){sphere.hp=Math.min(sphere.maxHp,sphere.hp+sphere.maxHp*.05);regenAt=elapsed+TICKS;}
         // Ties: hero action, counters, existing status ticks/expiry, impacts, then enemies.
         if (heroCanAttack && nextHero === next) {
           const target = enemies.find(enemy => enemy.hp > 0),step = sword ? swordSteps[comboIndex] : null;
@@ -471,6 +502,7 @@
           if(impact.overloaded)events.push({type:'mageSkill',skill:'overload',sourceId:'hero',targetId:target.id,at:elapsed/TICKS});
           if(!impact.shards&&!impact.echo&&impact.sourceId==='hero'&&target.id!=='hero'&&['fire','ice'].includes(impact.magic)){
             mageReaction(target,impact.magic,previous);
+            if(previous==='freeze'&&hasTalent('storm')&&shardRank)for(const enemy of nearby(target))hit('hero',enemy,shardRank*3,'reaction',{dot:true,magic:'ice'});
             if(target.hp>0)applyStatus(target,impact.magic);
           }
           if (hero.hp === 0) { end('defeat'); break; }
@@ -505,6 +537,7 @@
           nextEnemies[index] += Math.round(enemy.interval*TICKS);
           if (hero.hp === 0) { end('defeat'); break; }
           if (blocked) reserveCounter(enemy.id);
+          if(enemies.every(e=>e.hp===0)){clearWave();break;}
         }
       }
       if (phase === 'running' || phase === 'intermission') advanceClock(until);
@@ -512,7 +545,7 @@
     }
     restart();
     return {getState,getArrowSchedule,advance,pause,resume,restart,updateHeroStats,
-      setCompanionEnabled,companionStrike,get state(){return getState();}};
+      setCompanionEnabled,companionStrike,setTalents,get state(){return getState();}};
   }
   return {createBattle,magicTiming,closeMagicTiming,statusTiming,intermissionDuration,dragonBreath};
 });

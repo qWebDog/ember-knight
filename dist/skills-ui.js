@@ -90,7 +90,7 @@
       if(destroyed)return;
       const state=store.getState(),entry=activeDetails[selected],quote=store.quote(selected);
       $('[data-skill-gold]').textContent=String(state.gold);
-      $('[data-skill-hero-level]').textContent=String(Number.isInteger(heroLevel)&&heroLevel>0?heroLevel:1);
+      $('[data-skill-hero-level]').textContent=String(mage&&store.getTalents?store.getTalents().level:Number.isInteger(heroLevel)&&heroLevel>0?heroLevel:1);
       root.dataset.selected=selected;root.dataset.ready='true';
       for(const node of nodes){
         const id=node.dataset.skillId,item=activeDetails[id];if(!item)continue;
