@@ -116,4 +116,4 @@ dialog{width:min(380px,calc(100% - 32px));max-height:calc(var(--app-height) - 32
   top:-9px;left:22%;right:22%;height:5px;
 }
 
-.battlefield .fighter>canvas.mage-sphere{position:absolute;width:150%;height:150%;left:-25%;top:-37%;z-index:2;pointer-events:none;image-rendering:pixelated;filter:none;animation:none}.spell-projectile[data-shards="true"]{width:calc(var(--enemy-size)*.9);height:calc(var(--enemy-size)*.9)}
+.battlefield .fighter>canvas.mage-sphere{position:absolute;width:150%;height:150%;left:-25%;top:-25%;z-index:2;pointer-events:none;image-rendering:pixelated;filter:none;animation:none}.spell-projectile[data-shards="true"]{width:calc(var(--enemy-size)*.9);height:calc(var(--enemy-size)*.9)}
