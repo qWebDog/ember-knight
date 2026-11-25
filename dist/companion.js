@@ -31,8 +31,15 @@
       die:Object.freeze({y:192,h:32,count:4,fps:8})
     })
   });
+  const skillDuration=Object.freeze({howl:.9,revive:1.5});
   function frameAt(time,moving=false,reducedMotion=false,direction=3,action=null){
     const side=direction===1?'left':'right';
+    if(action==='revive'){
+      const age=Math.max(0,Number.isFinite(time)?time:0);
+      if(reducedMotion||age>=1.08)return {...frameAt(0,false,false,direction,'idle'),mode:'revive'};
+      const spec=strips[side].die,frame=3-Math.min(3,Math.floor(Math.max(0,age-.20+1e-8)/.22));
+      return {sx:320+frame*tile,sy:spec.y,sw:tile,sh:spec.h,dx:0,dy:tile-spec.h,dw:tile,dh:spec.h,mode:'revive',frame};
+    }
     const desired=typeof action==='string'&&Object.hasOwn(strips[side],action)
       ?action:(moving?'walk':'idle');
     const mode=reducedMotion&&desired!=='die'?'idle':desired;
@@ -43,20 +50,58 @@
     return {sx:320+frame*tile,sy:spec.y,sw:tile,sh:spec.h,
       dx:0,dy:tile-spec.h,dw:tile,dh:spec.h,mode,frame};
   }
-  function create({element,store,loadImage}={}){
+  // Separate pixel overlay; keeps original sprite pixels and hitbox untouched.
+  function paintEffect(ctx,mode,age,direction=3){
+    ctx.clearRect(0,0,128,96);
+    const pixel=(x,y,color)=>{ctx.fillStyle=color;ctx.fillRect(Math.round(x),Math.round(y),1,1);};
+    if(mode==='howl'){
+      const side=direction===1?-1:1,mx=64+side*23,my=43;
+      for(let k=0;k<3;k++){
+        const t=age-.20-k*.13;if(t<0||t>.55)continue;
+        const p=t/.55,r=5+28*p,alpha=Math.min(1,p*5+.25)*(1-p);
+        for(let a=-1.25;a<.40;a+=.025){
+          const x=mx+side*r*Math.cos(a),y=my+r*Math.sin(a);
+          pixel(x,y,'rgba(199,184,121,'+alpha.toFixed(3)+')');
+          if(p<.7)pixel(x+side,y,'rgba(231,214,152,'+(alpha*.65).toFixed(3)+')');
+        }
+      }
+    }else if(mode==='revive'){
+      const p=Math.min(1,Math.max(0,age/skillDuration.revive)),fade=Math.min(1,p*8+.25)*(1-p);
+      for(let k=0;k<2;k++){
+        const r=20+k*6+5*p;
+        for(let a=0;a<Math.PI*2;a+=.035)
+          pixel(64+r*Math.cos(a),79+(3+k*1.3)*Math.sin(a),'rgba(138,220,163,'+(fade*(k?.46:.85)).toFixed(3)+')');
+      }
+      for(let i=0;i<12;i++){
+        const q=(p*1.45+i*.137)%1,x=64+Math.sin(i*2.39)*25+Math.sin(q*4+i)*2,y=76-q*45;
+        const alpha=fade*Math.sin(q*Math.PI);if(alpha<.03)continue;
+        const color='rgba(167,234,184,'+alpha.toFixed(3)+')';pixel(x,y,color);
+        if(i%3===0){pixel(x-1,y,color);pixel(x+1,y,color);pixel(x,y-1,color);pixel(x,y+1,color);}
+      }
+    }
+  }
+  function create({element,store,loadImage,canvasFactory}={}){
     const canvas=element?.querySelector?.('canvas')||null;
     let image=null,inflight=null,lastKey=null,idleSince=null;
     let position=null,actorDepth=3,facing=3,motion='idle',engaged=false;
     let biteStarted=null,biteTarget=null,biteLanded=false,nextBiteAt=0;
-    let exitHeroX=null;
+    let exitHeroX=null,skill=null,fx=null;
     const biteImpact=3/12, biteDuration=5/12, biteInterval=1.25, biteDamage=7;
     const active=()=>store?.classId==='bow'&&store?.getState()?.companion==='wolf';
     function loaded(){return Boolean(image);}
+    function clearEffect(){if(fx){fx.remove?.();fx=null;}}
     function reset(){
+      skill=null;clearEffect();
       position=null;actorDepth=3;facing=3;motion='idle';engaged=false;
       idleSince=null;biteStarted=null;biteTarget=null;biteLanded=false;nextBiteAt=0;
       exitHeroX=null;
       lastKey=null;
+    }
+    function startSkill(mode,time){
+      if(!active()||!image||!Object.hasOwn(skillDuration,mode))return false;
+      if(skill?.mode==='revive'&&mode==='howl'&&time<skill.at+skillDuration.revive)return false;
+      skill={mode,at:time};biteStarted=null;biteTarget=null;biteLanded=false;idleSince=null;lastKey=null;
+      return true;
     }
     function load(){
       if(image)return Promise.resolve(image);
@@ -89,7 +134,7 @@
       const home=(entering?heroX:restingX)-size*.83;
       if(position===null){position=home;actorDepth=heroDepth;facing=3;motion='idle';}
       if(!companionAlive||!heroAlive||phase==='defeat'){
-        motion='die';biteStarted=null;biteTarget=null;biteLanded=false;return null;
+        skill=null;clearEffect();motion='die';biteStarted=null;biteTarget=null;biteLanded=false;return null;
       }
       if(entering){
         // The hero enters each wave over ~2.5 seconds; the wolf walks in
@@ -106,6 +151,10 @@
         return null;
       }
       exitHeroX=null;
+      if(skill){
+        if(!reducedMotion&&time-skill.at<skillDuration[skill.mode]){motion=skill.mode;return null;}
+        skill=null;clearEffect();
+      }
       const attacking=phase==='running'&&target&&Number.isFinite(target.x)&&Number.isFinite(target.width)
         &&target.hp>0;
       const destination=attacking
@@ -161,7 +210,7 @@
     function followExit({heroX,heroDepth=3}={}){
       if(!active()||!Number.isFinite(heroX)||position===null)return false;
       if(exitHeroX!==null)position+=Math.max(0,heroX-exitHeroX);
-      exitHeroX=heroX;
+      exitHeroX=heroX;skill=null;clearEffect();
       actorDepth=heroDepth;facing=3;motion='walk';engaged=false;
       biteStarted=null;biteTarget=null;biteLanded=false;
       idleSince=null;
@@ -170,7 +219,7 @@
     function render({time=0,x=0,heroSize=64,depth=3,laneStep=0,moving=false,
       direction=3,action=null,actionAge=0,reducedMotion=false,alive=true}={}){
       if(!element||!canvas||!image||!active()||(!alive&&action!=='die')){
-        if(element)element.hidden=true;
+        clearEffect();if(element)element.hidden=true;
         return false;
       }
       element.hidden=false;
@@ -182,14 +231,15 @@
       const layer=Math.round(100+((position===null?depth:actorDepth)-1)*100);
       element.style.zIndex=String(layer+(engaged?6:-1));
       const face=position===null?direction:facing;
-      const animation=action||(position===null?(moving?'walk':'idle'):motion);
+      const activeSkill=alive&&!action&&!reducedMotion&&skill&&time-skill.at<skillDuration[skill.mode]?skill:null;
+      const animation=action||activeSkill?.mode||(position===null?(moving?'walk':'idle'):motion);
       if(animation!=='idle'){idleSince=null;}
       else if(idleSince===null||time<idleSince){idleSince=time;}
       const idleAge=idleSince===null?0:Math.max(0,time-idleSince);
       const cycle=idleAge>=5?(idleAge-5)%10:-1;
       const howl=animation==='idle'&&!engaged&&!reducedMotion&&cycle>=0&&cycle<.75;
       const mode=howl?'howl':animation;
-      const age=action?Math.max(0,actionAge):
+      const age=action?Math.max(0,actionAge):activeSkill?Math.max(0,time-activeSkill.at):
         mode==='bite'&&biteStarted!==null?Math.max(0,time-biteStarted):
         howl?cycle:time;
       const rect=frameAt(age,mode==='walk'||mode==='run',reducedMotion,face,mode);
@@ -203,6 +253,18 @@
           rect.dx,rect.dy,rect.dw,rect.dh);
         lastKey=key;
       }
+      const effectMode=!reducedMotion&&alive&&(mode==='howl'||mode==='revive')?mode:null;
+      if(effectMode&&canvasFactory){
+        if(!fx){
+          fx=canvasFactory();fx.width=128;fx.height=96;fx.className='wolf-skill-fx';
+          fx.style.position='absolute';fx.style.width='200%';fx.style.height='150%';
+          fx.style.left='-50%';fx.style.top='-25%';fx.style.pointerEvents='none';
+          fx.style.imageRendering='pixelated';fx.style.filter='none';fx.style.zIndex='1';
+          fx.setAttribute?.('aria-hidden','true');element.appendChild(fx);
+        }
+        paintEffect(fx.getContext('2d'),effectMode,age,face);
+      }else clearEffect();
+      element.dataset.skillEffect=effectMode||'';
       element.dataset.motion=rect.mode;
       element.dataset.facing=face===1?'left':'right';
       return true;
@@ -221,8 +283,8 @@
       }
       return true;
     }
-    return Object.freeze({load,loaded,reset,advance,followExit,render,paintPreview,
+    return Object.freeze({load,loaded,reset,startSkill,advance,followExit,render,paintPreview,
       getPose:()=>({x:position,depth:actorDepth,facing,motion,engaged,biteStarted,biteTarget})});
   }
-  return Object.freeze({path,sprite,contact,strips,frameAt,create});
+  return Object.freeze({path,sprite,contact,strips,frameAt,skillDuration,paintEffect,create});
 });
