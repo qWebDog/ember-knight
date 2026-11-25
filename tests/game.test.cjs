@@ -1724,3 +1724,23 @@ test('Archer skill shots select dedicated equipped LPC clips and keep original p
  assert.ok(projectiles.has('doubleShot'));assert.ok(projectiles.has('arrowRain'));assert.ok([...projectiles].some(s=>s.startsWith('dance')));
  assert.ok(Math.max(...rainAngles)-Math.min(...rainAngles)>15,'rain arrow rotates along its arc');
 });
+
+test('Alpha wolf howls with sound waves and revives at its fallen position',async()=>{
+ const ui=createHarness({weapon:'bow',outfit:'wanderer',wolfEquipped:true,
+  combatOptions:{companionMaxHp:14,heroDamage:1,heroMaxHp:10000,archer_alpha:5}});
+ await ui.loadAllImages();
+ const wolfNode=ui.node('#companion-wolf');
+ const fx=()=>wolfNode.children.filter(el=>el.className==='wolf-skill-fx');
+ ui.runUntil(()=>wolfNode.dataset.motion==='howl'&&fx().length===1,20);
+ assert.ok(ui.events.some(e=>e.type==='archerSkill'&&e.skill==='roar'));
+ ui.runUntil(()=>ui.events.some(e=>e.type==='death'&&e.id==='companion'),25);
+ const fallen=wolfNode.style.left;
+ ui.runUntil(()=>ui.events.some(e=>e.type==='archerSkill'&&e.skill==='wolfRevive'),30);
+ assert.equal(wolfNode.dataset.motion,'revive');
+ assert.equal(wolfNode.style.left,fallen);
+ assert.equal(fx().length,1);assert.ok(ui.state().companion.hp>0);
+ const revived=ui.events.find(e=>e.type==='archerSkill'&&e.skill==='wolfRevive');
+ ui.runUntil(()=>wolfNode.dataset.motion!=='revive',3);
+ assert.equal(fx().length,0);
+ assert.ok(!ui.events.some(e=>e.type==='attack'&&e.sourceId==='companion'&&e.at>=revived.at&&e.at<revived.at+1.4));
+});

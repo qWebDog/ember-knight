@@ -120,7 +120,7 @@ test('game invokes the corrected wolf animation controller and exposes class com
  assert.match(html,/data-equipment-slot="companion"/);
  assert.doesNotMatch(html,/data-equipment-slot="boots"/);
  assert.match(html,/id="companion-wolf"/);
- assert.match(html,/src="companion.js\?v=archer-skills-1"/);
+ assert.match(html,/src="companion\.js\?v=wolf-skill-effects-1"/);
  assert.match(js,/companion\?\.render\(/);
  assert.match(js,/direction:walkDirection/);
  assert.match(js,/action:wolfFallen\|\|wolfDefeatedWithHero\?'die':null/);
@@ -259,4 +259,35 @@ test('wolf stays with the exiting Archer instead of running left toward the old 
  assert.ok(h.actor.getPose().x>start+90,'wolf leaves to the right with the hero');
  assert.ok(Number.parseFloat(h.element.style.left)>start);
  h.actor.reset();assert.equal(h.actor.getPose().x,null,'next wave resets escort position');
+});
+
+test('revival reverses the original death strip in both directions and then stands',()=>{
+ for(const face of [1,3]){
+  const frames=[0,.43,.66,.90,1.20].map(t=>wolf.frameAt(t,false,false,face,'revive'));
+  assert.deepEqual(frames.map(f=>f.frame),[3,2,1,0,0]);
+  assert.ok(frames.slice(0,4).every(f=>f.sy===(face===1?192:0)&&f.dy+f.dh===64));
+  assert.equal(frames.at(-1).sy,face===1?248:56);
+ }
+});
+test('howl wave pixels mirror across the wolf and revival has rising particles',()=>{
+ const capture=(mode,age,face)=>{const pixels=[];wolf.paintEffect({clearRect(){},fillRect(x,y){pixels.push([x,y])}},mode,age,face);return pixels;};
+ const right=capture('howl',.50,3),left=capture('howl',.50,1),revive=capture('revive',.5,3);
+ assert.ok(right.length&&left.length&&revive.length);
+ assert.ok(right.every(p=>p[0]>64));assert.ok(left.every(p=>p[0]<64));
+ assert.ok(revive.some(p=>p[1]<60)&&revive.some(p=>p[1]>75));
+ assert.equal(capture('howl',0,3).length,0);
+});
+test('revival keeps the fallen wolf position and prevents a bite during its recovery',async()=>{
+ const h=harness();await h.actor.load();h.store.equip('companion','wolf');
+ const options={heroX:150,heroSize:64,heroDepth:3,target:{id:'archer1',x:460,width:64,depth:2,hp:60}};
+ h.actor.advance({...options,dt:.1,time:0});
+ h.actor.advance({...options,dt:.5,time:.5});
+ h.actor.advance({...options,time:1,companionAlive:false});
+ const fallen=h.actor.getPose().x;
+ assert.ok(h.actor.startSkill('revive',15));
+ assert.equal(h.actor.advance({...options,dt:.1,time:15.5}),null);
+ h.actor.render({time:15.5,x:150});assert.equal(h.element.dataset.motion,'revive');
+ assert.equal(h.actor.getPose().x,fallen);
+ h.actor.advance({...options,dt:.1,time:16.6});h.actor.render({time:16.6,x:150});
+ assert.notEqual(h.element.dataset.motion,'revive');
 });
