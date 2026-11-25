@@ -170,14 +170,19 @@
       nextHero = elapsed + heroTicks(sword ? swordSteps[0].interval : HERO_INTERVAL);
       nextEnemies = enemies.map(enemy => elapsed + Math.round(enemy.interval * TICKS));
     }
-    function restart() {
+    function restart({carryFallenWolf=false}={}) {
+      // An automatic victory continuation can retain a fallen companion and
+      // its remaining resurrection cooldown; explicit replay still resets.
+      const preserve=carryFallenWolf&&phase==='victory'&&companionEnabled&&companion?.hp===0;
+      const reviveRemaining=preserve?Math.max(0,wolfReviveAt-elapsed):Infinity;
       elapsed = 0; remainder = 0; reward = 0; completedWaves = 0; defeatedCount = 0;
       hero = {id:'hero',name:config.name,hp:config.maxHp,maxHp:config.maxHp,damage:config.damage,attackSpeed:config.attackSpeed};
       echoMeter=overloadMeter=archCount=archRemaining=reactionCount=echoCount=chaosCount=0;rebirthUsed=false;immuneUntil=0;powerCharged=false;
       sphere=sphereRank?{hp:sphereCapacity(),maxHp:sphereCapacity(),brokenAt:null}:null;
       dodgeUntil=0;evasionReady=0;arrowMeters={};arrowQueue=[];shotCount=rainLeft=wolfBites=0;rainAt=archerRanks.arrowRain?(33-3*archerRanks.arrowRain)*TICKS:0;retreatAt=0;danceAt=20*TICKS;danceUntil=0;wolfReviveAt=Infinity;roarUntil=0;roarAt=0;
       const maxHp=wolfMax();
-      companion={id:'companion',name:'Боевой волк',hp:companionEnabled?maxHp:0,maxHp};
+      companion={id:'companion',name:'Боевой волк',hp:companionEnabled&&!preserve?maxHp:0,maxHp};
+      if(preserve)wolfReviveAt=reviveRemaining;
       companionEverSummoned=companionEnabled;
       spawnWave(0);
       return getState();

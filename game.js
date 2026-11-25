@@ -140,6 +140,7 @@
   // its x-coordinate moves while the legs stay on one static frame.
   let walkDistance = 0, walkDirection = 3, activeTime = 0, companionTime = 0;
   let companionDeathAt = null, companionHitAt = -10;
+  let carryAtlas=null,carryAtlasPromise=null,wolfCarry=null;
   let sceneTransition = null;
   // At the start of EACH wave the hero walks in at a deliberate pace
   // from fully off-screen. The battle clock stays on hold until arrival.
@@ -246,7 +247,7 @@
         // Stage the original wolf image before committing an equipment choice.
         // Companion selection must not rebuild the hero's LPC armor or bow.
         if(slot==='companion'){
-          if(id==='wolf')await companion?.load();
+          if(id==='wolf'){await companion?.load();await loadCarryAtlas();}
           return;
         }
         const nextLook={...equipment.getState(),[slot]:id};
@@ -269,7 +270,7 @@
       onEquip:(_look,slot)=>{
         if(slot==='companion'){
           battle.setCompanionEnabled?.(equipment.classId==='bow'&&equipment.getState().companion==='wolf');
-          companionDeathAt=null;
+          companionDeathAt=null;wolfCarry=null;
           companion?.reset();
         }
         if(slot!=='companion'&&classEquipment&&loadedClassSprites)applyClassSprites(loadedClassSprites);
@@ -282,6 +283,13 @@
   }
   function loadImage(path) {
     return new Promise((resolve,reject) => { const image = new Image(); image.onload = () => resolve(image); image.onerror = () => reject(new Error(path)); image.src = path; });
+  }
+  function loadCarryAtlas(){
+    if(!carryAtlasPromise)carryAtlasPromise=loadImage('assets/companions/wolf-carry.png').then(image=>{
+      if(image.width===768&&image.height===64)carryAtlas=image;
+      return carryAtlas;
+    }).catch(()=>{carryAtlasPromise=null;return null;});
+    return carryAtlasPromise;
   }
   async function loadAssets() {
     ready = false; assetError = false; updateControls();
@@ -360,7 +368,7 @@
       if(equipmentArt)try{await equipmentArt.prepareLook(equipment.getState(),equipment.getColors());}
       catch{$('#status').textContent='Не удалось загрузить часть LPC-экипировки.';}
       // A missing cosmetic image should never block combat or hero creation.
-      if(equipment?.getState().companion==='wolf')try{await companion?.load();}catch{}
+      if(equipment?.getState().companion==='wolf')try{await companion?.load();await loadCarryAtlas();}catch{}
       ready = true;
       beginHeroEntrance();
       updateMovement(0,battle.getState());
@@ -393,10 +401,80 @@
     if(restartRemaining===null)return;
     $('#result-copy').textContent=`${resultSummary} ${auto ? `Новый бой через ${Math.max(1,Math.ceil(restartRemaining))} с.` : 'Автоповтор на паузе.'}`;
   }
+  // Carry is a presentation-only transition. Combat time stays frozen
+  // during the approach and lifting/lowering, not during normal combat.
+  function beginWolfCarry(state){
+    if(wolfCarry||!carryAtlas||reducedMotion.matches||starterWeapon?.id!=='bow'||state.hero.hp<=0||state.companion?.hp!==0||companionDeathAt===null)return;
+    const pose=companion?.getPose(),size=actors.hero.element.offsetWidth;
+    if(!Number.isFinite(pose?.x))return;
+    const to=pose.x-size*26/64,from=heroX??to,fromDepth=actors.hero.depth;
+    const duration=Math.max(.18,Math.abs(to-from)/(size*1.75),Math.abs(pose.depth-fromDepth)*.16);
+    wolfCarry={stage:'approach',age:0,from,to,fromDepth,depth:pose.depth,duration};
+  }
+  function moveCarryHero(x,depth,walking){
+    const size=actors.hero.element.offsetWidth,old=heroX??x;
+    walkDistance+=Math.abs(x-old)/size;
+    if(Math.abs(x-old)>.001)walkDirection=x>=old?3:1;
+    heroX=x;actors.hero.depth=depth;
+    heroMoving=moving=walking;
+    actors.hero.element.style.left=x+'px';projectFormation();
+  }
+  function stepWolfCarry(dt,state){
+    if(!wolfCarry)return false;
+    if(state.hero.hp<=0||state.companion?.hp!==0){wolfCarry=null;return false;}
+    const c=wolfCarry,size=actors.hero.element.offsetWidth;
+    if(c.stage==='approach'){
+      c.age+=dt;const p=Math.min(1,c.age/c.duration);
+      moveCarryHero(c.from+(c.to-c.from)*p,c.fromDepth+(c.depth-c.fromDepth)*p,p<1);
+      if(p===1){c.stage='lift';c.age=0;walkDirection=3;}
+      return true;
+    }
+    if(c.stage==='lift'){
+      c.age+=dt;const p=Math.min(1,c.age/.9);
+      // Atlas head shifts ten native pixels as the Ranger crouches.
+      moveCarryHero(c.to+size*10/64*p,c.depth,false);
+      if(p===1){c.stage='walk';c.age=0;if(sceneTransition){sceneTransition.depth=c.depth;sceneTransition.at=activeTime;sceneTransition.lastTime=activeTime;}}
+      return true;
+    }
+    if(c.stage==='entry'){
+      if(heroEntrance)updateMovement(dt,state);
+      if(!heroEntrance){c.stage='lower';c.age=0;heroMoving=moving=false;}
+      return true;
+    }
+    if(c.stage==='lower'){
+      c.age+=dt;
+      if(c.age>=.9){
+        companion?.placeFallen(heroX+size*26/64,actors.hero.depth,3);
+        companionDeathAt=companionTime-1;
+        wolfCarry=null;actors.hero.lastKey=null;updateControls();
+      }
+      return true;
+    }
+    return false;
+  }
+  function paintWolfCarry(){
+    const c=wolfCarry;
+    if(!c||c.stage==='approach'||!carryAtlas)return false;
+    const actor=actors.hero,canvas=actor.canvas;
+    const frame=c.stage==='lift'?Math.min(4,Math.floor(c.age/.9*5)):
+      c.stage==='lower'?Math.max(0,4-Math.floor(c.age/.9*5)):4+Math.floor(companionTime*8)%4;
+    const key='wolf-carry:'+frame;
+    if(actor.lastKey!==key){
+      canvas.width=96;canvas.height=64;
+      const ctx=canvas.getContext('2d');ctx.imageSmoothingEnabled=false;ctx.clearRect(0,0,96,64);
+      ctx.drawImage(carryAtlas,frame*96,0,96,64,0,0,96,64);
+      canvas.style.width='150%';canvas.style.height='100%';canvas.style.left='0%';canvas.style.top='0%';
+      actor.lastKey=key;
+    }
+    actor.element.dataset.motion=c.stage==='lift'?'wolf-pickup':c.stage==='lower'?'wolf-putdown':'wolf-carry';
+    return true;
+  }
   function beginSceneTransition(phase,at) {
     sceneTransition={phase,at,lastTime:at,depth:actors.hero.depth,fresh:phase==='wave-in'};
     arena.dataset.transition=phase;sceneFade.dataset.phase=phase;
     if(phase==='wave-out'||phase==='victory'||phase==='defeat')actors.hero.animation=null;
+    if(phase==='wave-out'||phase==='victory')beginWolfCarry(battle.getState());
+    if(phase==='defeat')wolfCarry=null;
   }
   function clearSceneTransition() {
     sceneTransition=null;arena.dataset.transition='';sceneFade.dataset.phase='';sceneFade.dataset.opacity='0';sceneFade.style.opacity='0';
@@ -404,6 +482,9 @@
   function renderSceneTransition(state) {
     if(!sceneTransition)return;
     const transition=sceneTransition;
+    if((transition.phase==='wave-out'||transition.phase==='victory')&&['approach','lift'].includes(wolfCarry?.stage)){
+      sceneFade.style.opacity='0';sceneFade.dataset.opacity='0';return;
+    }
     // A wave reset gets one fully covered paint even if a frame crosses its boundary.
     const justSpawned=transition.fresh;
     if(justSpawned){transition.at=activeTime;transition.lastTime=activeTime;transition.fresh=false;}
@@ -907,7 +988,10 @@
     pendingIceImpacts.clear();
     cuedArrows.clear();
     heroX=null;archerRetreatOffset=0;archerRetreatMotion=null;archerEvadeAt=-10;fieldWidth=null;walkDistance=0;walkDirection=3;moving=heroMoving=false;
-    companionTime=0;companionDeathAt=null;companionHitAt=-10;
+    const deadWolf=state.companion?.hp===0;
+    const arrivingWithWolf=deadWolf&&wolfCarry?.stage==='walk'&&carryAtlas&&!reducedMotion.matches;
+    wolfCarry=arrivingWithWolf?{stage:'entry',age:0}:null;
+    companionTime=0;companionDeathAt=deadWolf?-1:null;companionHitAt=-10;
     companion?.reset();
     pairContacted=false;previousSeparation=null;contactTarget=null;previousTargetSeparation=null;
     for(const actor of Object.values(actors)){
@@ -922,6 +1006,7 @@
     }
     beginHeroEntrance();
     updateMovement(0,state);
+    if(deadWolf&&!arrivingWithWolf)companion?.placeFallen(battlefield.clientWidth*(window.innerWidth>700?.18:.22)-actors.hero.element.offsetWidth*.83,3,3);
   }
   // Range holds only melee cooldowns; archers shoot throughout the approach.
   function currentRetreatOffset(){
@@ -1331,9 +1416,11 @@
     cueArrowShots(state);
     for (const id of Object.keys(actors)) drawActor(id,state);
     renderMageSphere(state);
+    const carrying=paintWolfCarry();
+    actors.hero.element.dataset.wolfCarry=wolfCarry?.stage||'';
     const wolfFallen=state.companion?.hp===0&&companionDeathAt!==null;
     const wolfDefeatedWithHero=state.phase==='defeat'&&state.companion?.hp>0;
-    companion?.render({
+    if(!carrying)companion?.render({
       time:companionTime,x:heroX??0,heroSize:actors.hero.element.offsetWidth,
       depth:actors.hero.depth,laneStep,
       moving:heroMoving,
@@ -1346,6 +1433,7 @@
     });
     const wolfElement=$('#companion-wolf');
     if(wolfElement){
+      if(carrying)wolfElement.hidden=true;
       wolfElement.classList.toggle('is-hit',companionTime-companionHitAt<.16);
       wolfElement.classList.toggle('is-roaring',!!state.archerEffects?.roar);
       if(state.companion){
@@ -1451,6 +1539,7 @@
       }
       const after=battle.getState();
       syncFrozenActors(after);updateMovement(0,after);
+      if(wolfCarry?.stage==='entry')break;
       if(moving!==wasMoving||after.phase!==before.phase)updateControls();
       remaining-=step;
     }
@@ -1491,7 +1580,10 @@
       // pauses the game, so bites remain synced to their actual frames.
       companionTime+=dt;
       const before=battle.getState();
-      if(['victory','defeat'].includes(before.phase)){
+      if(stepWolfCarry(dt,before)){
+        // No attack, countdown or cooldown advances while picking up or
+        // setting down the wolf. Rendering is still driven by the RAF.
+      }else if(['victory','defeat'].includes(before.phase)){
         activeTime+=dt;
         if(restartRemaining!==null){
           restartRemaining=Math.max(0,restartRemaining-dt);
@@ -1500,13 +1592,15 @@
       }else{
         advanceBattleFrame(dt);
       }
-      updateCompanionCombat(dt);
+      if(!wolfCarry||wolfCarry.stage==='approach')updateCompanionCombat(dt);
     }
     if(ready)render(battle.getState());
     window.requestAnimationFrame(tick);
   }
   function restartBattle(startAuto) {
-    battle.restart();talentUI?.render();if(startAuto)auto=true;
+    const prior=battle.getState(),keepFallen=!startAuto&&prior.phase==='victory'&&prior.companion?.hp===0;
+    if(!keepFallen)wolfCarry=null;
+    battle.restart({carryFallenWolf:keepFallen});talentUI?.render();if(startAuto)auto=true;
     activeTime=0;sphereHitAt=-Infinity;sphereDrawKey=null;restartRemaining=null;resultSummary='';paidDeaths.clear();creditedRunGold=0;
     clearSceneTransition();
     prepareWave(battle.getState());
