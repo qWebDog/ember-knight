@@ -15,7 +15,7 @@
   const intermissionDuration = 1.4;
   const INTERMISSION = Math.round(intermissionDuration * TICKS);
   const KILL_REWARD = 5;
-  const WOLF_MAX_HP = 70;
+  const WOLF_MAX_HP = 23;
   // The dragon releases five SEPARATE fire-magic projectiles like the
   // Mage's spell, never a continuous jet. Each has its own launch, flight,
   // engine hit and short impact animation.
