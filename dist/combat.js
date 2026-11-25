@@ -66,6 +66,11 @@
       magic:options.heroMagic==='both'?'both':
         ['fire','ice'].includes(options.heroMagic)?options.heroMagic:'fire'
     };
+    const mage=options.heroWeapon==='wand'&&config.projectile==='magic';
+    const rank=value=>Number.isFinite(value)?Math.max(0,Math.min(5,Math.floor(value))):0;
+    let burnRank=mage?rank(options.heroBurnRank):0,sphereRank=mage?rank(options.heroSphereRank):0,shardRank=mage?rank(options.heroShardRank):0;
+    const sphereCapacity=()=>sphereRank?10+10*sphereRank:0;
+    let sphere=null;
     const sword = options.heroWeapon === 'sword' && config.projectile === 'melee';
     let phase, pausedFrom, elapsed, remainder, hero, enemies, nextHero, nextEnemies, reward;
     let comboIndex, meleeHits, heroBusyUntil, pendingCounters, pendingImpacts, pendingBreaths;
@@ -103,10 +108,10 @@
       const target = enemies.find(enemy => enemy.hp > 0);
       const waiting = phase === 'intermission' || (phase === 'paused' && pausedFrom === 'intermission');
       return {
-        phase, elapsed:elapsed / TICKS, hero:{...hero},
+        phase, elapsed:elapsed / TICKS, hero:{...hero,...(sphere?{sphere:{...sphere}}:{})},
         companion:companionEnabled?{...companion,alive:companion.hp>0}:null,
         enemyTargetId:currentEnemyTarget().id,
-        enemies:enemies.map(enemy => ({...enemy,status:enemy.status ? {type:enemy.status.type,startedAt:enemy.status.startedAt/TICKS,endsAt:enemy.status.endsAt/TICKS} : null,alive:enemy.hp > 0})),
+        enemies:enemies.map(enemy => ({...enemy,status:enemy.status ? {type:enemy.status.type,startedAt:enemy.status.startedAt/TICKS,endsAt:enemy.status.endsAt/TICKS,...(enemy.status.enhanced?{enhanced:true}:{})} : null,alive:enemy.hp > 0})),
         targetId:target ? target.id : null,
         waveIndex,waveNumber:waveIndex+1,waveCount:activeWaves.length,completedWaves,
         defeatedCount,totalDefeated:defeatedCount,totalEnemies:activeTotalEnemies,reward,
@@ -124,6 +129,7 @@
     function restart() {
       elapsed = 0; remainder = 0; reward = 0; completedWaves = 0; defeatedCount = 0;
       hero = {id:'hero',name:config.name,hp:config.maxHp,maxHp:config.maxHp,damage:config.damage,attackSpeed:config.attackSpeed};
+      sphere=sphereRank?{hp:sphereCapacity(),maxHp:sphereCapacity(),brokenAt:null}:null;
       const maxHp=positive(options.companionMaxHp,WOLF_MAX_HP);
       companion={id:'companion',name:'Боевой волк',hp:companionEnabled?maxHp:0,maxHp};
       companionEverSummoned=companionEnabled;
@@ -204,6 +210,15 @@
     }
     function updateHeroStats(stats = {}) {
       const oldSpeed = config.attackSpeed;
+      if(mage){
+        if(stats.heroBurnRank!==undefined)burnRank=rank(stats.heroBurnRank);
+        if(stats.heroShardRank!==undefined)shardRank=rank(stats.heroShardRank);
+        if(stats.heroSphereRank!==undefined){
+          sphereRank=rank(stats.heroSphereRank);const maxHp=sphereCapacity();
+          if(!sphere&&maxHp)sphere={hp:maxHp,maxHp,brokenAt:null};
+          else if(sphere){sphere.maxHp=maxHp;sphere.hp=Math.min(sphere.hp,maxHp);}
+        }
+      }
       config.damage = positive(stats?.heroDamage,config.damage);
       config.maxHp = positive(stats?.heroMaxHp,config.maxHp);
       config.attackSpeed = attackSpeed(stats?.heroAttackSpeed,config.attackSpeed);
@@ -249,6 +264,11 @@
         elapsed = time;
       }
       function hit(sourceId,target,damage,projectile,metadata) {
+        if(target.id==='hero'&&sphere?.hp>0&&damage>0){
+          const absorbed=Math.min(sphere.hp,damage);sphere.hp-=absorbed;damage-=absorbed;
+          if(sphere.hp===0)sphere.brokenAt=elapsed/TICKS;
+          events.push({type:'sphere',sourceId,targetId:'hero',absorbed,hp:sphere.hp,maxHp:sphere.maxHp,broken:sphere.hp===0,at:elapsed/TICKS});
+        }
         target.hp = Math.max(0,target.hp-damage);
         events.push({type:'attack',sourceId,targetId:target.id,damage,hp:target.hp,at:elapsed/TICKS,projectile,...metadata});
         if (target.hp === 0) {
@@ -280,8 +300,9 @@
       }
       function applyStatus(target,magic) {
         const type = magic === 'fire' ? 'burn' : 'freeze';
-        target.status = {type,sourceId:'hero',startedAt:elapsed,endsAt:elapsed+STATUS_DURATION,nextTick:elapsed+BURN_INTERVAL};
-        events.push({type:'status',status:type,sourceId:'hero',targetId:target.id,at:elapsed/TICKS,duration:statusTiming.duration,endsAt:target.status.endsAt/TICKS});
+        const enhanced=type==='burn'&&burnRank>0,duration=STATUS_DURATION+(enhanced?burnRank*BURN_INTERVAL:0);
+        target.status = {type,sourceId:'hero',startedAt:elapsed,endsAt:elapsed+duration,nextTick:elapsed+BURN_INTERVAL,...(enhanced?{enhanced:true,damage:statusTiming.burnDamage+burnRank}:{})};
+        events.push({type:'status',status:type,sourceId:'hero',targetId:target.id,at:elapsed/TICKS,duration:duration/TICKS,endsAt:target.status.endsAt/TICKS});
       }
       function dragonPulse(sourceId,burstIndex){
         // Fire belongs exclusively to the hero-facing ranged phase. A living
@@ -311,6 +332,11 @@
         const castAt = elapsed/TICKS,impactTick = elapsed+delay,castId = `${sourceId}:${elapsed}`;
         events.push({type:'cast',sourceId,targetId:target.id,projectile:'magic',magic,at:castAt,...timing,impactAt:impactTick/TICKS,castId,animationDuration:sourceId === 'hero' ? heroTicks((close ? .36 : .66)*TICKS)/TICKS : .66,castInterval:interval/TICKS});
         pendingImpacts.push({sourceId,targetId:target.id,damage,magic,at:impactTick,castAt,castId});
+        if(sourceId==='hero'&&magic==='ice'&&shardRank>0){
+          const shardAt=impactTick+Math.round(.12*TICKS),shardId=castId+':shards';
+          events.push({type:'cast',sourceId,targetId:target.id,projectile:'magic',magic:'ice',shards:true,at:castAt,impactAt:shardAt/TICKS,castId:shardId,appearDuration:timing.appearDuration,flightDuration:timing.flightDuration+.12,impactDuration:.32,animationDuration:0,castInterval:interval/TICKS});
+          pendingImpacts.push({sourceId,targetId:target.id,damage:shardRank*3,magic:'ice',shards:true,at:shardAt,castAt,castId:shardId});
+        }
         pendingImpacts.sort((a,b) => a.at-b.at || Number(b.sourceId==='hero')-Number(a.sourceId==='hero'));
         return interval;
       }
@@ -366,7 +392,7 @@
           const status = enemy.status;
           if (!status || enemy.hp <= 0) continue;
           if (status.type === 'burn' && status.nextTick === next) {
-            hit(status.sourceId,enemy,statusTiming.burnDamage,'burn',{magic:'fire',dot:true});
+            hit(status.sourceId,enemy,status.damage||statusTiming.burnDamage,'burn',{magic:'fire',dot:true});
             if (enemy.status === status) status.nextTick += BURN_INTERVAL;
             if (enemies.every(unit => unit.hp === 0)) { clearWave(); break; }
           }
@@ -390,8 +416,8 @@
             : impact.targetId === 'companion' ? companion : enemies.find(enemy => enemy.id === impact.targetId);
           if (!target || target.hp <= 0) continue;
           hit(impact.sourceId,target,impact.damage,'magic',{magic:impact.magic,impact:true,castAt:impact.castAt,castId:impact.castId,
-            breath:Boolean(impact.breath),burstIndex:impact.burstIndex});
-          if (impact.sourceId === 'hero' && target.id !== 'hero' && target.hp > 0 && ['fire','ice'].includes(impact.magic)) applyStatus(target,impact.magic);
+            breath:Boolean(impact.breath),burstIndex:impact.burstIndex,...(impact.shards?{shards:true}:{})});
+          if (!impact.shards && impact.sourceId === 'hero' && target.id !== 'hero' && target.hp > 0 && ['fire','ice'].includes(impact.magic)) applyStatus(target,impact.magic);
           if (hero.hp === 0) { end('defeat'); break; }
           if (enemies.every(enemy => enemy.hp === 0)) { clearWave(); break; }
         }

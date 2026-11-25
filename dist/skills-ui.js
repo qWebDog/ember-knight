@@ -16,6 +16,11 @@
     barrier:{name:'Магический барьер',branch:'defense',category:'Аркана',icon:'skill-shield',benefit:'+20 к максимуму здоровья',total:level=>`+${level*20} к максимуму здоровья`},
     channel:{name:'Поток маны',branch:'control',category:'Криомантия',icon:'bolt',benefit:'+5% к скорости заклинаний',total:level=>`+${level*5}% к скорости заклинаний`}
   };
+  Object.assign(mageDetails,{
+    strongBurn:{name:'Сильный ожог',branch:'attack',category:'Пиромантия',icon:'flame',benefit:'+0,25 с горения и +1 урона за тик',total:level=>`+${level*.25} с, +${level} урона за тик`,requires:'Сила стихий'},
+    protectiveSphere:{name:'Защитная сфера',branch:'defense',category:'Аркана',icon:'skill-shield',benefit:'20 прочности на I уровне, затем +10',total:level=>`${10+level*10} прочности`,requires:'Магический барьер'},
+    iceShards:{name:'Ледяные осколки',branch:'control',category:'Криомантия',icon:'bolt',benefit:'+3 урона дополнительного залпа',total:level=>`${level*3} урона залпа`,requires:'Поток маны'}
+  });
   const archerDetails={
     marksmanship:{name:'Меткий выстрел',branch:'attack',category:'Атака',icon:'skill-bow',benefit:'+2 к урону стрел',total:level=>`+${level*2} к урону стрел`},
     endurance:{name:'Выносливость',branch:'defense',category:'Защита',icon:'skill-shield',benefit:'+20 к максимуму здоровья',total:level=>`+${level*20} к максимуму здоровья`},
@@ -55,6 +60,12 @@
       node.querySelector('use').setAttribute('href',`#${activeDetails[activeIds[index]].icon}`);
       branch.querySelectorAll('[data-skill-future]').forEach((future,i)=>{
         const name=(mage?futureMage:futureArcher)[branch.dataset.branch][i];
+        if(mage&&i===0){
+          const id=['strongBurn','protectiveSphere','iceShards'][index];
+          future.dataset.skillId=id;future.dataset.mageAdvanced='true';future.disabled=false;
+          future.querySelector('use').setAttribute('href',`#${activeDetails[id].icon}`);
+          future.querySelector('span').setAttribute('data-skill-node-rank','');nodes.push(future);return;
+        }
         future.setAttribute('aria-label',`${name} — скоро`);
         future.setAttribute('title',`${name}: будет доступно позже`);
       });
@@ -74,8 +85,9 @@
         node.classList.toggle('is-selected',active);
         node.classList.toggle('is-learned',rank.level>0);
         node.classList.toggle('is-max',rank.level===rank.maxLevel);
+        node.classList.toggle('is-locked',rank.reason==='locked');
         node.setAttribute('aria-pressed',String(active));
-        node.setAttribute('aria-label',`${item.name}, уровень ${rank.level} из ${rank.maxLevel}`);
+        node.setAttribute('aria-label',`${item.name}, уровень ${rank.level} из ${rank.maxLevel}${rank.reason==='locked'?', требуется '+item.requires+' III':''}`);
         node.dataset.level=String(rank.level);
         node.querySelector('[data-skill-node-rank]').textContent=`${rank.level}/${rank.maxLevel}`;
       }
@@ -83,15 +95,15 @@
       $('[data-skill-category]').textContent=entry.category;
       $('[data-skill-name]').textContent=entry.name;
       $('[data-skill-rank]').textContent=`Уровень ${quote.level}/${quote.maxLevel}`;
-      $('[data-skill-benefit]').textContent=quote.reason==='max'?`${entry.total(quote.level)} · Максимум`:`Следующий уровень: ${entry.benefit}`;
+      $('[data-skill-benefit]').textContent=quote.reason==='locked'?`Требуется: ${entry.requires} III`:quote.reason==='max'?`${entry.total(quote.level)} · Максимум`:`Следующий уровень: ${entry.benefit}`;
       $('[data-skill-benefit]').dataset.feedback='';
       $('[data-skill-icon-use]').setAttribute('href',`#${entry.icon}`);
       upgrade.dataset.upgrade=selected;upgrade.disabled=!quote.canBuy;
-      upgrade.dataset.state=quote.canBuy?'available':quote.reason==='max'?'max':'insufficient';
-      $('[data-skill-upgrade-label]').textContent=quote.reason==='max'?'Максимум':quote.canBuy?'Улучшить':'Не хватает монет';
+      upgrade.dataset.state=quote.canBuy?'available':quote.reason==='max'?'max':quote.reason==='locked'?'locked':'insufficient';
+      $('[data-skill-upgrade-label]').textContent=quote.reason==='locked'?'Закрыто':quote.reason==='max'?'Максимум':quote.canBuy?'Улучшить':'Не хватает монет';
       $('[data-skill-price-wrap]').hidden=quote.cost===null;
       $('[data-skill-price]').textContent=quote.cost===null?'':String(quote.cost);
-      upgrade.setAttribute('aria-label',quote.reason==='max'?`${entry.name}: максимальный уровень`:`Улучшить ${entry.name} за ${quote.cost} монет${quote.canBuy?'':', не хватает монет'}`);
+      upgrade.setAttribute('aria-label',quote.reason==='locked'?`Требуется ${entry.requires} III`:quote.reason==='max'?`${entry.name}: максимальный уровень`:`Улучшить ${entry.name} за ${quote.cost} монет${quote.canBuy?'':', не хватает монет'}`);
     }
     function select(id) {
       if(!Object.prototype.hasOwnProperty.call(activeDetails,id)||destroyed)return false;

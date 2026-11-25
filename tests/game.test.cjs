@@ -1503,3 +1503,8 @@ test('mixed second wave has two advancing swordsmen and two stationary archers',
  assert.ok(ui.events.some(e=>e.type==='attack'&&e.sourceId==='skeletonSword1'&&e.targetId==='companion'));
  assert.ok(ui.events.some(e=>e.type==='attack'&&e.sourceId==='archer2'&&e.targetId==='companion'));
 });
+
+test('mage shield is rendered as separate actor-local overlay and shard spell uses its own sprite',async()=>{
+ const ui=createHarness({weapon:'wand',outfit:'acolyte',combatOptions:{heroDamage:1,heroSphereRank:1,heroShardRank:1,heroBurnRank:1,heroMaxHp:1000}});await ui.loadAllImages();
+ const hero=ui.node('[data-fighter="hero"]');assert.ok(hero.children.some(el=>el.className==='mage-sphere'));ui.runUntil(()=>ui.events.some(e=>e.type==='cast'&&e.shards),15);assert.ok(ui.spells().some(el=>el.dataset.shards==='true'));ui.runUntil(()=>ui.events.some(e=>e.type==='sphere'&&e.broken),20);assert.ok(hero.children.some(el=>el.className==='mage-sphere'&&Number(el.dataset.frame)>=8));ui.runFor(.7);assert.ok(!hero.children.some(el=>el.className==='mage-sphere'));
+});

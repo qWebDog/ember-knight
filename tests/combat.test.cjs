@@ -1175,3 +1175,13 @@ test('mixed wave adds two melee skeletons before ranged enemies and holds their 
  const hits=battle.advance(1.6,{heroCanAttack:false}).filter(e=>e.type==='attack'&&e.sourceId.startsWith('skeletonSword'));
  assert.equal(hits.length,2);assert.ok(hits.every(e=>e.damage===5&&e.targetId==='hero'));
 });
+
+test('mage sphere absorbs attacks, breaks once and resets only at new battle',()=>{
+ const b=createDefaultBattle({heroWeapon:'wand',heroProjectile:'magic',heroMagic:'both',heroDamage:1,heroSphereRank:1});
+ assert.equal(b.state.hero.sphere.hp,20);const events=b.advance(5.4,{heroCanAttack:false});
+ assert.equal(events.filter(e=>e.type==='sphere').reduce((sum,e)=>sum+e.absorbed,0),20);assert.equal(events.filter(e=>e.type==='sphere'&&e.broken).length,1);assert.equal(b.state.hero.hp,199);assert.equal(b.state.hero.sphere.hp,0);b.restart();assert.equal(b.state.hero.sphere.hp,20);
+});
+test('advanced mage burn and shard skills deal extra damage on engine-confirmed ticks',()=>{
+ const b=createDefaultBattle({heroWeapon:'wand',heroProjectile:'magic',heroMagic:'both',heroDamage:1,heroBurnRank:1,heroShardRank:2,heroMaxHp:1000});const e=b.advance(4);
+ assert.ok(e.some(x=>x.type==='status'&&x.status==='burn'&&x.duration===.75));assert.ok(e.some(x=>x.dot&&x.damage===2));assert.ok(e.some(x=>x.type==='cast'&&x.shards));assert.ok(e.some(x=>x.type==='attack'&&x.shards&&x.damage===6));
+});

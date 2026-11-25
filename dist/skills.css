@@ -41,3 +41,5 @@
 /* Archer class has its own identity without adding a class selector. */
 .skills-panel[data-hero-class="bow"]{background:radial-gradient(ellipse at 50% 10%,#4a653345,transparent 65%),repeating-linear-gradient(110deg,#c8bb7a03 0 1px,transparent 1px 18px),#14271f}
 .skills-panel[data-hero-class="bow"] .skills-title p{color:#c2d89c}
+
+.skill-future[data-mage-advanced]{opacity:1;cursor:pointer;color:var(--branch-soft);border-color:var(--branch)}.skill-future[data-mage-advanced].is-locked{opacity:.55}.skill-future[data-mage-advanced].is-selected{outline:1px solid #f5d293;box-shadow:0 0 6px #efd08966}.skill-future[data-mage-advanced].is-learned{background:var(--branch-bg)}.skill-future[data-mage-advanced] span{color:#e0ddbb}
