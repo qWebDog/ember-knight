@@ -607,11 +607,33 @@
       resonance,releaseAt:event.releaseAt,echoReleaseAt:event.echoReleaseAt,
       duration:resonance?event.echoReleaseAt-event.at+.40:event.skill==='archmage'?.9:.6,lastKey:null});
   }
+  // Lock enemy missile endpoints once they leave the weapon. The archer's
+  // subsequent movement must not steer a normal arrow or magic projectile.
+  function targetsArcher(effect){
+    return starterWeapon?.id==='bow'&&effect.targetId==='hero'&&effect.sourceId!=='hero'&&effect.sourceId!=='companion'&&(effect.type==='arrow'||effect.type==='spell');
+  }
+  function lockArcherTarget(effect,field,target){
+    if(!targetsArcher(effect))return null;
+    if(!effect.lockedTarget){
+      effect.lockedTarget={x:target.left+target.width*.5-field.left,y:target.top+target.height*(effect.type==='spell'?.55:.4)-field.top};
+      effect.element.dataset.aimX=String(effect.lockedTarget.x);effect.element.dataset.aimY=String(effect.lockedTarget.y);
+    }
+    return effect.lockedTarget;
+  }
+  function preserveIncomingAim(at){
+    const field=battlefield.getBoundingClientRect(),target=actors.hero.element.getBoundingClientRect();
+    for(const effect of effects){
+      if(!targetsArcher(effect))continue;
+      const launch=effect.at+(effect.type==='spell'?effect.appearDuration:0);
+      if(launch<=at+1e-6)lockArcherTarget(effect,field,target);
+    }
+  }
   function handleEvents(events) {
     for (const event of events) {
       if(event.type==='archerSkill'){
         if(event.skill==='retreat'||event.skill==='evasion'){
           if(event.dodgeShot){
+            preserveIncomingAim(event.at);
             const from=currentRetreatOffset(),max=Math.max(0,Math.min(battlefield.clientWidth*.14,battlefield.clientWidth*(window.innerWidth>700?.18:.22)-actors.hero.element.offsetWidth*.65));
             archerRetreatOffset=Math.min(max,from+actors.hero.element.offsetWidth*.75);
             archerRetreatMotion={from,to:archerRetreatOffset,at:event.at};
@@ -657,6 +679,15 @@
         }
         addSpell(event);
       } else if (event.type === 'attack') {
+        if(event.evaded&&event.targetId==='hero'&&event.projectile==='arrow'){
+          const arrow=effects.find(effect=>targetsArcher(effect)&&effect.type==='arrow'&&effect.sourceId===event.sourceId&&Math.abs(effect.at+effect.duration-event.at)<1e-5);
+          if(arrow){
+            preserveIncomingAim(event.at);
+            // Keep the original velocity: a missed arrow continues beyond
+            // the old target point instead of disappearing on the hero.
+            arrow.missUntil=event.at+.20;arrow.element.dataset.missed='true';
+          }
+        }
         if(event.sourceId==='hero'&&event.projectile==='arrow'&&event.arrowType&&!event.dot)addArcherArrowImpact(event);
         // Visual bow wind-up already began before impact. Do not restart it
         // at the moment the arrow reaches its target.
@@ -666,7 +697,7 @@
         if (event.impact) {
           pendingIceImpacts.delete(event.castId);
           const spell=effects.find(effect=>effect.type==='spell'&&effect.castId===event.castId);
-          if(spell){spell.landed=true;spell.impactAt=event.at;spell.duration=event.at-spell.at+spell.impactDuration;}
+          if(spell){if(event.evaded){preserveIncomingAim(event.at);spell.element.dataset.missed='true';}spell.landed=true;spell.impactAt=event.at;spell.duration=event.at-spell.at+spell.impactDuration;}
         }
         if(!event.dot&&event.damage>0){
           if(event.targetId==='companion')companionHitAt=companionTime;
@@ -1128,7 +1159,7 @@
           &&state.enemies.some(unit=>unit.id==='dragon'&&unit.hp>0);
         if(!alive){effect.element.remove();effects.splice(i,1);continue;}
       }
-      if (age+1e-6 >= effect.duration || reducedMotion.matches) { effect.element.remove(); effects.splice(i,1); continue; }
+      if (activeTime+1e-6 >= (effect.missUntil??(effect.at+effect.duration)) || reducedMotion.matches) { effect.element.remove(); effects.splice(i,1); continue; }
       if(effect.type==='archer-arrow-impact'){
         const actor=actors[effect.targetId]?.element;if(!actor){effect.element.remove();effects.splice(i,1);continue;}
         const bounds=actor.getBoundingClientRect();
@@ -1195,8 +1226,13 @@
           }
           sx=effect.mouthOrigin.x;sy=effect.mouthOrigin.y;
         }
+        const aim=phase==='appear'?null:lockArcherTarget(effect,field,target);
+        if(aim){
+          if(!effect.lockedOrigin)effect.lockedOrigin={x:sx,y:sy};
+          sx=effect.lockedOrigin.x;sy=effect.lockedOrigin.y;
+        }
         const barrier=aimAtBarrier(effect,state,target,field,sx,sy);
-        const hitX=barrier?.x??tx,hitY=barrier?.y??(target.top+target.height*.55-field.top);
+        const hitX=aim?.x??barrier?.x??tx,hitY=aim?.y??barrier?.y??(target.top+target.height*.55-field.top);
         const progress=phase==='appear'?0:phase==='impact'?1:Math.min(1,phaseAge/effect.flightDuration);
         if(phase!=='impact'||effect.angle===null)effect.angle=Math.atan2(hitY-sy,hitX-sx)*180/Math.PI+180;
         effect.element.style.left=`${sx+(hitX-sx)*progress}px`;
@@ -1216,8 +1252,13 @@
           if(!effect.releaseOrigin)effect.releaseOrigin={x:source.left+source.width*46/64-field.left,y:source.top+source.height*25/64-field.top};
           sx=effect.releaseOrigin.x;sy=effect.releaseOrigin.y;
         }
+        const aim=lockArcherTarget(effect,field,target);
+        if(aim){
+          if(!effect.lockedOrigin)effect.lockedOrigin={x:sx,y:sy};
+          sx=effect.lockedOrigin.x;sy=effect.lockedOrigin.y;
+        }
         const barrier=effect.type==='arrow'?aimAtBarrier(effect,state,target,field,sx,sy):null;
-        const hitX=barrier?.x??tx,hitY=barrier?.y??ty;
+        const hitX=aim?.x??barrier?.x??tx,hitY=aim?.y??barrier?.y??ty;
         if(effect.type==='arrow'){
           const angle=Math.atan2(hitY-sy,hitX-sx)*180/Math.PI+180;
           effect.element.style.transform=`translate(-50%,-50%) rotate(${angle}deg)`;
