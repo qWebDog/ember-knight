@@ -208,7 +208,8 @@
     // Keep the wolf moving in the SAME direction and at the same pace,
     // without teleporting it across the arena at the instant of victory.
     function followExit({heroX,heroDepth=3}={}){
-      if(!active()||!Number.isFinite(heroX)||position===null)return false;
+      // A fallen wolf must not be dragged along by the scene-exit escort.
+      if(!active()||!Number.isFinite(heroX)||position===null||motion==='die')return false;
       if(exitHeroX!==null)position+=Math.max(0,heroX-exitHeroX);
       exitHeroX=heroX;skill=null;clearEffect();
       actorDepth=heroDepth;facing=3;motion='walk';engaged=false;
