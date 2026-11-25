@@ -1519,3 +1519,24 @@ test('arcane sphere atlas has separate transparent durability and hit frames, an
  ui.runUntil(()=>ui.events.some(e=>e.type==='sphere'&&e.broken),20);assert.ok(Number(shield().dataset.frame)>=8&&Number(shield().dataset.frame)<12);ui.runFor(.7);assert.ok(!shield());
  const css=fs.readFileSync(path.join(dist,'game.css'),'utf8');assert.match(css,/canvas\.mage-sphere\{[^}]*width:150%;height:150%;left:-25%;top:-25%/);
 });
+
+test('shield stops a skeleton arrow on its outer rim and draws splinters instead of body hit',async()=>{
+ const ui=createHarness({weapon:'wand',outfit:'acolyte',combatOptions:{heroDamage:1,heroSphereRank:1,heroMaxHp:1000}});await ui.loadAllImages();
+ const field=ui.node('.battlefield'),arrows=()=>field.children.filter(el=>el.className==='projectile arrow'&&el.dataset.target==='hero'&&!el.hidden),bursts=()=>field.children.filter(el=>el.className==='barrier-impact');
+ ui.runUntil(()=>arrows().some(el=>Number.isFinite(Number(el.dataset.barrierX))),15);
+ const arrow=arrows()[0],hero=ui.node('[data-fighter="hero"]').getBoundingClientRect(),rect=field.getBoundingClientRect();
+ assert.ok(Number(arrow.dataset.barrierX)>hero.left+hero.width/2-rect.left);
+ assert.ok(Number.parseFloat(arrow.style.left)>=Number(arrow.dataset.barrierX)-.01);
+ ui.runUntil(()=>ui.events.some(e=>e.type==='sphere'),15);assert.ok(!field.children.includes(arrow));assert.equal(ui.state().hero.hp,1000);
+ const burst=bursts()[0];assert.ok(burst);assert.equal(burst.dataset.kind,'arrow');assert.ok(burst.draws.some(d=>d.src.endsWith('mage-barrier-impact.svg')&&d.crop[1]===0));
+ assert.ok(Math.abs(Number.parseFloat(burst.style.left)-Number(arrow.dataset.barrierX))<1);ui.runFor(.5);assert.ok(!field.children.includes(burst));
+});
+test('dragon magic shatters at shield, only unabsorbed damage reaches hero',async()=>{
+ const ui=createHarness({weapon:'wand',outfit:'acolyte',dragonBoss:true,combatOptions:{heroDamage:300,heroMaxHp:1800}});await ui.loadAllImages();ui.runUntil(()=>ui.state().waveIndex===3,45);
+ ui.battle.updateHeroStats({heroDamage:1,heroSphereRank:1});const field=ui.node('.battlefield');
+ ui.runUntil(()=>ui.events.some(e=>e.type==='sphere'&&e.sourceId==='dragon'),15);
+ const absorbed=ui.events.find(e=>e.type==='sphere'&&e.sourceId==='dragon');assert.equal(absorbed.projectile,'magic');assert.ok(absorbed.castId);assert.equal(absorbed.absorbed,6);
+ const burst=field.children.find(el=>el.className==='barrier-impact'&&el.dataset.castId===absorbed.castId);assert.ok(burst);assert.equal(burst.dataset.kind,'magic');assert.ok(burst.draws.some(d=>d.crop[1]===64));
+ assert.ok(!ui.spells().some(el=>el.dataset.dragonVolley==='true'&&el.dataset.burst==='0'));
+ ui.runUntil(()=>ui.events.some(e=>e.type==='sphere'&&e.sourceId==='dragon'&&e.broken),15);assert.equal(ui.state().hero.sphere.hp,0);assert.ok(ui.events.some(e=>e.type==='attack'&&e.sourceId==='dragon'&&e.damage===4));
+});

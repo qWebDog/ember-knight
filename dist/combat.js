@@ -267,7 +267,7 @@
         if(target.id==='hero'&&sphere?.hp>0&&damage>0){
           const absorbed=Math.min(sphere.hp,damage);sphere.hp-=absorbed;damage-=absorbed;
           if(sphere.hp===0)sphere.brokenAt=elapsed/TICKS;
-          events.push({type:'sphere',sourceId,targetId:'hero',absorbed,hp:sphere.hp,maxHp:sphere.maxHp,broken:sphere.hp===0,at:elapsed/TICKS});
+          events.push({type:'sphere',sourceId,targetId:'hero',absorbed,hp:sphere.hp,maxHp:sphere.maxHp,broken:sphere.hp===0,at:elapsed/TICKS,projectile,...(metadata?.castId?{castId:metadata.castId}:{}),...(metadata?.magic?{magic:metadata.magic}:{})});
         }
         target.hp = Math.max(0,target.hp-damage);
         events.push({type:'attack',sourceId,targetId:target.id,damage,hp:target.hp,at:elapsed/TICKS,projectile,...metadata});

@@ -1185,3 +1185,7 @@ test('advanced mage burn and shard skills deal extra damage on engine-confirmed 
  const b=createDefaultBattle({heroWeapon:'wand',heroProjectile:'magic',heroMagic:'both',heroDamage:1,heroBurnRank:1,heroShardRank:2,heroMaxHp:1000});const e=b.advance(4);
  assert.ok(e.some(x=>x.type==='status'&&x.status==='burn'&&x.duration===.75));assert.ok(e.some(x=>x.dot&&x.damage===2));assert.ok(e.some(x=>x.type==='cast'&&x.shards));assert.ok(e.some(x=>x.type==='attack'&&x.shards&&x.damage===6));
 });
+
+test('shield impact carries projectile identity, including the final overflowing arrow',()=>{
+ const b=createDefaultBattle({heroWeapon:'wand',heroProjectile:'magic',heroSphereRank:1});const events=b.advance(7.2,{heroCanAttack:false});const blocks=events.filter(e=>e.type==='sphere');assert.equal(blocks.length,3);assert.ok(blocks.every(e=>e.projectile==='arrow'));assert.equal(blocks[2].absorbed,6);assert.equal(blocks[2].broken,true);assert.equal(events.find(e=>e.type==='attack'&&e.at===blocks[2].at).damage,1);assert.equal(events.filter(e=>e.type==='attack').at(-1).damage,7);
+});
