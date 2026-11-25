@@ -1021,7 +1021,7 @@ test('skill purchases update the active hero and HUD without healing, and surviv
  const ui=createHarness({weapon:'bow',outfit:'wanderer',savedProgression:{version:1,gold:120,levels:{power:0,vitality:0,tempo:0},archerLevels:{endurance:1}}});await ui.loadAllImages();
  assert.equal(ui.skillMount.root,ui.node('#skills-panel'));assert.equal(ui.skillMount.heroLevel,1);
  ui.runUntil(()=>ui.events.some(event=>event.type==='attack'&&event.targetId==='hero'));
- ui.node('#auto-button').click();const hp=ui.state().hero.hp,elapsed=ui.state().elapsed;assert.ok(hp<200);
+ ui.node('#auto-button').click();const hp=ui.state().hero.hp,elapsed=ui.state().elapsed;assert.ok(hp<ui.state().hero.maxHp);
  for(const id of ['marksmanship','wolfBond','quickdraw'])assert.equal(ui.progression.purchase(id).ok,true);
  assert.equal(ui.state().elapsed,elapsed);assert.equal(ui.state().hero.hp,hp,'raising maximum HP must not heal the current battle');
  assert.equal(ui.state().hero.damage,14);assert.equal(ui.state().hero.maxHp,220);assert.equal(ui.state().hero.attackSpeed,1.05);
