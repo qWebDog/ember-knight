@@ -1228,14 +1228,14 @@ test('after the wolf falls, stationary archers switch fire to the hero',async()=
 
 test('animated Red Dragon boss appears after the old three waves with flapping wings during entrance',async()=>{
  const ui=createHarness({weapon:'sword',outfit:'wanderer',dragonBoss:true,
-   combatOptions:{heroDamage:450,heroMaxHp:1400}});
+   combatOptions:{heroDamage:20000,heroMaxHp:14000}});
  await ui.loadAllImages();
  assert.equal(ui.state().waveCount,4);
  assert.equal(ui.state().totalEnemies,5);
  const wave=ui.runUntil(()=>ui.state().waveIndex===3,45);
  assert.ok(wave>0);
  assert.equal(ui.state().enemies[0].id,'dragon');
- assert.equal(ui.state().enemies[0].maxHp,1800);
+ assert.equal(ui.state().enemies[0].maxHp,18000);
  const body=ui.node('[data-fighter="dragon"]'),sprite=ui.node('#enemy-dragon');
  assert.equal(body.hidden,false,'dragon needs a visible battle actor');
  assert.equal(body.dataset.motion,'fly');
@@ -1253,7 +1253,7 @@ test('animated Red Dragon boss appears after the old three waves with flapping w
 
 test('dragon hovers and fires five separate Mage-style fireballs from its mouth',async()=>{
  const ui=createHarness({weapon:'bow',outfit:'wanderer',dragonBoss:true,wolfEquipped:false,
-   combatOptions:{heroDamage:300,heroMaxHp:1800}});
+   combatOptions:{heroDamage:300,heroMaxHp:18000}});
  await ui.loadAllImages();
  ui.runUntil(()=>ui.state().waveIndex===3,45);
  ui.battle.updateHeroStats({heroDamage:1});
@@ -1290,13 +1290,13 @@ test('dragon hovers and fires five separate Mage-style fireballs from its mouth'
    'dragon pauses between distinct salvos');
  const hits=ui.events.filter(e=>e.type==='attack'&&e.sourceId==='dragon');
  assert.equal(hits.length,5,'each of the five magic shots deals engine-confirmed damage');
- assert.ok(hits.every(e=>e.damage===60));
- assert.equal(hits.reduce((sum,e)=>sum+e.damage,0),300);
+ assert.ok(hits.every(e=>e.damage===600));
+ assert.equal(hits.reduce((sum,e)=>sum+e.damage,0),3000);
 });
 
 test('hovering dragon hits equipped wolf with claws, not with persistent fire',async()=>{
  const ui=createHarness({weapon:'bow',outfit:'wanderer',dragonBoss:true,wolfEquipped:true,
-   combatOptions:{heroDamage:300,heroMaxHp:1800}});
+   combatOptions:{heroDamage:300,heroMaxHp:18000}});
  await ui.loadAllImages();
  ui.runUntil(()=>ui.state().waveIndex===3,45);
  ui.battle.updateHeroStats({heroDamage:1});
@@ -1307,7 +1307,7 @@ test('hovering dragon hits equipped wolf with claws, not with persistent fire',a
    &&e.projectile==='claw'),18);
  const claw=ui.events.find(e=>e.sourceId==='dragon'&&e.projectile==='claw');
  assert.equal(claw.targetId,'companion');
- assert.equal(claw.damage,240);
+ assert.equal(claw.damage,2400);
  assert.ok(ui.state().companion.hp<ui.state().companion.maxHp);
  assert.equal(ui.events.filter(e=>e.type==='cast'&&e.sourceId==='dragon').length,0,
    'no fireball or fire breath may be aimed at a living wolf');
@@ -1318,7 +1318,7 @@ test('hovering dragon hits equipped wolf with claws, not with persistent fire',a
 
 test('dragon fireballs disappear instantly when dragon dies during a salvo',async()=>{
  const ui=createHarness({weapon:'bow',outfit:'wanderer',dragonBoss:true,wolfEquipped:false,
-   combatOptions:{heroDamage:300,heroMaxHp:1800}});
+   combatOptions:{heroDamage:300,heroMaxHp:18000}});
  await ui.loadAllImages();
  ui.runUntil(()=>ui.state().waveIndex===3,45);
  ui.battle.updateHeroStats({heroDamage:1});
@@ -1326,7 +1326,7 @@ test('dragon fireballs disappear instantly when dragon dies during a salvo',asyn
  ui.runFor(.1);
  const visible=()=>ui.node('.battlefield').children.filter(el=>el.className==='spell-projectile'&&el.dataset.dragonVolley==='true');
  assert.ok(visible().length>0,'fire exists while dragon is alive and exhaling');
- ui.battle.updateHeroStats({heroDamage:2000});
+ ui.battle.updateHeroStats({heroDamage:20000});
  ui.runUntil(()=>ui.events.some(e=>e.type==='death'&&e.id==='dragon'),3);
  assert.equal(ui.state().phase,'victory');
  assert.equal(visible().length,0,'every fireball is removed in the death event, not at timeout');
@@ -1390,7 +1390,7 @@ test('Archer and living wolf exit the completed wave in the SAME direction',asyn
 });
 test('dragon visibly descends toward wolf before claw strike and climbs back up before breathing fire',async()=>{
  const ui=createHarness({weapon:'bow',outfit:'wanderer',dragonBoss:true,wolfEquipped:true,
-   combatOptions:{heroDamage:300,heroMaxHp:1800,companionMaxHp:12}});
+   combatOptions:{heroDamage:300,heroMaxHp:18000,companionMaxHp:12}});
  await ui.loadAllImages();
  ui.runUntil(()=>ui.state().waveIndex===3,45);
  ui.battle.updateHeroStats({heroDamage:1});
@@ -1418,7 +1418,7 @@ test('dragon visibly descends toward wolf before claw strike and climbs back up 
 
 test('Red Dragon keeps jaws open continuously across all five fireballs, then closes between salvos',async()=>{
  const ui=createHarness({weapon:'bow',outfit:'wanderer',dragonBoss:true,wolfEquipped:false,
-   combatOptions:{heroDamage:300,heroMaxHp:1800}});
+   combatOptions:{heroDamage:300,heroMaxHp:18000}});
  await ui.loadAllImages();
  ui.runUntil(()=>ui.state().waveIndex===3,45);
  ui.battle.updateHeroStats({heroDamage:1});
@@ -1460,7 +1460,7 @@ test('Red Dragon keeps jaws open continuously across all five fireballs, then cl
 
 test('Red Dragon never holds open-mouth fire pose for claw attacks on living wolf',async()=>{
  const ui=createHarness({weapon:'bow',outfit:'wanderer',dragonBoss:true,wolfEquipped:true,
-   combatOptions:{heroDamage:300,heroMaxHp:1800}});
+   combatOptions:{heroDamage:300,heroMaxHp:18000}});
  await ui.loadAllImages();
  ui.runUntil(()=>ui.state().waveIndex===3,45);
  ui.battle.updateHeroStats({heroDamage:1});
@@ -1535,13 +1535,13 @@ test('shield stops a skeleton arrow on its outer rim and draws splinters instead
  assert.ok(Math.abs(Number.parseFloat(burst.style.left)-Number(arrow.dataset.barrierX))<1);ui.runFor(.5);assert.ok(!field.children.includes(burst));
 });
 test('dragon magic shatters at shield, only unabsorbed damage reaches hero',async()=>{
- const ui=createHarness({weapon:'wand',outfit:'acolyte',dragonBoss:true,combatOptions:{heroDamage:300,heroMaxHp:1800}});await ui.loadAllImages();ui.runUntil(()=>ui.state().waveIndex===3,45);
+ const ui=createHarness({weapon:'wand',outfit:'acolyte',dragonBoss:true,combatOptions:{heroDamage:300,heroMaxHp:18000}});await ui.loadAllImages();ui.runUntil(()=>ui.state().waveIndex===3,45);
  ui.battle.updateHeroStats({heroDamage:1,heroSphereRank:1});const field=ui.node('.battlefield');
  ui.runUntil(()=>ui.events.some(e=>e.type==='sphere'&&e.sourceId==='dragon'),15);
  const absorbed=ui.events.find(e=>e.type==='sphere'&&e.sourceId==='dragon');assert.equal(absorbed.projectile,'magic');assert.ok(absorbed.castId);assert.equal(absorbed.absorbed,20);
  const burst=field.children.find(el=>el.className==='barrier-impact'&&el.dataset.castId===absorbed.castId);assert.ok(burst);assert.equal(burst.dataset.kind,'magic');assert.ok(burst.draws.some(d=>d.crop[1]===64));
  assert.ok(!ui.spells().some(el=>el.dataset.dragonVolley==='true'&&el.dataset.burst==='0'));
- ui.runUntil(()=>ui.events.some(e=>e.type==='sphere'&&e.sourceId==='dragon'&&e.broken),15);assert.equal(ui.state().hero.sphere.hp,0);assert.ok(ui.events.some(e=>e.type==='attack'&&e.sourceId==='dragon'&&e.damage===40));
+ ui.runUntil(()=>ui.events.some(e=>e.type==='sphere'&&e.sourceId==='dragon'&&e.broken),15);assert.equal(ui.state().hero.sphere.hp,0);assert.ok(ui.events.some(e=>e.type==='attack'&&e.sourceId==='dragon'&&e.damage===580));
 });
 
 test('mage reaction uses separate transparent advanced effect atlas',async()=>{
@@ -1690,7 +1690,7 @@ test('Enemy arrow keeps its launch aim and passes the archer without damage on d
  runFramesUntil(ui,()=>!ui.node('.battlefield').children.includes(arrow),2);
 });
 test('Dragon projectiles retain their original aim while archer dodges',async()=>{
- const ui=createHarness({weapon:'bow',outfit:'wanderer',dragonBoss:true,combatOptions:{heroDamage:300,heroMaxHp:1800,archer_evasion:5,dodgeRandom:()=>0}});
+ const ui=createHarness({weapon:'bow',outfit:'wanderer',dragonBoss:true,combatOptions:{heroDamage:300,heroMaxHp:18000,archer_evasion:5,dodgeRandom:()=>0}});
  await ui.loadAllImages();ui.runUntil(()=>ui.state().waveIndex===3,45);ui.battle.updateHeroStats({heroDamage:1});
  const aimed=new Map();let moved=false,missed=false;const initial=ui.heroX();
  for(let i=0;i<1800&&!(moved&&missed);i++){
