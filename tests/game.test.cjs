@@ -1540,3 +1540,7 @@ test('dragon magic shatters at shield, only unabsorbed damage reaches hero',asyn
  assert.ok(!ui.spells().some(el=>el.dataset.dragonVolley==='true'&&el.dataset.burst==='0'));
  ui.runUntil(()=>ui.events.some(e=>e.type==='sphere'&&e.sourceId==='dragon'&&e.broken),15);assert.equal(ui.state().hero.sphere.hp,0);assert.ok(ui.events.some(e=>e.type==='attack'&&e.sourceId==='dragon'&&e.damage===4));
 });
+
+test('mage reaction uses separate transparent advanced effect atlas',async()=>{
+ const ui=createHarness({weapon:'wand',outfit:'acolyte',combatOptions:{heroDamage:1,heroMaxHp:1000,heroFusionRank:1}});await ui.loadAllImages();assert.ok(ui.loadedPaths.includes('assets/magic/mage-advanced.svg'));ui.runUntil(()=>ui.events.some(e=>e.type==='mageSkill'&&e.skill==='steam'),15);const effect=ui.node('.battlefield').children.find(el=>el.className==='mage-advanced-effect'&&el.dataset.skill==='steam');assert.ok(effect);assert.ok(effect.draws.some(d=>d.src.endsWith('mage-advanced.svg')&&d.crop[1]===128));
+});

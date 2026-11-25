@@ -69,6 +69,9 @@
     const mage=options.heroWeapon==='wand'&&config.projectile==='magic';
     const rank=value=>Number.isFinite(value)?Math.max(0,Math.min(5,Math.floor(value))):0;
     let burnRank=mage?rank(options.heroBurnRank):0,sphereRank=mage?rank(options.heroSphereRank):0,shardRank=mage?rank(options.heroShardRank):0;
+    const advancedKeys=["heroFusionRank","heroChaosRank","heroAbsorptionRank","heroRebirthRank","heroEchoRank","heroOverloadRank","heroArchmageRank"];
+    const advanced=Object.fromEntries(advancedKeys.map(key=>[key,mage?rank(options[key]):0]));
+    let echoMeter=0,overloadMeter=0,archCount=0,archRemaining=0,reactionCount=0,rebirthUsed=false;
     const sphereCapacity=()=>sphereRank?10+10*sphereRank:0;
     let sphere=null;
     const sword = options.heroWeapon === 'sword' && config.projectile === 'melee';
@@ -129,6 +132,7 @@
     function restart() {
       elapsed = 0; remainder = 0; reward = 0; completedWaves = 0; defeatedCount = 0;
       hero = {id:'hero',name:config.name,hp:config.maxHp,maxHp:config.maxHp,damage:config.damage,attackSpeed:config.attackSpeed};
+      echoMeter=overloadMeter=archCount=archRemaining=reactionCount=0;rebirthUsed=false;
       sphere=sphereRank?{hp:sphereCapacity(),maxHp:sphereCapacity(),brokenAt:null}:null;
       const maxHp=positive(options.companionMaxHp,WOLF_MAX_HP);
       companion={id:'companion',name:'Боевой волк',hp:companionEnabled?maxHp:0,maxHp};
@@ -211,6 +215,7 @@
     function updateHeroStats(stats = {}) {
       const oldSpeed = config.attackSpeed;
       if(mage){
+        for(const key of advancedKeys)if(stats[key]!==undefined)advanced[key]=rank(stats[key]);
         if(stats.heroBurnRank!==undefined)burnRank=rank(stats.heroBurnRank);
         if(stats.heroShardRank!==undefined)shardRank=rank(stats.heroShardRank);
         if(stats.heroSphereRank!==undefined){
@@ -270,10 +275,19 @@
           events.push({type:'sphere',sourceId,targetId:'hero',absorbed,hp:sphere.hp,maxHp:sphere.maxHp,broken:sphere.hp===0,at:elapsed/TICKS,projectile,...(metadata?.castId?{castId:metadata.castId}:{}),...(metadata?.magic?{magic:metadata.magic}:{})});
         }
         target.hp = Math.max(0,target.hp-damage);
+        if(target.id==='hero'&&target.hp===0&&advanced.heroRebirthRank&&!rebirthUsed){
+          rebirthUsed=true;target.hp=Math.max(1,Math.floor(target.maxHp*.1*advanced.heroRebirthRank));
+          events.push({type:'mageSkill',skill:'rebirth',sourceId:'hero',targetId:'hero',at:elapsed/TICKS,hp:target.hp});
+        }
         events.push({type:'attack',sourceId,targetId:target.id,damage,hp:target.hp,at:elapsed/TICKS,projectile,...metadata});
         if (target.hp === 0) {
           const enemy = target.id !== 'hero' && target.id !== 'companion';
-          if (enemy) { defeatedCount++; reward += KILL_REWARD; target.status = null; }
+          if (enemy) { defeatedCount++; reward += KILL_REWARD; target.status = null;
+            if(sourceId==='hero'&&advanced.heroAbsorptionRank&&sphere&&sphere.hp<sphere.maxHp){
+              const restored=Math.min(sphere.maxHp-sphere.hp,4*advanced.heroAbsorptionRank);sphere.hp+=restored;sphere.brokenAt=null;
+              events.push({type:'mageSkill',skill:'absorption',sourceId:target.id,targetId:'hero',at:elapsed/TICKS,restored});
+            }
+          }
           events.push({type:'death',id:target.id,unitType:target.type || (target.id==='companion'?'companion':'hero'),reward:enemy ? KILL_REWARD : 0,totalReward:reward,at:elapsed/TICKS});
           pendingCounters = pendingCounters.filter(counter => counter.targetId !== target.id);
           // A dead dragon cannot finish breathing: cancel both unreleased
@@ -300,9 +314,26 @@
       }
       function applyStatus(target,magic) {
         const type = magic === 'fire' ? 'burn' : 'freeze';
-        const enhanced=type==='burn'&&burnRank>0,duration=STATUS_DURATION+(enhanced?burnRank*BURN_INTERVAL:0);
+        const enhanced=type==='burn'&&burnRank>0,duration=Math.max(STATUS_DURATION+(enhanced?burnRank*BURN_INTERVAL:0),advanced.heroFusionRank?Math.round(1.55*TICKS):0);
         target.status = {type,sourceId:'hero',startedAt:elapsed,endsAt:elapsed+duration,nextTick:elapsed+BURN_INTERVAL,...(enhanced?{enhanced:true,damage:statusTiming.burnDamage+burnRank}:{})};
         events.push({type:'status',status:type,sourceId:'hero',targetId:target.id,at:elapsed/TICKS,duration:duration/TICKS,endsAt:target.status.endsAt/TICKS});
+      }
+      function mageReaction(target,magic,previous){
+        if(!advanced.heroFusionRank||!previous||!['fire','ice'].includes(magic))return;
+        const skill=magic==='fire'&&previous==='freeze'?'thermal':magic==='ice'&&previous==='burn'?'steam':null;
+        if(!skill)return;
+        const damage=advanced.heroFusionRank*4;
+        events.push({type:'mageSkill',skill,sourceId:'hero',targetId:target.id,at:elapsed/TICKS});
+        if(target.hp>0)hit('hero',target,damage,'reaction',{dot:true,magic});
+        if(skill==='steam'){
+          const nearby=availability?.nearbyEnemies?.[target.id]||[];
+          for(const enemy of enemies)if(enemy.id!==target.id&&enemy.hp>0&&nearby.includes(enemy.id))hit('hero',enemy,Math.max(1,Math.floor(damage*.5)),'reaction',{dot:true,magic});
+        }
+        reactionCount++;
+        if(advanced.heroChaosRank&&reactionCount%3===0){
+          events.push({type:'mageSkill',skill:'chaos',sourceId:'hero',targetId:target.id,at:elapsed/TICKS});
+          for(const enemy of enemies)if(enemy.hp>0)hit('hero',enemy,advanced.heroChaosRank*5,'reaction',{dot:true});
+        }
       }
       function dragonPulse(sourceId,burstIndex){
         // Fire belongs exclusively to the hero-facing ranged phase. A living
@@ -327,11 +358,24 @@
       function cast(sourceId,target,damage,magic) {
         const close = sourceId === 'hero' && availability?.heroCloseRange === true;
         const timing = close ? closeMagicTiming : magicTiming;
-        const interval = sourceId === 'hero' ? heroTicks(close ? CLOSE_MAGIC_INTERVAL : HERO_INTERVAL) : Math.round(enemies.find(enemy=>enemy.id===sourceId).interval*TICKS);
+        let interval = sourceId === 'hero' ? heroTicks(close ? CLOSE_MAGIC_INTERVAL : HERO_INTERVAL) : Math.round(enemies.find(enemy=>enemy.id===sourceId).interval*TICKS);
+        let echo=false,overloaded=false;
+        if(sourceId==='hero'&&mage){
+          if(archRemaining>0){interval=Math.max(1,Math.round(interval*(.9-.05*advanced.heroArchmageRank)));archRemaining--;}
+          if(advanced.heroArchmageRank&&++archCount%6===0){archRemaining=3;events.push({type:'mageSkill',skill:'archmage',sourceId:'hero',targetId:'hero',at:elapsed/TICKS});}
+          overloadMeter+=advanced.heroOverloadRank*8;if(overloadMeter>=100){overloadMeter-=100;damage=Math.ceil(damage*1.5);overloaded=true;}
+          echoMeter+=advanced.heroEchoRank;if(echoMeter>=10){echoMeter-=10;echo=true;}
+        }
         const delay = Math.round((timing.appearDuration+timing.flightDuration)*TICKS);
         const castAt = elapsed/TICKS,impactTick = elapsed+delay,castId = `${sourceId}:${elapsed}`;
         events.push({type:'cast',sourceId,targetId:target.id,projectile:'magic',magic,at:castAt,...timing,impactAt:impactTick/TICKS,castId,animationDuration:sourceId === 'hero' ? heroTicks((close ? .36 : .66)*TICKS)/TICKS : .66,castInterval:interval/TICKS});
-        pendingImpacts.push({sourceId,targetId:target.id,damage,magic,at:impactTick,castAt,castId});
+        pendingImpacts.push({sourceId,targetId:target.id,damage,magic,at:impactTick,castAt,castId,overloaded});
+        if(echo){
+          const echoAt=impactTick+Math.round(.18*TICKS),echoId=castId+':echo';
+          events.push({type:'mageSkill',skill:'echo',sourceId:'hero',targetId:'hero',at:castAt});
+          events.push({type:'cast',sourceId,targetId:target.id,projectile:'magic',magic,echo:true,at:castAt,impactAt:echoAt/TICKS,castId:echoId,appearDuration:timing.appearDuration,flightDuration:timing.flightDuration+.18,impactDuration:.32,animationDuration:0,castInterval:interval/TICKS});
+          pendingImpacts.push({sourceId,targetId:target.id,damage:Math.max(1,Math.floor(damage*.5)),magic,echo:true,at:echoAt,castAt,castId:echoId});
+        }
         if(sourceId==='hero'&&magic==='ice'&&shardRank>0){
           const shardAt=impactTick+Math.round(.12*TICKS),shardId=castId+':shards';
           events.push({type:'cast',sourceId,targetId:target.id,projectile:'magic',magic:'ice',shards:true,at:castAt,impactAt:shardAt/TICKS,castId:shardId,appearDuration:timing.appearDuration,flightDuration:timing.flightDuration+.12,impactDuration:.32,animationDuration:0,castInterval:interval/TICKS});
@@ -415,9 +459,14 @@
           const impact = pendingImpacts.shift(),target = impact.targetId === 'hero' ? hero
             : impact.targetId === 'companion' ? companion : enemies.find(enemy => enemy.id === impact.targetId);
           if (!target || target.hp <= 0) continue;
+          const previous=target.status?.type;
           hit(impact.sourceId,target,impact.damage,'magic',{magic:impact.magic,impact:true,castAt:impact.castAt,castId:impact.castId,
-            breath:Boolean(impact.breath),burstIndex:impact.burstIndex,...(impact.shards?{shards:true}:{})});
-          if (!impact.shards && impact.sourceId === 'hero' && target.id !== 'hero' && target.hp > 0 && ['fire','ice'].includes(impact.magic)) applyStatus(target,impact.magic);
+            breath:Boolean(impact.breath),burstIndex:impact.burstIndex,...(impact.shards?{shards:true}:{}),...(impact.echo?{echo:true}:{}),...(impact.overloaded?{overloaded:true}:{})});
+          if(impact.overloaded)events.push({type:'mageSkill',skill:'overload',sourceId:'hero',targetId:target.id,at:elapsed/TICKS});
+          if(!impact.shards&&!impact.echo&&impact.sourceId==='hero'&&target.id!=='hero'&&['fire','ice'].includes(impact.magic)){
+            mageReaction(target,impact.magic,previous);
+            if(target.hp>0)applyStatus(target,impact.magic);
+          }
           if (hero.hp === 0) { end('defeat'); break; }
           if (enemies.every(enemy => enemy.hp === 0)) { clearWave(); break; }
         }

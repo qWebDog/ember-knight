@@ -162,7 +162,7 @@ test('listeners receive isolated snapshots after commit, can unsubscribe, and ca
 test('Mage progression is class-specific, combines independent branches, and preserves Warrior ranks and shared gold', () => {
  const storage=memoryStorage({[storageKey]:canonical(200,{power:3,vitality:1,tempo:2})});
  const mage=createStore({storage,classId:'wand'});
- assert.deepEqual(mage.catalog.map(item=>item.id),['sorcery','barrier','channel','strongBurn','protectiveSphere','iceShards']);
+ assert.deepEqual(mage.catalog.map(item=>item.id),['sorcery','barrier','channel','strongBurn','protectiveSphere','iceShards','fusion','chaos','absorption','rebirth','echo','overload','archmage']);
  assert.deepEqual(mage.getStats(),{heroDamage:12,heroMaxHp:200,heroAttackSpeed:1});
  assert.equal(mage.quote('power').reason,'unknown');
  for(const id of ['sorcery','barrier','channel'])assert.equal(mage.purchase(id).ok,true);
@@ -233,5 +233,12 @@ test('Archer purchases retain previous saves and avoid charging on full ranks or
 
 test('mage tier two requires rank three and persists each independent upgrade',()=>{
  const storage=memoryStorage({[storageKey]:canonical(1000,{})}),mage=createStore({storage,classId:'wand'});
- for(const [id,requires,stat] of [['strongBurn','sorcery','heroBurnRank'],['protectiveSphere','barrier','heroSphereRank'],['iceShards','channel','heroShardRank']]){assert.equal(mage.purchase(id).reason,'locked');for(let i=0;i<3;i++)assert.equal(mage.purchase(requires).ok,true);assert.equal(mage.purchase(id).ok,true);assert.equal(mage.getStats()[stat],1);assert.equal(createStore({storage,classId:'wand'}).getStats()[stat],1);}
+ for(const [id,requires,stat] of [['strongBurn','sorcery','heroBurnRank'],['protectiveSphere','barrier','heroSphereRank'],['iceShards','sorcery','heroShardRank']]){if(mage.quote(requires).level<3)assert.equal(mage.purchase(id).reason,'locked');for(let i=mage.quote(requires).level;i<3;i++)assert.equal(mage.purchase(requires).ok,true);assert.equal(mage.purchase(id).ok,true);assert.equal(mage.getStats()[stat],1);assert.equal(createStore({storage,classId:'wand'}).getStats()[stat],1);}
+});
+
+test('all advanced mage ranks persist, and old shard purchases survive migration',()=>{
+ const storage=memoryStorage({[storageKey]:JSON.stringify({version:1,gold:10000,levels:{power:2},mageLevels:{sorcery:0,barrier:0,channel:3,iceShards:2}})}),mage=createStore({storage,classId:'wand'});
+ assert.equal(mage.quote('iceShards').level,2);assert.equal(mage.quote('iceShards').canBuy,true);assert.equal(mage.getStats().heroShardRank,2);assert.equal(mage.quote('fusion').reason,'locked');
+ for(const id of ['sorcery','barrier','channel','strongBurn','iceShards','protectiveSphere','fusion','absorption','echo','overload','chaos','rebirth','archmage'])for(let i=mage.quote(id).level;i<3;i++)assert.equal(mage.purchase(id).ok,true,id);
+ const restored=createStore({storage,classId:'wand'});assert.equal(restored.getStats().heroArchmageRank,3);assert.equal(restored.getStats().heroFusionRank,3);assert.equal(restored.getState().levels.power,2);
 });

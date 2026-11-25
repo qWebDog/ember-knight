@@ -22,7 +22,14 @@
     Object.freeze({id:'channel', branch:'control', name:'Поток маны', description:'Каждый уровень ускоряет сотворение заклинаний на 5%.', maxLevel:5, icon:'bolt'}),
     Object.freeze({id:'strongBurn',branch:'attack',name:'Сильный ожог',description:'Продлевает горение и усиливает его урон.',maxLevel:5,icon:'flame',requires:'sorcery'}),
     Object.freeze({id:'protectiveSphere',branch:'defense',name:'Защитная сфера',description:'Поглощает урон до разрушения. Восстанавливается в начале нового боя.',maxLevel:5,icon:'skill-shield',requires:'barrier'}),
-    Object.freeze({id:'iceShards',branch:'control',name:'Ледяные осколки',description:'Дополнительный залп после ледяного заклинания.',maxLevel:5,icon:'bolt',requires:'channel'})
+    Object.freeze({id:'iceShards',branch:'attack',name:'Ледяные осколки',description:'Дополнительный залп после ледяного заклинания.',maxLevel:5,icon:'bolt',requires:'sorcery'}),
+    Object.freeze({"id":"fusion","branch":"attack","name":"Слияние стихий","description":"Огонь и лёд вызывают термошок или паровой взрыв: +4 урона за уровень.","maxLevel":5,"icon":"flame","requires":["strongBurn","iceShards"]}),
+    Object.freeze({"id":"chaos","branch":"attack","name":"Стихийный хаос","description":"Каждая третья реакция наносит всем врагам +5 урона за уровень.","maxLevel":5,"icon":"flame","requires":"fusion"}),
+    Object.freeze({"id":"absorption","branch":"defense","name":"Поглощение","description":"За убийство восстанавливается 4 прочности сферы за уровень, в том числе после разрушения.","maxLevel":5,"icon":"skill-shield","requires":"protectiveSphere"}),
+    Object.freeze({"id":"rebirth","branch":"defense","name":"Перерождение","description":"Один раз за бой спасает от гибели и восстанавливает 10% здоровья за уровень.","maxLevel":5,"icon":"skill-shield","requires":"absorption"}),
+    Object.freeze({"id":"echo","branch":"control","name":"Эхо заклинаний","description":"Каждые 10 очков резонанса повторяют заклинание с 50% урона; +1 очко за уровень за каждый каст.","maxLevel":5,"icon":"bolt","requires":"channel"}),
+    Object.freeze({"id":"overload","branch":"control","name":"Перегрузка","description":"Усиленный удар +50% урона с частотой 8% за уровень (предсказуемая накопительная шкала).","maxLevel":5,"icon":"bolt","requires":"echo"}),
+    Object.freeze({"id":"archmage","branch":"control","name":"Архимаг","description":"После каждых 6 обычных заклинаний следующие 3 интервала сокращаются на 10% + 5% за уровень.","maxLevel":5,"icon":"bolt","requires":"overload"})
   ]);
   const archerCatalog = Object.freeze([
     Object.freeze({id:'marksmanship', branch:'attack', name:'Меткий выстрел', description:'Каждый уровень добавляет 2 к урону стрел лучника.', maxLevel:5, icon:'skill-bow'}),
@@ -72,7 +79,14 @@
       heroAttackSpeed:1 + .05 * levels[ids[2]],
       ...(classId==='wand'&&levels.strongBurn?{heroBurnRank:levels.strongBurn}:{}),
       ...(classId==='wand'&&levels.protectiveSphere?{heroSphereRank:levels.protectiveSphere}:{}),
-      ...(classId==='wand'&&levels.iceShards?{heroShardRank:levels.iceShards}:{})
+      ...(classId==='wand'&&levels.iceShards?{heroShardRank:levels.iceShards}:{}),
+      ...(classId==='wand'&&levels.fusion?{heroFusionRank:levels.fusion}:{}),
+      ...(classId==='wand'&&levels.chaos?{heroChaosRank:levels.chaos}:{}),
+      ...(classId==='wand'&&levels.absorption?{heroAbsorptionRank:levels.absorption}:{}),
+      ...(classId==='wand'&&levels.rebirth?{heroRebirthRank:levels.rebirth}:{}),
+      ...(classId==='wand'&&levels.echo?{heroEchoRank:levels.echo}:{}),
+      ...(classId==='wand'&&levels.overload?{heroOverloadRank:levels.overload}:{}),
+      ...(classId==='wand'&&levels.archmage?{heroArchmageRank:levels.archmage}:{})
     };
   }
   function quoteState(state, id, classId = 'sword') {
@@ -81,7 +95,9 @@
     const level = classId === 'wand' ? (state.mageLevels?.[id] || 0)
       : classId === 'bow' ? (state.archerLevels?.[id] || 0) : state.levels[id];
     if (level >= item.maxLevel) return {id, level, maxLevel:item.maxLevel, cost:null, canBuy:false, reason:'max'};
-    if(item.requires&&(state.mageLevels?.[item.requires]||0)<3)return {id,level,maxLevel:item.maxLevel,cost:null,canBuy:false,reason:'locked',requires:item.requires};
+    // Purchased ranks survive changed prerequisites (including old ice-shard saves).
+    const requirements=item.requires?[].concat(item.requires):[];
+    if(!level&&requirements.some(key=>(state.mageLevels?.[key]||0)<3))return {id,level,maxLevel:item.maxLevel,cost:null,canBuy:false,reason:'locked',requires:item.requires};
     const cost = (item.requires?20:10) + 10 * level;
     return {id, level, maxLevel:item.maxLevel, cost, canBuy:state.gold >= cost, reason:state.gold >= cost ? null : 'coins'};
   }

@@ -97,7 +97,7 @@ test('the panel stays in the lower viewport grid with compact portrait and lands
  assert.match(css,/@media\(max-width:700px\)/);assert.match(css,/@media\(orientation:portrait\) and \(max-height:700px\)/);assert.ok(/@media\(orientation:landscape\) and \(max-height:600px\)\{\s*\.skills-panel\{[^}]*grid-template-columns:minmax\(0,[\d.]+fr\) minmax\(0,[\d.]+fr\)/.test(css),'compact landscape must place the tree and detail in two flexible columns');assert.doesNotMatch(base,/overflow(?:-y)?:\s*(?:auto|scroll)/);const treeRules=[...css.matchAll(/\.skills-tree\{([^}]*)\}/g)].map(match=>match[1]).join(';');assert.match(treeRules,/overflow-y:auto/);assert.match(treeRules,/overflow-x:hidden/);assert.match(treeRules,/overscroll-behavior:contain/);
  const gameScript=html.search(/src="game\.js(?:\?[^"]*)?"/);
  assert.ok(gameScript>=0,'game script must be present');
- for(const dependency of ['progression.js?v=mage-tier2-1','skills-ui.js?v=mage-tier2-1']){
+ for(const dependency of ['progression.js?v=mage-elemental-tree-1','skills-ui.js?v=mage-elemental-tree-1']){
    const dependencyIndex=html.indexOf(`src="${dependency}"`);
    assert.ok(dependencyIndex>=0&&dependencyIndex<gameScript,
      'the dependencies must load before the game mounts the panel');
@@ -126,7 +126,7 @@ test('Mage displays only Mage skills and its chosen branches can be bought indep
  assert.equal(ui.root.querySelectorAll('[data-skill-future]').length,6);
  assert.match(ui.root.querySelectorAll('[data-skill-future]')[0].getAttribute('aria-label'),/Сильный ожог/);
  assert.deepEqual(ui.root.querySelectorAll('.skill-branch').map(node=>node.querySelector('h3').textContent),
-   ['Пиромантия','Аркана','Криомантия']);
+   ['Стихии','Аркана','Мастерство']);
  assert.equal(ui.root.querySelectorAll('[data-skill-tab]').length,4);
  assert.equal(ui.root.querySelectorAll('[data-skill-tab]').filter(node=>!node.disabled).length,2);
  const saved=JSON.parse(ui.storage.get('ember.progress.v1'));
@@ -173,4 +173,8 @@ test('Archer mounts a genuine independent three-branch tree with future nodes an
 
 test('mage tier two nodes select locked details then become purchasable at rank three',()=>{
  const ui=createPanel({classId:'wand',gold:200});ui.clickSkill('protectiveSphere');assert.equal(ui.node('#skill-upgrade').disabled,true);assert.match(ui.node('[data-skill-benefit]').textContent,/III/);ui.clickSkill('barrier');for(let i=0;i<3;i++)ui.upgrade();ui.clickSkill('protectiveSphere');assert.equal(ui.node('#skill-upgrade').disabled,false);ui.upgrade();assert.equal(ui.store.getStats().heroSphereRank,1);
+});
+
+test('mage tree exposes all thirteen nodes and both elemental branches in attack',()=>{
+ const ui=createPanel({classId:'wand',gold:1000});assert.equal(ui.root.querySelectorAll('[data-skill-id]').length,13);assert.equal(ui.node('[data-branch="attack"]').querySelectorAll('[data-skill-id]').length,5);ui.clickSkill('fusion');assert.match(ui.node('[data-skill-benefit]').textContent,/Сильный ожог.*Ледяные осколки/);assert.equal(ui.node('#skill-upgrade').disabled,true);
 });

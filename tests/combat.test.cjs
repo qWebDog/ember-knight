@@ -1189,3 +1189,13 @@ test('advanced mage burn and shard skills deal extra damage on engine-confirmed 
 test('shield impact carries projectile identity, including the final overflowing arrow',()=>{
  const b=createDefaultBattle({heroWeapon:'wand',heroProjectile:'magic',heroSphereRank:1});const events=b.advance(7.2,{heroCanAttack:false});const blocks=events.filter(e=>e.type==='sphere');assert.equal(blocks.length,3);assert.ok(blocks.every(e=>e.projectile==='arrow'));assert.equal(blocks[2].absorbed,6);assert.equal(blocks[2].broken,true);assert.equal(events.find(e=>e.type==='attack'&&e.at===blocks[2].at).damage,1);assert.equal(events.filter(e=>e.type==='attack').at(-1).damage,7);
 });
+
+test('advanced mage triggers elemental reactions and mastery events in real combat',()=>{
+ const b=createDefaultBattle({heroWeapon:'wand',heroProjectile:'magic',heroMagic:'both',heroDamage:1,heroMaxHp:10000,heroFusionRank:1,heroChaosRank:1,heroEchoRank:5,heroOverloadRank:5,heroArchmageRank:1});const e=b.advance(20);
+ for(const skill of ['thermal','steam','chaos','echo','overload','archmage'])assert.ok(e.some(x=>x.type==='mageSkill'&&x.skill===skill),skill);
+ assert.ok(e.some(x=>x.type==='attack'&&x.echo));assert.ok(e.some(x=>x.type==='attack'&&x.overloaded));assert.ok(e.some(x=>x.type==='attack'&&x.projectile==='reaction'));
+});
+test('rebirth saves exactly once per battle and absorption restores actual sphere HP',()=>{
+ const b=createDefaultBattle({heroWeapon:'wand',heroProjectile:'magic',heroMaxHp:10,heroDamage:1,heroRebirthRank:5});const e=b.advance(20,{heroCanAttack:false});assert.equal(e.filter(x=>x.type==='mageSkill'&&x.skill==='rebirth').length,1);assert.equal(b.state.phase,'defeat');
+ const a=createDefaultBattle({heroWeapon:'wand',heroProjectile:'magic',heroDamage:30,heroSphereRank:1,heroAbsorptionRank:1});const x=a.advance(5);assert.ok(x.some(v=>v.type==='mageSkill'&&v.skill==='absorption'&&v.restored===4));
+});
