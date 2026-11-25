@@ -132,7 +132,7 @@
   const sphereTile=128,sphereBreakDuration=.56;
   let laneStep = 0;
   arena.dataset.lanes='5';battlefield.dataset.lanes='5';
-  let heroX = null, fieldWidth = null, moving = false, heroMoving = false, archerRetreatOffset=0;
+  let heroX = null, fieldWidth = null, moving = false, heroMoving = false, archerRetreatOffset=0,archerRetreatMotion=null,archerEvadeAt=-10;
   // The engine clock deliberately freezes for the 2.5s wave entrance.
   // Wolf sprite frames need their own pause-aware visual clock, otherwise
   // its x-coordinate moves while the legs stay on one static frame.
@@ -449,6 +449,7 @@
       element.src = arrowSprite; element.alt = ''; element.draggable = false;
       element.width = 192; element.height = 30;
       if(sourceId==='hero'&&archerArrowRows.includes(options.arrowType))element.dataset.arrowType=options.arrowType;
+      if(options.double)element.dataset.double=String(options.double);if(options.rainIndex){element.dataset.rainIndex=String(options.rainIndex);element.dataset.rainCount=String(options.rainCount);}if(options.retreat)element.dataset.retreat='true';
     }
     const floating = ['damage','heavy','counter','block','coin'].includes(type);
     element.className = floating ? `damage-number ${type}-number ${targetId === 'hero' && type !== 'block' ? 'enemy-damage' : ''}` : `projectile ${type}`;
@@ -460,7 +461,7 @@
       element.dataset.releaseAt=String(at);
       element.dataset.impactAt=String(at+(options.duration||arrowFlightDuration));
     }
-    const effect={element,type,floating,sourceId,targetId,
+    const effect={element,type,floating,sourceId,targetId,...(options.double?{double:options.double}:{}),...(options.retreat?{retreat:true}:{}),
       at:options.at??activeTime,
       duration:options.duration??(type==='coin'?.65:floating?.85:.38)};
     battlefield.appendChild(element);effects.push(effect);
@@ -606,9 +607,21 @@
   function handleEvents(events) {
     for (const event of events) {
       if(event.type==='archerSkill'){
-        if(event.skill==='retreat'){archerRetreatOffset=Math.max(0,Math.min(battlefield.clientWidth*.14,battlefield.clientWidth*(window.innerWidth>700?.18:.22)-actors.hero.element.offsetWidth*.65,archerRetreatOffset+actors.hero.element.offsetWidth*.7));addEffect('block','hero','hero','Отступление',event.at);}
-        else if(event.skill==='evasion')addEffect('block','hero','hero','Уклонение',event.at);
-        else if(event.skill==='wolfRevive'){companionDeathAt=null;companion?.reset();}
+        if(event.skill==='retreat'){
+          const from=currentRetreatOffset(),max=Math.max(0,Math.min(battlefield.clientWidth*.14,battlefield.clientWidth*(window.innerWidth>700?.18:.22)-actors.hero.element.offsetWidth*.65));
+          archerRetreatOffset=Math.min(max,from+actors.hero.element.offsetWidth*.7);
+          archerRetreatMotion={from,to:archerRetreatOffset,at:event.at};addEffect('block','hero','hero','Отступление',event.at);
+        }
+        else if(event.skill==='evasion'){archerEvadeAt=event.at;addEffect('block','hero','hero','Уклонение',event.at);}
+        else if(event.skill==='wolfRevive'){companionDeathAt=null;companion?.reset();addEffect('block','companion','companion','Возвращение',event.at);}
+        else if(event.skill==='roar')addEffect('block','companion','companion','Рык',event.at);
+        else if(event.skill==='rendingBite')addEffect('heavy','companion',event.targetId,'Кровотечение',event.at);
+        else if(event.skill==='arrowDance')addEffect('block','hero','hero','Танец стрел',event.at);
+        else if(event.skill==='arrowRain')addEffect('block','hero','hero','Град стрел',event.at);
+      }else if(event.type==='arrowLaunch'){
+        const source=actors[event.sourceId];
+        source.animation={at:event.at-event.animationDuration*arrowReleaseFrame/arrowPoseFrames,duration:event.animationDuration};source.lastKey=null;
+        addEffect('arrow',event.sourceId,event.targetId,null,event.at,{at:event.at,duration:event.impactAt-event.at,retreat:true});
       }else if(event.type==='talentKnockback'){
         for(const id of event.targets){const actor=actors[id];if(!actor||actor.x==null)continue;const side=actor.x>=heroX?1:-1;actor.x+=side*actors.hero.element.offsetWidth*.65;actor.moving=false;actor.element.style.left=actor.x+'px';}
         pairContacted=false;projectFormation();
@@ -835,13 +848,19 @@
     actor.bar.setAttribute('aria-valuenow',unit.hp);
     actor.bar.setAttribute('aria-valuemax',unit.maxHp);
     actor.element.setAttribute('aria-label', `${unit.name}${id === 'hero' && loadout ? `, ${starterWeapon.name}, наряд ${starterOutfit.name}, ${loadouts.color(loadout.outfitColor).name}${starterWeapon?.id==='wand'?', огонь и лёд':''}` : ''}: ${unit.hp} из ${unit.maxHp} здоровья`);
+    if(id==='hero'&&starterWeapon?.id==='bow'){
+      const p=(activeTime-archerEvadeAt)/.22,evading=!ended&&!reducedMotion.matches&&p>=0&&p<1;
+      actor.canvas.style.transform=evading?'translateX('+(-Math.sin(p*Math.PI)*18)+'%)':'';
+      actor.element.dataset.evading=String(evading);
+      actor.element.classList.toggle('is-arrow-dance',!ended&&!!state.archerEffects?.dance);
+    }
     drawStatus(actor,unit,state);
   }
   function prepareWave(state) {
     removeEffects(()=>false);
     pendingIceImpacts.clear();
     cuedArrows.clear();
-    heroX=null;archerRetreatOffset=0;fieldWidth=null;walkDistance=0;walkDirection=3;moving=heroMoving=false;
+    heroX=null;archerRetreatOffset=0;archerRetreatMotion=null;archerEvadeAt=-10;fieldWidth=null;walkDistance=0;walkDirection=3;moving=heroMoving=false;
     companionTime=0;companionDeathAt=null;companionHitAt=-10;
     companion?.reset();
     pairContacted=false;previousSeparation=null;contactTarget=null;previousTargetSeparation=null;
@@ -859,13 +878,19 @@
     updateMovement(0,state);
   }
   // Range holds only melee cooldowns; archers shoot throughout the approach.
+  function currentRetreatOffset(){
+    if(!archerRetreatMotion||reducedMotion.matches)return archerRetreatOffset;
+    const p=Math.max(0,Math.min(1,(activeTime-archerRetreatMotion.at)/.24));
+    if(p>=1){archerRetreatMotion=null;return archerRetreatOffset;}
+    return archerRetreatMotion.from+(archerRetreatMotion.to-archerRetreatMotion.from)*(1-(1-p)**2);
+  }
   function updateMovement(dt,state) {
     const activeIds=new Set(state.enemies.map(enemy=>enemy.id));
     for(const id of Object.keys(enemyDefinitions))actors[id].element.hidden=!activeIds.has(id);
     const width=battlefield.clientWidth;
     if(!width)return 0;
     const heroSize=actors.hero.element.offsetWidth;
-    const home=width*(window.innerWidth>700?.18:.22)-(starterWeapon?.id==='bow'?archerRetreatOffset:0);
+    const home=width*(window.innerWidth>700?.18:.22)-(starterWeapon?.id==='bow'?currentRetreatOffset():0);
     if(heroX===null)heroX=home;
     for(const id of Object.keys(enemyDefinitions))if(actors[id].x===null)actors[id].x=width*actors[id].spawn;
     const resized=fieldWidth&&fieldWidth!==width;
@@ -1057,11 +1082,12 @@
       ||heroEntrance||state.phase!=='running'
       ||sceneTransition&&sceneTransition.phase!=='wave-in')return;
     const shots=battle.getArrowSchedule?.()||[];
-    const valid=new Set(shots.map(shot=>shot.sourceId+':'+shot.targetId+':'+shot.at.toFixed(6)));
+    const keyFor=shot=>shot.sourceId+':'+shot.targetId+':'+shot.at.toFixed(6);
+    const valid=new Map(shots.map(shot=>[keyFor(shot),shot]));
     for(const [key,effect] of cuedArrows){
-      if(valid.has(key)||activeTime+1e-6>=effect.at+effect.duration)continue;
-      effect.element.remove();
-      const i=effects.indexOf(effect);if(i>=0)effects.splice(i,1);
+      if(activeTime+1e-6>=effect.at+effect.duration){cuedArrows.delete(key);continue;}
+      const planned=valid.get(key);if(planned&&Boolean(planned.double)===Boolean(effect.paired)&&planned.arrowType===effect.element.dataset.arrowType)continue;
+      for(const e of [effect,effect.paired].filter(Boolean)){e.element.remove();const i=effects.indexOf(e);if(i>=0)effects.splice(i,1);}
       const shooter=actors[effect.sourceId];
       if(shooter.animation?.arrowCue===key){shooter.animation=null;shooter.lastKey=null;}
       cuedArrows.delete(key);
@@ -1071,16 +1097,16 @@
         target=shot.targetId==='companion'?$('#companion-wolf'):actors[shot.targetId];
       if(!source?.images.attack||!target||!shot.animationDuration)continue;
       if(state.companion && shot.sourceId!=='hero' && source.moving)continue;
-      const key=shot.sourceId+':'+shot.targetId+':'+shot.at.toFixed(6);
+      const key=keyFor(shot);
       if(cuedArrows.has(key))continue;
       const releaseAt=shot.at-arrowFlightDuration;
       const startAt=releaseAt-shot.animationDuration*arrowReleaseFrame/arrowPoseFrames;
       if(activeTime+1e-6<startAt||activeTime>shot.at)continue;
       source.animation={at:startAt,duration:shot.animationDuration,arrowCue:key};
       source.lastKey=null;
-      const effect=addEffect('arrow',shot.sourceId,shot.targetId,null,releaseAt,
-        {at:releaseAt,duration:arrowFlightDuration,arrowType:shot.arrowType});
-      if(effect)cuedArrows.set(key,effect);
+      const opts={at:releaseAt,duration:arrowFlightDuration,arrowType:shot.arrowType,rainIndex:shot.rainIndex,rainCount:shot.rainCount};
+      const effect=addEffect('arrow',shot.sourceId,shot.targetId,null,releaseAt,{...opts,...(shot.double?{double:1}:{})});
+      if(effect){if(shot.double)effect.paired=addEffect('arrow',shot.sourceId,shot.targetId,null,releaseAt,{...opts,double:2});cuedArrows.set(key,effect);}
     }
   }
   function renderEffects(state) {
@@ -1089,6 +1115,7 @@
       const effect = effects[i], age = activeTime - effect.at;
       // Each dragon orb is finite, removed on impact or immediately on
       // source death, and never survives result screens or wave transitions.
+      if(effect.retreat&&(!state.enemies.some(unit=>unit.id===effect.targetId&&unit.hp>0)||state.phase==='victory'||state.phase==='defeat')){effect.element.remove();effects.splice(i,1);continue;}
       if(effect.dragonVolley){
         const alive=state.phase==='running'
           &&state.enemies.some(unit=>unit.id==='dragon'&&unit.hp>0);
@@ -1184,7 +1211,8 @@
           const angle=Math.atan2(hitY-sy,hitX-sx)*180/Math.PI+180;
           effect.element.style.transform=`translate(-50%,-50%) rotate(${angle}deg)`;
         }
-        effect.element.style.left = `${sx+(hitX-sx)*p}px`; effect.element.style.top = `${sy+(hitY-sy)*p}px`;
+        const spread=effect.double?(effect.double===1?-1:1)*Math.sin(p*Math.PI)*source.width*.10:0;
+        effect.element.style.left = `${sx+(hitX-sx)*p}px`; effect.element.style.top = `${sy+(hitY-sy)*p+spread}px`;
       }
     }
   }
@@ -1246,6 +1274,7 @@
     const wolfElement=$('#companion-wolf');
     if(wolfElement){
       wolfElement.classList.toggle('is-hit',companionTime-companionHitAt<.16);
+      wolfElement.classList.toggle('is-roaring',!!state.archerEffects?.roar);
       if(state.companion){
         const bar=$('#companion-health-fill');
         if(bar)bar.style.width=`${state.companion.hp/state.companion.maxHp*100}%`;
@@ -1284,7 +1313,8 @@
     }));
     return {
       nearbyEnemies:Object.fromEntries(state.enemies.map(a=>[a.id,state.enemies.filter(b=>b.id!==a.id&&Math.hypot(actors[a.id].x-actors[b.id].x,(actors[a.id].depth-actors[b.id].depth)*laneStep)<=heroSize*1.6).sort((b,c)=>Math.hypot(actors[a.id].x-actors[b.id].x,(actors[a.id].depth-actors[b.id].depth)*laneStep)-Math.hypot(actors[a.id].x-actors[c.id].x,(actors[a.id].depth-actors[c.id].depth)*laneStep)).map(b=>b.id)])),
-      heroCanRetreat:starterWeapon?.id==='bow'&&heroX>heroSize*.65,
+      heroCloseEnemy:Object.fromEntries(state.enemies.map(e=>[e.id,enemyReach(e.id,actors[e.id].x)])),
+      heroCanRetreat:starterWeapon?.id==='bow'&&heroX>heroSize*.65&&archerRetreatOffset<Math.max(0,Math.min(battlefield.clientWidth*.14,battlefield.clientWidth*(window.innerWidth>700?.18:.22)-heroSize*.65))-.01,
       heroCanAttack:Boolean(target && (ranged || inReach(target,actors[target].x))),
       heroCloseRange:Boolean(target && inReach(target,actors[target].x)),
       orcCanAttack:wolfBattle?Boolean(enemyCanAttack.orc):
