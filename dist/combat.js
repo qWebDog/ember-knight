@@ -72,7 +72,7 @@
     const rank=value=>Number.isFinite(value)?Math.max(0,Math.min(5,Math.floor(value))):0;
     let burnRank=mage?rank(options.heroBurnRank):0,sphereRank=mage?rank(options.heroSphereRank):0,shardRank=mage?rank(options.heroShardRank):0;
     const archerRanks=Object.fromEntries(["piercing","poison","explosive","barbed","doubleShot","arrowRain","rendingBite","guardian","alpha","evasion","retreat","arrowDance","wolfBond"].map(id=>[id,archer?rank(options['archer_'+id]):0]));
-    let dodgeUntil=0;
+    let dodgeUntil=0,dodgeSince=Infinity;
     let arrowMeters={},arrowQueue=[],shotCount=0,rainLeft=0,rainAt=0,dodgeMeter=0,retreatAt=0,danceAt=0,danceUntil=0,wolfBites=0,wolfReviveAt=Infinity,roarUntil=0,roarAt=0;
     const wolfMax=()=>positive(options.companionMaxHp,WOLF_MAX_HP)*(1+.15*archerRanks.wolfBond);
     const advancedKeys=["heroFusionRank","heroChaosRank","heroAbsorptionRank","heroRebirthRank","heroEchoRank","heroOverloadRank","heroArchmageRank"];
@@ -158,6 +158,7 @@
       };
     }
     function spawnWave(index) {
+      dodgeUntil=0;dodgeSince=Infinity;
       waveIndex = index; phase = 'running'; pausedFrom = null; nextWaveAt = null;
       enemies = activeWaves[index].map(unit => ({...archetypes[unit.type],...unit,hp:archetypes[unit.type].maxHp,status:null}));
       comboIndex = 0; meleeHits = 0; heroBusyUntil = elapsed; pendingCounters = []; pendingImpacts = []; pendingBreaths = [];rainLeft=0;
@@ -316,7 +317,7 @@
         if(!enemy||enemy.hp<=0||hero.hp<=0||elapsed<dodgeUntil)return false;
         const at=elapsed/TICKS,releaseTick=elapsed+Math.round(archerDodge.release*TICKS),
           impactTick=releaseTick+Math.round(archerDodge.flight*TICKS);
-        dodgeUntil=elapsed+Math.round(archerDodge.duration*TICKS);
+        dodgeSince=elapsed;dodgeUntil=elapsed+Math.round(archerDodge.duration*TICKS);
         deferNormalShot();
         events.push({type:'archerSkill',skill,sourceId:'hero',targetId:enemy.id,at,dodgeShot:true});
         events.push({type:'arrowLaunch',sourceId:'hero',targetId:enemy.id,at:releaseTick/TICKS,
@@ -327,11 +328,27 @@
         return true;
       }
       function hit(sourceId,target,damage,projectile,metadata) {
-        let reflected=0;
+        let reflected=0,evaded=false;
         if(archer&&sourceId!=='hero'&&sourceId!=='companion'&&damage>0){
           if(target.id==='companion'&&archerRanks.guardian)damage*=1-(.05+.05*archerRanks.guardian);
           if(elapsed<roarUntil)damage*=1-.05*archerRanks.alpha;
-          if(target.id==='hero'&&!metadata?.dot){dodgeMeter+=archerRanks.evasion*5+(elapsed<danceUntil?10:0);if(dodgeMeter>=100){dodgeMeter-=100;damage=0;if(!dodgeShot(enemies.find(enemy=>enemy.id===sourceId),'evasion'))events.push({type:'archerSkill',skill:'evasion',sourceId,targetId:'hero',at:elapsed/TICKS});}}
+          if(target.id==='hero'&&!metadata?.dot){
+            // Incoming ballistic projectiles aim once, at release. A dodge
+            // invalidates shots aimed at the old position, including those
+            // that arrive after landing. Fresh shots after movement can hit.
+            const flight=projectile==='arrow'?archerDodge.flight:projectile==='magic'?(metadata?.breath?dragonBreath.flight:magicTiming.flightDuration):0;
+            const release=elapsed-Math.round(flight*TICKS);
+            const motionEnd=dodgeSince+Math.round(archerDodge.frames.slice(0,8).reduce((a,b)=>a+b,0)*TICKS);
+            if((flight>0&&elapsed>=dodgeSince&&release<motionEnd&&release<=dodgeUntil&&elapsed<dodgeUntil+Math.round(flight*TICKS))||
+              (flight===0&&elapsed>=dodgeSince&&elapsed<dodgeUntil)){
+              damage=0;evaded=true;
+            }else{
+              dodgeMeter+=archerRanks.evasion*5+(elapsed<danceUntil?10:0);
+              if(dodgeMeter>=100){dodgeMeter-=100;damage=0;evaded=true;
+                if(!dodgeShot(enemies.find(enemy=>enemy.id===sourceId),'evasion'))events.push({type:'archerSkill',skill:'evasion',sourceId,targetId:'hero',at:elapsed/TICKS});
+              }
+            }
+          }
         }
         if(target.id==='hero'&&elapsed<immuneUntil)damage=0;
         if(target.id==='hero'&&sphere?.hp>0&&damage>0){
@@ -349,7 +366,7 @@
           if(hasTalent('immortality'))immuneUntil=elapsed+2*TICKS;
           events.push({type:'mageSkill',skill:'rebirth',sourceId:'hero',targetId:'hero',at:elapsed/TICKS,hp:target.hp});
         }
-        events.push({type:'attack',sourceId,targetId:target.id,damage,hp:target.hp,at:elapsed/TICKS,projectile,...metadata});
+        events.push({type:'attack',sourceId,targetId:target.id,damage,hp:target.hp,at:elapsed/TICKS,projectile,...metadata,...(evaded?{evaded:true}:{})});
         if (target.hp === 0) {
           const enemy = target.id !== 'hero' && target.id !== 'companion';
           if(target.id==='companion'&&archerRanks.alpha)wolfReviveAt=elapsed+(24-2*archerRanks.alpha)*TICKS;
