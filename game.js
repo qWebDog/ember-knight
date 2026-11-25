@@ -65,6 +65,7 @@
     ? window.EmberClassEquipment.create({classId:starterWeapon.id,skin,color:loadout.outfitColor,
       loadImage,standardPath:pose=>loadouts.path(loadout,skin,pose),
       canvasFactory:()=>document.createElement('canvas'),dye:dyeEngine}) : null;
+  const dodgeTiming=window.EmberCombat.archerDodge,dodgeArt=window.EmberArcherDodge;
   let loadedClassSprites = null;
   function applyClassSprites(images){
     if(!images||!actors.hero.images.walk)return;
@@ -72,6 +73,7 @@
     for(const [kind,pose] of [['idle','walk'],['walk','walk'],['attack','attack']]){
       if(sets[kind])sets[kind].image=images[pose];
     }
+    if(starterWeapon?.id==='bow')sets.dodge=dodgeArt.build(images.attack);
     actors.hero.lastKey=null;
   }
   let loadedSwordSprites = null;
@@ -132,7 +134,7 @@
   const sphereTile=128,sphereBreakDuration=.56;
   let laneStep = 0;
   arena.dataset.lanes='5';battlefield.dataset.lanes='5';
-  let heroX = null, fieldWidth = null, moving = false, heroMoving = false, archerRetreatOffset=0;
+  let heroX = null, fieldWidth = null, moving = false, heroMoving = false, archerRetreatOffset=0,archerRetreatMotion=null,archerEvadeAt=-10;
   // The engine clock deliberately freezes for the 2.5s wave entrance.
   // Wolf sprite frames need their own pause-aware visual clock, otherwise
   // its x-coordinate moves while the legs stay on one static frame.
@@ -296,6 +298,7 @@
         actors.hero.images.idle = {image:walk,row:3,still:0,...starterWeapon.walk};
         actors.hero.images.walk = {image:walk,row:3,...starterWeapon.walk};
         actors.hero.images.attack = {image:attack,row:3,...starterWeapon.attack};
+        if(starterWeapon.id==='bow')actors.hero.images.dodge=dodgeArt.build(attack);
         if (starterWeapon.attacks) {
           const variants = await Promise.all(Object.entries(starterWeapon.attacks).map(async ([variant,geometry]) => {
             const image = variant === 'slash' ? attack : (swordSprites?.[variant]||await loadImage(loadouts.path(loadout,skin,variant)));
@@ -449,6 +452,7 @@
       element.src = arrowSprite; element.alt = ''; element.draggable = false;
       element.width = 192; element.height = 30;
       if(sourceId==='hero'&&archerArrowRows.includes(options.arrowType))element.dataset.arrowType=options.arrowType;
+      if(options.double)element.dataset.double=String(options.double);if(options.rainIndex){element.dataset.rainIndex=String(options.rainIndex);element.dataset.rainCount=String(options.rainCount);}if(options.retreat)element.dataset.retreat='true';
     }
     const floating = ['damage','heavy','counter','block','coin'].includes(type);
     element.className = floating ? `damage-number ${type}-number ${targetId === 'hero' && type !== 'block' ? 'enemy-damage' : ''}` : `projectile ${type}`;
@@ -460,7 +464,7 @@
       element.dataset.releaseAt=String(at);
       element.dataset.impactAt=String(at+(options.duration||arrowFlightDuration));
     }
-    const effect={element,type,floating,sourceId,targetId,
+    const effect={element,type,floating,sourceId,targetId,...(options.double?{double:options.double}:{}),...(options.retreat?{retreat:true}:{}),
       at:options.at??activeTime,
       duration:options.duration??(type==='coin'?.65:floating?.85:.38)};
     battlefield.appendChild(element);effects.push(effect);
@@ -606,9 +610,25 @@
   function handleEvents(events) {
     for (const event of events) {
       if(event.type==='archerSkill'){
-        if(event.skill==='retreat'){archerRetreatOffset=Math.max(0,Math.min(battlefield.clientWidth*.14,battlefield.clientWidth*(window.innerWidth>700?.18:.22)-actors.hero.element.offsetWidth*.65,archerRetreatOffset+actors.hero.element.offsetWidth*.7));addEffect('block','hero','hero','Отступление',event.at);}
-        else if(event.skill==='evasion')addEffect('block','hero','hero','Уклонение',event.at);
-        else if(event.skill==='wolfRevive'){companionDeathAt=null;companion?.reset();}
+        if(event.skill==='retreat'||event.skill==='evasion'){
+          if(event.dodgeShot){
+            const from=currentRetreatOffset(),max=Math.max(0,Math.min(battlefield.clientWidth*.14,battlefield.clientWidth*(window.innerWidth>700?.18:.22)-actors.hero.element.offsetWidth*.65));
+            archerRetreatOffset=Math.min(max,from+actors.hero.element.offsetWidth*.75);
+            archerRetreatMotion={from,to:archerRetreatOffset,at:event.at};
+            archerEvadeAt=event.at;actors.hero.lastKey=null;
+          }
+          addEffect('block','hero','hero',event.skill==='retreat'?'Отступление':'Уклонение',event.at);
+        }
+        else if(event.skill==='wolfRevive'){companionDeathAt=null;companion?.reset();addEffect('block','companion','companion','Возвращение',event.at);}
+        else if(event.skill==='roar')addEffect('block','companion','companion','Рык',event.at);
+        else if(event.skill==='rendingBite')addEffect('heavy','companion',event.targetId,'Кровотечение',event.at);
+        else if(event.skill==='arrowDance')addEffect('block','hero','hero','Танец стрел',event.at);
+        else if(event.skill==='arrowRain')addEffect('block','hero','hero','Град стрел',event.at);
+      }else if(event.type==='arrowLaunch'){
+        const source=actors[event.sourceId];
+        if(!event.dodgeShot){source.animation={at:event.at-event.animationDuration*arrowReleaseFrame/arrowPoseFrames,duration:event.animationDuration};source.lastKey=null;}
+        const effect=addEffect('arrow',event.sourceId,event.targetId,null,event.at,{at:event.at,duration:event.impactAt-event.at,retreat:true});
+        if(effect&&event.dodgeShot)effect.dodgeShot=true;
       }else if(event.type==='talentKnockback'){
         for(const id of event.targets){const actor=actors[id];if(!actor||actor.x==null)continue;const side=actor.x>=heroX?1:-1;actor.x+=side*actors.hero.element.offsetWidth*.65;actor.moving=false;actor.element.style.left=actor.x+'px';}
         pairContacted=false;projectFormation();
@@ -795,8 +815,9 @@
     const distance = id === 'hero' ? walkDistance : actor.distance;
     const walking = (id==='hero'?heroMoving:actor.moving) && distance > 0 && unit.hp > 0 && (!ended||walkingOut) && !reducedMotion.matches && actor.images.walk?.frames > 1;
     const blocking = !walking && !ended && unit.hp > 0 && !reducedMotion.matches && actor.images.block && activeTime - actor.blockAt < .28/(state.hero.attackSpeed||1);
-    const attacking = !walking && !blocking && !ended && age >= 0 && age < (actor.animation?.duration || 0) && unit.hp > 0 && !reducedMotion.matches;
-    const kind = walking ? 'walk' : blocking ? 'block' : attacking ? 'attack' : 'idle';
+    const evading=id==='hero'&&starterWeapon?.id==='bow'&&!!actor.images.dodge&&!ended&&!walkingOut&&unit.hp>0&&!reducedMotion.matches&&activeTime>=archerEvadeAt&&activeTime-archerEvadeAt<dodgeTiming.duration;
+    const attacking = !evading&&!walking && !blocking && !ended && age >= 0 && age < (actor.animation?.duration || 0) && unit.hp > 0 && !reducedMotion.matches;
+    const kind = evading ? 'dodge' : walking ? 'walk' : blocking ? 'block' : attacking ? 'attack' : 'idle';
     const descriptor = attacking && actor.images.attacks?.[actor.animation.variant] || actor.images[kind];
     // LPC directions: 0=back, 1=left, 2=front, 3=right.
     // When moving toward a hero/wolf on the left, Orc must use the LEFT
@@ -804,9 +825,9 @@
     const defender=state.enemyTargetId==='companion'?companion?.getPose():null;
     const facingTargetX=defender?.x??heroX;
     const enemyFacing=['archer','swordsman'].includes(actor.type)?(facingTargetX>actor.x?3:1):descriptor.row;
-    const row = walking ? (id==='hero'?walkDirection:actor.direction) : enemyFacing;
+    const row = evading?0:walking ? (id==='hero'?walkDirection:actor.direction) : enemyFacing;
     const tile = descriptor.tile || 64, origin = descriptor.origin || 0;
-    const cell = walking ? 1 + Math.floor((distance / .75 % 1) * 8) : attacking ? Math.min(descriptor.frames-1,Math.floor((age+(actor.animation?.arrowCue?1e-6:0)) / actor.animation.duration * descriptor.frames)) : Number.isInteger(descriptor.still) ? descriptor.still : id === 'hero' && auto && unit.hp > 0 && !ended && !reducedMotion.matches ? Math.floor(activeTime / .65) % 2 : 0;
+    const cell = evading ? dodgeArt.frameAt(activeTime-archerEvadeAt,dodgeTiming) : walking ? 1 + Math.floor((distance / .75 % 1) * 8) : attacking ? Math.min(descriptor.frames-1,Math.floor((age+(actor.animation?.arrowCue?1e-6:0)) / actor.animation.duration * descriptor.frames)) : Number.isInteger(descriptor.still) ? descriptor.still : id === 'hero' && auto && unit.hp > 0 && !ended && !reducedMotion.matches ? Math.floor(activeTime / .65) % 2 : 0;
     const key = `${kind}-${descriptor.image.src}-${cell}-${row}-${tile}-${origin}`;
     if (!frozen&&actor.lastKey !== key) {
       actor.canvas.width = tile; actor.canvas.height = tile;
@@ -835,13 +856,18 @@
     actor.bar.setAttribute('aria-valuenow',unit.hp);
     actor.bar.setAttribute('aria-valuemax',unit.maxHp);
     actor.element.setAttribute('aria-label', `${unit.name}${id === 'hero' && loadout ? `, ${starterWeapon.name}, наряд ${starterOutfit.name}, ${loadouts.color(loadout.outfitColor).name}${starterWeapon?.id==='wand'?', огонь и лёд':''}` : ''}: ${unit.hp} из ${unit.maxHp} здоровья`);
+    if(id==='hero'&&starterWeapon?.id==='bow'){
+      actor.canvas.style.transform='';
+      actor.element.dataset.evading=String(evading);
+      actor.element.classList.toggle('is-arrow-dance',!ended&&!!state.archerEffects?.dance);
+    }
     drawStatus(actor,unit,state);
   }
   function prepareWave(state) {
     removeEffects(()=>false);
     pendingIceImpacts.clear();
     cuedArrows.clear();
-    heroX=null;archerRetreatOffset=0;fieldWidth=null;walkDistance=0;walkDirection=3;moving=heroMoving=false;
+    heroX=null;archerRetreatOffset=0;archerRetreatMotion=null;archerEvadeAt=-10;fieldWidth=null;walkDistance=0;walkDirection=3;moving=heroMoving=false;
     companionTime=0;companionDeathAt=null;companionHitAt=-10;
     companion?.reset();
     pairContacted=false;previousSeparation=null;contactTarget=null;previousTargetSeparation=null;
@@ -859,13 +885,19 @@
     updateMovement(0,state);
   }
   // Range holds only melee cooldowns; archers shoot throughout the approach.
+  function currentRetreatOffset(){
+    if(!archerRetreatMotion||reducedMotion.matches)return archerRetreatOffset;
+    const motion=archerRetreatMotion,age=Math.max(0,activeTime-motion.at);
+    if(age>=dodgeTiming.duration){archerRetreatMotion=null;return archerRetreatOffset;}
+    return motion.from+(motion.to-motion.from)*dodgeArt.offset(age,dodgeTiming);
+  }
   function updateMovement(dt,state) {
     const activeIds=new Set(state.enemies.map(enemy=>enemy.id));
     for(const id of Object.keys(enemyDefinitions))actors[id].element.hidden=!activeIds.has(id);
     const width=battlefield.clientWidth;
     if(!width)return 0;
     const heroSize=actors.hero.element.offsetWidth;
-    const home=width*(window.innerWidth>700?.18:.22)-(starterWeapon?.id==='bow'?archerRetreatOffset:0);
+    const home=width*(window.innerWidth>700?.18:.22)-(starterWeapon?.id==='bow'?currentRetreatOffset():0);
     if(heroX===null)heroX=home;
     for(const id of Object.keys(enemyDefinitions))if(actors[id].x===null)actors[id].x=width*actors[id].spawn;
     const resized=fieldWidth&&fieldWidth!==width;
@@ -1057,11 +1089,12 @@
       ||heroEntrance||state.phase!=='running'
       ||sceneTransition&&sceneTransition.phase!=='wave-in')return;
     const shots=battle.getArrowSchedule?.()||[];
-    const valid=new Set(shots.map(shot=>shot.sourceId+':'+shot.targetId+':'+shot.at.toFixed(6)));
+    const keyFor=shot=>shot.sourceId+':'+shot.targetId+':'+shot.at.toFixed(6);
+    const valid=new Map(shots.map(shot=>[keyFor(shot),shot]));
     for(const [key,effect] of cuedArrows){
-      if(valid.has(key)||activeTime+1e-6>=effect.at+effect.duration)continue;
-      effect.element.remove();
-      const i=effects.indexOf(effect);if(i>=0)effects.splice(i,1);
+      if(activeTime+1e-6>=effect.at+effect.duration){cuedArrows.delete(key);continue;}
+      const planned=valid.get(key);if(planned&&Boolean(planned.double)===Boolean(effect.paired)&&planned.arrowType===effect.element.dataset.arrowType)continue;
+      for(const e of [effect,effect.paired].filter(Boolean)){e.element.remove();const i=effects.indexOf(e);if(i>=0)effects.splice(i,1);}
       const shooter=actors[effect.sourceId];
       if(shooter.animation?.arrowCue===key){shooter.animation=null;shooter.lastKey=null;}
       cuedArrows.delete(key);
@@ -1071,16 +1104,16 @@
         target=shot.targetId==='companion'?$('#companion-wolf'):actors[shot.targetId];
       if(!source?.images.attack||!target||!shot.animationDuration)continue;
       if(state.companion && shot.sourceId!=='hero' && source.moving)continue;
-      const key=shot.sourceId+':'+shot.targetId+':'+shot.at.toFixed(6);
+      const key=keyFor(shot);
       if(cuedArrows.has(key))continue;
       const releaseAt=shot.at-arrowFlightDuration;
       const startAt=releaseAt-shot.animationDuration*arrowReleaseFrame/arrowPoseFrames;
       if(activeTime+1e-6<startAt||activeTime>shot.at)continue;
       source.animation={at:startAt,duration:shot.animationDuration,arrowCue:key};
       source.lastKey=null;
-      const effect=addEffect('arrow',shot.sourceId,shot.targetId,null,releaseAt,
-        {at:releaseAt,duration:arrowFlightDuration,arrowType:shot.arrowType});
-      if(effect)cuedArrows.set(key,effect);
+      const opts={at:releaseAt,duration:arrowFlightDuration,arrowType:shot.arrowType,rainIndex:shot.rainIndex,rainCount:shot.rainCount};
+      const effect=addEffect('arrow',shot.sourceId,shot.targetId,null,releaseAt,{...opts,...(shot.double?{double:1}:{})});
+      if(effect){if(shot.double)effect.paired=addEffect('arrow',shot.sourceId,shot.targetId,null,releaseAt,{...opts,double:2});cuedArrows.set(key,effect);}
     }
   }
   function renderEffects(state) {
@@ -1089,6 +1122,7 @@
       const effect = effects[i], age = activeTime - effect.at;
       // Each dragon orb is finite, removed on impact or immediately on
       // source death, and never survives result screens or wave transitions.
+      if(effect.retreat&&(!state.enemies.some(unit=>unit.id===effect.targetId&&unit.hp>0)||state.phase==='victory'||state.phase==='defeat')){effect.element.remove();effects.splice(i,1);continue;}
       if(effect.dragonVolley){
         const alive=state.phase==='running'
           &&state.enemies.some(unit=>unit.id==='dragon'&&unit.hp>0);
@@ -1177,14 +1211,19 @@
       } else if (effect.floating) {
         effect.element.style.left = `${tx}px`; effect.element.style.top = `${ty-p*22}px`; effect.element.style.opacity = String(1-p);
       } else {
-        const sx=source.left+source.width*(effect.sourceId==='hero'?.7:.3)-field.left, sy=source.top+source.height*.45-field.top;
+        let sx=source.left+source.width*(effect.sourceId==='hero'?.7:.3)-field.left, sy=source.top+source.height*.45-field.top;
+        if(effect.dodgeShot){
+          if(!effect.releaseOrigin)effect.releaseOrigin={x:source.left+source.width*46/64-field.left,y:source.top+source.height*25/64-field.top};
+          sx=effect.releaseOrigin.x;sy=effect.releaseOrigin.y;
+        }
         const barrier=effect.type==='arrow'?aimAtBarrier(effect,state,target,field,sx,sy):null;
         const hitX=barrier?.x??tx,hitY=barrier?.y??ty;
         if(effect.type==='arrow'){
           const angle=Math.atan2(hitY-sy,hitX-sx)*180/Math.PI+180;
           effect.element.style.transform=`translate(-50%,-50%) rotate(${angle}deg)`;
         }
-        effect.element.style.left = `${sx+(hitX-sx)*p}px`; effect.element.style.top = `${sy+(hitY-sy)*p}px`;
+        const spread=effect.double?(effect.double===1?-1:1)*Math.sin(p*Math.PI)*source.width*.10:0;
+        effect.element.style.left = `${sx+(hitX-sx)*p}px`; effect.element.style.top = `${sy+(hitY-sy)*p+spread}px`;
       }
     }
   }
@@ -1246,6 +1285,7 @@
     const wolfElement=$('#companion-wolf');
     if(wolfElement){
       wolfElement.classList.toggle('is-hit',companionTime-companionHitAt<.16);
+      wolfElement.classList.toggle('is-roaring',!!state.archerEffects?.roar);
       if(state.companion){
         const bar=$('#companion-health-fill');
         if(bar)bar.style.width=`${state.companion.hp/state.companion.maxHp*100}%`;
@@ -1284,7 +1324,8 @@
     }));
     return {
       nearbyEnemies:Object.fromEntries(state.enemies.map(a=>[a.id,state.enemies.filter(b=>b.id!==a.id&&Math.hypot(actors[a.id].x-actors[b.id].x,(actors[a.id].depth-actors[b.id].depth)*laneStep)<=heroSize*1.6).sort((b,c)=>Math.hypot(actors[a.id].x-actors[b.id].x,(actors[a.id].depth-actors[b.id].depth)*laneStep)-Math.hypot(actors[a.id].x-actors[c.id].x,(actors[a.id].depth-actors[c.id].depth)*laneStep)).map(b=>b.id)])),
-      heroCanRetreat:starterWeapon?.id==='bow'&&heroX>heroSize*.65,
+      heroCloseEnemy:Object.fromEntries(state.enemies.map(e=>[e.id,enemyReach(e.id,actors[e.id].x)])),
+      heroCanRetreat:starterWeapon?.id==='bow'&&heroX>heroSize*.65&&archerRetreatOffset<Math.max(0,Math.min(battlefield.clientWidth*.14,battlefield.clientWidth*(window.innerWidth>700?.18:.22)-heroSize*.65))-.01,
       heroCanAttack:Boolean(target && (ranged || inReach(target,actors[target].x))),
       heroCloseRange:Boolean(target && inReach(target,actors[target].x)),
       orcCanAttack:wolfBattle?Boolean(enemyCanAttack.orc):

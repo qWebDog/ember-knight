@@ -7,6 +7,7 @@
 })(typeof window !== 'undefined' ? window : null, function () {
   'use strict';
   const TICKS = 1000000;
+  const archerDodge=Object.freeze({frames:Object.freeze([.100,.070,.065,.065,.055,.055,.060,.080,.080,.180]),offsets:Object.freeze([0,0,3,10,20,31,40,46,48,48]),release:.355,duration:.810,flight:.28});
   const HERO_INTERVAL = 1.2 * TICKS;
   const CLOSE_MAGIC_INTERVAL = .8 * TICKS;
   const COUNTER_DELAY = .3 * TICKS;
@@ -71,6 +72,7 @@
     const rank=value=>Number.isFinite(value)?Math.max(0,Math.min(5,Math.floor(value))):0;
     let burnRank=mage?rank(options.heroBurnRank):0,sphereRank=mage?rank(options.heroSphereRank):0,shardRank=mage?rank(options.heroShardRank):0;
     const archerRanks=Object.fromEntries(["piercing","poison","explosive","barbed","doubleShot","arrowRain","rendingBite","guardian","alpha","evasion","retreat","arrowDance","wolfBond"].map(id=>[id,archer?rank(options['archer_'+id]):0]));
+    let dodgeUntil=0;
     let arrowMeters={},arrowQueue=[],shotCount=0,rainLeft=0,rainAt=0,dodgeMeter=0,retreatAt=0,danceAt=0,danceUntil=0,wolfBites=0,wolfReviveAt=Infinity,roarUntil=0,roarAt=0;
     const wolfMax=()=>positive(options.companionMaxHp,WOLF_MAX_HP)*(1+.15*archerRanks.wolfBond);
     const advancedKeys=["heroFusionRank","heroChaosRank","heroAbsorptionRank","heroRebirthRank","heroEchoRank","heroOverloadRank","heroArchmageRank"];
@@ -109,14 +111,28 @@
       }
       return queue.shift()||'normal';
     }
+    // A single read-only plan drives both the bow pose and the actual attack.
+    function archerShotPlan(at){
+      const rain=archerRanks.arrowRain>0&&(rainLeft>0||at>=rainAt);
+      const count=rain?4+archerRanks.arrowRain:0;
+      const remaining=rain?(rainLeft||count):0;
+      const dance=archerRanks.arrowDance>0&&(at<danceUntil||at>=danceAt);
+      const speed=dance?1+.05*archerRanks.arrowDance:1;
+      return {kind:chooseArrow(false),double:!!archerRanks.doubleShot&&(shotCount+1)%(14-2*archerRanks.doubleShot)===0,
+        rain,remaining,count,speed,animationDuration:heroTicks((rain?.50:.9)*TICKS)/TICKS/speed,
+        ...(rain?{rainIndex:count-remaining+1,rainCount:count}:{})};
+    }
     function getArrowSchedule() {
       if(phase!=='running'&&phase!=='paused')return [];
       const target=enemies.find(enemy=>enemy.hp>0);
       if(!target||hero.hp<=0)return [];
       const shots=[];
       if(config.projectile==='arrow'){
-        shots.push({sourceId:'hero',targetId:target.id,
-          at:nextHero/TICKS,animationDuration:heroTicks(.9*TICKS)/TICKS,...(archer&&chooseArrow(false)!=='normal'?{arrowType:chooseArrow(false)}:{})});
+        const plan=archer?archerShotPlan(nextHero):null;
+        shots.push({sourceId:'hero',targetId:target.id,at:nextHero/TICKS,
+          animationDuration:plan?.animationDuration??heroTicks(.9*TICKS)/TICKS,
+          ...(plan?.kind&&plan.kind!=='normal'?{arrowType:plan.kind}:{}),
+          ...(plan?.double?{double:true}:{}),...(plan?.rain?{rainIndex:plan.rainIndex,rainCount:plan.rainCount}:{})});
       }
       for(let i=0;i<enemies.length;i++){
         const enemy=enemies[i];
@@ -131,7 +147,7 @@
       const target = enemies.find(enemy => enemy.hp > 0);
       const waiting = phase === 'intermission' || (phase === 'paused' && pausedFrom === 'intermission');
       return {
-        ...(mage?{activeTalents:[...activeTalents]}:{}),...(archer&&archerRanks.alpha?{wolfAttackSpeed:elapsed<roarUntil?1+.1*archerRanks.alpha:1}:{}),phase, elapsed:elapsed / TICKS, hero:{...hero,...(sphere?{sphere:{...sphere}}:{})},
+        ...(mage?{activeTalents:[...activeTalents]}:{}),...(archer&&archerRanks.alpha?{wolfAttackSpeed:elapsed<roarUntil?1+.1*archerRanks.alpha:1}:{}),...(archer&&(archerRanks.arrowDance||archerRanks.alpha)?{archerEffects:{dance:elapsed<danceUntil,roar:companionEnabled&&companion?.hp>0&&elapsed<roarUntil}}:{}),phase, elapsed:elapsed / TICKS, hero:{...hero,...(sphere?{sphere:{...sphere}}:{})},
         companion:companionEnabled?{...companion,alive:companion.hp>0}:null,
         enemyTargetId:currentEnemyTarget().id,
         enemies:enemies.map(({arrowDots,...enemy}) => ({...enemy,status:enemy.status ? {type:enemy.status.type,startedAt:enemy.status.startedAt/TICKS,endsAt:enemy.status.endsAt/TICKS,...(enemy.status.enhanced?{enhanced:true}:{})} : null,alive:enemy.hp > 0})),
@@ -144,7 +160,7 @@
     function spawnWave(index) {
       waveIndex = index; phase = 'running'; pausedFrom = null; nextWaveAt = null;
       enemies = activeWaves[index].map(unit => ({...archetypes[unit.type],...unit,hp:archetypes[unit.type].maxHp,status:null}));
-      comboIndex = 0; meleeHits = 0; heroBusyUntil = elapsed; pendingCounters = []; pendingImpacts = []; pendingBreaths = [];
+      comboIndex = 0; meleeHits = 0; heroBusyUntil = elapsed; pendingCounters = []; pendingImpacts = []; pendingBreaths = [];rainLeft=0;
       mageCastIndex=0;orcHasAttacked=false;activeTalents=[...queuedTalents];powerCharged=false;regenAt=sphere?.hp>0?elapsed+3*TICKS:Infinity;
       nextHero = elapsed + heroTicks(sword ? swordSteps[0].interval : HERO_INTERVAL);
       nextEnemies = enemies.map(enemy => elapsed + Math.round(enemy.interval * TICKS));
@@ -154,7 +170,7 @@
       hero = {id:'hero',name:config.name,hp:config.maxHp,maxHp:config.maxHp,damage:config.damage,attackSpeed:config.attackSpeed};
       echoMeter=overloadMeter=archCount=archRemaining=reactionCount=echoCount=chaosCount=0;rebirthUsed=false;immuneUntil=0;powerCharged=false;
       sphere=sphereRank?{hp:sphereCapacity(),maxHp:sphereCapacity(),brokenAt:null}:null;
-      arrowMeters={};arrowQueue=[];shotCount=rainLeft=dodgeMeter=wolfBites=0;rainAt=archerRanks.arrowRain?(33-3*archerRanks.arrowRain)*TICKS:0;retreatAt=0;danceAt=20*TICKS;danceUntil=0;wolfReviveAt=Infinity;roarUntil=0;roarAt=0;
+      dodgeUntil=0;arrowMeters={};arrowQueue=[];shotCount=rainLeft=dodgeMeter=wolfBites=0;rainAt=archerRanks.arrowRain?(33-3*archerRanks.arrowRain)*TICKS:0;retreatAt=0;danceAt=20*TICKS;danceUntil=0;wolfReviveAt=Infinity;roarUntil=0;roarAt=0;
       const maxHp=wolfMax();
       companion={id:'companion',name:'Боевой волк',hp:companionEnabled?maxHp:0,maxHp};
       companionEverSummoned=companionEnabled;
@@ -207,7 +223,7 @@
       const target=enemies.find(enemy=>enemy.id===targetId&&enemy.hp>0);
       if(!target)return events;
       const damage=Math.max(1,Math.floor(baseDamage*(1+.1*archerRanks.wolfBond)-target.armor));
-      if(archerRanks.rendingBite&&++wolfBites%3===0){target.arrowDots??=[];target.arrowDots.push({type:'wolfBleed',sourceId:'companion',damage:Math.max(1,damage*(.2+.1*archerRanks.rendingBite)),at:elapsed+TICKS,left:4});}
+      if(archerRanks.rendingBite&&++wolfBites%3===0){target.arrowDots??=[];target.arrowDots.push({type:'wolfBleed',sourceId:'companion',damage:Math.max(1,damage*(.2+.1*archerRanks.rendingBite)),at:elapsed+TICKS,left:4});events.push({type:'archerSkill',skill:'rendingBite',sourceId:'companion',targetId:target.id,at:elapsed/TICKS});}
       target.hp=Math.max(0,target.hp-damage);
       const at=elapsed/TICKS;
       events.push({type:'attack',sourceId:'companion',targetId:target.id,
@@ -291,12 +307,31 @@
         }
         elapsed = time;
       }
+      function deferNormalShot(){
+        // A regular arrow already in flight must keep its original hit time.
+        if(nextHero-elapsed>Math.round(archerDodge.flight*TICKS)&&elapsed<dodgeUntil)
+          nextHero=Math.max(nextHero,dodgeUntil+Math.round(archerDodge.flight*TICKS+heroTicks(.9*TICKS)*9/13));
+      }
+      function dodgeShot(enemy,skill){
+        if(!enemy||enemy.hp<=0||hero.hp<=0||elapsed<dodgeUntil)return false;
+        const at=elapsed/TICKS,releaseTick=elapsed+Math.round(archerDodge.release*TICKS),
+          impactTick=releaseTick+Math.round(archerDodge.flight*TICKS);
+        dodgeUntil=elapsed+Math.round(archerDodge.duration*TICKS);
+        deferNormalShot();
+        events.push({type:'archerSkill',skill,sourceId:'hero',targetId:enemy.id,at,dodgeShot:true});
+        events.push({type:'arrowLaunch',sourceId:'hero',targetId:enemy.id,at:releaseTick/TICKS,
+          impactAt:impactTick/TICKS,retreat:true,dodgeShot:true,animationDuration:archerDodge.duration});
+        pendingImpacts.push({sourceId:'hero',targetId:enemy.id,damage:config.damage,arrowKind:'normal',
+          dodgeShot:true,at:impactTick});
+        pendingImpacts.sort((a,b)=>a.at-b.at);
+        return true;
+      }
       function hit(sourceId,target,damage,projectile,metadata) {
         let reflected=0;
         if(archer&&sourceId!=='hero'&&sourceId!=='companion'&&damage>0){
           if(target.id==='companion'&&archerRanks.guardian)damage*=1-(.05+.05*archerRanks.guardian);
           if(elapsed<roarUntil)damage*=1-.05*archerRanks.alpha;
-          if(target.id==='hero'&&!metadata?.dot){dodgeMeter+=archerRanks.evasion*5+(elapsed<danceUntil?10:0);if(dodgeMeter>=100){dodgeMeter-=100;damage=0;events.push({type:'archerSkill',skill:'evasion',sourceId,targetId:'hero',at:elapsed/TICKS});}}
+          if(target.id==='hero'&&!metadata?.dot){dodgeMeter+=archerRanks.evasion*5+(elapsed<danceUntil?10:0);if(dodgeMeter>=100){dodgeMeter-=100;damage=0;if(!dodgeShot(enemies.find(enemy=>enemy.id===sourceId),'evasion'))events.push({type:'archerSkill',skill:'evasion',sourceId,targetId:'hero',at:elapsed/TICKS});}}
         }
         if(target.id==='hero'&&elapsed<immuneUntil)damage=0;
         if(target.id==='hero'&&sphere?.hp>0&&damage>0){
@@ -501,17 +536,21 @@
           let interval = config.projectile === 'magic' ? cast('hero',target,Math.max(1,damage-target.armor),element) : heroTicks(HERO_INTERVAL);
           if(archer){
             if(archerRanks.arrowDance&&elapsed>=danceAt){danceUntil=elapsed+5*TICKS;danceAt=elapsed+20*TICKS;events.push({type:'archerSkill',skill:'arrowDance',sourceId:'hero',targetId:'hero',at:elapsed/TICKS});}
-            if(archerRanks.arrowRain&&!rainLeft&&elapsed>=rainAt){rainLeft=4+archerRanks.arrowRain;rainAt=elapsed+(33-3*archerRanks.arrowRain)*TICKS;}
+            const plan=archerShotPlan(elapsed);
+            if(plan.rain&&!rainLeft){rainLeft=plan.count;rainAt=elapsed+(33-3*archerRanks.arrowRain)*TICKS;events.push({type:'archerSkill',skill:'arrowRain',sourceId:'hero',targetId:'hero',at:elapsed/TICKS,count:plan.count});}
             const kind=chooseArrow();shotCount++;
-            archerArrow(target,damage,kind,metadata);
-            if(archerRanks.doubleShot&&shotCount%(14-2*archerRanks.doubleShot)===0){const other=target.hp>0?target:enemies.find(e=>e.hp>0);archerArrow(other,damage*.6,kind,{...metadata,extraArrow:true});}
-            if(rainLeft>0){rainLeft--;if(rainLeft>0)interval=Math.max(1,heroTicks(.9*TICKS));}
-            if(elapsed<danceUntil)interval=Math.max(1,Math.round(interval/(1+.05*archerRanks.arrowDance)));
+            const shotMeta={...metadata,animationDuration:plan.animationDuration,...(plan.rain?{rainIndex:plan.rainIndex,rainCount:plan.rainCount}:{}),...(plan.double?{double:true}: {})};
+            archerArrow(target,damage,kind,shotMeta);
+            // Both arrows leave the same bow release and converge on the same
+            // target. A killed target cannot be damaged or rewarded twice.
+            if(plan.double&&target.hp>0)archerArrow(target,damage*.6,kind,{...shotMeta,extraArrow:true});
+            if(plan.rain){rainLeft--;if(rainLeft>0)interval=Math.max(1,heroTicks(.65*TICKS));}
+            interval=Math.max(1,Math.round(interval/plan.speed));
           }else if (config.projectile !== 'magic') hit('hero',target,Math.max(1,damage-target.armor),config.projectile,metadata);
           if (sword) {
             heroBusyUntil = elapsed + heroTicks(step.animationDuration*TICKS);
             comboIndex = (comboIndex+1) % swordSteps.length; nextHero += heroTicks(swordSteps[comboIndex].interval);
-          } else nextHero += interval;
+          } else {nextHero += interval;if(archer)deferNormalShot();}
           if (enemies.every(enemy => enemy.hp === 0)) { clearWave(); continue; }
         }
         while (heroCanAttack && pendingCounters.length && pendingCounters[0].at === next) {
@@ -552,6 +591,11 @@
           const impact = pendingImpacts.shift(),target = impact.targetId === 'hero' ? hero
             : impact.targetId === 'companion' ? companion : enemies.find(enemy => enemy.id === impact.targetId);
           if (!target || target.hp <= 0) continue;
+          if(impact.arrowKind){
+            archerArrow(target,impact.damage,impact.arrowKind,{extraArrow:true,retreat:true,dodgeShot:!!impact.dodgeShot});
+            if(enemies.every(enemy=>enemy.hp===0)){clearWave();break;}
+            continue;
+          }
           const previous=target.status?.type;
           hit(impact.sourceId,target,impact.damage,'magic',{magic:impact.magic,impact:true,castAt:impact.castAt,castId:impact.castId,
             breath:Boolean(impact.breath),burstIndex:impact.burstIndex,...(impact.shards?{shards:true}:{}),...(impact.echo?{echo:true}:{}),...(impact.overloaded?{overloaded:true}:{})});
@@ -571,7 +615,11 @@
           const defender=currentEnemyTarget();
           if(enemy.type==='orc')orcHasAttacked=true;
           let damage = enemy.damage,blocked = false;
-          if(archer&&defender.id==='hero'&&enemy.projectile==='melee'&&archerRanks.retreat&&elapsed>=retreatAt&&availability?.heroCanRetreat!==false){retreatAt=elapsed+(14-2*archerRanks.retreat)*TICKS*(elapsed<danceUntil?.5:1);events.push({type:'archerSkill',skill:'retreat',sourceId:'hero',targetId:enemy.id,at:elapsed/TICKS});archerArrow(enemy,config.damage,chooseArrow(),{extraArrow:true});nextEnemies[index]+=Math.round(enemy.interval*TICKS);if(enemies.every(e=>e.hp===0)){clearWave();break;}continue;}
+          if(archer&&defender.id==='hero'&&enemy.projectile==='melee'&&archerRanks.retreat&&elapsed>=retreatAt&&elapsed>=dodgeUntil&&availability?.heroCanRetreat!==false&&availability?.heroCloseEnemy?.[enemy.id]!==false){
+            retreatAt=elapsed+(14-2*archerRanks.retreat)*TICKS*(elapsed<danceUntil?.5:1);
+            dodgeShot(enemy,'retreat');
+            nextEnemies[index]+=Math.round(enemy.interval*TICKS);continue;
+          }
           if (defender.id==='hero' && sword && enemy.projectile === 'melee' && ++meleeHits % 2 === 0) {
             const blockedDamage = damage*.5; damage -= blockedDamage; blocked = true;
             events.push({type:'block',sourceId:enemy.id,targetId:'hero',blockedDamage,at:elapsed/TICKS});
@@ -604,5 +652,5 @@
     return {getState,getArrowSchedule,advance,pause,resume,restart,updateHeroStats,
       setCompanionEnabled,companionStrike,setTalents,get state(){return getState();}};
   }
-  return {createBattle,magicTiming,closeMagicTiming,statusTiming,intermissionDuration,dragonBreath};
+  return {createBattle,magicTiming,closeMagicTiming,statusTiming,intermissionDuration,dragonBreath,archerDodge};
 });
