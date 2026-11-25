@@ -117,3 +117,7 @@ dialog{width:min(380px,calc(100% - 32px));max-height:calc(var(--app-height) - 32
 }
 
 .battlefield .fighter>canvas.mage-sphere{position:absolute;width:150%;height:150%;left:-25%;top:-25%;z-index:2;pointer-events:none;image-rendering:pixelated;filter:none;animation:none}.spell-projectile[data-shards="true"]{width:calc(var(--enemy-size)*.9);height:calc(var(--enemy-size)*.9)}
+
+/* A barrier impact is a short independent effect at the contact point, above the shield. */
+.barrier-impact{position:absolute;z-index:602;pointer-events:none;width:calc(var(--enemy-size)*1.05);height:calc(var(--enemy-size)*1.05);image-rendering:pixelated;transform-origin:50% 50%}
+@media(prefers-reduced-motion:reduce){.barrier-impact{display:none}}

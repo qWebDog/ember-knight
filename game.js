@@ -313,7 +313,7 @@
         ...['fire','ice','shadow'].map(async magic=>{spellImages[magic]=await loadImage(`assets/magic/${magic}.png`);})
       ]);
       statusImage = statusAtlas;
-      if(starterWeapon?.id==='wand')await Promise.all(['burn','shards','sphere'].map(async effect=>{mageEffects[effect]=await loadImage(effect==='sphere'?'assets/magic/mage-sphere-v2.svg':`assets/magic/mage-${effect}.png`);}));
+      if(starterWeapon?.id==='wand')await Promise.all(['burn','shards','sphere','impact'].map(async effect=>{mageEffects[effect]=await loadImage(effect==='sphere'?'assets/magic/mage-sphere-v2.svg':effect==='impact'?'assets/magic/mage-barrier-impact.svg':`assets/magic/mage-${effect}.png`);}));
       actors.orc.images.attack = orcAttack ? {image:orcAttack,frames:6,row:1,tile:128,origin:32} : { ...actors.orc.images.idle,frames:1 };
       const face = $('#avatar').getContext('2d'); face.imageSmoothingEnabled = false;
       const avatarTile=loadout?starterWeapon.walk.tile:64, avatarOrigin=loadout?starterWeapon.walk.origin:0;
@@ -448,6 +448,53 @@
       dragonVolley:Boolean(event.breath&&event.sourceId==='dragon'),
       mouthOrigin:null,landed:false,lastKey:null,angle:null});
   }
+  // The sphere's visible rim is radius 50/128 of its 150% overlay.
+  // Projectiles aim at that ellipse instead of the hero's body while it exists.
+  function barrierContact(target,field,sx,sy){
+    const cx=target.left+target.width/2-field.left,cy=target.top+target.height/2-field.top;
+    const rx=target.width*1.5*50/128,ry=target.height*1.5*50/128;
+    let dx=sx-cx,dy=sy-cy;
+    if(Math.hypot(dx,dy)<1e-6){dx=1;dy=0;}
+    const scale=1/Math.hypot(dx/rx,dy/ry),x=cx+dx*scale,y=cy+dy*scale;
+    const len=Math.hypot(dx,dy);
+    return {x,y,nx:dx/len,ny:dy/len};
+  }
+  function aimAtBarrier(effect,state,target,field,sx,sy){
+    if(effect.targetId!=='hero'||effect.sourceId==='hero'||!state.hero.sphere?.hp||effect.landed)return null;
+    const contact=barrierContact(target,field,sx,sy);
+    // Stop the arrow's leading tip, not its midpoint, at the glowing rim.
+    const source=actors[effect.sourceId]?.element;
+    const arrowWidth=effect.element.offsetWidth||source?.offsetWidth*.62||target.width*.62;
+    const padding=effect.type==='arrow'?arrowWidth*.46:target.width*.13;
+    effect.barrierContact=contact;
+    effect.element.dataset.barrierX=String(contact.x);effect.element.dataset.barrierY=String(contact.y);
+    return {x:contact.x+contact.nx*padding,y:contact.y+contact.ny*padding};
+  }
+  function shatterBlockedProjectile(event){
+    if(reducedMotion.matches||!mageEffects.impact||!['arrow','magic'].includes(event.projectile))return;
+    const field=battlefield.getBoundingClientRect(),target=actors.hero.element.getBoundingClientRect();
+    const source=actors[event.sourceId]?.element.getBoundingClientRect();
+    if(!source)return;
+    const match=effects.find(effect=>effect.sourceId===event.sourceId&&effect.targetId==='hero'&&
+      (event.projectile==='arrow'?effect.type==='arrow'&&Math.abs(effect.at+effect.duration-event.at)<.001:
+       effect.type==='spell'&&effect.castId===event.castId));
+    const sx=match?.mouthOrigin?.x??(source.left+source.width*.3-field.left);
+    const sy=match?.mouthOrigin?.y??(source.top+source.height*.45-field.top);
+    const point=match?.barrierContact||barrierContact(target,field,sx,sy);
+    // Consume the exact projectile at the engine-confirmed hit. The final
+    // shield-breaking hit still shatters; excess damage is handled by combat.
+    if(match){match.element.remove();effects.splice(effects.indexOf(match),1);}
+    const element=document.createElement('canvas');element.width=64;element.height=64;
+    element.className='barrier-impact';element.dataset.kind=event.projectile==='arrow'?'arrow':'magic';
+    element.dataset.source=event.sourceId;element.dataset.target='hero';
+    if(event.castId)element.dataset.castId=event.castId;
+    element.setAttribute('aria-hidden','true');battlefield.appendChild(element);
+    const angle=Math.atan2(point.ny,point.nx)*180/Math.PI;
+    element.style.left=point.x+'px';element.style.top=point.y+'px';
+    element.style.transform=`translate(-50%,-50%) rotate(${angle}deg)`;
+    effects.push({type:'barrier-impact',element,sourceId:event.sourceId,targetId:'hero',at:event.at,duration:.36,
+      kind:element.dataset.kind,point,lastKey:null});
+  }
   function removeEffects(keep) {
     for(let i=effects.length-1;i>=0;i--)if(!keep(effects[i])){effects[i].element.remove();effects.splice(i,1);}
   }
@@ -499,7 +546,7 @@
   function handleEvents(events) {
     for (const event of events) {
       if(event.type==='sphere'){
-        if(event.absorbed>0){sphereHitAt=event.at;addEffect('block',event.sourceId,'hero',`Щит −${event.absorbed}`,event.at);}
+        if(event.absorbed>0){sphereHitAt=event.at;shatterBlockedProjectile(event);addEffect('block',event.sourceId,'hero',`Щит −${event.absorbed}`,event.at);}
       } else if (event.type === 'cast') {
         if(!event.shards&&event.sourceId==='hero'&&event.magic==='ice')pendingIceImpacts.set(event.castId,{at:event.impactAt,targetId:event.targetId});
         const caster=actors[event.sourceId];
@@ -531,11 +578,11 @@
           const spell=effects.find(effect=>effect.type==='spell'&&effect.castId===event.castId);
           if(spell){spell.landed=true;spell.impactAt=event.at;spell.duration=event.at-spell.at+spell.impactDuration;}
         }
-        if(!event.dot){
+        if(!event.dot&&event.damage>0){
           if(event.targetId==='companion')companionHitAt=companionTime;
           else if(actors[event.targetId])actors[event.targetId].hitAt=activeTime;
         }
-        addEffect(event.counter ? 'counter' : event.heavy ? 'heavy' : 'damage',event.sourceId,event.targetId,event.counter ? `Ответ −${event.damage}` : `−${event.damage}`,event.at);
+        if(event.damage>0)addEffect(event.counter ? 'counter' : event.heavy ? 'heavy' : 'damage',event.sourceId,event.targetId,event.counter ? `Ответ −${event.damage}` : `−${event.damage}`,event.at);
       } else if(event.type==='status'){
         syncFrozenActors(battle.getState());
       } else if (event.type === 'block') {
@@ -975,6 +1022,12 @@
         if(!alive){effect.element.remove();effects.splice(i,1);continue;}
       }
       if (age+1e-6 >= effect.duration || reducedMotion.matches) { effect.element.remove(); effects.splice(i,1); continue; }
+      if(effect.type==='barrier-impact'){
+        const frame=Math.min(5,Math.max(0,Math.floor(age/.06))),row=effect.kind==='arrow'?0:1;
+        effect.element.dataset.frame=String(frame);
+        if(effect.lastKey!==frame){const ctx=effect.element.getContext('2d');ctx.clearRect(0,0,64,64);ctx.imageSmoothingEnabled=false;ctx.drawImage(mageEffects.impact,frame*64,row*64,64,64,0,0,64,64);effect.lastKey=frame;}
+        continue;
+      }
       if(effect.type==='arrow'&&age<0){effect.element.hidden=true;effect.element.style.visibility='hidden';continue;}
       if(effect.type==='arrow'){effect.element.hidden=false;effect.element.style.visibility='visible';}
       const sourceElement=effect.sourceId==='companion'?$('#companion-wolf'):actors[effect.sourceId]?.element;
@@ -1006,10 +1059,11 @@
           }
           sx=effect.mouthOrigin.x;sy=effect.mouthOrigin.y;
         }
-        const hitY=target.top+target.height*.55-field.top;
+        const barrier=aimAtBarrier(effect,state,target,field,sx,sy);
+        const hitX=barrier?.x??tx,hitY=barrier?.y??(target.top+target.height*.55-field.top);
         const progress=phase==='appear'?0:phase==='impact'?1:Math.min(1,phaseAge/effect.flightDuration);
-        if(phase!=='impact'||effect.angle===null)effect.angle=Math.atan2(hitY-sy,tx-sx)*180/Math.PI+180;
-        effect.element.style.left=`${sx+(tx-sx)*progress}px`;
+        if(phase!=='impact'||effect.angle===null)effect.angle=Math.atan2(hitY-sy,hitX-sx)*180/Math.PI+180;
+        effect.element.style.left=`${sx+(hitX-sx)*progress}px`;
         effect.element.style.top=`${sy+(hitY-sy)*progress}px`;
         effect.element.style.transform=`translate(-25%,-50%) rotate(${effect.angle}deg)`;
         effect.element.dataset.phase=phase;
@@ -1022,11 +1076,13 @@
         effect.element.style.left = `${tx}px`; effect.element.style.top = `${ty-p*22}px`; effect.element.style.opacity = String(1-p);
       } else {
         const sx=source.left+source.width*(effect.sourceId==='hero'?.7:.3)-field.left, sy=source.top+source.height*.45-field.top;
+        const barrier=effect.type==='arrow'?aimAtBarrier(effect,state,target,field,sx,sy):null;
+        const hitX=barrier?.x??tx,hitY=barrier?.y??ty;
         if(effect.type==='arrow'){
-          const angle=Math.atan2(ty-sy,tx-sx)*180/Math.PI+180;
+          const angle=Math.atan2(hitY-sy,hitX-sx)*180/Math.PI+180;
           effect.element.style.transform=`translate(-50%,-50%) rotate(${angle}deg)`;
         }
-        effect.element.style.left = `${sx+(tx-sx)*p}px`; effect.element.style.top = `${sy+(ty-sy)*p}px`;
+        effect.element.style.left = `${sx+(hitX-sx)*p}px`; effect.element.style.top = `${sy+(hitY-sy)*p}px`;
       }
     }
   }
