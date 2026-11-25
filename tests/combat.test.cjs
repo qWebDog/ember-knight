@@ -1217,7 +1217,7 @@ test('Reactive Archer evasion uses an independent 10–50% roll at each eligible
  for(let rank=1;rank<=5;rank++){
   for(const [roll,expected] of [[rank/10-.001,true],[rank/10,false]]){
    let rolls=0;
-   const b=createBattle({heroWeapon:'bow',heroProjectile:'arrow',heroDamage:1,heroMaxHp:10000,archer_evasion:rank,dodgeRandom:()=>{rolls++;return roll;}});
+   const b=createDefaultBattle({heroWeapon:'bow',heroProjectile:'arrow',heroDamage:1,heroMaxHp:10000,archer_evasion:rank,dodgeRandom:()=>{rolls++;return roll;}});
    const events=b.advance(1.8),dodge=events.find(e=>e.skill==='evasion'),hit=events.find(e=>e.type==='attack'&&e.sourceId==='archer1');
    assert.equal(rolls,1);assert.equal(Boolean(dodge),expected);
    assert.equal(hit.damage,expected?0:7);
@@ -1227,7 +1227,7 @@ test('Reactive Archer evasion uses an independent 10–50% roll at each eligible
 });
 test('Evasion cooldown is two seconds, no repeat rolls and no immunity to fresh arrows',()=>{
  let rolls=0;
- const b=createBattle({heroWeapon:'bow',heroProjectile:'arrow',heroDamage:1,heroMaxHp:10000,archer_evasion:5,dodgeRandom:()=>{rolls++;return 0;}});
+ const b=createDefaultBattle({heroWeapon:'bow',heroProjectile:'arrow',heroDamage:1,heroMaxHp:10000,archer_evasion:5,dodgeRandom:()=>{rolls++;return 0;}});
  const events=b.advance(9),dodges=events.filter(e=>e.skill==='evasion'),hits=events.filter(e=>e.type==='attack'&&e.sourceId==='archer1');
  assert.deepEqual(hits.map(e=>e.damage),[0,7,0,7,0]);assert.equal(rolls,3);
  assert.ok(dodges.every((e,i)=>i===0||e.at-dodges[i-1].at>=2));
@@ -1237,7 +1237,7 @@ test('Evasion cooldown is two seconds, no repeat rolls and no immunity to fresh 
 });
 test('Seeded evasion is invariant to frame chunking',()=>{
  const options={heroWeapon:'bow',heroProjectile:'arrow',heroDamage:1,heroMaxHp:10000,archer_evasion:5,archer_arrowDance:5,dodgeSeed:420};
- const a=createBattle(options),b=createBattle(options),expected=a.advance(45),actual=[];
+ const a=createDefaultBattle(options),b=createDefaultBattle(options),expected=a.advance(45),actual=[];
  for(let i=0;i<450;i++)actual.push(...b.advance(.1));
  assert.deepEqual(actual,expected);assert.deepEqual(b.state,a.state);
 });
