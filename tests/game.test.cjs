@@ -1718,7 +1718,7 @@ test('Archer skill shots select dedicated equipped LPC clips and keep original p
      assert.ok(Math.abs(Number(arrow.dataset.impactAt)-Number(arrow.dataset.releaseAt)-.28)<1e-6);
      if(arrow.dataset.skillAnimation==='arrowRain')rainAngles.push(Number.parseFloat(arrow.style.transform.split('rotate(')[1]));
    }
-   if(seen.has('doubleShot')&&seen.has('arrowRain')&&[...seen].some(s=>s.startsWith('dance'))&&rainAngles.length>4)break;
+   if(seen.has('doubleShot')&&seen.has('arrowRain')&&[...seen].some(s=>s.startsWith('dance'))&&projectiles.has('doubleShot')&&projectiles.has('arrowRain')&&[...projectiles].some(s=>s.startsWith('dance'))&&rainAngles.length>4)break;
  }
  assert.ok(seen.has('doubleShot'));assert.ok(seen.has('arrowRain'));assert.ok([...seen].some(s=>s.startsWith('dance')));
  assert.ok(projectiles.has('doubleShot'));assert.ok(projectiles.has('arrowRain'));assert.ok([...projectiles].some(s=>s.startsWith('dance')));
