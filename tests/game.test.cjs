@@ -197,8 +197,8 @@ function createHarness({skin = 'bronze', preference, search = '', weapon, outfit
       return emitted;
     };
     const restart=battle.restart;
-    battle.restart=()=>{
-      const reset=restart();restarts++;restartStates.push(JSON.parse(JSON.stringify(battle.getState())));return reset;
+    battle.restart=(...args)=>{
+      const reset=restart(...args);restarts++;restartStates.push(JSON.parse(JSON.stringify(battle.getState())));return reset;
     };
     return battle;
   };
@@ -1747,21 +1747,36 @@ test('Alpha wolf howls with sound waves and revives at its fallen position',asyn
  assert.ok(!ui.events.some(e=>e.type==='attack'&&e.sourceId==='companion'&&e.at>=revived.at&&e.at<revived.at+1.4));
 });
 
-test('dead wolf stays on its death coordinates while Archer exits the wave',async()=>{
+test('Archer approaches, picks up, carries and puts down dead wolf on next wave',async()=>{
  const ui=createHarness({weapon:'bow',outfit:'wanderer',wolfEquipped:true,
   combatOptions:{companionMaxHp:7,heroDamage:1,heroMaxHp:10000}});
  await ui.loadAllImages();
+ assert.ok(ui.loadedPaths.includes('assets/companions/wolf-carry.png'));
  ui.runUntil(()=>ui.events.some(e=>e.type==='death'&&e.id==='companion'),25);
- const wolf=ui.node('#companion-wolf'),fallenX=wolf.style.left,fallenDepth=wolf.style['--lane-offset'],facing=wolf.dataset.facing;
+ const wolf=ui.node('#companion-wolf'),fallenX=wolf.style.left,fallenDepth=wolf.style['--lane-offset'];
+ const hero=ui.node('[data-fighter="hero"]'),sprite=ui.node('#player-sprite');
  ui.battle.updateHeroStats({heroDamage:300});
  ui.runUntil(()=>ui.state().phase==='intermission',15);
- const heroX=ui.heroX();
- for(let i=0;i<10;i++){
-  ui.frame(48);
-  assert.equal(wolf.style.left,fallenX);
-  assert.equal(wolf.style['--lane-offset'],fallenDepth);
-  assert.equal(wolf.dataset.facing,facing);
-  assert.equal(wolf.dataset.motion,'die');
+ assert.equal(hero.dataset.wolfCarry,'approach');
+ const elapsed=ui.state().elapsed;
+ for(let i=0;i<200&&hero.dataset.wolfCarry==='approach';i++){
+  assert.equal(wolf.style.left,fallenX);assert.equal(wolf.style['--lane-offset'],fallenDepth);
+  assert.equal(ui.state().elapsed,elapsed);ui.frame(32);
  }
- assert.ok(ui.heroX()>heroX+10,'living Archer still walks into the next wave');
+ assert.equal(hero.dataset.wolfCarry,'lift');assert.equal(wolf.hidden,true);
+ ui.runUntil(()=>hero.dataset.wolfCarry==='walk',5);
+ assert.equal(hero.dataset.motion,'wolf-carry');
+ const carryX=ui.heroX();ui.runFor(.3);assert.ok(ui.heroX()>carryX);
+ assert.ok(sprite.draws.some(d=>d.src==='assets/companions/wolf-carry.png'&&d.crop[2]===96));
+ ui.runUntil(()=>ui.state().waveIndex===1,5);
+ assert.equal(hero.dataset.wolfCarry,'entry');
+ const entryElapsed=ui.state().elapsed;
+ ui.runUntil(()=>hero.dataset.wolfCarry==='lower',5);
+ assert.equal(ui.state().elapsed,entryElapsed);assert.equal(wolf.hidden,true);
+ ui.runUntil(()=>hero.dataset.wolfCarry==='',3);
+ assert.equal(ui.state().companion.hp,0);assert.equal(wolf.hidden,false);
+ assert.equal(wolf.dataset.motion,'die');
+ const ground=wolf.style.left;
+ ui.runFor(.3);assert.equal(wolf.style.left,ground);
+ assert.equal(ui.state().enemyTargetId,'hero');
 });
