@@ -1703,3 +1703,24 @@ test('Dragon projectiles retain their original aim while archer dodges',async()=
  }
  assert.ok(missed);assert.ok(moved);assert.ok(ui.events.some(e=>e.type==='attack'&&e.sourceId==='dragon'&&e.evaded&&e.damage===0));
 });
+
+test('Archer skill shots select dedicated equipped LPC clips and keep original projectile timing',async()=>{
+ const ui=createHarness({weapon:'bow',outfit:'wanderer',combatOptions:{heroDamage:1,heroMaxHp:10000,archer_doubleShot:5,archer_arrowRain:5,archer_arrowDance:5}});
+ await ui.loadAllImages();
+ const hero=ui.node('[data-fighter="hero"]'),seen=new Set(),projectiles=new Set(),rainAngles=[];
+ for(let i=0;i<3000;i++){
+   ui.frame(20);
+   const clip=hero.dataset.skillAnimation;
+   if(clip)seen.add(clip);
+   for(const arrow of arrowsFrom(ui,'hero').filter(e=>!e.hidden&&e.dataset.skillAnimation)){
+     projectiles.add(arrow.dataset.skillAnimation);
+     assert.equal(arrow.src,'assets/projectiles/arrow.png');
+     assert.ok(Math.abs(Number(arrow.dataset.impactAt)-Number(arrow.dataset.releaseAt)-.28)<1e-6);
+     if(arrow.dataset.skillAnimation==='arrowRain')rainAngles.push(Number.parseFloat(arrow.style.transform.split('rotate(')[1]));
+   }
+   if(seen.has('doubleShot')&&seen.has('arrowRain')&&[...seen].some(s=>s.startsWith('dance'))&&projectiles.has('doubleShot')&&projectiles.has('arrowRain')&&[...projectiles].some(s=>s.startsWith('dance'))&&rainAngles.length>4)break;
+ }
+ assert.ok(seen.has('doubleShot'));assert.ok(seen.has('arrowRain'));assert.ok([...seen].some(s=>s.startsWith('dance')));
+ assert.ok(projectiles.has('doubleShot'));assert.ok(projectiles.has('arrowRain'));assert.ok([...projectiles].some(s=>s.startsWith('dance')));
+ assert.ok(Math.max(...rainAngles)-Math.min(...rainAngles)>15,'rain arrow rotates along its arc');
+});

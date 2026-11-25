@@ -123,7 +123,7 @@
       const dance=archerRanks.arrowDance>0&&(at<danceUntil||at>=danceAt);
       const speed=dance?1+.05*archerRanks.arrowDance:1;
       return {kind:chooseArrow(false),double:!!archerRanks.doubleShot&&(shotCount+1)%(14-2*archerRanks.doubleShot)===0,
-        rain,remaining,count,speed,animationDuration:heroTicks((rain?.50:.9)*TICKS)/TICKS/speed,
+        rain,remaining,count,speed,dance,danceIndex:shotCount%3,animationDuration:heroTicks((rain?.50:.9)*TICKS)/TICKS/speed,
         ...(rain?{rainIndex:count-remaining+1,rainCount:count}:{})};
     }
     function getArrowSchedule() {
@@ -136,7 +136,7 @@
         shots.push({sourceId:'hero',targetId:target.id,at:nextHero/TICKS,
           animationDuration:plan?.animationDuration??heroTicks(.9*TICKS)/TICKS,
           ...(plan?.kind&&plan.kind!=='normal'?{arrowType:plan.kind}:{}),
-          ...(plan?.double?{double:true}:{}),...(plan?.rain?{rainIndex:plan.rainIndex,rainCount:plan.rainCount}:{})});
+          ...(plan?.double?{double:true}:{}),...(plan?.dance?{dance:true,danceIndex:plan.danceIndex}:{}),...(plan?.rain?{rainIndex:plan.rainIndex,rainCount:plan.rainCount}:{})});
       }
       for(let i=0;i<enemies.length;i++){
         const enemy=enemies[i];
@@ -570,7 +570,7 @@
             const plan=archerShotPlan(elapsed);
             if(plan.rain&&!rainLeft){rainLeft=plan.count;rainAt=elapsed+(33-3*archerRanks.arrowRain)*TICKS;events.push({type:'archerSkill',skill:'arrowRain',sourceId:'hero',targetId:'hero',at:elapsed/TICKS,count:plan.count});}
             const kind=chooseArrow();shotCount++;
-            const shotMeta={...metadata,animationDuration:plan.animationDuration,...(plan.rain?{rainIndex:plan.rainIndex,rainCount:plan.rainCount}:{}),...(plan.double?{double:true}: {})};
+            const shotMeta={...metadata,animationDuration:plan.animationDuration,...(plan.rain?{rainIndex:plan.rainIndex,rainCount:plan.rainCount}:{}),...(plan.double?{double:true}: {}),...(plan.dance?{dance:true,danceIndex:plan.danceIndex}:{})};
             archerArrow(target,damage,kind,shotMeta);
             // Both arrows leave the same bow release and converge on the same
             // target. A killed target cannot be damaged or rewarded twice.
