@@ -121,7 +121,7 @@
   // The Archer's equipped wolf is an independent melee attacker. Its bite
   // reaches the engine at the source animation's impact frame.
   const companion=window.EmberCompanion?.create({
-    element:$('#companion-wolf'),store:equipment,loadImage
+    element:$('#companion-wolf'),store:equipment,loadImage,canvasFactory:()=>document.createElement('canvas')
   });
   const effects = [];
   const cuedArrows=new Map();
@@ -645,8 +645,8 @@
           }
           addEffect('block','hero','hero',event.skill==='retreat'?'Отступление':'Уклонение',event.at);
         }
-        else if(event.skill==='wolfRevive'){companionDeathAt=null;companion?.reset();addEffect('block','companion','companion','Возвращение',event.at);}
-        else if(event.skill==='roar')addEffect('block','companion','companion','Рык',event.at);
+        else if(event.skill==='wolfRevive'){companionDeathAt=null;companion?.startSkill('revive',companionTime);addEffect('block','companion','companion','Возвращение',event.at);}
+        else if(event.skill==='roar'){companion?.startSkill('howl',companionTime);addEffect('block','companion','companion','Рык',event.at);}
         else if(event.skill==='rendingBite')addEffect('heavy','companion',event.targetId,'Кровотечение',event.at);
         else if(event.skill==='arrowDance')addEffect('block','hero','hero','Танец стрел',event.at);
         else if(event.skill==='arrowRain')addEffect('block','hero','hero','Град стрел',event.at);
