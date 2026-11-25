@@ -33,6 +33,7 @@
   ];
   const archetypes = {
     orc:{name:'Орк-щитоносец',maxHp:100,damage:6,interval:1.5,armor:3,projectile:'melee'},
+    swordsman:{name:'Скелет-мечник',maxHp:35,damage:5,interval:1.6,armor:0,projectile:'melee'},
     archer:{name:'Скелет-лучник',maxHp:60,damage:7,interval:1.8,armor:0,projectile:'arrow'},
     mage:{name:'Могильный колдун',maxHp:65,damage:10,interval:3.8,armor:0,projectile:'magic'},
     dragon:{name:'Красный дракон',maxHp:180,damage:24,interval:2.8,armor:3,projectile:'magic'}
@@ -52,8 +53,9 @@
   function createBattle(options = {}) {
     // The default three-wave encounters are immutable for existing saves
     // and deterministic tests; the game's fourth boss wave opts in explicitly.
+    const waves=options.skeletonSwordsEnabled===true ? waveTemplates.map((wave,index)=>index===1?[{id:'skeletonSword1',type:'swordsman'},{id:'skeletonSword2',type:'swordsman'},...wave]:wave) : waveTemplates;
     const activeWaves=options.dragonBossEnabled===true
-      ?[...waveTemplates,[{id:'dragon',type:'dragon'}]]:waveTemplates;
+      ?[...waves,[{id:'dragon',type:'dragon'}]]:waves;
     const activeTotalEnemies=activeWaves.reduce((n,wave)=>n+wave.length,0);
     const config = {
       name:typeof options.heroName === 'string' && options.heroName.trim() ? options.heroName.trim() : 'Странник',
