@@ -137,13 +137,13 @@ test('Mage displays only Mage skills and its chosen branches can be bought indep
  assert.equal(restore.node('[data-skill-id="channel"]').dataset.level,'1');
 });
 
-test('Archer mounts a genuine independent three-branch tree with future nodes and persistent upgrades',()=>{
+test('Archer mounts 15 real skills in three independent branches and persists upgrades',()=>{
  const ui=createPanel({classId:'bow',gold:60});
  assert.equal(ui.node('.skills-title p').textContent,'ЛУЧНИК');
  assert.equal(ui.root.dataset.heroClass,'bow');
  assert.equal(ui.root.getAttribute('aria-label'),'Древо навыков: ЛУЧНИК');
  assert.equal(ui.root.querySelectorAll('[data-class-switch]').length,0);
- const cases=[['marksmanship','attack','Меткий выстрел','урону стрел'],['endurance','defense','Выносливость','здоровья'],['quickdraw','control','Быстрая тетива','стрельбы']];
+ const cases=[['marksmanship','attack','Меткий выстрел','урону стрел'],['wolfBond','defense','Связь со зверем','здоровья'],['quickdraw','control','Быстрый выстрел','стрельбы']];
  for(const [id,branch,name,fragment] of cases){
   ui.clickSkill(id);
   assert.equal(ui.root.dataset.selected,id);
@@ -153,20 +153,20 @@ test('Archer mounts a genuine independent three-branch tree with future nodes an
   assert.equal(ui.node('#skill-upgrade').dataset.upgrade,id);
   ui.upgrade();assert.equal(ui.node(`[data-skill-id="${id}"]`).dataset.level,'1');
  }
- assert.deepEqual(clean(ui.store.getStats()),{heroDamage:14,heroMaxHp:220,heroAttackSpeed:1.05});
+ assert.deepEqual(clean(ui.store.getStats()),{heroDamage:14,heroMaxHp:200,heroAttackSpeed:1.05,archer_wolfBond:1});
  assert.equal(ui.node('[data-skill-gold]').textContent,'30');
  assert.equal(ui.controller.select('power'),false);
  assert.equal(ui.controller.select('sorcery'),false);
  assert.equal(ui.root.querySelectorAll('[data-skill-future]').length,6);
- assert.match(ui.root.querySelectorAll('[data-skill-future]')[0].getAttribute('aria-label'),/Пробивающая стрела/);
- assert.match(ui.root.querySelectorAll('[data-skill-future]')[5].getAttribute('aria-label'),/Прицельный залп/);
+ assert.match(ui.root.querySelectorAll('[data-skill-future]')[0].getAttribute('aria-label'),/Пробивная стрела/);
+ assert.match(ui.root.querySelectorAll('[data-skill-future]')[5].getAttribute('aria-label'),/Отступающий выстрел/);
  assert.equal(ui.root.querySelectorAll('[data-skill-tab]').length,3);
  assert.equal(ui.root.querySelectorAll('[data-skill-tab]').filter(node=>!node.disabled).length,1);
  const saved=JSON.parse(ui.storage.get('ember.progress.v1'));
- assert.deepEqual(saved.archerLevels,{marksmanship:1,endurance:1,quickdraw:1});
+ assert.deepEqual(saved.archerLevels,{marksmanship:1,endurance:0,quickdraw:1,wolfBond:1});
  const restored=createPanel({classId:'bow',saved});
  assert.equal(restored.node('[data-skill-id="marksmanship"]').dataset.level,'1');
- assert.equal(restored.node('[data-skill-id="endurance"]').dataset.level,'1');
+ assert.equal(restored.node('[data-skill-id="wolfBond"]').dataset.level,'1');
  assert.equal(restored.node('[data-skill-id="quickdraw"]').dataset.level,'1');
 });
 

@@ -166,7 +166,7 @@ test('Mage progression is class-specific, combines independent branches, and pre
  assert.deepEqual(mage.getStats(),{heroDamage:12,heroMaxHp:200,heroAttackSpeed:1});
  assert.equal(mage.quote('power').reason,'unknown');
  for(const id of ['sorcery','barrier','channel'])assert.equal(mage.purchase(id).ok,true);
- assert.deepEqual(mage.getStats(),{heroDamage:14,heroMaxHp:220,heroAttackSpeed:1.05});
+ assert.deepEqual(mage.getStats(),{heroDamage:14,heroMaxHp:200,heroAttackSpeed:1.05,archer_wolfBond:1});
  assert.equal(mage.getState().gold,170);
  const warrior=createStore({storage});
  assert.deepEqual(warrior.getStats(),{heroDamage:18,heroMaxHp:220,heroAttackSpeed:1.1});
@@ -197,17 +197,17 @@ test('Archer branch purchases change arrow stats and never borrow Warrior or Mag
  const saved={version:1,gold:200,levels:{power:4,vitality:3,tempo:2},mageLevels:{sorcery:2,barrier:2,channel:2}};
  const storage=memoryStorage({[storageKey]:JSON.stringify(saved)});
  const archer=createStore({storage,classId:'bow'});
- assert.deepEqual(archer.catalog.map(item=>[item.id,item.branch]),[['marksmanship','attack'],['endurance','defense'],['quickdraw','control']]);
+ assert.equal(archer.catalog.length,15);assert.equal(archer.quote('piercing').reason,'locked');
  assert.deepEqual(archer.getStats(),{heroDamage:12,heroMaxHp:200,heroAttackSpeed:1});
  assert.equal(archer.quote('power').reason,'unknown');
  assert.equal(archer.quote('sorcery').reason,'unknown');
- for(const id of ['marksmanship','endurance','quickdraw'])assert.equal(archer.purchase(id).ok,true);
+ for(const id of ['marksmanship','wolfBond','quickdraw'])assert.equal(archer.purchase(id).ok,true);
  assert.deepEqual(archer.getStats(),{heroDamage:14,heroMaxHp:220,heroAttackSpeed:1.05});
  assert.equal(archer.getState().gold,170);
  const state=JSON.parse(storage.data.get(storageKey));
  assert.deepEqual(state.levels,saved.levels);
  assert.deepEqual(state.mageLevels,saved.mageLevels);
- assert.deepEqual(state.archerLevels,{marksmanship:1,endurance:1,quickdraw:1});
+ assert.deepEqual(state.archerLevels,{marksmanship:1,endurance:0,quickdraw:1,wolfBond:1});
  assert.equal(createStore({storage,classId:'sword'}).getStats().heroDamage,20);
  assert.equal(createStore({storage,classId:'wand'}).getStats().heroDamage,16);
  assert.equal(createStore({storage,classId:'bow'}).quote('marksmanship').cost,20);
@@ -225,7 +225,7 @@ test('Archer purchases retain previous saves and avoid charging on full ranks or
  assert.equal(storage.writes.length,0);
  const before=storage.data.get(storageKey);
  storage.setItem=()=>{throw Error('quota');};
- assert.equal(archer.purchase('endurance').reason,'storage');
+ assert.equal(archer.purchase('wolfBond').reason,'storage');
  assert.equal(storage.data.get(storageKey),before);
  assert.equal(archer.getState().gold,75);
  assert.equal(archer.getStats().heroMaxHp,200);
@@ -242,3 +242,5 @@ test('all advanced mage ranks persist, and old shard purchases survive migration
  for(const id of ['sorcery','barrier','channel','strongBurn','iceShards','protectiveSphere','fusion','absorption','echo','overload','chaos','rebirth','archmage'])for(let i=mage.quote(id).level;i<3;i++)assert.equal(mage.purchase(id).ok,true,id);
  const restored=createStore({storage,classId:'wand'});assert.equal(restored.getStats().heroArchmageRank,3);assert.equal(restored.getStats().heroFusionRank,3);assert.equal(restored.getState().levels.power,2);
 });
+
+test('Archer arrow prerequisites require both branches at rank III, old endurance is preserved',()=>{const storage=memoryStorage({[storageKey]:JSON.stringify({version:1,gold:1000,levels:{},archerLevels:{marksmanship:3,endurance:2,piercing:3,poison:3,explosive:3,barbed:2}})});const a=createStore({storage,classId:'bow'});assert.equal(a.getStats().heroMaxHp,240);assert.equal(a.quote('doubleShot').reason,'locked');assert.equal(a.purchase('barbed').ok,true);assert.equal(a.quote('doubleShot').canBuy,true);});

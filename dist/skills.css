@@ -98,3 +98,30 @@
 .skills-panel[data-hero-class="wand"] .skill-detail-icon svg{width:32px;height:32px}
 @media(max-width:700px){.skills-panel[data-hero-class="wand"] .skill-detail-icon svg{width:26px;height:26px}}
 @media(orientation:portrait) and (max-height:700px),(orientation:landscape) and (max-height:600px){.skills-panel[data-hero-class="wand"] .skill-detail:not([hidden]){grid-template-columns:28px minmax(0,1fr) 82px;gap:5px}.skills-panel[data-hero-class="wand"] .skill-detail-icon{display:grid;width:28px;height:28px}.skills-panel[data-hero-class="wand"] .skill-detail-icon svg{width:24px;height:24px}.skills-panel[data-hero-class="wand"] .skill-node svg{width:29px;height:29px}}
+
+/* Archer skill graph follows the approved two-column arrow paths. */
+.skills-panel[data-hero-class="bow"] .skill-branch{min-height:214px;grid-template-rows:18px auto;align-content:start}
+.skills-panel[data-hero-class="bow"] .skill-path{grid-template-rows:40px 12px auto;align-content:start}
+.skills-panel[data-hero-class="bow"] .skill-node{width:34px;height:34px}
+.skills-panel[data-hero-class="bow"] .skill-fork{width:50%;opacity:.65}
+.skills-panel[data-hero-class="bow"] .skill-branch:not([data-branch="attack"]) .skill-fork{border-bottom:0}
+.skills-panel[data-hero-class="bow"] .skill-children{position:relative;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(3,36px);gap:12px 0;padding:0;align-items:start}
+.skills-panel[data-hero-class="bow"] .skill-future[data-mage-advanced]{width:30px;height:26px;grid-column:1/-1;z-index:1}
+.skills-panel[data-hero-class="bow"] .skill-future[data-mage-advanced] svg{width:18px;height:18px}
+.skills-panel[data-hero-class="bow"] .skill-future[data-mage-advanced] span{display:block;font-size:9px;line-height:10px;top:100%;color:#e0ddbb}
+.skills-panel[data-hero-class="bow"] .skill-future[data-mage-advanced]:before{height:12px;opacity:.65;z-index:-1}
+.skills-panel[data-hero-class="bow"] .skill-future[data-skill-depth="1"]:before{display:none}
+.skills-panel[data-hero-class="bow"] .skill-future[data-skill-depth="1"]{grid-row:1}
+.skills-panel[data-hero-class="bow"] .skill-future[data-skill-depth="2"]{grid-row:2}
+.skills-panel[data-hero-class="bow"] .skill-future[data-skill-depth="3"]{grid-row:3}
+.skills-panel[data-hero-class="bow"] .skill-growth{display:none}
+.skills-panel[data-hero-class="bow"] [data-branch="attack"] .skill-children:before{content:"";position:absolute;box-sizing:border-box;left:25%;top:36px;width:50%;height:6px;border:1px solid var(--branch);border-top:0;opacity:.65;pointer-events:none}
+.skills-panel[data-hero-class="bow"] .skill-future.is-locked:before{opacity:1}
+.skills-panel[data-hero-class="bow"] .skill-node svg{width:32px;height:32px}
+.skills-panel[data-hero-class="bow"] .skill-future[data-mage-advanced] svg{width:24px;height:24px}
+.skills-panel[data-hero-class="bow"] .skill-branch{min-height:258px}
+.skills-panel[data-hero-class="bow"] .skill-children{grid-template-rows:repeat(4,36px)}
+.skills-panel[data-hero-class="bow"] .skill-future[data-skill-depth="4"]{grid-row:4}
+.skills-panel[data-hero-class="bow"] [data-skill-id="piercing"],.skills-panel[data-hero-class="bow"] [data-skill-id="explosive"]{grid-column:1!important}
+.skills-panel[data-hero-class="bow"] [data-skill-id="poison"],.skills-panel[data-hero-class="bow"] [data-skill-id="barbed"]{grid-column:2!important}
+.skills-panel[data-hero-class="bow"] [data-branch="attack"] .skill-children:before{top:84px}

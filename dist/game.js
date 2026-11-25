@@ -129,7 +129,7 @@
   const sphereTile=128,sphereBreakDuration=.56;
   let laneStep = 0;
   arena.dataset.lanes='5';battlefield.dataset.lanes='5';
-  let heroX = null, fieldWidth = null, moving = false, heroMoving = false;
+  let heroX = null, fieldWidth = null, moving = false, heroMoving = false, archerRetreatOffset=0;
   // The engine clock deliberately freezes for the 2.5s wave entrance.
   // Wolf sprite frames need their own pause-aware visual clock, otherwise
   // its x-coordinate moves while the legs stay on one static frame.
@@ -201,7 +201,7 @@
     if(change?.type!=='purchase')return;
     const current = battle.getState().hero, stats = progression.getStats();
     const oldSpeed = current.attackSpeed || 1;
-    if (current.damage !== stats.heroDamage || current.maxHp !== stats.heroMaxHp || oldSpeed !== stats.heroAttackSpeed || stats.heroBurnRank || stats.heroSphereRank || stats.heroShardRank || starterWeapon?.id==='wand') {
+    if (current.damage !== stats.heroDamage || current.maxHp !== stats.heroMaxHp || oldSpeed !== stats.heroAttackSpeed || stats.heroBurnRank || stats.heroSphereRank || stats.heroShardRank || starterWeapon?.id==='wand'|| starterWeapon?.id==='bow') {
       const ratio = oldSpeed / stats.heroAttackSpeed;
       const animation = actors.hero.animation;
       if (animation && ratio !== 1) {
@@ -590,7 +590,11 @@
   }
   function handleEvents(events) {
     for (const event of events) {
-      if(event.type==='talentKnockback'){
+      if(event.type==='archerSkill'){
+        if(event.skill==='retreat'){archerRetreatOffset=Math.min(battlefield.clientWidth*.14,archerRetreatOffset+actors.hero.element.offsetWidth*.7);addEffect('block','hero','hero','Отступление',event.at);}
+        else if(event.skill==='evasion')addEffect('block','hero','hero','Уклонение',event.at);
+        else if(event.skill==='wolfRevive'){companionDeathAt=null;companion?.reset();}
+      }else if(event.type==='talentKnockback'){
         for(const id of event.targets){const actor=actors[id];if(!actor||actor.x==null)continue;const side=actor.x>=heroX?1:-1;actor.x+=side*actors.hero.element.offsetWidth*.65;actor.moving=false;actor.element.style.left=actor.x+'px';}
         pairContacted=false;projectFormation();
       }else if(event.type==='mageSkill'){
@@ -821,7 +825,7 @@
     removeEffects(()=>false);
     pendingIceImpacts.clear();
     cuedArrows.clear();
-    heroX=null;fieldWidth=null;walkDistance=0;walkDirection=3;moving=heroMoving=false;
+    heroX=null;archerRetreatOffset=0;fieldWidth=null;walkDistance=0;walkDirection=3;moving=heroMoving=false;
     companionTime=0;companionDeathAt=null;companionHitAt=-10;
     companion?.reset();
     pairContacted=false;previousSeparation=null;contactTarget=null;previousTargetSeparation=null;
@@ -845,7 +849,7 @@
     const width=battlefield.clientWidth;
     if(!width)return 0;
     const heroSize=actors.hero.element.offsetWidth;
-    const home=width*(window.innerWidth>700?.18:.22);
+    const home=width*(window.innerWidth>700?.18:.22)-(starterWeapon?.id==='bow'?archerRetreatOffset:0);
     if(heroX===null)heroX=home;
     for(const id of Object.keys(enemyDefinitions))if(actors[id].x===null)actors[id].x=width*actors[id].spawn;
     const resized=fieldWidth&&fieldWidth!==width;
@@ -1256,6 +1260,7 @@
     }));
     return {
       nearbyEnemies:Object.fromEntries(state.enemies.map(a=>[a.id,state.enemies.filter(b=>b.id!==a.id&&Math.hypot(actors[a.id].x-actors[b.id].x,(actors[a.id].depth-actors[b.id].depth)*laneStep)<=heroSize*1.6).sort((b,c)=>Math.hypot(actors[a.id].x-actors[b.id].x,(actors[a.id].depth-actors[b.id].depth)*laneStep)-Math.hypot(actors[a.id].x-actors[c.id].x,(actors[a.id].depth-actors[c.id].depth)*laneStep)).map(b=>b.id)])),
+      heroCanRetreat:starterWeapon?.id==='bow'&&heroX>heroSize*.65,
       heroCanAttack:Boolean(target && (ranged || inReach(target,actors[target].x))),
       heroCloseRange:Boolean(target && inReach(target,actors[target].x)),
       orcCanAttack:wolfBattle?Boolean(enemyCanAttack.orc):
@@ -1334,6 +1339,7 @@
       exiting:sceneTransition?.phase==='wave-out'||sceneTransition?.phase==='victory',
       heroAlive:state.hero.hp>0,
       companionAlive:Boolean(state.companion?.hp>0),
+      attackSpeed:state.wolfAttackSpeed||1,
       heroX:heroX??0,
       // Resting point must never follow the hero's wave-exit movement.
       anchorX:battlefield.clientWidth*(window.innerWidth>700?.18:.22),

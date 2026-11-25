@@ -76,7 +76,7 @@
     // bite-frame timing and when to request an engine-confirmed hit.
     function advance({dt=0,time=0,phase='running',entering=false,heroAlive=true,companionAlive=true,
       heroX=0,anchorX=null,heroSize=64,heroDepth=3,target=null,
-      exiting=false,reducedMotion=false}={}){
+      exiting=false,reducedMotion=false,attackSpeed=1}={}){
       if(!active()||!image||!Number.isFinite(heroX)){
         if(position!==null)reset();
         return null;
@@ -151,7 +151,7 @@
       if(attacking&&time>=nextBiteAt){
         facing=destination<=target.x?3:1;
         biteStarted=time;biteTarget=target.id;biteLanded=false;
-        nextBiteAt=time+biteInterval;motion='bite';idleSince=null;
+        nextBiteAt=time+Math.max(.5,biteInterval/Math.max(1,attackSpeed));motion='bite';idleSince=null;
       }
       return null;
     }
