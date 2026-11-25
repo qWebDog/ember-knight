@@ -73,7 +73,7 @@
     for(const [kind,pose] of [['idle','walk'],['walk','walk'],['attack','attack']]){
       if(sets[kind])sets[kind].image=images[pose];
     }
-    if(starterWeapon?.id==='bow')sets.dodge=dodgeArt.build(images.attack);
+    if(starterWeapon?.id==='bow'){sets.dodge=dodgeArt.build(images.attack);sets.skills=dodgeArt.buildSkills(images.attack);}
     actors.hero.lastKey=null;
   }
   let loadedSwordSprites = null;
@@ -298,7 +298,7 @@
         actors.hero.images.idle = {image:walk,row:3,still:0,...starterWeapon.walk};
         actors.hero.images.walk = {image:walk,row:3,...starterWeapon.walk};
         actors.hero.images.attack = {image:attack,row:3,...starterWeapon.attack};
-        if(starterWeapon.id==='bow')actors.hero.images.dodge=dodgeArt.build(attack);
+        if(starterWeapon.id==='bow'){actors.hero.images.dodge=dodgeArt.build(attack);actors.hero.images.skills=dodgeArt.buildSkills(attack);}
         if (starterWeapon.attacks) {
           const variants = await Promise.all(Object.entries(starterWeapon.attacks).map(async ([variant,geometry]) => {
             const image = variant === 'slash' ? attack : (swordSprites?.[variant]||await loadImage(loadouts.path(loadout,skin,variant)));
@@ -855,14 +855,15 @@
     const evading=id==='hero'&&starterWeapon?.id==='bow'&&!!actor.images.dodge&&!ended&&!walkingOut&&unit.hp>0&&!reducedMotion.matches&&activeTime>=archerEvadeAt&&activeTime-archerEvadeAt<dodgeTiming.duration;
     const attacking = !evading&&!walking && !blocking && !ended && age >= 0 && age < (actor.animation?.duration || 0) && unit.hp > 0 && !reducedMotion.matches;
     const kind = evading ? 'dodge' : walking ? 'walk' : blocking ? 'block' : attacking ? 'attack' : 'idle';
-    const descriptor = attacking && actor.images.attacks?.[actor.animation.variant] || actor.images[kind];
+    const skillClip=attacking&&actor.images.skills?.[actor.animation.skillClip];
+    const descriptor = skillClip || attacking && actor.images.attacks?.[actor.animation.variant] || actor.images[kind];
     // LPC directions: 0=back, 1=left, 2=front, 3=right.
     // When moving toward a hero/wolf on the left, Orc must use the LEFT
     // profile (row 1), not the front-facing row 2.
     const defender=state.enemyTargetId==='companion'?companion?.getPose():null;
     const facingTargetX=defender?.x??heroX;
     const enemyFacing=['archer','swordsman'].includes(actor.type)?(facingTargetX>actor.x?3:1):descriptor.row;
-    const row = evading?0:walking ? (id==='hero'?walkDirection:actor.direction) : enemyFacing;
+    const row = evading||skillClip?0:walking ? (id==='hero'?walkDirection:actor.direction) : enemyFacing;
     const tile = descriptor.tile || 64, origin = descriptor.origin || 0;
     const cell = evading ? dodgeArt.frameAt(activeTime-archerEvadeAt,dodgeTiming) : walking ? 1 + Math.floor((distance / .75 % 1) * 8) : attacking ? Math.min(descriptor.frames-1,Math.floor((age+(actor.animation?.arrowCue?1e-6:0)) / actor.animation.duration * descriptor.frames)) : Number.isInteger(descriptor.still) ? descriptor.still : id === 'hero' && auto && unit.hp > 0 && !ended && !reducedMotion.matches ? Math.floor(activeTime / .65) % 2 : 0;
     const key = `${kind}-${descriptor.image.src}-${cell}-${row}-${tile}-${origin}`;
@@ -881,6 +882,7 @@
     if(!frozen){
       actor.poseAge=age;actor.poseAnimation=actor.animation;
       actor.element.dataset.motion = kind;
+      if(id==='hero')actor.element.dataset.skillAnimation=skillClip?.skill||'';
       actor.element.dataset.attack = attacking ? actor.animation.variant || 'basic' : '';
       actor.element.dataset.counter = String(Boolean(attacking && actor.animation.counter));
       actor.element.classList.toggle('is-heavy',Boolean(attacking && actor.animation.heavy));
@@ -1133,7 +1135,7 @@
     const valid=new Map(shots.map(shot=>[keyFor(shot),shot]));
     for(const [key,effect] of cuedArrows){
       if(activeTime+1e-6>=effect.at+effect.duration){cuedArrows.delete(key);continue;}
-      const planned=valid.get(key);if(planned&&Boolean(planned.double)===Boolean(effect.paired)&&planned.arrowType===effect.element.dataset.arrowType)continue;
+      const planned=valid.get(key);if(planned&&Boolean(planned.double)===Boolean(effect.paired)&&planned.arrowType===effect.element.dataset.arrowType&&dodgeArt.skillName(planned)===effect.skillClip)continue;
       for(const e of [effect,effect.paired].filter(Boolean)){e.element.remove();const i=effects.indexOf(e);if(i>=0)effects.splice(i,1);}
       const shooter=actors[effect.sourceId];
       if(shooter.animation?.arrowCue===key){shooter.animation=null;shooter.lastKey=null;}
@@ -1147,13 +1149,15 @@
       const key=keyFor(shot);
       if(cuedArrows.has(key))continue;
       const releaseAt=shot.at-arrowFlightDuration;
-      const startAt=releaseAt-shot.animationDuration*arrowReleaseFrame/arrowPoseFrames;
+      const skillClip=dodgeArt.skillName(shot),clip=source.images.skills?.[skillClip];
+      const releaseFraction=clip?clip.releaseFrame/clip.frames:arrowReleaseFrame/arrowPoseFrames;
+      const startAt=releaseAt-shot.animationDuration*releaseFraction;
       if(activeTime+1e-6<startAt||activeTime>shot.at)continue;
-      source.animation={at:startAt,duration:shot.animationDuration,arrowCue:key};
+      source.animation={at:startAt,duration:shot.animationDuration,arrowCue:key,skillClip};
       source.lastKey=null;
       const opts={at:releaseAt,duration:arrowFlightDuration,arrowType:shot.arrowType,rainIndex:shot.rainIndex,rainCount:shot.rainCount};
       const effect=addEffect('arrow',shot.sourceId,shot.targetId,null,releaseAt,{...opts,...(shot.double?{double:1}:{})});
-      if(effect){if(shot.double)effect.paired=addEffect('arrow',shot.sourceId,shot.targetId,null,releaseAt,{...opts,double:2});cuedArrows.set(key,effect);}
+      if(effect){effect.skillClip=skillClip;if(shot.double)effect.paired=addEffect('arrow',shot.sourceId,shot.targetId,null,releaseAt,{...opts,double:2});for(const e of [effect,effect.paired].filter(Boolean)){e.skillClip=skillClip;if(skillClip)e.element.dataset.skillAnimation=skillClip;}cuedArrows.set(key,effect);}
     }
   }
   function renderEffects(state) {
@@ -1261,6 +1265,13 @@
           if(!effect.releaseOrigin)effect.releaseOrigin={x:source.left+source.width*46/64-field.left,y:source.top+source.height*25/64-field.top};
           sx=effect.releaseOrigin.x;sy=effect.releaseOrigin.y;
         }
+        // Rain launches from the raised bow, and follows a visible lofted
+        // trajectory. Keep its original 0.28-second impact schedule.
+        const rain=effect.skillClip==='arrowRain';
+        if(rain){
+          if(!effect.releaseOrigin)effect.releaseOrigin={x:source.left+source.width*.53-field.left,y:source.top+source.height*.30-field.top};
+          sx=effect.releaseOrigin.x;sy=effect.releaseOrigin.y;
+        }
         const aim=lockArcherTarget(effect,field,target);
         if(aim){
           if(!effect.lockedOrigin)effect.lockedOrigin={x:sx,y:sy};
@@ -1268,12 +1279,13 @@
         }
         const barrier=effect.type==='arrow'?aimAtBarrier(effect,state,target,field,sx,sy):null;
         const hitX=aim?.x??barrier?.x??tx,hitY=aim?.y??barrier?.y??ty;
+        const arc=rain?Math.max(0,Math.min(source.width*.8,Math.max(0,sy-8)*.85,Math.abs(hitX-sx)*.35)):0;
         if(effect.type==='arrow'){
-          const angle=Math.atan2(hitY-sy,hitX-sx)*180/Math.PI+180;
+          const angle=Math.atan2(hitY-sy-4*arc*(1-2*p),hitX-sx)*180/Math.PI+180;
           effect.element.style.transform=`translate(-50%,-50%) rotate(${angle}deg)`;
         }
         const spread=effect.double?(effect.double===1?-1:1)*Math.sin(p*Math.PI)*source.width*.10:0;
-        effect.element.style.left = `${sx+(hitX-sx)*p}px`; effect.element.style.top = `${sy+(hitY-sy)*p+spread}px`;
+        effect.element.style.left = `${sx+(hitX-sx)*p}px`; effect.element.style.top = `${sy+(hitY-sy)*p+spread-4*arc*p*(1-p)}px`;
       }
     }
   }
