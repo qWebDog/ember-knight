@@ -22,26 +22,6 @@
   const archerArrowSprite='assets/projectiles/archer-arrow-sprites-v1.png';
   const archerArrowRows=['piercing','poison','explosive','barbed'];
   let archerArrowAtlas=null;
-  // Flight frames are 32px square, but their visible shafts must match the
-  // original 192×30 arrow. Measure the actual tip, not the transparent cell.
-  // The extra canvas space is exclusively for the animated trails.
-  const arrowFlightCanvas={width:320,height:96};
-  const arrowFlightTips=[
-    [[29,15.5],[30,15.5],[31,15.5],[32,15.5]], // piercing
-    [[28,14.5],[29,14.5],[31,14.5],[31,14.5]], // poison
-    [[29,14],[30,14],[31,14],[31,14]],         // explosive
-    [[29,13.5],[30,13.5],[31,13.5],[32,13.5]] // barbed
-  ];
-  function drawArcherArrowFlight(element,row,frame){
-    const [tipX,tipY]=arrowFlightTips[row][frame];
-    const scaleX=192/(tipX-4),scaleY=30/8;
-    const ctx=element.getContext('2d');
-    ctx.clearRect(0,0,arrowFlightCanvas.width,arrowFlightCanvas.height);
-    ctx.imageSmoothingEnabled=false;
-    // Body spans x=64..256, centred on x=160; tip stays at (256,48).
-    ctx.drawImage(archerArrowAtlas,frame*32,row*32,32,32,
-      256-tipX*scaleX,48-tipY*scaleY,32*scaleX,32*scaleY);
-  }
   // The 13-frame LPC bow releases at frame 9. Flight ends at the original
   // engine hit time, so damage and combat cooldowns remain unchanged.
   const arrowReleaseFrame=9,arrowPoseFrames=13,arrowFlightDuration=.28;
@@ -462,12 +442,13 @@
   document.addEventListener('visibilitychange', syncPause);
   function addEffect(type, sourceId, targetId, text, at,options={}) {
     if (reducedMotion.matches) return null;
-    const arrowRow=archerArrowAtlas&&sourceId==='hero'?archerArrowRows.indexOf(options.arrowType):-1;
-    const special=type==='arrow'&&arrowRow>=0;
-    const element = document.createElement(special?'canvas':type === 'arrow' ? 'img' : 'span');
+    const element = document.createElement(type === 'arrow' ? 'img' : 'span');
     if (type === 'arrow') {
-      if(special){element.width=arrowFlightCanvas.width;element.height=arrowFlightCanvas.height;element.dataset.arrowType=options.arrowType;}
-      else{element.src = arrowSprite; element.alt = ''; element.draggable = false;element.width = 192; element.height = 30;}
+      // All flying arrows use the SAME original raster, alpha mask, size and pivot.
+      // Special types change RGB only, never the silhouette or its dimensions.
+      element.src = arrowSprite; element.alt = ''; element.draggable = false;
+      element.width = 192; element.height = 30;
+      if(sourceId==='hero'&&archerArrowRows.includes(options.arrowType))element.dataset.arrowType=options.arrowType;
     }
     const floating = ['damage','heavy','counter','block','coin'].includes(type);
     element.className = floating ? `damage-number ${type}-number ${targetId === 'hero' && type !== 'block' ? 'enemy-damage' : ''}` : `projectile ${type}`;
@@ -479,7 +460,7 @@
       element.dataset.releaseAt=String(at);
       element.dataset.impactAt=String(at+(options.duration||arrowFlightDuration));
     }
-    const effect={element,type,floating,sourceId,targetId,...(special?{arrowRow}:{}),
+    const effect={element,type,floating,sourceId,targetId,
       at:options.at??activeTime,
       duration:options.duration??(type==='coin'?.65:floating?.85:.38)};
     battlefield.appendChild(element);effects.push(effect);
@@ -1200,9 +1181,8 @@
         const barrier=effect.type==='arrow'?aimAtBarrier(effect,state,target,field,sx,sy):null;
         const hitX=barrier?.x??tx,hitY=barrier?.y??ty;
         if(effect.type==='arrow'){
-          const angle=Math.atan2(hitY-sy,hitX-sx)*180/Math.PI+(effect.arrowRow!==undefined?0:180);
+          const angle=Math.atan2(hitY-sy,hitX-sx)*180/Math.PI+180;
           effect.element.style.transform=`translate(-50%,-50%) rotate(${angle}deg)`;
-          if(effect.arrowRow!==undefined){const frame=Math.min(3,Math.max(0,Math.floor(p*4)));effect.element.dataset.frame=String(frame);if(effect.lastKey!==frame){drawArcherArrowFlight(effect.element,effect.arrowRow,frame);effect.lastKey=frame;}}
         }
         effect.element.style.left = `${sx+(hitX-sx)*p}px`; effect.element.style.top = `${sy+(hitY-sy)*p}px`;
       }
