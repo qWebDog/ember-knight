@@ -82,10 +82,12 @@ test('red dragon strikes the wolf with claws rather than fire',()=>{
  }
  assert.equal(battle.state.waveIndex,3);
  assert.equal(battle.state.enemies[0].id,'dragon');
+ assert.equal(battle.state.enemies[0].maxHp,1800);
+ assert.equal(battle.state.enemies[0].armor,30);
  assert.equal(battle.state.enemyTargetId,'companion');
  const events=battle.advance(2.8,{enemyCanAttack:{dragon:true},orcCanAttack:true});
  assert.ok(events.some(e=>e.type==='attack'&&e.sourceId==='dragon'
-   &&e.targetId==='companion'&&e.projectile==='claw'&&e.damage===24));
+   &&e.targetId==='companion'&&e.projectile==='claw'&&e.damage===240));
  assert.equal(events.filter(e=>e.type==='cast'&&e.sourceId==='dragon').length,0);
 });
 test('published HTML mounts dragon before game, adds boss actor, and scales atlas without slicing 64px tiles',()=>{

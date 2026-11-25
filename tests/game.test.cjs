@@ -1235,7 +1235,7 @@ test('animated Red Dragon boss appears after the old three waves with flapping w
  const wave=ui.runUntil(()=>ui.state().waveIndex===3,45);
  assert.ok(wave>0);
  assert.equal(ui.state().enemies[0].id,'dragon');
- assert.equal(ui.state().enemies[0].maxHp,180);
+ assert.equal(ui.state().enemies[0].maxHp,1800);
  const body=ui.node('[data-fighter="dragon"]'),sprite=ui.node('#enemy-dragon');
  assert.equal(body.hidden,false,'dragon needs a visible battle actor');
  assert.equal(body.dataset.motion,'fly');
@@ -1290,6 +1290,8 @@ test('dragon hovers and fires five separate Mage-style fireballs from its mouth'
    'dragon pauses between distinct salvos');
  const hits=ui.events.filter(e=>e.type==='attack'&&e.sourceId==='dragon');
  assert.equal(hits.length,5,'each of the five magic shots deals engine-confirmed damage');
+ assert.ok(hits.every(e=>e.damage===60));
+ assert.equal(hits.reduce((sum,e)=>sum+e.damage,0),300);
 });
 
 test('hovering dragon hits equipped wolf with claws, not with persistent fire',async()=>{
@@ -1305,7 +1307,7 @@ test('hovering dragon hits equipped wolf with claws, not with persistent fire',a
    &&e.projectile==='claw'),18);
  const claw=ui.events.find(e=>e.sourceId==='dragon'&&e.projectile==='claw');
  assert.equal(claw.targetId,'companion');
- assert.equal(claw.damage,24);
+ assert.equal(claw.damage,240);
  assert.ok(ui.state().companion.hp<ui.state().companion.maxHp);
  assert.equal(ui.events.filter(e=>e.type==='cast'&&e.sourceId==='dragon').length,0,
    'no fireball or fire breath may be aimed at a living wolf');
@@ -1324,7 +1326,7 @@ test('dragon fireballs disappear instantly when dragon dies during a salvo',asyn
  ui.runFor(.1);
  const visible=()=>ui.node('.battlefield').children.filter(el=>el.className==='spell-projectile'&&el.dataset.dragonVolley==='true');
  assert.ok(visible().length>0,'fire exists while dragon is alive and exhaling');
- ui.battle.updateHeroStats({heroDamage:500});
+ ui.battle.updateHeroStats({heroDamage:2000});
  ui.runUntil(()=>ui.events.some(e=>e.type==='death'&&e.id==='dragon'),3);
  assert.equal(ui.state().phase,'victory');
  assert.equal(visible().length,0,'every fireball is removed in the death event, not at timeout');
@@ -1536,10 +1538,10 @@ test('dragon magic shatters at shield, only unabsorbed damage reaches hero',asyn
  const ui=createHarness({weapon:'wand',outfit:'acolyte',dragonBoss:true,combatOptions:{heroDamage:300,heroMaxHp:1800}});await ui.loadAllImages();ui.runUntil(()=>ui.state().waveIndex===3,45);
  ui.battle.updateHeroStats({heroDamage:1,heroSphereRank:1});const field=ui.node('.battlefield');
  ui.runUntil(()=>ui.events.some(e=>e.type==='sphere'&&e.sourceId==='dragon'),15);
- const absorbed=ui.events.find(e=>e.type==='sphere'&&e.sourceId==='dragon');assert.equal(absorbed.projectile,'magic');assert.ok(absorbed.castId);assert.equal(absorbed.absorbed,6);
+ const absorbed=ui.events.find(e=>e.type==='sphere'&&e.sourceId==='dragon');assert.equal(absorbed.projectile,'magic');assert.ok(absorbed.castId);assert.equal(absorbed.absorbed,20);
  const burst=field.children.find(el=>el.className==='barrier-impact'&&el.dataset.castId===absorbed.castId);assert.ok(burst);assert.equal(burst.dataset.kind,'magic');assert.ok(burst.draws.some(d=>d.crop[1]===64));
  assert.ok(!ui.spells().some(el=>el.dataset.dragonVolley==='true'&&el.dataset.burst==='0'));
- ui.runUntil(()=>ui.events.some(e=>e.type==='sphere'&&e.sourceId==='dragon'&&e.broken),15);assert.equal(ui.state().hero.sphere.hp,0);assert.ok(ui.events.some(e=>e.type==='attack'&&e.sourceId==='dragon'&&e.damage===4));
+ ui.runUntil(()=>ui.events.some(e=>e.type==='sphere'&&e.sourceId==='dragon'&&e.broken),15);assert.equal(ui.state().hero.sphere.hp,0);assert.ok(ui.events.some(e=>e.type==='attack'&&e.sourceId==='dragon'&&e.damage===40));
 });
 
 test('mage reaction uses separate transparent advanced effect atlas',async()=>{
