@@ -1241,3 +1241,22 @@ test('Seeded evasion is invariant to frame chunking',()=>{
  for(let i=0;i<450;i++)actual.push(...b.advance(.1));
  assert.deepEqual(actual,expected);assert.deepEqual(b.state,a.state);
 });
+
+test('automatic victory continuation preserves dead wolf and its remaining revival cooldown, manual replay resets',()=>{
+ const b=createDefaultBattle({heroWeapon:'bow',heroProjectile:'arrow',companionEnabled:true,
+  companionMaxHp:7,heroDamage:1,heroMaxHp:10000,archer_alpha:1});
+ const first=b.advance(1.8);
+ b.updateHeroStats({heroDamage:1000});
+ const events=first.concat(b.advance(12)),death=events.find(e=>e.type==='death'&&e.id==='companion');
+ assert.ok(death);assert.equal(b.state.phase,'victory');assert.equal(b.state.companion.hp,0);
+ const remaining=death.at+22-b.state.elapsed;
+ assert.ok(remaining>0);
+ b.restart({carryFallenWolf:true});
+ assert.equal(b.state.companion.hp,0);assert.equal(b.state.enemyTargetId,'hero');
+ b.updateHeroStats({heroDamage:1});
+ assert.equal(b.advance(remaining-.01).some(e=>e.skill==='wolfRevive'),false);
+ assert.equal(b.state.companion.hp,0);
+ const revival=b.advance(.02).find(e=>e.skill==='wolfRevive');
+ assert.ok(revival);assert.equal(b.state.companion.hp,7);
+ b.restart();assert.equal(b.state.companion.hp,7);
+});
