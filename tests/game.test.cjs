@@ -1579,3 +1579,35 @@ test('Mage resonance portal is in front of the caster and releases a delayed ele
  assert.ok(portal.draws.some(d=>d.crop[0]===192||d.crop[0]===256));
  ui.runFor(.7);assert.ok(!field.children.includes(portal));
 });
+
+test('Orc strikes the intact sphere immediately at its rim and advances only after break',async()=>{
+ const ui=createHarness({weapon:'wand',outfit:'acolyte',magic:'fire',combatOptions:{heroDamage:100,heroMaxHp:2000}});
+ await ui.loadAllImages();ui.runUntil(()=>ui.state().waveIndex===2,35);
+ ui.battle.updateHeroStats({heroDamage:1,heroSphereRank:1});
+ const hero=ui.node('[data-fighter="hero"]'),orc=ui.node('[data-fighter="orc"]');
+ const rim=()=>hero.offsetWidth*1.5*50/128+orc.offsetWidth*.34;
+ const gap=()=>ui.orcX()-ui.heroX();
+ runFramesUntil(ui,()=>Math.abs(gap()-rim())<.01&&ui.depth('hero')===ui.depth('orc'),20);
+ const contact=ui.state().elapsed;
+ runFramesUntil(ui,()=>ui.events.some(e=>e.type==='attack'&&e.sourceId==='orc'),.1);
+ const hit=ui.events.find(e=>e.type==='attack'&&e.sourceId==='orc');
+ assert.ok(Math.abs(hit.at-contact)<.05);assert.equal(hit.damage,0);
+ assert.ok(ui.events.some(e=>e.type==='sphere'&&e.sourceId==='orc'&&e.projectile==='melee'));
+ for(let i=0;i<200&&ui.state().hero.sphere.hp>0;i++){assert.ok(gap()>=rim()-.01);ui.frame(100);}
+ assert.equal(ui.state().hero.sphere.hp,0);
+ assert.ok(gap()>hero.offsetWidth*.23+orc.offsetWidth*.34+.01);
+ runFramesUntil(ui,()=>ui.inMeleeRange(),3);
+});
+test('Mixed-wave swordsmen stay outside the active Mage sphere',async()=>{
+ const ui=createHarness({weapon:'wand',outfit:'acolyte',magic:'fire',mixedWave:true,combatOptions:{heroDamage:100,heroMaxHp:2000}});
+ await ui.loadAllImages();ui.runUntil(()=>ui.state().waveIndex===1,30);
+ ui.battle.updateHeroStats({heroDamage:1,heroSphereRank:5});
+ const ids=['skeletonSword1','skeletonSword2'],hero=ui.node('[data-fighter="hero"]');
+ const boundary=id=>hero.offsetWidth*1.5*50/128+ui.node('[data-fighter="'+id+'"]').offsetWidth*.34;
+ runFramesUntil(ui,()=>ui.events.some(e=>e.type==='sphere'&&ids.includes(e.sourceId)),15);
+ assert.ok(ui.state().hero.sphere.hp>0);
+ for(let i=0;i<15&&ui.state().hero.sphere.hp>0;i++){
+  for(const id of ids)assert.ok(Math.abs(actorX(ui,id)-ui.heroX())>=boundary(id)-.01);
+  ui.frame(100);
+ }
+});

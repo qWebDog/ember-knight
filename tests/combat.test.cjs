@@ -1199,3 +1199,16 @@ test('rebirth saves exactly once per battle and absorption restores actual spher
  const b=createDefaultBattle({heroWeapon:'wand',heroProjectile:'magic',heroMaxHp:10,heroDamage:1,heroRebirthRank:5});const e=b.advance(20,{heroCanAttack:false});assert.equal(e.filter(x=>x.type==='mageSkill'&&x.skill==='rebirth').length,1);assert.equal(b.state.phase,'defeat');
  const a=createDefaultBattle({heroWeapon:'wand',heroProjectile:'magic',heroDamage:30,heroSphereRank:1,heroAbsorptionRank:1});const x=a.advance(5);assert.ok(x.some(v=>v.type==='mageSkill'&&v.skill==='absorption'&&v.restored===4));
 });
+
+test('Orc first contact is immediate, then normal cooldown without extra hits on recontact',()=>{
+ const b=createBattle({heroMaxHp:1000,heroDamage:1});
+ const approach=b.advance(4,{heroCanAttack:false,orcCanAttack:false,immediateOrcContact:true});
+ assert.ok(!approach.some(e=>e.sourceId==='orc'&&e.type==='attack'));
+ const contact=b.state.elapsed,interval=b.state.enemies.find(e=>e.id==='orc').interval;
+ const first=b.advance(.01,{heroCanAttack:false,orcCanAttack:true,immediateOrcContact:true}).filter(e=>e.sourceId==='orc'&&e.type==='attack');
+ assert.equal(first.length,1);assert.equal(first[0].at,contact);
+ const held=b.advance(.2,{heroCanAttack:false,orcCanAttack:false,immediateOrcContact:true});
+ assert.ok(!held.some(e=>e.sourceId==='orc'&&e.type==='attack'));
+ const resumed=b.advance(interval-.01,{heroCanAttack:false,orcCanAttack:true,immediateOrcContact:true}).filter(e=>e.sourceId==='orc'&&e.type==='attack');
+ assert.equal(resumed.length,1);assert.ok(Math.abs(resumed[0].at-contact-interval-.2)<1e-7);
+});
