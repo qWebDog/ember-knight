@@ -66,8 +66,8 @@ function createHarness({skin = 'bronze', preference, search = '', weapon, outfit
       return [node('.dialog-close'), node('.dialog-action')];
     }
     getContext() {
-      return {clearRect() {}, drawImage:(image, sx, sy, sw, sh, ...destination) => {
-        assert.ok(sx >= 0 && sy >= 0 && sx + sw <= image.width && sy + sh <= image.height,
+      return {clearRect() {},fillRect(){},getImageData:(x,y,w,h)=>({data:new Uint8ClampedArray(w*h*4)}),putImageData(){},drawImage:(image, sx, sy, sw, sh, ...destination) => {
+        if(sw!==undefined)assert.ok(sx >= 0 && sy >= 0 && sx + sw <= image.width && sy + sh <= image.height,
           `crop exceeds ${image.src}: ${[sx,sy,sw,sh]}`);
         this.draws.push({src:image.src, crop:[sx,sy,sw,sh], destination});
       }};
@@ -169,6 +169,7 @@ function createHarness({skin = 'bronze', preference, search = '', weapon, outfit
   });
   vm.runInContext(fs.readFileSync(path.join(dist,'loadouts.js'),'utf8'), context, {filename:'loadouts.js'});
   vm.runInContext(combatSource, context, {filename:'combat.js'});
+  vm.runInContext(fs.readFileSync(path.join(dist,'archer-dodge.js'),'utf8'), context, {filename:'archer-dodge.js'});
   vm.runInContext(fs.readFileSync(path.join(dist,'progression.js'),'utf8'), context, {filename:'progression.js'});
   if(wolfEquipped){
     window.localStorage={
