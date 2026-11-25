@@ -121,3 +121,6 @@ dialog{width:min(380px,calc(100% - 32px));max-height:calc(var(--app-height) - 32
 /* A barrier impact is a short independent effect at the contact point, above the shield. */
 .barrier-impact{position:absolute;z-index:602;pointer-events:none;width:calc(var(--enemy-size)*1.05);height:calc(var(--enemy-size)*1.05);image-rendering:pixelated;transform-origin:50% 50%}
 @media(prefers-reduced-motion:reduce){.barrier-impact{display:none}}
+
+.mage-advanced-effect{position:absolute;transform:translate(-50%,-50%);z-index:603;pointer-events:none;image-rendering:pixelated}.spell-projectile[data-echo="true"]{filter:drop-shadow(0 0 3px #bb9cff)}
+@media(prefers-reduced-motion:reduce){.mage-advanced-effect{display:none}}

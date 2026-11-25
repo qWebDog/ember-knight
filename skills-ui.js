@@ -12,14 +12,23 @@
     tempo:{name:'Натиск',branch:'control',category:'Контроль',icon:'bolt',benefit:'+5% к скорости атаки',total:level=>`+${level*5}% к скорости атаки`}
   };
   const mageDetails={
-    sorcery:{name:'Сила стихий',branch:'attack',category:'Пиромантия',icon:'flame',benefit:'+2 к урону заклинаний',total:level=>`+${level*2} к урону заклинаний`},
+    sorcery:{name:'Сила стихий',branch:'attack',category:'Стихии',icon:'flame',benefit:'+2 к урону заклинаний',total:level=>`+${level*2} к урону заклинаний`},
     barrier:{name:'Магический барьер',branch:'defense',category:'Аркана',icon:'skill-shield',benefit:'+20 к максимуму здоровья',total:level=>`+${level*20} к максимуму здоровья`},
-    channel:{name:'Поток маны',branch:'control',category:'Криомантия',icon:'bolt',benefit:'+5% к скорости заклинаний',total:level=>`+${level*5}% к скорости заклинаний`}
+    channel:{name:'Поток маны',branch:'control',category:'Мастерство',icon:'bolt',benefit:'+5% к скорости заклинаний',total:level=>`+${level*5}% к скорости заклинаний`}
   };
   Object.assign(mageDetails,{
-    strongBurn:{name:'Сильный ожог',branch:'attack',category:'Пиромантия',icon:'flame',benefit:'+0,25 с горения и +1 урона за тик',total:level=>`+${level*.25} с, +${level} урона за тик`,requires:'Сила стихий'},
+    strongBurn:{name:'Сильный ожог',branch:'attack',category:'Стихии',icon:'flame',benefit:'+0,25 с горения и +1 урона за тик',total:level=>`+${level*.25} с, +${level} урона за тик`,requires:'Сила стихий'},
     protectiveSphere:{name:'Защитная сфера',branch:'defense',category:'Аркана',icon:'skill-shield',benefit:'20 прочности на I уровне, затем +10',total:level=>`${10+level*10} прочности`,requires:'Магический барьер'},
-    iceShards:{name:'Ледяные осколки',branch:'control',category:'Криомантия',icon:'bolt',benefit:'+3 урона дополнительного залпа',total:level=>`${level*3} урона залпа`,requires:'Поток маны'}
+    iceShards:{name:'Ледяные осколки',branch:'attack',category:'Стихии',icon:'bolt',benefit:'+3 урона дополнительного залпа',total:level=>`${level*3} урона залпа`,requires:'Сила стихий'}
+  });
+  Object.assign(mageDetails,{
+    fusion:{name:"Слияние стихий",branch:'attack',category:'Стихии',icon:'flame',benefit:"+4 урона реакции",total:level=>level*4+' урона реакции',requires:"Сильный ожог III + Ледяные осколки"},
+    chaos:{name:"Стихийный хаос",branch:'attack',category:'Стихии',icon:'flame',benefit:"+5 урона всем врагам при каждой 3-й реакции",total:level=>level*5+' урона хаоса',requires:"Слияние стихий"},
+    absorption:{name:"Поглощение",branch:'defense',category:'Аркана',icon:'skill-shield',benefit:"+4 прочности за убийство",total:level=>level*4+' прочности за убийство',requires:"Защитная сфера"},
+    rebirth:{name:"Перерождение",branch:'defense',category:'Аркана',icon:'skill-shield',benefit:"+10% здоровья при спасении, раз за бой",total:level=>level*10+'% здоровья, раз за бой',requires:"Поглощение"},
+    echo:{name:"Эхо заклинаний",branch:'control',category:'Мастерство',icon:'bolt',benefit:"+1 резонанс за каст (10 = эхо, 50% урона)",total:level=>level*10+'% частоты эха',requires:"Поток маны"},
+    overload:{name:"Перегрузка",branch:'control',category:'Мастерство',icon:'bolt',benefit:"+8% частоты усиленного удара (+50% урона)",total:level=>level*8+'% частоты перегрузки',requires:"Эхо заклинаний"},
+    archmage:{name:"Архимаг",branch:'control',category:'Мастерство',icon:'bolt',benefit:"+5% ускорения 3 кастов после каждых 6",total:level=>(10+level*5)+'% сокращения интервала',requires:"Перегрузка"}
   });
   const archerDetails={
     marksmanship:{name:'Меткий выстрел',branch:'attack',category:'Атака',icon:'skill-bow',benefit:'+2 к урону стрел',total:level=>`+${level*2} к урону стрел`},
@@ -31,11 +40,7 @@
     defense:['Уклонение','Ловушка'],
     control:['Замедляющая стрела','Прицельный залп']
   };
-  const futureMage={
-    attack:['Сильный ожог','Огненный шквал'],
-    defense:['Защитная сфера','Эхо заклинаний'],
-    control:['Ледяные осколки','Глубокая заморозка']
-  };
+  const magePaths={attack:['strongBurn','iceShards','fusion','chaos'],defense:['protectiveSphere','absorption','rebirth'],control:['echo','overload','archmage']};
   function mount({root,store,heroLevel=1,classId=store?.classId||'sword'}={}) {
     if(!root||!store||typeof store.getState!=='function'||typeof store.purchase!=='function')throw new TypeError('A skill panel root and progression store are required.');
     const $=selector=>root.querySelector(selector);
@@ -54,18 +59,21 @@
       if(index<0)continue;
       const node=branch.querySelector('[data-skill-id]');
       if(mage)branch.querySelector('h3').textContent={
-        attack:'Пиромантия',defense:'Аркана',control:'Криомантия'
+        attack:'Стихии',defense:'Аркана',control:'Мастерство'
       }[branch.dataset.branch];
       node.dataset.skillId=activeIds[index];
       node.querySelector('use').setAttribute('href',`#${activeDetails[activeIds[index]].icon}`);
-      branch.querySelectorAll('[data-skill-future]').forEach((future,i)=>{
-        const name=(mage?futureMage:futureArcher)[branch.dataset.branch][i];
-        if(mage&&i===0){
-          const id=['strongBurn','protectiveSphere','iceShards'][index];
-          future.dataset.skillId=id;future.dataset.mageAdvanced='true';future.disabled=false;
+      if(mage){
+        const slots=[...branch.querySelectorAll('[data-skill-future]'),...branch.querySelectorAll('[data-mage-slot]')];
+        slots.forEach((future,i)=>{
+          const id=magePaths[branch.dataset.branch][i];if(!id)return;
+          future.hidden=false;future.disabled=false;future.dataset.skillId=id;future.dataset.mageAdvanced='true';
           future.querySelector('use').setAttribute('href',`#${activeDetails[id].icon}`);
-          future.querySelector('span').setAttribute('data-skill-node-rank','');nodes.push(future);return;
-        }
+          future.querySelector('span').setAttribute('data-skill-node-rank','');
+          future.setAttribute('title',activeDetails[id].name);nodes.push(future);
+        });
+      }else branch.querySelectorAll('[data-skill-future]').forEach((future,i)=>{
+        const name=futureArcher[branch.dataset.branch][i];
         future.setAttribute('aria-label',`${name} — скоро`);
         future.setAttribute('title',`${name}: будет доступно позже`);
       });

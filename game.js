@@ -176,7 +176,7 @@
     if(change?.type!=='purchase')return;
     const current = battle.getState().hero, stats = progression.getStats();
     const oldSpeed = current.attackSpeed || 1;
-    if (current.damage !== stats.heroDamage || current.maxHp !== stats.heroMaxHp || oldSpeed !== stats.heroAttackSpeed || stats.heroBurnRank || stats.heroSphereRank || stats.heroShardRank) {
+    if (current.damage !== stats.heroDamage || current.maxHp !== stats.heroMaxHp || oldSpeed !== stats.heroAttackSpeed || stats.heroBurnRank || stats.heroSphereRank || stats.heroShardRank || starterWeapon?.id==='wand') {
       const ratio = oldSpeed / stats.heroAttackSpeed;
       const animation = actors.hero.animation;
       if (animation && ratio !== 1) {
@@ -313,7 +313,7 @@
         ...['fire','ice','shadow'].map(async magic=>{spellImages[magic]=await loadImage(`assets/magic/${magic}.png`);})
       ]);
       statusImage = statusAtlas;
-      if(starterWeapon?.id==='wand')await Promise.all(['burn','shards','sphere','impact'].map(async effect=>{mageEffects[effect]=await loadImage(effect==='sphere'?'assets/magic/mage-sphere-v2.svg':effect==='impact'?'assets/magic/mage-barrier-impact.svg':`assets/magic/mage-${effect}.png`);}));
+      if(starterWeapon?.id==='wand')await Promise.all(['burn','shards','sphere','impact','advanced'].map(async effect=>{mageEffects[effect]=await loadImage(effect==='sphere'?'assets/magic/mage-sphere-v2.svg':effect==='impact'?'assets/magic/mage-barrier-impact.svg':effect==='advanced'?'assets/magic/mage-advanced.svg':`assets/magic/mage-${effect}.png`);}));
       actors.orc.images.attack = orcAttack ? {image:orcAttack,frames:6,row:1,tile:128,origin:32} : { ...actors.orc.images.idle,frames:1 };
       const face = $('#avatar').getContext('2d'); face.imageSmoothingEnabled = false;
       const avatarTile=loadout?starterWeapon.walk.tile:64, avatarOrigin=loadout?starterWeapon.walk.origin:0;
@@ -433,7 +433,7 @@
       :event.sourceId==='dragon'?'fire':'shadow';
     const element=document.createElement('canvas');
     element.width=64; element.height=64; element.className='spell-projectile';
-    element.dataset.magic=magic; if(event.shards)element.dataset.shards='true'; element.dataset.source=event.sourceId; element.dataset.target=event.targetId;
+    element.dataset.magic=magic; if(event.shards)element.dataset.shards='true';if(event.echo){element.dataset.echo='true';element.style.opacity='.65';} element.dataset.source=event.sourceId; element.dataset.target=event.targetId;
     if(event.breath&&event.sourceId==='dragon'){
       // Each pulse is one independent fire spell, exactly like a Mage orb,
       // spawned from the dragon's visible mouth rather than body centre.
@@ -543,12 +543,23 @@
       if(enhanced)ctx.drawImage(mageEffects.burn,frame*32,0,32,32,0,0,64,64);else ctx.drawImage(statusImage,frame*width,row*height,width,height,0,0,64,64);actor.statusKey=key;
     }
   }
+  const mageSkillRows=['thermal','steam','chaos','absorption','rebirth','echo','overload','archmage'];
+  function addMageSkillEffect(event){
+    const row=mageSkillRows.indexOf(event.skill);
+    if(row<0||!mageEffects.advanced||reducedMotion.matches)return;
+    const element=document.createElement('canvas');element.width=128;element.height=128;element.className='mage-advanced-effect';
+    element.dataset.skill=event.skill;element.dataset.target=event.targetId;element.setAttribute('aria-hidden','true');
+    battlefield.appendChild(element);
+    effects.push({type:'mage-advanced',element,row,sourceId:event.sourceId,targetId:event.targetId,at:event.at,duration:event.skill==='archmage'?.9:.6,lastKey:null});
+  }
   function handleEvents(events) {
     for (const event of events) {
-      if(event.type==='sphere'){
+      if(event.type==='mageSkill'){
+        addMageSkillEffect(event);
+      }else if(event.type==='sphere'){
         if(event.absorbed>0){sphereHitAt=event.at;shatterBlockedProjectile(event);addEffect('block',event.sourceId,'hero',`Щит −${event.absorbed}`,event.at);}
       } else if (event.type === 'cast') {
-        if(!event.shards&&event.sourceId==='hero'&&event.magic==='ice')pendingIceImpacts.set(event.castId,{at:event.impactAt,targetId:event.targetId});
+        if(!event.shards&&!event.echo&&event.sourceId==='hero'&&event.magic==='ice')pendingIceImpacts.set(event.castId,{at:event.impactAt,targetId:event.targetId});
         const caster=actors[event.sourceId];
         if(event.sourceId==='dragon'&&event.breath){
           // One five-shot salvo must have ONE sustained open-jaw pose.
@@ -563,7 +574,7 @@
           }else{
             caster.breathUntil=Math.max(caster.breathUntil,event.at+holdAfterLastShot);
           }
-        }else if(!event.shards){
+        }else if(!event.shards&&!event.echo){
           caster.animation={at:event.at,duration:event.animationDuration||.66};
         }
         addSpell(event);
@@ -1022,6 +1033,14 @@
         if(!alive){effect.element.remove();effects.splice(i,1);continue;}
       }
       if (age+1e-6 >= effect.duration || reducedMotion.matches) { effect.element.remove(); effects.splice(i,1); continue; }
+      if(effect.type==='mage-advanced'){
+        const actor=actors[effect.targetId]?.element;if(!actor){effect.element.remove();effects.splice(i,1);continue;}
+        const bounds=actor.getBoundingClientRect(),frame=Math.min(5,Math.max(0,Math.floor(age/effect.duration*6)));
+        effect.element.style.left=(bounds.left+bounds.width/2-field.left)+'px';effect.element.style.top=(bounds.top+bounds.height/2-field.top)+'px';
+        effect.element.style.width=effect.element.style.height=(bounds.width*(effect.row===2?2.7:1.9))+'px';effect.element.dataset.frame=String(frame);
+        if(effect.lastKey!==frame){const ctx=effect.element.getContext('2d');ctx.clearRect(0,0,128,128);ctx.imageSmoothingEnabled=false;ctx.drawImage(mageEffects.advanced,frame*128,effect.row*128,128,128,0,0,128,128);effect.lastKey=frame;}
+        continue;
+      }
       if(effect.type==='barrier-impact'){
         const frame=Math.min(5,Math.max(0,Math.floor(age/.06))),row=effect.kind==='arrow'?0:1;
         effect.element.dataset.frame=String(frame);
@@ -1179,6 +1198,7 @@
           ||(actor.dive||0)>=.92))];
     }));
     return {
+      nearbyEnemies:Object.fromEntries(state.enemies.map(a=>[a.id,state.enemies.filter(b=>b.id!==a.id&&Math.hypot(actors[a.id].x-actors[b.id].x,(actors[a.id].depth-actors[b.id].depth)*laneStep)<=heroSize*1.6).map(b=>b.id)])),
       heroCanAttack:Boolean(target && (ranged || inReach(target,actors[target].x))),
       heroCloseRange:Boolean(target && inReach(target,actors[target].x)),
       orcCanAttack:wolfBattle?Boolean(enemyCanAttack.orc):
