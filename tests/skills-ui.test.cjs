@@ -217,5 +217,5 @@ test('Mage uses the approved transparent 13-cell battle-effect PNG atlas, with u
  const ids=["sorcery","strongBurn","iceShards","fusion","chaos","barrier","protectiveSphere","absorption","rebirth","channel","echo","overload","archmage"];
  const ui=createPanel({classId:'wand',gold:100});
  for(const [i,id] of ids.entries()){assert.ok(css.includes('[data-skill-id="'+id+'"]'));assert.ok(css.includes('[data-selected="'+id+'"] .skill-detail-icon{--mage-icon-position:'+i*100/12+'%}'));ui.clickSkill(id);assert.equal(ui.root.dataset.selected,id);}
- assert.match(css,/background-size:1300% 100%/);assert.match(html,/skills\.css\?v=archer-skills-1/);
+ assert.match(css,/background-size:1300% 100%/);assert.match(html,/skills\.css\?v=archer-arrow-art-1/);
 });
