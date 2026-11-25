@@ -125,3 +125,5 @@
 .skills-panel[data-hero-class="bow"] [data-skill-id="piercing"],.skills-panel[data-hero-class="bow"] [data-skill-id="explosive"]{grid-column:1!important}
 .skills-panel[data-hero-class="bow"] [data-skill-id="poison"],.skills-panel[data-hero-class="bow"] [data-skill-id="barbed"]{grid-column:2!important}
 .skills-panel[data-hero-class="bow"] [data-branch="attack"] .skill-children:before{top:84px}
+
+.skill-future[data-archer-slot][hidden]{display:none!important}

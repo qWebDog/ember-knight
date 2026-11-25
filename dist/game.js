@@ -591,7 +591,7 @@
   function handleEvents(events) {
     for (const event of events) {
       if(event.type==='archerSkill'){
-        if(event.skill==='retreat'){archerRetreatOffset=Math.min(battlefield.clientWidth*.14,archerRetreatOffset+actors.hero.element.offsetWidth*.7);addEffect('block','hero','hero','Отступление',event.at);}
+        if(event.skill==='retreat'){archerRetreatOffset=Math.max(0,Math.min(battlefield.clientWidth*.14,battlefield.clientWidth*(window.innerWidth>700?.18:.22)-actors.hero.element.offsetWidth*.65,archerRetreatOffset+actors.hero.element.offsetWidth*.7));addEffect('block','hero','hero','Отступление',event.at);}
         else if(event.skill==='evasion')addEffect('block','hero','hero','Уклонение',event.at);
         else if(event.skill==='wolfRevive'){companionDeathAt=null;companion?.reset();}
       }else if(event.type==='talentKnockback'){

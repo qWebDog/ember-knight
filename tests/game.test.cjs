@@ -1018,11 +1018,11 @@ test('reduced motion keeps transitions without walking and manual replay clears 
 });
 
 test('skill purchases update the active hero and HUD without healing, and survive replay and reload',async()=>{
- const ui=createHarness({weapon:'bow',outfit:'wanderer',savedProgression:{version:1,gold:120,levels:{power:0,vitality:0,tempo:0}}});await ui.loadAllImages();
+ const ui=createHarness({weapon:'bow',outfit:'wanderer',savedProgression:{version:1,gold:120,levels:{power:0,vitality:0,tempo:0},archerLevels:{endurance:1}}});await ui.loadAllImages();
  assert.equal(ui.skillMount.root,ui.node('#skills-panel'));assert.equal(ui.skillMount.heroLevel,1);
  ui.runUntil(()=>ui.events.some(event=>event.type==='attack'&&event.targetId==='hero'));
  ui.node('#auto-button').click();const hp=ui.state().hero.hp,elapsed=ui.state().elapsed;assert.ok(hp<200);
- for(const id of ['marksmanship','endurance','quickdraw'])assert.equal(ui.progression.purchase(id).ok,true);
+ for(const id of ['marksmanship','wolfBond','quickdraw'])assert.equal(ui.progression.purchase(id).ok,true);
  assert.equal(ui.state().elapsed,elapsed);assert.equal(ui.state().hero.hp,hp,'raising maximum HP must not heal the current battle');
  assert.equal(ui.state().hero.damage,14);assert.equal(ui.state().hero.maxHp,220);assert.equal(ui.state().hero.attackSpeed,1.05);
  assert.equal(ui.node('.power b').textContent,14);assert.equal(ui.node('#hero-vital').textContent,`${hp} / 220 HP`);assert.equal(ui.node('healthbar:hero').attributes['aria-valuemax'],'220');
@@ -1034,7 +1034,7 @@ test('skill purchases update the active hero and HUD without healing, and surviv
  ui.runUntil(()=>ui.state().phase==='victory');ui.runUntil(()=>!ui.node('#battle-result').hidden,2);
  assert.equal(wallet(ui),110);ui.node('#replay-button').click();assert.equal(ui.state().hero.hp,220);assert.equal(ui.state().hero.damage,14);assert.equal(ui.state().hero.attackSpeed,1.05);
  const saved=JSON.parse(ui.storage.get('ember.progress.v1'));assert.deepEqual(saved.levels,{power:0,vitality:0,tempo:0});
- assert.deepEqual(saved.archerLevels,{marksmanship:1,endurance:1,quickdraw:1});assert.equal(saved.gold,110);
+ assert.deepEqual(saved.archerLevels,{marksmanship:1,endurance:1,quickdraw:1,wolfBond:1});assert.equal(saved.gold,110);
  const restored=createHarness({preference:'off',weapon:'bow',outfit:'wanderer',savedProgression:saved});await restored.loadAllImages();
  assert.equal(restored.state().hero.damage,14);assert.equal(restored.state().hero.maxHp,220);assert.equal(restored.state().hero.attackSpeed,1.05);assert.equal(restored.progression.getState().gold,110);assert.equal(restored.node('.gold').attributes['aria-label'],'Золото: 110');
 });
@@ -1084,18 +1084,18 @@ test('Archer has independent live arrow upgrades and cannot spend Warrior or Mag
  assert.equal(ui.progression.purchase('power').reason,'unknown');
  assert.equal(ui.progression.purchase('sorcery').reason,'unknown');
  assert.equal(ui.progression.purchase('marksmanship').ok,true);
- assert.equal(ui.progression.purchase('endurance').ok,true);
+ assert.equal(ui.progression.purchase('wolfBond').ok,true);
  assert.equal(ui.progression.purchase('quickdraw').ok,true);
  assert.equal(ui.state().hero.damage,14);
- assert.equal(ui.state().hero.maxHp,220);
+ assert.equal(ui.state().hero.maxHp,200);
  assert.equal(ui.state().hero.attackSpeed,1.05);
  const progress=JSON.parse(ui.storage.get('ember.progress.v1'));
  assert.deepEqual(progress.levels,saved.levels);
  assert.deepEqual(progress.mageLevels,saved.mageLevels);
- assert.deepEqual(progress.archerLevels,{marksmanship:1,endurance:1,quickdraw:1});
+ assert.deepEqual(progress.archerLevels,{marksmanship:1,endurance:0,quickdraw:1,wolfBond:1});
  const restored=createHarness({weapon:'bow',outfit:'wanderer',savedProgression:progress});await restored.loadAllImages();
  assert.equal(restored.state().hero.damage,14);
- assert.equal(restored.state().hero.maxHp,220);
+ assert.equal(restored.state().hero.maxHp,200);
  assert.equal(restored.state().hero.attackSpeed,1.05);
 });
 

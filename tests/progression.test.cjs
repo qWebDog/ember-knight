@@ -166,7 +166,7 @@ test('Mage progression is class-specific, combines independent branches, and pre
  assert.deepEqual(mage.getStats(),{heroDamage:12,heroMaxHp:200,heroAttackSpeed:1});
  assert.equal(mage.quote('power').reason,'unknown');
  for(const id of ['sorcery','barrier','channel'])assert.equal(mage.purchase(id).ok,true);
- assert.deepEqual(mage.getStats(),{heroDamage:14,heroMaxHp:200,heroAttackSpeed:1.05,archer_wolfBond:1});
+ assert.deepEqual(mage.getStats(),{heroDamage:14,heroMaxHp:220,heroAttackSpeed:1.05});
  assert.equal(mage.getState().gold,170);
  const warrior=createStore({storage});
  assert.deepEqual(warrior.getStats(),{heroDamage:18,heroMaxHp:220,heroAttackSpeed:1.1});
@@ -202,7 +202,7 @@ test('Archer branch purchases change arrow stats and never borrow Warrior or Mag
  assert.equal(archer.quote('power').reason,'unknown');
  assert.equal(archer.quote('sorcery').reason,'unknown');
  for(const id of ['marksmanship','wolfBond','quickdraw'])assert.equal(archer.purchase(id).ok,true);
- assert.deepEqual(archer.getStats(),{heroDamage:14,heroMaxHp:220,heroAttackSpeed:1.05});
+ assert.deepEqual(archer.getStats(),{heroDamage:14,heroMaxHp:200,heroAttackSpeed:1.05,archer_wolfBond:1});
  assert.equal(archer.getState().gold,170);
  const state=JSON.parse(storage.data.get(storageKey));
  assert.deepEqual(state.levels,saved.levels);

@@ -204,7 +204,7 @@
       events.push({type:'attack',sourceId:'companion',targetId:target.id,
         damage,hp:target.hp,at,projectile:'bite',animationDuration:5/12});
       if(target.hp!==0)return events;
-      defeatedCount++;reward+=KILL_REWARD;target.status=null;
+      defeatedCount++;reward+=KILL_REWARD;target.status=null;target.arrowDots=[];
       pendingCounters=pendingCounters.filter(counter=>counter.targetId!==target.id);
       pendingImpacts=pendingImpacts.filter(impact=>
         impact.targetId!==target.id
@@ -357,7 +357,7 @@
         const r=archerRanks[kind]||0;
         const armor=kind==='piercing'?target.armor*(1-(.1+.1*r)):target.armor;
         const dealt=Math.max(1,damage-armor);
-        hit('hero',target,dealt,'arrow',{...metadata,arrowType:kind});
+        hit('hero',target,dealt,'arrow',{...metadata,...(kind==='normal'?{}:{arrowType:kind})});
         if(kind==='piercing'){
           const others=(availability?.nearbyEnemies?nearby(target):enemies.filter(e=>e!==target&&e.hp>0)).slice(0,2);
           others.forEach((e,i)=>{if(e.hp>0)hit('hero',e,dealt*Math.pow(.75,i+1),'arrow',{arrowType:kind,dot:true});});
