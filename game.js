@@ -104,6 +104,7 @@
   const spellImages = {};
   const pendingIceImpacts = new Map();
   let statusImage = null;
+  const mageEffects={};let sphereCanvas=null;
   let laneStep = 0;
   arena.dataset.lanes='5';battlefield.dataset.lanes='5';
   let heroX = null, fieldWidth = null, moving = false, heroMoving = false;
@@ -174,7 +175,7 @@
     if(change?.type!=='purchase')return;
     const current = battle.getState().hero, stats = progression.getStats();
     const oldSpeed = current.attackSpeed || 1;
-    if (current.damage !== stats.heroDamage || current.maxHp !== stats.heroMaxHp || oldSpeed !== stats.heroAttackSpeed) {
+    if (current.damage !== stats.heroDamage || current.maxHp !== stats.heroMaxHp || oldSpeed !== stats.heroAttackSpeed || stats.heroBurnRank || stats.heroSphereRank || stats.heroShardRank) {
       const ratio = oldSpeed / stats.heroAttackSpeed;
       const animation = actors.hero.animation;
       if (animation && ratio !== 1) {
@@ -311,6 +312,7 @@
         ...['fire','ice','shadow'].map(async magic=>{spellImages[magic]=await loadImage(`assets/magic/${magic}.png`);})
       ]);
       statusImage = statusAtlas;
+      if(starterWeapon?.id==='wand')await Promise.all(['burn','shards','sphere'].map(async effect=>{mageEffects[effect]=await loadImage(`assets/magic/mage-${effect}.${effect==='sphere'?'svg':'png'}`);}));
       actors.orc.images.attack = orcAttack ? {image:orcAttack,frames:6,row:1,tile:128,origin:32} : { ...actors.orc.images.idle,frames:1 };
       const face = $('#avatar').getContext('2d'); face.imageSmoothingEnabled = false;
       const avatarTile=loadout?starterWeapon.walk.tile:64, avatarOrigin=loadout?starterWeapon.walk.origin:0;
@@ -430,7 +432,7 @@
       :event.sourceId==='dragon'?'fire':'shadow';
     const element=document.createElement('canvas');
     element.width=64; element.height=64; element.className='spell-projectile';
-    element.dataset.magic=magic; element.dataset.source=event.sourceId; element.dataset.target=event.targetId;
+    element.dataset.magic=magic; if(event.shards)element.dataset.shards='true'; element.dataset.source=event.sourceId; element.dataset.target=event.targetId;
     if(event.breath&&event.sourceId==='dragon'){
       // Each pulse is one independent fire spell, exactly like a Mage orb,
       // spawned from the dragon's visible mouth rather than body centre.
@@ -438,7 +440,7 @@
       element.dataset.burst=String(event.burstIndex);
     }
     element.setAttribute('aria-hidden','true'); battlefield.appendChild(element);
-    effects.push({element,type:'spell',sourceId:event.sourceId,targetId:event.targetId,magic,image:spellImages[magic],
+    effects.push({element,type:'spell',sourceId:event.sourceId,targetId:event.targetId,magic,image:event.shards&&mageEffects.shards?mageEffects.shards:spellImages[magic],shards:Boolean(event.shards&&mageEffects.shards),
       castId:event.castId,at:event.at,impactAt:event.impactAt,appearDuration:event.appearDuration,
       flightDuration:event.flightDuration,impactDuration:event.impactDuration,
       duration:event.appearDuration+event.flightDuration+event.impactDuration,
@@ -481,21 +483,24 @@
       const canvas=document.createElement('canvas');canvas.width=64;canvas.height=64;canvas.className='status-effect';
       canvas.setAttribute('aria-hidden','true');actor.element.appendChild(canvas);actor.statusCanvas=canvas;
     }
-    const frame=reducedMotion.matches?2:Math.min(5,Math.max(0,Math.floor((state.elapsed-status.startedAt)/(status.endsAt-status.startedAt)*6+1e-7)));
-    const canvas=actor.statusCanvas,row=status.type==='freeze'?1:0,key=`${status.type}:${frame}`;
+    const enhanced=status.enhanced&&mageEffects.burn;
+    const frame=enhanced?(reducedMotion.matches?3:Math.floor((state.elapsed-status.startedAt)*12)%8):reducedMotion.matches?2:Math.min(5,Math.max(0,Math.floor((state.elapsed-status.startedAt)/(status.endsAt-status.startedAt)*6+1e-7)));
+    const canvas=actor.statusCanvas,row=status.type==='freeze'?1:0,key=`${status.type}:${frame}:${Boolean(enhanced)}`;
     canvas.dataset.status=status.type;canvas.dataset.frame=String(frame);
     canvas.style.opacity=status.type==='freeze'?'0.65':'1';
     actor.element.classList.toggle('is-burning',status.type==='burn');
     if(actor.statusKey!==key){
       const width=(statusImage.naturalWidth||statusImage.width)/6,height=(statusImage.naturalHeight||statusImage.height)/2;
       const ctx=canvas.getContext('2d');ctx.clearRect(0,0,64,64);ctx.imageSmoothingEnabled=false;
-      ctx.drawImage(statusImage,frame*width,row*height,width,height,0,0,64,64);actor.statusKey=key;
+      if(enhanced)ctx.drawImage(mageEffects.burn,frame*32,0,32,32,0,0,64,64);else ctx.drawImage(statusImage,frame*width,row*height,width,height,0,0,64,64);actor.statusKey=key;
     }
   }
   function handleEvents(events) {
     for (const event of events) {
-      if (event.type === 'cast') {
-        if(event.sourceId==='hero'&&event.magic==='ice')pendingIceImpacts.set(event.castId,{at:event.impactAt,targetId:event.targetId});
+      if(event.type==='sphere'){
+        if(event.absorbed>0)addEffect('block',event.sourceId,'hero',`Щит −${event.absorbed}`,event.at);
+      } else if (event.type === 'cast') {
+        if(!event.shards&&event.sourceId==='hero'&&event.magic==='ice')pendingIceImpacts.set(event.castId,{at:event.impactAt,targetId:event.targetId});
         const caster=actors[event.sourceId];
         if(event.sourceId==='dragon'&&event.breath){
           // One five-shot salvo must have ONE sustained open-jaw pose.
@@ -510,7 +515,7 @@
           }else{
             caster.breathUntil=Math.max(caster.breathUntil,event.at+holdAfterLastShot);
           }
-        }else{
+        }else if(!event.shards){
           caster.animation={at:event.at,duration:event.animationDuration||.66};
         }
         addSpell(event);
@@ -1010,7 +1015,7 @@
         const key=`${row}:${cell}`;
         if(effect.lastKey!==key){
           const ctx=effect.element.getContext('2d');ctx.clearRect(0,0,64,64);ctx.imageSmoothingEnabled=false;
-          ctx.drawImage(effect.image,cell*64,row*64,64,64,0,0,64,64);effect.lastKey=key;
+          if(effect.shards){const f=phase==='appear'?Math.min(1,cell):phase==='flight'?2+cell%3:5+Math.min(2,Math.floor(cell/2));ctx.drawImage(effect.image,f*32,0,32,32,0,0,64,64);effect.element.style.transform=`translate(-50%,-50%) rotate(${effect.angle-180}deg)`;}else ctx.drawImage(effect.image,cell*64,row*64,64,64,0,0,64,64);effect.lastKey=key;
         }
       } else if (effect.floating) {
         effect.element.style.left = `${tx}px`; effect.element.style.top = `${ty-p*22}px`; effect.element.style.opacity = String(1-p);
@@ -1024,6 +1029,19 @@
       }
     }
   }
+  function renderMageSphere(state){
+    const sphere=state.hero.sphere,age=sphere?.brokenAt==null?0:activeTime-sphere.brokenAt;
+    const visible=Boolean(mageEffects.sphere&&sphere&&(sphere.hp>0&&!['victory','defeat'].includes(state.phase)||sphere.brokenAt!==null&&age<.56&&!reducedMotion.matches));
+    if(!visible){if(sphereCanvas)sphereCanvas.remove();sphereCanvas=null;return;}
+    if(!sphereCanvas){sphereCanvas=document.createElement('canvas');sphereCanvas.width=64;sphereCanvas.height=64;sphereCanvas.className='mage-sphere';actors.hero.element.appendChild(sphereCanvas);}
+    const fraction=sphere.hp/sphere.maxHp, pulse=reducedMotion.matches?0:Math.floor(activeTime*7)%4;
+    const frame=sphere.hp<=0?8+Math.min(3,Math.max(0,Math.floor(age/.14))):fraction>.5?pulse:fraction>.25?4+pulse%2:6+pulse%2;
+    sphereCanvas.dataset.frame=String(frame);sphereCanvas.dataset.hp=String(sphere.hp);sphereCanvas.dataset.maxHp=String(sphere.maxHp);
+    sphereCanvas.setAttribute('aria-label',`Прочность сферы: ${sphere.hp} из ${sphere.maxHp}`);
+    const ctx=sphereCanvas.getContext('2d');ctx.clearRect(0,0,64,64);ctx.imageSmoothingEnabled=false;ctx.drawImage(mageEffects.sphere,frame*64,0,64,64,0,0,64,64);
+    sphereCanvas.style.opacity=sphere.hp>0?'0.85':'1';
+    actors.hero.element.style.setProperty('--sphere-hp',String(fraction));
+  }
   function render(state) {
     renderSceneTransition(state);
     if(sceneTransition?.phase==='wave-out'||sceneTransition?.phase==='victory'){
@@ -1033,6 +1051,7 @@
     }
     cueArrowShots(state);
     for (const id of Object.keys(actors)) drawActor(id,state);
+    renderMageSphere(state);
     const wolfFallen=state.companion?.hp===0&&companionDeathAt!==null;
     const wolfDefeatedWithHero=state.phase==='defeat'&&state.companion?.hp>0;
     companion?.render({

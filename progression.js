@@ -19,7 +19,10 @@
   const mageCatalog = Object.freeze([
     Object.freeze({id:'sorcery', branch:'attack', name:'Сила стихий', description:'Каждый уровень добавляет 2 к урону заклинаний огня и льда.', maxLevel:5, icon:'flame'}),
     Object.freeze({id:'barrier', branch:'defense', name:'Магический барьер', description:'Каждый уровень добавляет 20 к максимальному здоровью мага.', maxLevel:5, icon:'skill-shield'}),
-    Object.freeze({id:'channel', branch:'control', name:'Поток маны', description:'Каждый уровень ускоряет сотворение заклинаний на 5%.', maxLevel:5, icon:'bolt'})
+    Object.freeze({id:'channel', branch:'control', name:'Поток маны', description:'Каждый уровень ускоряет сотворение заклинаний на 5%.', maxLevel:5, icon:'bolt'}),
+    Object.freeze({id:'strongBurn',branch:'attack',name:'Сильный ожог',description:'Продлевает горение и усиливает его урон.',maxLevel:5,icon:'flame',requires:'sorcery'}),
+    Object.freeze({id:'protectiveSphere',branch:'defense',name:'Защитная сфера',description:'Поглощает урон до разрушения. Восстанавливается в начале нового боя.',maxLevel:5,icon:'skill-shield',requires:'barrier'}),
+    Object.freeze({id:'iceShards',branch:'control',name:'Ледяные осколки',description:'Дополнительный залп после ледяного заклинания.',maxLevel:5,icon:'bolt',requires:'channel'})
   ]);
   const archerCatalog = Object.freeze([
     Object.freeze({id:'marksmanship', branch:'attack', name:'Меткий выстрел', description:'Каждый уровень добавляет 2 к урону стрел лучника.', maxLevel:5, icon:'skill-bow'}),
@@ -47,7 +50,7 @@
     for (const item of catalog) state.levels[item.id] = normalizeRank(value.levels?.[item.id]);
     if (value.mageLevels && typeof value.mageLevels === 'object' && !Array.isArray(value.mageLevels)) {
       state.mageLevels = emptyMageLevels();
-      for (const item of mageCatalog) state.mageLevels[item.id] = normalizeRank(value.mageLevels[item.id]);
+      for (const item of mageCatalog) {const rank=normalizeRank(value.mageLevels[item.id]);if(!item.requires||rank>0)state.mageLevels[item.id]=rank;}
     }
     if (value.archerLevels && typeof value.archerLevels === 'object' && !Array.isArray(value.archerLevels)) {
       state.archerLevels = emptyArcherLevels();
@@ -66,7 +69,10 @@
     return {
       heroDamage:12 + 2 * levels[ids[0]],
       heroMaxHp:200 + 20 * levels[ids[1]],
-      heroAttackSpeed:1 + .05 * levels[ids[2]]
+      heroAttackSpeed:1 + .05 * levels[ids[2]],
+      ...(classId==='wand'&&levels.strongBurn?{heroBurnRank:levels.strongBurn}:{}),
+      ...(classId==='wand'&&levels.protectiveSphere?{heroSphereRank:levels.protectiveSphere}:{}),
+      ...(classId==='wand'&&levels.iceShards?{heroShardRank:levels.iceShards}:{})
     };
   }
   function quoteState(state, id, classId = 'sword') {
@@ -75,7 +81,8 @@
     const level = classId === 'wand' ? (state.mageLevels?.[id] || 0)
       : classId === 'bow' ? (state.archerLevels?.[id] || 0) : state.levels[id];
     if (level >= item.maxLevel) return {id, level, maxLevel:item.maxLevel, cost:null, canBuy:false, reason:'max'};
-    const cost = 10 + 10 * level;
+    if(item.requires&&(state.mageLevels?.[item.requires]||0)<3)return {id,level,maxLevel:item.maxLevel,cost:null,canBuy:false,reason:'locked',requires:item.requires};
+    const cost = (item.requires?20:10) + 10 * level;
     return {id, level, maxLevel:item.maxLevel, cost, canBuy:state.gold >= cost, reason:state.gold >= cost ? null : 'coins'};
   }
   function createStore(options = {}) {
@@ -134,7 +141,7 @@
       next.gold -= offer.cost;
       const levels = classId === 'wand' ? (next.mageLevels ||= emptyMageLevels())
         : classId === 'bow' ? (next.archerLevels ||= emptyArcherLevels()) : next.levels;
-      levels[id] += 1;
+      levels[id] = (levels[id]||0)+1;
       return commit(next, {type:'purchase', id, level:levels[id], classId, spent:offer.cost}, offer.cost) || result(false, 'storage', fresh);
     }
     function awardGold(amount) {
