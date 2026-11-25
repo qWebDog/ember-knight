@@ -97,6 +97,14 @@
       exitHeroX=null;
       lastKey=null;
     }
+    // At the end of a carry sequence the original dead sprite is placed
+    // back on the road, not summoned as a living follower.
+    function placeFallen(x,depth,direction=3){
+      if(!active()||!Number.isFinite(x))return false;
+      position=x;actorDepth=depth;facing=direction;motion='die';engaged=false;
+      skill=null;clearEffect();biteStarted=null;biteTarget=null;biteLanded=false;
+      exitHeroX=null;idleSince=null;lastKey=null;return true;
+    }
     function startSkill(mode,time){
       if(!active()||!image||!Object.hasOwn(skillDuration,mode))return false;
       if(skill?.mode==='revive'&&mode==='howl'&&time<skill.at+skillDuration.revive)return false;
@@ -284,7 +292,7 @@
       }
       return true;
     }
-    return Object.freeze({load,loaded,reset,startSkill,advance,followExit,render,paintPreview,
+    return Object.freeze({load,loaded,reset,placeFallen,startSkill,advance,followExit,render,paintPreview,
       getPose:()=>({x:position,depth:actorDepth,facing,motion,engaged,biteStarted,biteTarget})});
   }
   return Object.freeze({path,sprite,contact,strips,frameAt,skillDuration,paintEffect,create});
