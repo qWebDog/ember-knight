@@ -72,8 +72,12 @@
     const rank=value=>Number.isFinite(value)?Math.max(0,Math.min(5,Math.floor(value))):0;
     let burnRank=mage?rank(options.heroBurnRank):0,sphereRank=mage?rank(options.heroSphereRank):0,shardRank=mage?rank(options.heroShardRank):0;
     const archerRanks=Object.fromEntries(["piercing","poison","explosive","barbed","doubleShot","arrowRain","rendingBite","guardian","alpha","evasion","retreat","arrowDance","wolfBond"].map(id=>[id,archer?rank(options['archer_'+id]):0]));
-    let dodgeUntil=0,dodgeSince=Infinity;
-    let arrowMeters={},arrowQueue=[],shotCount=0,rainLeft=0,rainAt=0,dodgeMeter=0,retreatAt=0,danceAt=0,danceUntil=0,wolfBites=0,wolfReviveAt=Infinity,roarUntil=0,roarAt=0;
+    const DODGE_LEAD=Math.round(.32*TICKS),DODGE_COOLDOWN=2*TICKS;
+    let dodgeUntil=0,dodgeSince=Infinity,evasionReady=0,enemyDodgeChecks=[];
+    // Independent random rolls, seeded once; explicit seed/RNG for tests.
+    let randomState=(Number.isInteger(options.dodgeSeed)?options.dodgeSeed:Math.floor(Math.random()*4294967296))>>>0;
+    const dodgeRandom=typeof options.dodgeRandom==='function'?options.dodgeRandom:()=>{randomState=(Math.imul(randomState,1664525)+1013904223)>>>0;return randomState/4294967296;};
+    let arrowMeters={},arrowQueue=[],shotCount=0,rainLeft=0,rainAt=0,retreatAt=0,danceAt=0,danceUntil=0,wolfBites=0,wolfReviveAt=Infinity,roarUntil=0,roarAt=0;
     const wolfMax=()=>positive(options.companionMaxHp,WOLF_MAX_HP)*(1+.15*archerRanks.wolfBond);
     const advancedKeys=["heroFusionRank","heroChaosRank","heroAbsorptionRank","heroRebirthRank","heroEchoRank","heroOverloadRank","heroArchmageRank"];
     const advanced=Object.fromEntries(advancedKeys.map(key=>[key,mage?rank(options[key]):0]));
@@ -158,7 +162,7 @@
       };
     }
     function spawnWave(index) {
-      dodgeUntil=0;dodgeSince=Infinity;
+      dodgeUntil=0;dodgeSince=Infinity;enemyDodgeChecks=[];
       waveIndex = index; phase = 'running'; pausedFrom = null; nextWaveAt = null;
       enemies = activeWaves[index].map(unit => ({...archetypes[unit.type],...unit,hp:archetypes[unit.type].maxHp,status:null}));
       comboIndex = 0; meleeHits = 0; heroBusyUntil = elapsed; pendingCounters = []; pendingImpacts = []; pendingBreaths = [];rainLeft=0;
@@ -171,7 +175,7 @@
       hero = {id:'hero',name:config.name,hp:config.maxHp,maxHp:config.maxHp,damage:config.damage,attackSpeed:config.attackSpeed};
       echoMeter=overloadMeter=archCount=archRemaining=reactionCount=echoCount=chaosCount=0;rebirthUsed=false;immuneUntil=0;powerCharged=false;
       sphere=sphereRank?{hp:sphereCapacity(),maxHp:sphereCapacity(),brokenAt:null}:null;
-      dodgeUntil=0;arrowMeters={};arrowQueue=[];shotCount=rainLeft=dodgeMeter=wolfBites=0;rainAt=archerRanks.arrowRain?(33-3*archerRanks.arrowRain)*TICKS:0;retreatAt=0;danceAt=20*TICKS;danceUntil=0;wolfReviveAt=Infinity;roarUntil=0;roarAt=0;
+      dodgeUntil=0;evasionReady=0;arrowMeters={};arrowQueue=[];shotCount=rainLeft=wolfBites=0;rainAt=archerRanks.arrowRain?(33-3*archerRanks.arrowRain)*TICKS:0;retreatAt=0;danceAt=20*TICKS;danceUntil=0;wolfReviveAt=Infinity;roarUntil=0;roarAt=0;
       const maxHp=wolfMax();
       companion={id:'companion',name:'Боевой волк',hp:companionEnabled?maxHp:0,maxHp};
       companionEverSummoned=companionEnabled;
@@ -327,6 +331,16 @@
         pendingImpacts.sort((a,b)=>a.at-b.at);
         return true;
       }
+      function canRollEvasion(){
+        return archer&&hero.hp>0&&(archerRanks.evasion>0||elapsed<danceUntil);
+      }
+      function attemptEvasion(enemy){
+        if(!canRollEvasion()||elapsed<evasionReady||elapsed<dodgeUntil||!enemy||enemy.hp<=0)return false;
+        const chance=(10*archerRanks.evasion+(elapsed<danceUntil?10:0))/100;
+        if(dodgeRandom()>=chance||!dodgeShot(enemy,'evasion'))return false;
+        evasionReady=elapsed+DODGE_COOLDOWN;
+        return true;
+      }
       function hit(sourceId,target,damage,projectile,metadata) {
         let reflected=0,evaded=false;
         if(archer&&sourceId!=='hero'&&sourceId!=='companion'&&damage>0){
@@ -338,15 +352,9 @@
             // that arrive after landing. Fresh shots after movement can hit.
             const flight=projectile==='arrow'?archerDodge.flight:projectile==='magic'?(metadata?.breath?dragonBreath.flight:magicTiming.flightDuration):0;
             const release=elapsed-Math.round(flight*TICKS);
-            const motionEnd=dodgeSince+Math.round(archerDodge.frames.slice(0,8).reduce((a,b)=>a+b,0)*TICKS);
-            if((flight>0&&elapsed>=dodgeSince&&release<motionEnd&&release<=dodgeUntil&&elapsed<dodgeUntil+Math.round(flight*TICKS))||
-              (flight===0&&elapsed>=dodgeSince&&elapsed<dodgeUntil)){
+            // Reserved miss or old trajectory, not blanket invulnerability.
+            if(metadata?.evaded||(flight>0&&elapsed>=dodgeSince&&release<=dodgeSince&&elapsed<=dodgeSince+Math.round(flight*TICKS))){
               damage=0;evaded=true;
-            }else{
-              dodgeMeter+=archerRanks.evasion*5+(elapsed<danceUntil?10:0);
-              if(dodgeMeter>=100){dodgeMeter-=100;damage=0;evaded=true;
-                if(!dodgeShot(enemies.find(enemy=>enemy.id===sourceId),'evasion'))events.push({type:'archerSkill',skill:'evasion',sourceId,targetId:'hero',at:elapsed/TICKS});
-              }
             }
           }
         }
@@ -521,6 +529,10 @@
         if(hasTalent('regeneration')&&sphere?.hp>0&&sphere.hp<sphere.maxHp){if(regenAt<elapsed)regenAt=elapsed;next=Math.min(next,regenAt);}
         if (heroCanAttack && pendingCounters.length) next = Math.min(next,pendingCounters[0].at);
         if (pendingImpacts.length) next = Math.min(next,pendingImpacts[0].at);
+        if(canRollEvasion())for(const impact of pendingImpacts){
+          if(!impact.dodgeChecked&&impact.targetId==='hero'&&impact.sourceId!=='hero'&&impact.magic)
+            next=Math.min(next,Math.max(elapsed,impact.at-DODGE_LEAD));
+        }
         if (pendingBreaths.length) next = Math.min(next,pendingBreaths[0].at);
         enemies.forEach((enemy,index) => {
           if (enemy.hp <= 0) return;
@@ -528,6 +540,8 @@
             // Only the first strike is immediate; subsequent strikes retain normal cooldowns.
             if(enemy.type==='orc'&&availability?.immediateOrcContact===true&&!orcHasAttacked)nextEnemies[index]=elapsed;
             next = Math.min(next,nextEnemies[index]);
+            if(canRollEvasion()&&currentEnemyTarget().id==='hero'&&!enemyDodgeChecks[index]&&enemy.projectile==='arrow')
+              next=Math.min(next,Math.max(elapsed,nextEnemies[index]-DODGE_LEAD));
           }
           for(const dot of enemy.arrowDots||[])next=Math.min(next,dot.at);
           if (enemy.status) {
@@ -604,6 +618,19 @@
           }
           dragonPulse(dragon.id,pulse.index);
         }
+        // One roll per approaching projectile, before its impact.
+        if(canRollEvasion()){
+          for(const impact of [...pendingImpacts]){
+            if(impact.dodgeChecked||impact.targetId!=='hero'||impact.sourceId==='hero'||!impact.magic||impact.at-DODGE_LEAD>elapsed)continue;
+            impact.dodgeChecked=true;
+            if(impact.at>elapsed&&attemptEvasion(enemies.find(e=>e.id===impact.sourceId)))impact.evaded=true;
+          }
+          for(let index=0;index<enemies.length;index++){
+            const enemy=enemies[index];
+            if(enemy.hp<=0||enemy.projectile!=='arrow'||enemyDodgeChecks[index]||!enemyCanAttack(enemy.id)||frozen(enemy)||currentEnemyTarget().id!=='hero'||nextEnemies[index]-DODGE_LEAD>elapsed)continue;
+            enemyDodgeChecks[index]={evaded:nextEnemies[index]>elapsed&&attemptEvasion(enemy)};
+          }
+        }
         while (pendingImpacts.length && pendingImpacts[0].at === next) {
           const impact = pendingImpacts.shift(),target = impact.targetId === 'hero' ? hero
             : impact.targetId === 'companion' ? companion : enemies.find(enemy => enemy.id === impact.targetId);
@@ -613,9 +640,13 @@
             if(enemies.every(enemy=>enemy.hp===0)){clearWave();break;}
             continue;
           }
+          if(impact.meleeDodge){
+            if(enemies.some(e=>e.id===impact.sourceId&&e.hp>0))hit(impact.sourceId,target,impact.damage,'melee',{evaded:true,windup:true,animationDuration:.66});
+            continue;
+          }
           const previous=target.status?.type;
           hit(impact.sourceId,target,impact.damage,'magic',{magic:impact.magic,impact:true,castAt:impact.castAt,castId:impact.castId,
-            breath:Boolean(impact.breath),burstIndex:impact.burstIndex,...(impact.shards?{shards:true}:{}),...(impact.echo?{echo:true}:{}),...(impact.overloaded?{overloaded:true}:{})});
+            breath:Boolean(impact.breath),burstIndex:impact.burstIndex,...(impact.evaded?{evaded:true}:{}),...(impact.shards?{shards:true}:{}),...(impact.echo?{echo:true}:{}),...(impact.overloaded?{overloaded:true}:{})});
           if(impact.overloaded)events.push({type:'mageSkill',skill:'overload',sourceId:'hero',targetId:target.id,at:elapsed/TICKS});
           if(!impact.shards&&!impact.echo&&impact.sourceId==='hero'&&target.id!=='hero'&&['fire','ice'].includes(impact.magic)){
             mageReaction(target,impact.magic,previous);
@@ -632,10 +663,17 @@
           const defender=currentEnemyTarget();
           if(enemy.type==='orc')orcHasAttacked=true;
           let damage = enemy.damage,blocked = false;
+          const arrowEvaded=enemyDodgeChecks[index]?.evaded&&defender.id==='hero';enemyDodgeChecks[index]=null;
           if(archer&&defender.id==='hero'&&enemy.projectile==='melee'&&archerRanks.retreat&&elapsed>=retreatAt&&elapsed>=dodgeUntil&&availability?.heroCanRetreat!==false&&availability?.heroCloseEnemy?.[enemy.id]!==false){
             retreatAt=elapsed+(14-2*archerRanks.retreat)*TICKS*(elapsed<danceUntil?.5:1);
             dodgeShot(enemy,'retreat');
             nextEnemies[index]+=Math.round(enemy.interval*TICKS);continue;
+          }
+          if(defender.id==='hero'&&enemy.projectile==='melee'&&attemptEvasion(enemy)){
+            events.push({type:'enemyWindup',sourceId:enemy.id,targetId:'hero',at:elapsed/TICKS,impactAt:(elapsed+DODGE_LEAD)/TICKS,animationDuration:.66});
+            pendingImpacts.push({sourceId:enemy.id,targetId:'hero',damage,meleeDodge:true,at:elapsed+DODGE_LEAD});
+            pendingImpacts.sort((a,b)=>a.at-b.at);
+            nextEnemies[index]+=Math.round(enemy.interval*TICKS)+DODGE_LEAD;continue;
           }
           if (defender.id==='hero' && sword && enemy.projectile === 'melee' && ++meleeHits % 2 === 0) {
             const blockedDamage = damage*.5; damage -= blockedDamage; blocked = true;
@@ -655,7 +693,7 @@
               pendingBreaths.sort((a,b)=>a.at-b.at||a.index-b.index);
             }
           }else if (enemy.projectile === 'magic') cast(enemy.id,defender,damage,'shadow');
-          else hit(enemy.id,defender,damage,enemy.projectile,enemy.type === 'archer' ? {animationDuration:.6} : undefined);
+          else hit(enemy.id,defender,damage,enemy.projectile,enemy.type === 'archer' ? {animationDuration:.6,...(arrowEvaded?{evaded:true}:{})} : undefined);
           nextEnemies[index] += Math.round(enemy.interval*TICKS);
           if (hero.hp === 0) { end('defeat'); break; }
           if (blocked) reserveCounter(enemy.id);

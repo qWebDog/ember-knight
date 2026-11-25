@@ -97,8 +97,8 @@ test('the panel stays in the lower viewport grid with compact portrait and lands
  assert.match(css,/@media\(max-width:700px\)/);assert.match(css,/@media\(orientation:portrait\) and \(max-height:700px\)/);assert.ok(/@media\(orientation:landscape\) and \(max-height:600px\)\{\s*\.skills-panel\{[^}]*grid-template-columns:minmax\(0,[\d.]+fr\) minmax\(0,[\d.]+fr\)/.test(css),'compact landscape must place the tree and detail in two flexible columns');assert.doesNotMatch(base,/overflow(?:-y)?:\s*(?:auto|scroll)/);const treeRules=[...css.matchAll(/\.skills-tree\{([^}]*)\}/g)].map(match=>match[1]).join(';');assert.match(treeRules,/overflow-y:auto/);assert.match(treeRules,/overflow-x:hidden/);assert.match(treeRules,/overscroll-behavior:contain/);
  const gameScript=html.search(/src="game\.js(?:\?[^"]*)?"/);
  assert.ok(gameScript>=0,'game script must be present');
- for(const dependency of ['progression.js?v=archer-tree-fix-1','skills-ui.js?v=archer-tree-fix-1']){
-   const dependencyIndex=html.indexOf(`src="${dependency}"`);
+ for(const dependency of ['progression.js','skills-ui.js']){
+   const dependencyIndex=html.indexOf(`src="${dependency}?`);
    assert.ok(dependencyIndex>=0&&dependencyIndex<gameScript,
      'the dependencies must load before the game mounts the panel');
  }
