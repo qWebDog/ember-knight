@@ -100,6 +100,15 @@
     function heroTicks(base) { return Math.max(1,Math.round(base/config.attackSpeed)); }
     // Pure read-only shot schedule for sprite anticipation. Existing engine
     // attack ticks, damage, rewards and cooldowns stay exactly unchanged.
+    function chooseArrow(commit=true){
+      const meters=commit?arrowMeters:{...arrowMeters},queue=commit?arrowQueue:[...arrowQueue];
+      for(const id of ['piercing','poison','explosive','barbed']){
+        const r=archerRanks[id];if(!r)continue;
+        meters[id]=(meters[id]||0)+1;
+        if(meters[id]>=12-2*r){meters[id]=0;if(!queue.includes(id))queue.push(id);}
+      }
+      return queue.shift()||'normal';
+    }
     function getArrowSchedule() {
       if(phase!=='running'&&phase!=='paused')return [];
       const target=enemies.find(enemy=>enemy.hp>0);
@@ -107,7 +116,7 @@
       const shots=[];
       if(config.projectile==='arrow'){
         shots.push({sourceId:'hero',targetId:target.id,
-          at:nextHero/TICKS,animationDuration:heroTicks(.9*TICKS)/TICKS});
+          at:nextHero/TICKS,animationDuration:heroTicks(.9*TICKS)/TICKS,...(archer&&chooseArrow(false)!=='normal'?{arrowType:chooseArrow(false)}:{})});
       }
       for(let i=0;i<enemies.length;i++){
         const enemy=enemies[i];
@@ -344,14 +353,7 @@
         else { phase = 'intermission'; nextWaveAt = elapsed + INTERMISSION; }
       }
       function nearby(target){const ids=availability?.nearbyEnemies?.[target.id]||[];return ids.map(id=>enemies.find(e=>e.id===id)).filter(e=>e&&e.id!==target.id&&e.hp>0);}
-      function chooseArrow(){
-        for(const id of ['piercing','poison','explosive','barbed']){
-          const r=archerRanks[id];if(!r)continue;
-          arrowMeters[id]=(arrowMeters[id]||0)+1;
-          if(arrowMeters[id]>=12-2*r){arrowMeters[id]=0;if(!arrowQueue.includes(id))arrowQueue.push(id);}
-        }
-        return arrowQueue.shift()||'normal';
-      }
+
       function archerArrow(target,damage,kind,metadata){
         if(!target||target.hp<=0)return;
         const r=archerRanks[kind]||0;

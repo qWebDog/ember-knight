@@ -141,3 +141,8 @@ dialog{width:min(380px,calc(100% - 32px));max-height:calc(var(--app-height) - 32
 .battle-talent-slot[data-empty="true"] svg{display:none}.battle-talent-slot[data-empty="true"] .battle-talent-empty{display:block}
 @media(max-width:365px){.battle-talents{width:55%;min-width:150px}.battle-talents-slots{gap:4px}.battle-talents-title{letter-spacing:.015em}}
 @media(orientation:landscape) and (max-height:600px){.battle-talents{width:220px;gap:2px}.battle-talent-slot{height:28px}.battle-talent-slot svg{width:20px;height:20px}}
+
+/* Four approved raster arrow rows, with matching hit frames. */
+.projectile.arrow[data-arrow-type]{width:calc(var(--enemy-size)*.84);height:calc(var(--enemy-size)*.84);aspect-ratio:1;image-rendering:pixelated}
+.archer-arrow-impact{position:absolute;z-index:602;pointer-events:none;width:calc(var(--enemy-size)*1.15);height:calc(var(--enemy-size)*1.15);transform:translate(-50%,-50%);image-rendering:pixelated}
+@media(prefers-reduced-motion:reduce){.archer-arrow-impact{display:none}}

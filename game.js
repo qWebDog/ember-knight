@@ -19,6 +19,9 @@
   if (new URLSearchParams(window.location.search).get('battle') === 'test') auto = true;
   const loadouts = window.EmberLoadouts;
   const arrowSprite = 'assets/projectiles/arrow.png';
+  const archerArrowSprite='assets/projectiles/archer-arrow-sprites-v1.png';
+  const archerArrowRows=['piercing','poison','explosive','barbed'];
+  let archerArrowAtlas=null;
   // The 13-frame LPC bow releases at frame 9. Flight ends at the original
   // engine hit time, so damage and combat cooldowns remain unchanged.
   const arrowReleaseFrame=9,arrowPoseFrames=13,arrowFlightDuration=.28;
@@ -341,6 +344,7 @@
         ...['fire','ice','shadow'].map(async magic=>{spellImages[magic]=await loadImage(`assets/magic/${magic}.png`);})
       ]);
       statusImage = statusAtlas;
+      if(starterWeapon?.id==='bow')archerArrowAtlas=await loadImage(archerArrowSprite).catch(()=>null);
       if(starterWeapon?.id==='wand'){
         await Promise.all(['burn','shards','sphere','impact'].map(async effect=>{mageEffects[effect]=await loadImage(effect==='sphere'?'assets/magic/mage-sphere-v2.svg':effect==='impact'?'assets/magic/mage-barrier-impact.svg':`assets/magic/mage-${effect}.png`);}));
         mageEffects.advanced=await Promise.all(mageSkillRows.map(skill=>loadImage(skill==='echo'?'assets/magic/mage-echo-resonance-v2.png':`assets/magic/mage-${skill}.png`)));
@@ -438,10 +442,12 @@
   document.addEventListener('visibilitychange', syncPause);
   function addEffect(type, sourceId, targetId, text, at,options={}) {
     if (reducedMotion.matches) return null;
-    const element = document.createElement(type === 'arrow' ? 'img' : 'span');
+    const arrowRow=archerArrowAtlas&&sourceId==='hero'?archerArrowRows.indexOf(options.arrowType):-1;
+    const special=type==='arrow'&&arrowRow>=0;
+    const element = document.createElement(special?'canvas':type === 'arrow' ? 'img' : 'span');
     if (type === 'arrow') {
-      element.src = arrowSprite; element.alt = ''; element.draggable = false;
-      element.width = 192; element.height = 30;
+      if(special){element.width=element.height=32;element.dataset.arrowType=options.arrowType;}
+      else{element.src = arrowSprite; element.alt = ''; element.draggable = false;element.width = 192; element.height = 30;}
     }
     const floating = ['damage','heavy','counter','block','coin'].includes(type);
     element.className = floating ? `damage-number ${type}-number ${targetId === 'hero' && type !== 'block' ? 'enemy-damage' : ''}` : `projectile ${type}`;
@@ -453,11 +459,19 @@
       element.dataset.releaseAt=String(at);
       element.dataset.impactAt=String(at+(options.duration||arrowFlightDuration));
     }
-    const effect={element,type,floating,sourceId,targetId,
+    const effect={element,type,floating,sourceId,targetId,...(special?{arrowRow}:{}),
       at:options.at??activeTime,
       duration:options.duration??(type==='coin'?.65:floating?.85:.38)};
     battlefield.appendChild(element);effects.push(effect);
     return effect;
+  }
+  function addArcherArrowImpact(event){
+    const row=archerArrowRows.indexOf(event.arrowType);
+    if(!archerArrowAtlas||row<0||reducedMotion.matches)return;
+    const element=document.createElement('canvas');element.width=element.height=32;
+    element.className='archer-arrow-impact';element.dataset.arrowType=event.arrowType;
+    element.setAttribute('aria-hidden','true');battlefield.appendChild(element);
+    effects.push({element,type:'archer-arrow-impact',sourceId:event.sourceId,targetId:event.targetId,arrowRow:row,at:activeTime,duration:.32});
   }
   function addSpell(event) {
     if (reducedMotion.matches) return;
@@ -622,6 +636,7 @@
         }
         addSpell(event);
       } else if (event.type === 'attack') {
+        if(event.sourceId==='hero'&&event.projectile==='arrow'&&event.arrowType&&!event.dot)addArcherArrowImpact(event);
         // Visual bow wind-up already began before impact. Do not restart it
         // at the moment the arrow reaches its target.
         if (!event.impact&&!event.dot&&event.projectile!=='arrow'&&event.sourceId!=='companion')
@@ -1063,7 +1078,7 @@
       source.animation={at:startAt,duration:shot.animationDuration,arrowCue:key};
       source.lastKey=null;
       const effect=addEffect('arrow',shot.sourceId,shot.targetId,null,releaseAt,
-        {at:releaseAt,duration:arrowFlightDuration});
+        {at:releaseAt,duration:arrowFlightDuration,arrowType:shot.arrowType});
       if(effect)cuedArrows.set(key,effect);
     }
   }
@@ -1079,6 +1094,14 @@
         if(!alive){effect.element.remove();effects.splice(i,1);continue;}
       }
       if (age+1e-6 >= effect.duration || reducedMotion.matches) { effect.element.remove(); effects.splice(i,1); continue; }
+      if(effect.type==='archer-arrow-impact'){
+        const actor=actors[effect.targetId]?.element;if(!actor){effect.element.remove();effects.splice(i,1);continue;}
+        const bounds=actor.getBoundingClientRect();
+        effect.element.style.left=(bounds.left+bounds.width*.5-field.left)+'px';effect.element.style.top=(bounds.top+bounds.height*.42-field.top)+'px';
+        const frame=4+Math.min(3,Math.max(0,Math.floor(age/effect.duration*4)));effect.element.dataset.frame=String(frame);
+        if(effect.lastKey!==frame){const ctx=effect.element.getContext('2d');ctx.clearRect(0,0,32,32);ctx.imageSmoothingEnabled=false;ctx.drawImage(archerArrowAtlas,frame*32,effect.arrowRow*32,32,32,0,0,32,32);effect.lastKey=frame;}
+        continue;
+      }
       if(effect.type==='mage-advanced'){
         const actor=actors[effect.targetId]?.element;if(!actor){effect.element.remove();effects.splice(i,1);continue;}
         const bounds=actor.getBoundingClientRect();
@@ -1157,8 +1180,9 @@
         const barrier=effect.type==='arrow'?aimAtBarrier(effect,state,target,field,sx,sy):null;
         const hitX=barrier?.x??tx,hitY=barrier?.y??ty;
         if(effect.type==='arrow'){
-          const angle=Math.atan2(hitY-sy,hitX-sx)*180/Math.PI+180;
+          const angle=Math.atan2(hitY-sy,hitX-sx)*180/Math.PI+(effect.arrowRow!==undefined?0:180);
           effect.element.style.transform=`translate(-50%,-50%) rotate(${angle}deg)`;
+          if(effect.arrowRow!==undefined){const frame=Math.min(3,Math.max(0,Math.floor(p*4)));effect.element.dataset.frame=String(frame);if(effect.lastKey!==frame){const ctx=effect.element.getContext('2d');ctx.clearRect(0,0,32,32);ctx.imageSmoothingEnabled=false;ctx.drawImage(archerArrowAtlas,frame*32,effect.arrowRow*32,32,32,0,0,32,32);effect.lastKey=frame;}}
         }
         effect.element.style.left = `${sx+(hitX-sx)*p}px`; effect.element.style.top = `${sy+(hitY-sy)*p}px`;
       }

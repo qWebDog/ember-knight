@@ -127,3 +127,25 @@
 .skills-panel[data-hero-class="bow"] [data-branch="attack"] .skill-children:before{top:84px}
 
 .skill-future[data-archer-slot][hidden]{display:none!important}
+
+/* Only these four types use their own projectile art; all other skills keep their existing icons. */
+.skills-panel[data-hero-class="bow"] [data-skill-id="piercing"],.skills-panel[data-hero-class="bow"][data-selected="piercing"] .skill-detail-icon{--arrow-icon-y:0%;--arrow-icon-art:url('assets/projectiles/archer-arrow-sprites-v1.png')}
+.skills-panel[data-hero-class="bow"] [data-skill-id="poison"],.skills-panel[data-hero-class="bow"][data-selected="poison"] .skill-detail-icon{--arrow-icon-y:33.333333333333336%;--arrow-icon-art:url('assets/projectiles/archer-arrow-sprites-v1.png')}
+.skills-panel[data-hero-class="bow"] [data-skill-id="explosive"],.skills-panel[data-hero-class="bow"][data-selected="explosive"] .skill-detail-icon{--arrow-icon-y:66.66666666666667%;--arrow-icon-art:url('assets/projectiles/archer-arrow-sprites-v1.png')}
+.skills-panel[data-hero-class="bow"] [data-skill-id="barbed"],.skills-panel[data-hero-class="bow"][data-selected="barbed"] .skill-detail-icon{--arrow-icon-y:100%;--arrow-icon-art:url('assets/projectiles/archer-arrow-sprites-v1.png')}
+.skills-panel[data-hero-class="bow"] [data-skill-id="piercing"] svg,
+.skills-panel[data-hero-class="bow"][data-selected="piercing"] .skill-detail-icon svg,
+.skills-panel[data-hero-class="bow"] [data-skill-id="poison"] svg,
+.skills-panel[data-hero-class="bow"][data-selected="poison"] .skill-detail-icon svg,
+.skills-panel[data-hero-class="bow"] [data-skill-id="explosive"] svg,
+.skills-panel[data-hero-class="bow"][data-selected="explosive"] .skill-detail-icon svg,
+.skills-panel[data-hero-class="bow"] [data-skill-id="barbed"] svg,
+.skills-panel[data-hero-class="bow"][data-selected="barbed"] .skill-detail-icon svg{background-image:var(--arrow-icon-art);background-repeat:no-repeat;background-size:800% 400%;background-position:28.5714285714% var(--arrow-icon-y);image-rendering:pixelated;width:28px;height:28px;filter:none}
+.skills-panel[data-hero-class="bow"] [data-skill-id="piercing"] svg use,
+.skills-panel[data-hero-class="bow"][data-selected="piercing"] .skill-detail-icon svg use,
+.skills-panel[data-hero-class="bow"] [data-skill-id="poison"] svg use,
+.skills-panel[data-hero-class="bow"][data-selected="poison"] .skill-detail-icon svg use,
+.skills-panel[data-hero-class="bow"] [data-skill-id="explosive"] svg use,
+.skills-panel[data-hero-class="bow"][data-selected="explosive"] .skill-detail-icon svg use,
+.skills-panel[data-hero-class="bow"] [data-skill-id="barbed"] svg use,
+.skills-panel[data-hero-class="bow"][data-selected="barbed"] .skill-detail-icon svg use{opacity:0}
