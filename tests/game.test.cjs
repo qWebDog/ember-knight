@@ -1542,5 +1542,15 @@ test('dragon magic shatters at shield, only unabsorbed damage reaches hero',asyn
 });
 
 test('mage reaction uses separate transparent advanced effect atlas',async()=>{
- const ui=createHarness({weapon:'wand',outfit:'acolyte',combatOptions:{heroDamage:1,heroMaxHp:1000,heroFusionRank:1}});await ui.loadAllImages();assert.ok(ui.loadedPaths.includes('assets/magic/mage-advanced.svg'));ui.runUntil(()=>ui.events.some(e=>e.type==='mageSkill'&&e.skill==='steam'),15);const effect=ui.node('.battlefield').children.find(el=>el.className==='mage-advanced-effect'&&el.dataset.skill==='steam');assert.ok(effect);assert.ok(effect.draws.some(d=>d.src.endsWith('mage-advanced.svg')&&d.crop[1]===128));
+ const ui=createHarness({weapon:'wand',outfit:'acolyte',combatOptions:{heroDamage:1,heroMaxHp:1000,heroFusionRank:1}});await ui.loadAllImages();for(const skill of ['thermal','steam','chaos','absorption','rebirth','echo','overload','archmage'])assert.ok(ui.loadedPaths.includes('assets/magic/mage-'+skill+'.png'));assert.ok(!ui.loadedPaths.includes('assets/magic/mage-advanced.svg'));ui.runUntil(()=>ui.events.some(e=>e.type==='mageSkill'&&e.skill==='steam'),15);const effect=ui.node('.battlefield').children.find(el=>el.className==='mage-advanced-effect'&&el.dataset.skill==='steam');assert.ok(effect);assert.ok(effect.draws.some(d=>d.src.endsWith('mage-steam.png')&&d.crop[1]===0&&d.crop[2]===64&&d.crop[3]===64));
+});
+
+test('approved mage effect sheets are raster PNGs with real palette transparency and six equal frames',()=>{
+ for(const skill of ['thermal','steam','chaos','absorption','rebirth','echo','overload','archmage']){
+  const data=fs.readFileSync(path.join(dist,'assets/magic/mage-'+skill+'.png'));
+  assert.equal(data.subarray(1,4).toString(),'PNG');assert.equal(data.readUInt32BE(16),384);assert.equal(data.readUInt32BE(20),64);
+  let offset=8,transparent=false;
+  while(offset+12<=data.length){const size=data.readUInt32BE(offset),type=data.toString('ascii',offset+4,offset+8);if(type==='tRNS')transparent=data.subarray(offset+8,offset+8+size).includes(0);offset+=size+12;}
+  assert.ok(transparent,skill+' contains transparent pixels');
+ }
 });

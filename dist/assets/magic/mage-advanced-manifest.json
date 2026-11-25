@@ -1,0 +1,49 @@
+{
+  "source": "Approved generated pixel-art mage effects; cropped along transparent gutters, background alpha cleaned; each row resized to 64px and quantized to a 24-color RGBA palette.",
+  "frameWidth": 64,
+  "frameHeight": 64,
+  "frames": 6,
+  "format": "PNG",
+  "rows": [
+    {
+      "skill": "thermal",
+      "file": "mage-thermal.png",
+      "sha": "2249a72093f5d8066a5973f1201e19323fc8a452"
+    },
+    {
+      "skill": "steam",
+      "file": "mage-steam.png",
+      "sha": "bf2d7ef35da3ccf475132f870798a88c015b6d9c"
+    },
+    {
+      "skill": "chaos",
+      "file": "mage-chaos.png",
+      "sha": "ed7d15a7fabdbc65640186e36978c566de6fd022"
+    },
+    {
+      "skill": "absorption",
+      "file": "mage-absorption.png",
+      "sha": "252427c148e3dee7e3b3e135d48b336f38a9e497"
+    },
+    {
+      "skill": "rebirth",
+      "file": "mage-rebirth.png",
+      "sha": "ee363ebc1e7107d27593f75fc86f2f703ebbc7c0"
+    },
+    {
+      "skill": "echo",
+      "file": "mage-echo.png",
+      "sha": "10766bd7f8cdc5f69bf953e160d3437dad122edc"
+    },
+    {
+      "skill": "overload",
+      "file": "mage-overload.png",
+      "sha": "b491891181c410265ae6622ec912bac0ee1cc611"
+    },
+    {
+      "skill": "archmage",
+      "file": "mage-archmage.png",
+      "sha": "a76bd2a4b1b07e815a8a6786c7bc9e72b6fdea67"
+    }
+  ]
+}
