@@ -1076,12 +1076,12 @@ test('enemies cannot attack a wolf until within melee reach; their cooldowns are
    companionEnabled:true,heroDamage:1,heroMaxHp:240});
  const events=battle.advance(3.6,{enemyCanAttack:{archer1:false}});
  assert.equal(events.some(e=>e.sourceId==='archer1'),false);
- assert.equal(battle.state.companion.hp,70);
+ assert.equal(battle.state.companion.hp,23);
  assert.equal(battle.state.hero.hp,240);
  assert.equal(battle.getArrowSchedule().find(s=>s.sourceId==='archer1').at,5.4);
  const after=battle.advance(1.8,{enemyCanAttack:{archer1:true}});
  assert.equal(after.filter(e=>e.sourceId==='archer1'&&e.targetId==='companion').length,1);
- assert.equal(battle.state.companion.hp,63);
+ assert.equal(battle.state.companion.hp,16);
 });
 test('wolf tanking cannot be forced for other classes and first-time live equip initializes HP once',()=>{
  for(const [weapon,projectile] of [['sword','melee'],['wand','magic'],['sword','arrow']]){
@@ -1093,13 +1093,13 @@ test('wolf tanking cannot be forced for other classes and first-time live equip 
  const battle=createDefaultBattle({heroWeapon:'bow',heroProjectile:'arrow',companionEnabled:false});
  assert.equal(battle.state.companion,null);
  assert.equal(battle.setCompanionEnabled(true),true);
- assert.equal(battle.state.companion.hp,70);
+ assert.equal(battle.state.companion.hp,23);
  battle.advance(1.8);
- assert.equal(battle.state.companion.hp,63);
+ assert.equal(battle.state.companion.hp,16);
  battle.setCompanionEnabled(false);
  assert.equal(battle.state.companion,null);
  battle.setCompanionEnabled(true);
- assert.equal(battle.state.companion.hp,63,'unequipping preserves current health');
+ assert.equal(battle.state.companion.hp,16,'unequipping preserves current health');
 });
 
 test('simultaneous enemy hits do not teleport damage onto the hero at the instant the wolf dies',()=>{

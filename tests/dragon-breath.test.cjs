@@ -4,7 +4,7 @@ const assert=require('node:assert/strict');
 const dragon=require('../dist/dragon.js');
 const combat=require('../dist/combat.js');
 
-function bossFight({wolfHp=70}={}){
+function bossFight({wolfHp=23}={}){
  const b=combat.createBattle({
    heroWeapon:'bow',heroProjectile:'arrow',dragonBossEnabled:true,
    companionEnabled:true,companionMaxHp:wolfHp,heroDamage:1,heroMaxHp:12000
@@ -42,7 +42,7 @@ test('dragon holds its physical attack until the wolf actually reaches melee dis
  const far={enemyCanAttack:{dragon:false},enemyCanAttackHero:{dragon:true}};
  const stopped=b.advance(5.6,far);
  assert.equal(stopped.filter(e=>e.sourceId==='dragon').length,0);
- assert.equal(b.state.companion.hp,70);
+ assert.equal(b.state.companion.hp,23);
  const reached=b.advance(2.8,available);
  assert.ok(reached.some(e=>e.type==='attack'&&e.projectile==='claw'
    &&e.targetId==='companion'));
@@ -172,7 +172,7 @@ test('five dragon fireballs form one finite volley with a clear pause before the
 
 test('dragon one-shots the normal wolf and does not boost its base health',()=>{
  const b=bossFight();
- assert.equal(b.state.companion.maxHp,70);
+ assert.equal(b.state.companion.maxHp,23);
  assert.equal(b.state.enemies[0].maxHp,18000);
  assert.equal(b.state.enemies[0].armor,300);
  const hit=b.advance(2.8,available);
