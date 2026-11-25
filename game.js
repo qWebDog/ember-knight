@@ -217,13 +217,13 @@
       if (ready) render(battle.getState());
     }
   });
-  window.EmberSkillPanel?.mount({root:$('#skills-panel'),store:progression,heroLevel:level,classId:starterWeapon?.id||'sword'});
+  const skillUI=window.EmberSkillPanel?.mount({root:$('#skills-panel'),store:progression,heroLevel:level,classId:starterWeapon?.id||'sword'});
   let equipmentUI=null,talentUI=null;
   const talentPanel=$('#talents-panel');
   const showLowerPanel=mode=>{
     $('#equipment-panel').hidden=mode!=='equipment';$('#skills-panel').hidden=mode!=='skills';
     if(talentPanel)talentPanel.hidden=mode!=='talents';
-    if(mode==='equipment')equipmentUI?.refreshPreview();if(mode==='talents')talentUI?.open();
+    if(mode==='equipment')equipmentUI?.open();if(mode==='skills')skillUI?.open?.();if(mode==='talents')talentUI?.open();
   };
   if(starterWeapon?.id==='wand'&&window.EmberTalentPanel&&talentPanel){
     talentUI=window.EmberTalentPanel.mount({root:talentPanel,store:progression,battle});

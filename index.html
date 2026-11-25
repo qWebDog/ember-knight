@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#14231f">
 <title>EMBER — Приключение</title><meta name="description" content="Твой путь начинается в Забытом лесу. EMBER — пиксельная idle RPG.">
-<link rel="stylesheet" href="game.css?v=talent-hud-1"><link rel="stylesheet" href="skills.css?v=mage-tree-topology-1"><link rel="stylesheet" href="equipment.css?v=wolf-animations-2"><script src="https://telegram.org/js/telegram-web-app.js"></script><script src="loadouts.js" defer></script><script src="progression.js?v=mage-talents-1" defer></script><script src="combat.js?v=mage-talents-1" defer></script><script src="skills-ui.js?v=mage-talents-1" defer></script><script src="equipment.js?v=wolf-ranger-combat-3" defer></script><script src="companion.js?v=wolf-flight-fix-3" defer></script><script src="sword-equipment.js" defer></script><script src="class-equipment.js?v=gear-dyes-1" defer></script><script src="equipment-art.js?v=gear-dyes-1" defer></script><script src="equipment-dye.js?v=gear-dyes-1" defer></script><script src="equipment-ui.js?v=wolf-companion-1" defer></script><script src="dragon.js?v=dragon-open-mouth-5" defer></script><link rel="stylesheet" href="talents.css?v=2"><script src="talents-ui.js?v=2" defer></script><script src="game.js?v=talent-selection-1" defer></script>
+<link rel="stylesheet" href="game.css?v=talent-hud-1"><link rel="stylesheet" href="skills.css?v=panel-selection-1"><link rel="stylesheet" href="equipment.css?v=panel-selection-1"><script src="https://telegram.org/js/telegram-web-app.js"></script><script src="loadouts.js" defer></script><script src="progression.js?v=mage-talents-1" defer></script><script src="combat.js?v=mage-talents-1" defer></script><script src="skills-ui.js?v=panel-selection-1" defer></script><script src="equipment.js?v=wolf-ranger-combat-3" defer></script><script src="companion.js?v=wolf-flight-fix-3" defer></script><script src="sword-equipment.js" defer></script><script src="class-equipment.js?v=gear-dyes-1" defer></script><script src="equipment-art.js?v=gear-dyes-1" defer></script><script src="equipment-dye.js?v=gear-dyes-1" defer></script><script src="equipment-ui.js?v=panel-selection-1" defer></script><script src="dragon.js?v=dragon-open-mouth-5" defer></script><link rel="stylesheet" href="talents.css?v=2"><script src="talents-ui.js?v=2" defer></script><script src="game.js?v=panel-selection-1" defer></script>
 </head>
 <body>
 <svg class="svg-defs" xmlns="http://www.w3.org/2000/svg"><defs>
@@ -65,7 +65,7 @@
   <header class="skills-heading"><span class="skills-flourish" aria-hidden="true"><i></i><b>◆</b><i></i></span><div class="skills-title"><h2>Древо навыков</h2><p>ВОИН</p><span class="sr-only">Уровень героя <b data-skill-hero-level>1</b></span></div><div class="skills-coins" aria-label="Монеты для улучшений"><svg aria-hidden="true"><use href="#coin"/></svg><strong data-skill-gold>0</strong></div></header>
   <div class="skills-tree" role="group" aria-label="Ветки развития">
     <div class="skill-branch" data-branch="attack"><h3>Атака</h3><div class="skill-path">
-      <button type="button" class="skill-node is-selected" data-skill-id="power" aria-label="Сила удара, уровень 0 из 5" aria-pressed="true"><span class="skill-node-face"><svg aria-hidden="true"><use href="#swords"/></svg></span><span class="skill-node-rank" data-skill-node-rank>0/5</span></button><span class="skill-fork" aria-hidden="true"></span>
+      <button type="button" class="skill-node" data-skill-id="power" aria-label="Сила удара, уровень 0 из 5" aria-pressed="false"><span class="skill-node-face"><svg aria-hidden="true"><use href="#swords"/></svg></span><span class="skill-node-rank" data-skill-node-rank>0/5</span></button><span class="skill-fork" aria-hidden="true"></span>
       <div class="skill-children"><button type="button" class="skill-future" data-skill-future="attack-1" disabled aria-label="Будущий навык атаки — скоро"><svg aria-hidden="true"><use href="#lock"/></svg><span>Скоро</span></button><button type="button" class="skill-future" data-skill-future="attack-2" disabled aria-label="Будущий навык атаки — скоро"><svg aria-hidden="true"><use href="#lock"/></svg><span>Скоро</span></button><button type="button" class="skill-future" data-mage-slot="attack-3" hidden disabled><svg aria-hidden="true"><use href="#lock"/></svg><span>0/5</span></button><button type="button" class="skill-future" data-mage-slot="attack-4" hidden disabled><svg aria-hidden="true"><use href="#lock"/></svg><span>0/5</span></button></div><span class="skill-growth" aria-hidden="true"><i></i><i></i></span>
     </div></div>
     <div class="skill-branch" data-branch="defense"><h3>Защита</h3><div class="skill-path">
@@ -77,7 +77,7 @@
       <div class="skill-children"><button type="button" class="skill-future" data-skill-future="control-1" disabled aria-label="Будущий навык контроля — скоро"><svg aria-hidden="true"><use href="#lock"/></svg><span>Скоро</span></button><button type="button" class="skill-future" data-skill-future="control-2" disabled aria-label="Будущий навык контроля — скоро"><svg aria-hidden="true"><use href="#lock"/></svg><span>Скоро</span></button><button type="button" class="skill-future" data-mage-slot="control-3" hidden disabled><svg aria-hidden="true"><use href="#lock"/></svg><span>0/5</span></button></div><span class="skill-growth" aria-hidden="true"><i></i><i></i></span>
     </div></div>
   </div>
-  <div class="skill-detail" id="skill-detail" data-branch="attack" aria-label="Выбранный навык">
+  <div class="skill-detail" id="skill-detail" hidden data-branch="attack" aria-label="Выбранный навык">
     <span class="skill-detail-icon" aria-hidden="true"><svg><use data-skill-icon-use href="#swords"/></svg></span>
     <div class="skill-detail-copy"><div class="skill-detail-meta"><span data-skill-category>Атака</span><span data-skill-rank>Уровень 0/5</span></div><h3 data-skill-name>Сила удара</h3><p data-skill-benefit>Следующий уровень: +2 к урону</p></div>
     <button type="button" class="skill-upgrade" id="skill-upgrade" data-upgrade="power" disabled><span data-skill-upgrade-label>Не хватает монет</span><span class="skill-price" data-skill-price-wrap><svg aria-hidden="true"><use href="#coin"/></svg><b data-skill-price>10</b></span></button>
@@ -91,7 +91,7 @@
   <div class="equipment-dashboard">
     <div class="equipment-portrait" tabindex="0" role="group" aria-label="Поворот героя свайпом влево или вправо"><canvas id="equipment-preview" width="64" height="64" role="img" aria-label="Текущий облик героя спереди"></canvas><span class="equipment-rotate-hint" aria-hidden="true">↔ Повернуть</span></div>
     <div class="equipment-slots" role="group" aria-label="Отдельные слоты снаряжения">
-      <button class="equipment-slot is-active" type="button" data-equipment-slot="helmet" aria-pressed="true"><span class="equipment-slot-icon" aria-hidden="true">♜</span><strong>Шлем</strong><span data-equipment-slot-name>Без шлема</span></button>
+      <button class="equipment-slot" type="button" data-equipment-slot="helmet" aria-pressed="false"><span class="equipment-slot-icon" aria-hidden="true">♜</span><strong>Шлем</strong><span data-equipment-slot-name>Без шлема</span></button>
       <button class="equipment-slot" type="button" data-equipment-slot="armor" aria-pressed="false"><span class="equipment-slot-icon" aria-hidden="true">⬟</span><strong>Броня</strong><span data-equipment-slot-name>Походная одежда</span></button>
       <button class="equipment-slot" type="button" data-equipment-slot="weapon" aria-pressed="false"><span class="equipment-slot-icon" aria-hidden="true">⚔</span><strong>Оружие</strong><span data-equipment-slot-name>Начальный меч</span></button>
       <button class="equipment-slot" type="button" data-equipment-slot="shield" aria-pressed="false"><span class="equipment-slot-icon" aria-hidden="true">◈</span><strong>Щит</strong><span data-equipment-slot-name>Деревянный щит</span></button>
@@ -99,7 +99,7 @@
       <button class="equipment-slot" type="button" data-equipment-slot="companion" aria-pressed="false"><span class="equipment-slot-icon" aria-hidden="true">♧</span><strong>Компаньон</strong><span data-equipment-slot-name>Без компаньона</span></button>
     </div>
   </div>
-  <div class="equipment-inventory">
+  <div class="equipment-inventory" hidden>
     <div class="equipment-inventory-heading"><strong data-equipment-category>Шлем</strong><div class="equipment-dyes" id="equipment-dyes" role="group" aria-label="Цвет выбранного предмета" hidden></div></div>
     <div class="equipment-items" id="equipment-items" role="group" aria-label="Предметы выбранного слота"></div>
   </div>

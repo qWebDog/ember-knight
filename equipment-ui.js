@@ -12,7 +12,7 @@
     const items=$('#equipment-items'),preview=$('#equipment-preview'),portrait=$('.equipment-portrait'),dyePanel=$('#equipment-dyes');
     const slotNodes=[...root.querySelectorAll('[data-equipment-slot]')];
     const classes={sword:'ВОИН',bow:'ЛУЧНИК',wand:'МАГ'};
-    let selected='helmet',destroyed=false,busy=false,orientation=0,gesture=null;
+    let selected=null,destroyed=false,busy=false,orientation=0,gesture=null;
     // Universal LPC row order: back=0, left=1, front=2, right=3.
     // Rotation order is front -> left -> back -> right -> front.
     const directions=Object.freeze([{row:2,name:'спереди'},{row:1,name:'слева'},{row:0,name:'сзади'},{row:3,name:'справа'}]);
@@ -164,12 +164,15 @@
         if(label)label.textContent=data.slotLabel(store.classId,slot);
         button.disabled=!store.enabled||busy||!enabledSlots.includes(slot);
       }
+      root.dataset.selected=selected||'';
+      const inventory=$('.equipment-inventory');if(inventory)inventory.hidden=!selected;
       const category=data.slots.find(item=>item.id===selected);
-      $('[data-equipment-category]').textContent=data.slotLabel(store.classId,selected)||category?.name||'Экипировка';
-      items.replaceChildren(...catalogue[selected].map(item=>createItemButton(item,equipped[selected])));
+      $('[data-equipment-category]').textContent=selected?(data.slotLabel(store.classId,selected)||category?.name||'Экипировка'):'';
+      items.replaceChildren(...(selected?(catalogue[selected]||[]).map(item=>createItemButton(item,equipped[selected])):[]));
       renderDyes(equipped);
       paintPreview();
     }
+    function open(){if(destroyed)return;selected=null;if(!busy)message('');render();}
     function select(slot){
       if(destroyed||busy||!enabledSlots.includes(slot)||!store.enabled)return false;
       selected=slot;render();return true;
@@ -177,7 +180,7 @@
     for(const button of slotNodes)listen(button,'click',()=>select(button.dataset.equipmentSlot));
     const unsubscribe=store.subscribe(()=>{if(!destroyed)render();});
     render();
-    return {render,select,refreshPreview:paintPreview,getDirection:()=>directions[orientation].row,destroy(){
+    return {render,select,open,refreshPreview:paintPreview,getDirection:()=>directions[orientation].row,destroy(){
       if(destroyed)return;destroyed=true;unsubscribe();
       for(const remove of handlers)remove();
     }};
