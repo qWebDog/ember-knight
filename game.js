@@ -104,7 +104,8 @@
   const spellImages = {};
   const pendingIceImpacts = new Map();
   let statusImage = null;
-  const mageEffects={};let sphereCanvas=null;
+  const mageEffects={};let sphereCanvas=null,sphereHitAt=-Infinity,sphereDrawKey=null;
+  const sphereTile=128,sphereBreakDuration=.56;
   let laneStep = 0;
   arena.dataset.lanes='5';battlefield.dataset.lanes='5';
   let heroX = null, fieldWidth = null, moving = false, heroMoving = false;
@@ -312,7 +313,7 @@
         ...['fire','ice','shadow'].map(async magic=>{spellImages[magic]=await loadImage(`assets/magic/${magic}.png`);})
       ]);
       statusImage = statusAtlas;
-      if(starterWeapon?.id==='wand')await Promise.all(['burn','shards','sphere'].map(async effect=>{mageEffects[effect]=await loadImage(`assets/magic/mage-${effect}.${effect==='sphere'?'svg':'png'}`);}));
+      if(starterWeapon?.id==='wand')await Promise.all(['burn','shards','sphere'].map(async effect=>{mageEffects[effect]=await loadImage(effect==='sphere'?'assets/magic/mage-sphere-v2.svg':`assets/magic/mage-${effect}.png`);}));
       actors.orc.images.attack = orcAttack ? {image:orcAttack,frames:6,row:1,tile:128,origin:32} : { ...actors.orc.images.idle,frames:1 };
       const face = $('#avatar').getContext('2d'); face.imageSmoothingEnabled = false;
       const avatarTile=loadout?starterWeapon.walk.tile:64, avatarOrigin=loadout?starterWeapon.walk.origin:0;
@@ -498,7 +499,7 @@
   function handleEvents(events) {
     for (const event of events) {
       if(event.type==='sphere'){
-        if(event.absorbed>0)addEffect('block',event.sourceId,'hero',`Щит −${event.absorbed}`,event.at);
+        if(event.absorbed>0){sphereHitAt=event.at;addEffect('block',event.sourceId,'hero',`Щит −${event.absorbed}`,event.at);}
       } else if (event.type === 'cast') {
         if(!event.shards&&event.sourceId==='hero'&&event.magic==='ice')pendingIceImpacts.set(event.castId,{at:event.impactAt,targetId:event.targetId});
         const caster=actors[event.sourceId];
@@ -1030,16 +1031,34 @@
     }
   }
   function renderMageSphere(state){
-    const sphere=state.hero.sphere,age=sphere?.brokenAt==null?0:activeTime-sphere.brokenAt;
-    const visible=Boolean(mageEffects.sphere&&sphere&&(sphere.hp>0&&!['victory','defeat'].includes(state.phase)||sphere.brokenAt!==null&&age<.56&&!reducedMotion.matches));
-    if(!visible){if(sphereCanvas)sphereCanvas.remove();sphereCanvas=null;return;}
-    if(!sphereCanvas){sphereCanvas=document.createElement('canvas');sphereCanvas.width=64;sphereCanvas.height=64;sphereCanvas.className='mage-sphere';actors.hero.element.appendChild(sphereCanvas);}
-    const fraction=sphere.hp/sphere.maxHp, pulse=reducedMotion.matches?0:Math.floor(activeTime*7)%4;
-    const frame=sphere.hp<=0?8+Math.min(3,Math.max(0,Math.floor(age/.14))):fraction>.5?pulse:fraction>.25?4+pulse%2:6+pulse%2;
-    sphereCanvas.dataset.frame=String(frame);sphereCanvas.dataset.hp=String(sphere.hp);sphereCanvas.dataset.maxHp=String(sphere.maxHp);
+    const sphere=state.hero.sphere;
+    const age=sphere?.brokenAt==null?0:Math.max(0,state.elapsed-sphere.brokenAt);
+    const ended=['victory','defeat'].includes(state.phase);
+    // Battle time drives all atlas animation, including damage feedback.
+    // Do not show a fresh or previously broken sphere on the result screen.
+    const visible=Boolean(mageEffects.sphere&&sphere&&!ended&&
+      (sphere.hp>0||sphere.brokenAt!==null&&age<sphereBreakDuration&&!reducedMotion.matches));
+    if(!visible){if(sphereCanvas)sphereCanvas.remove();sphereCanvas=null;sphereDrawKey=null;return;}
+    if(!sphereCanvas){
+      sphereCanvas=document.createElement('canvas');sphereCanvas.width=sphereTile;sphereCanvas.height=sphereTile;
+      sphereCanvas.className='mage-sphere';actors.hero.element.appendChild(sphereCanvas);
+    }
+    const fraction=sphere.hp/sphere.maxHp,pulse=reducedMotion.matches?0:Math.floor(state.elapsed*7)%4;
+    const frame=sphere.hp<=0?8+Math.min(3,Math.floor(age/.14)):fraction>.5?pulse:fraction>.25?4+pulse%2:6+pulse%2;
+    const hitAge=state.elapsed-sphereHitAt;
+    const hitFrame=sphere.hp>0&&!reducedMotion.matches&&hitAge>=-1e-7&&hitAge<.32?
+      12+Math.min(3,Math.floor(Math.max(0,hitAge)/.08)):-1;
+    sphereCanvas.dataset.frame=String(frame);sphereCanvas.dataset.hitFrame=String(hitFrame);
+    sphereCanvas.dataset.hp=String(sphere.hp);sphereCanvas.dataset.maxHp=String(sphere.maxHp);
     sphereCanvas.setAttribute('aria-label',`Прочность сферы: ${sphere.hp} из ${sphere.maxHp}`);
-    const ctx=sphereCanvas.getContext('2d');ctx.clearRect(0,0,64,64);ctx.imageSmoothingEnabled=false;ctx.drawImage(mageEffects.sphere,frame*64,0,64,64,0,0,64,64);
-    sphereCanvas.style.opacity=sphere.hp>0?'0.85':'1';
+    const key=frame+':'+hitFrame;
+    if(sphereDrawKey!==key){
+      const ctx=sphereCanvas.getContext('2d');ctx.clearRect(0,0,sphereTile,sphereTile);ctx.imageSmoothingEnabled=false;
+      ctx.drawImage(mageEffects.sphere,frame*sphereTile,0,sphereTile,sphereTile,0,0,sphereTile,sphereTile);
+      if(hitFrame>=0)ctx.drawImage(mageEffects.sphere,hitFrame*sphereTile,0,sphereTile,sphereTile,0,0,sphereTile,sphereTile);
+      sphereDrawKey=key;
+    }
+    sphereCanvas.style.opacity='1';
     actors.hero.element.style.setProperty('--sphere-hp',String(fraction));
   }
   function render(state) {
@@ -1221,7 +1240,7 @@
   }
   function restartBattle(startAuto) {
     battle.restart();if(startAuto)auto=true;
-    activeTime=0;restartRemaining=null;resultSummary='';paidDeaths.clear();creditedRunGold=0;
+    activeTime=0;sphereHitAt=-Infinity;sphereDrawKey=null;restartRemaining=null;resultSummary='';paidDeaths.clear();creditedRunGold=0;
     clearSceneTransition();
     prepareWave(battle.getState());
     resultPanel.hidden=true;lastFrameTime=null;
