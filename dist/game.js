@@ -1323,7 +1323,7 @@
   function render(state) {
     renderBattleTalents(state);
     renderSceneTransition(state);
-    if(sceneTransition?.phase==='wave-out'||sceneTransition?.phase==='victory'){
+    if(state.hero.hp>0&&state.companion?.hp>0&&(sceneTransition?.phase==='wave-out'||sceneTransition?.phase==='victory')){
       companion?.followExit({
         heroX:heroX??0,heroDepth:actors.hero.depth
       });
