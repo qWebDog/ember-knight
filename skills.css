@@ -45,4 +45,27 @@
 .skill-future[data-mage-advanced]{opacity:1;cursor:pointer;color:var(--branch-soft);border-color:var(--branch)}.skill-future[data-mage-advanced].is-locked{opacity:.55}.skill-future[data-mage-advanced].is-selected{outline:1px solid #f5d293;box-shadow:0 0 6px #efd08966}.skill-future[data-mage-advanced].is-learned{background:var(--branch-bg)}.skill-future[data-mage-advanced] span{color:#e0ddbb}
 
 .skill-future[data-mage-slot][hidden]{display:none!important}
-.skills-panel[data-hero-class="wand"] .skill-branch{min-height:150px}.skills-panel[data-hero-class="wand"] .skill-path{grid-template-rows:36px 8px auto 1px;align-content:start}.skills-panel[data-hero-class="wand"] .skill-node{width:34px;height:34px}.skills-panel[data-hero-class="wand"] .skill-children{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 4px;padding-top:3px}.skills-panel[data-hero-class="wand"] .skill-future[data-mage-advanced]{width:26px;height:26px}.skills-panel[data-hero-class="wand"] .skill-future[data-mage-advanced] span{display:block;font-size:9px;line-height:10px;top:100%;color:#e0ddbb}.skills-panel[data-hero-class="wand"] .skill-growth{display:none}.skills-panel[data-hero-class="wand"] [data-branch="attack"] .skill-future[data-skill-id="iceShards"]{color:#8bddff;border-color:#75aacc}.skills-panel[data-hero-class="wand"] [data-branch="attack"] .skill-future[data-skill-id="fusion"]{color:#d4c5ff}.skills-panel[data-hero-class="wand"] [data-branch="attack"] .skill-future[data-skill-id="chaos"]{color:#ffc28a}
+/* The three Mage graphs share four ranks of visual depth. Only Elements forks and merges. */
+.skills-panel[data-hero-class="wand"] .skill-branch{min-height:214px;grid-template-rows:18px auto;align-content:start}
+.skills-panel[data-hero-class="wand"] .skill-path{grid-template-rows:40px 12px auto;align-content:start}
+.skills-panel[data-hero-class="wand"] .skill-node{width:34px;height:34px}
+.skills-panel[data-hero-class="wand"] .skill-fork{width:50%;opacity:.65}
+.skills-panel[data-hero-class="wand"] .skill-branch:not([data-branch="attack"]) .skill-fork{border-bottom:0}
+.skills-panel[data-hero-class="wand"] .skill-children{position:relative;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(3,36px);gap:12px 0;padding:0;align-items:start}
+.skills-panel[data-hero-class="wand"] .skill-future[data-mage-advanced]{width:30px;height:26px;grid-column:1/-1;z-index:1}
+.skills-panel[data-hero-class="wand"] .skill-future[data-mage-advanced] svg{width:18px;height:18px}
+.skills-panel[data-hero-class="wand"] .skill-future[data-mage-advanced] span{display:block;font-size:9px;line-height:10px;top:100%;color:#e0ddbb}
+.skills-panel[data-hero-class="wand"] .skill-future[data-mage-advanced]:before{height:12px;opacity:.65;z-index:-1}
+.skills-panel[data-hero-class="wand"] .skill-future[data-skill-depth="1"]:before{display:none}
+.skills-panel[data-hero-class="wand"] .skill-future[data-skill-depth="1"]{grid-row:1}
+.skills-panel[data-hero-class="wand"] .skill-future[data-skill-depth="2"]{grid-row:2}
+.skills-panel[data-hero-class="wand"] .skill-future[data-skill-depth="3"]{grid-row:3}
+.skills-panel[data-hero-class="wand"] .skill-growth{display:none}
+.skills-panel[data-hero-class="wand"] [data-skill-id="strongBurn"]{grid-column:1!important;color:#ffab69;border-color:#ca8050}
+.skills-panel[data-hero-class="wand"] [data-skill-id="iceShards"]{grid-column:2!important;color:#8bddff;border-color:#75aacc}
+.skills-panel[data-hero-class="wand"] [data-branch="attack"] .skill-children:before{content:"";position:absolute;box-sizing:border-box;left:25%;top:36px;width:50%;height:6px;border:1px solid var(--branch);border-top:0;opacity:.65;pointer-events:none}
+.skills-panel[data-hero-class="wand"] [data-skill-id="fusion"]{color:#d4c5ff}
+.skills-panel[data-hero-class="wand"] [data-skill-id="fusion"]:before{height:6px}
+.skills-panel[data-hero-class="wand"] [data-skill-id="chaos"]{color:#ffc28a}
+.skills-panel[data-hero-class="wand"] .skill-future.is-locked:before{opacity:1}
+@media(max-width:700px){.skills-panel[data-hero-class="wand"] .skill-branch h3{font-size:12px;letter-spacing:0}}
