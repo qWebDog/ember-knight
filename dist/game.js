@@ -71,17 +71,20 @@
   $('#level-badge').textContent = level;
   const dragonBoss=Boolean(window.EmberDragon);
   const battle = window.EmberCombat.createBattle({heroName:name,heroProjectile:starterWeapon?.projectile,heroWeapon:starterWeapon?.id,heroMagic,
-    dragonBossEnabled:dragonBoss,
+    dragonBossEnabled:dragonBoss,skeletonSwordsEnabled:true,
     companionEnabled:equipment?.classId==='bow'&&equipment.getState().companion==='wolf',
     ...progression.getStats()});
   battle.pause();
   let ready = false, assetError = false, lastFrameTime = null, restartRemaining = null, resultSummary = '';
   const paidDeaths = new Set();
   let creditedRunGold = 0;
+  // The WebApp opts into the mixed wave; old standalone engine fixtures remain supported.
+  const mixedWave=battle.getState().totalEnemies>(dragonBoss?5:4);
   const enemyDefinitions = {
     archer1:{type:'archer',spawn:.62,label:'Лучник',defaultLane:2},
     archer2:{type:'archer',spawn:.61,label:'Лучник I',defaultLane:1},
     archer3:{type:'archer',spawn:.80,label:'Лучник II',defaultLane:5},
+    ...(mixedWave?{skeletonSword1:{type:'swordsman',spawn:.51,label:'Мечник I',defaultLane:2},skeletonSword2:{type:'swordsman',spawn:.60,label:'Мечник II',defaultLane:4}}:{}),
     orc:{type:'orc',spawn:.65,label:'Орк',defaultLane:4},
     ...(dragonBoss?{dragon:{type:'dragon',spawn:.76,label:'Красный дракон',defaultLane:3}}:{})
   };
@@ -292,9 +295,10 @@
           actors[id].images.idle = actors[id].images.attack = {image,frames:1,row:0,still:0};
         }
       }));
-      // Dedicated distance-driven gait: the bow atlas is reserved for attacks.
-      const skeletonWalk = await loadImage('assets/enemies/lpc/skeleton-walk.svg');
-      actors.archer1.images.walk = {image:skeletonWalk,frames:9,row:1};
+      if(mixedWave){
+        const [walk,attack]=await Promise.all([loadImage('assets/enemies/lpc/skeleton-sword-walk.svg'),loadImage('assets/enemies/lpc/skeleton-sword-attack.svg')]);
+        for(const id of ['skeletonSword1','skeletonSword2'])actors[id].images={idle:{image:walk,frames:9,row:1,still:0},walk:{image:walk,frames:9,row:1},attack:{image:attack,frames:6,row:1,tile:128,origin:32}};
+      }
       actors.archer2.images = {...actors.archer1.images};
       actors.archer3.images = {...actors.archer1.images};
       actors.orc.images.walk = { ...actors.orc.images.idle,still:undefined };
@@ -321,7 +325,7 @@
       updateMovement(0,battle.getState());
       $('#status').textContent = dragonBoss
         ?'Бой готов: три волны и финальный красный дракон.'
-        :'Бой готов: один лучник, два лучника, затем орк.';
+        :'Бой готов: один лучник, смешанная волна скелетов, затем орк.';
       render(battle.getState()); equipmentUI?.refreshPreview(); syncPause();
     } catch {
       assetError = true;
@@ -537,7 +541,7 @@
       } else if (event.type === 'death') {
         if(event.id==='companion'){
           companionDeathAt=companionTime;
-          $('#status').textContent='Боевой волк пал. Враги теперь идут к лучнику.';
+          $('#status').textContent='Боевой волк пал. Враги переключились на лучника.';
           continue;
         }
         clearStatus(actors[event.id]);
@@ -570,7 +574,7 @@
         // The engine clock is held during the entrance, so the fade follows
         // the local entrance clock instead of relying on combat time.
         beginSceneTransition('wave-in',event.at);
-        $('#status').textContent=`Волна ${event.waveNumber} из ${event.waveCount}: ${event.enemies[0].type==='dragon'?'красный дракон':event.enemies.length===2?'два лучника':event.enemies[0].type==='orc'?'орк':'один лучник'}.`;
+        $('#status').textContent=`Волна ${event.waveNumber} из ${event.waveCount}: ${event.enemies[0].type==='dragon'?'красный дракон':event.enemies.some(enemy=>enemy.type==='swordsman')?'два мечника и два лучника':event.enemies.length===2?'два лучника':event.enemies[0].type==='orc'?'орк':'один лучник'}.`;
         updateControls();
       } else if (event.type === 'end') {
         // Terminal transitions must not freeze a visible breath in place
@@ -674,7 +678,10 @@
     // LPC directions: 0=back, 1=left, 2=front, 3=right.
     // When moving toward a hero/wolf on the left, Orc must use the LEFT
     // profile (row 1), not the front-facing row 2.
-    const row = walking ? (id==='hero'?walkDirection:actor.direction) : descriptor.row;
+    const defender=state.enemyTargetId==='companion'?companion?.getPose():null;
+    const facingTargetX=defender?.x??heroX;
+    const enemyFacing=['archer','swordsman'].includes(actor.type)?(facingTargetX>actor.x?3:1):descriptor.row;
+    const row = walking ? (id==='hero'?walkDirection:actor.direction) : enemyFacing;
     const tile = descriptor.tile || 64, origin = descriptor.origin || 0;
     const cell = walking ? 1 + Math.floor((distance / .75 % 1) * 8) : attacking ? Math.min(descriptor.frames-1,Math.floor((age+(actor.animation?.arrowCue?1e-6:0)) / actor.animation.duration * descriptor.frames)) : Number.isInteger(descriptor.still) ? descriptor.still : id === 'hero' && auto && unit.hp > 0 && !ended && !reducedMotion.matches ? Math.floor(activeTime / .65) % 2 : 0;
     const key = `${kind}-${descriptor.image.src}-${cell}-${row}-${tile}-${origin}`;
@@ -771,10 +778,42 @@
       projectFormation();
       return usedTime;
     }
-    // While the Archer's wolf has been summoned, ALL living enemies
-    // pursue the current defender. They stop at the wolf first, only
-    // resuming their advance toward the hero after the wolf dies.
-    // Non-wolf encounters keep their original movement rules.
+    // Mixed wave: both swordsmen approach the current defender, while archers stay at their spawn points.
+    const swords=state.enemies.filter(unit=>unit.type==='swordsman'&&unit.hp>0);
+    if(canMove&&swords.length){
+      if(ranged)heroX=home;
+      else if(state.targetId){
+        const target=actors[state.targetId],gap=target.x-heroX-heroSize*.23-target.element.offsetWidth*.34;
+        if(Math.abs(gap)>.01){
+          const step=Math.sign(gap)*Math.min(Math.abs(gap),reducedMotion.matches?Math.abs(gap):heroSize*.85*dt);
+          const oldDepth=actors.hero.depth;
+          heroX+=step;actors.hero.depth+=(target.depth-actors.hero.depth)*Math.min(1,Math.abs(step/gap));
+          if(!reducedMotion.matches){walkDistance+=Math.hypot(step,(actors.hero.depth-oldDepth)*laneStep)/heroSize;heroMoving=moving=Math.abs(step)>.001;if(heroMoving)usedTime=dt;}
+          if(step)walkDirection=step>0?3:1;
+        }else if(dt>0){actors.hero.depth=target.depth;}
+      }
+      const wolf=state.enemyTargetId==='companion',pose=wolf?companion?.getPose():null;
+      const defenderX=pose?.x??(wolf?heroX-heroSize*.83:heroX),defenderDepth=pose?.depth??actors.hero.depth;
+      const contact=window.EmberCompanion?.contact||{enemy:.56,companion:.18};
+      for(const unit of swords){
+        if(isFrozen(unit,state))continue;
+        const enemy=actors[unit.id],size=enemy.element.offsetWidth;
+        const separation=wolf?size*contact.enemy+heroSize*contact.companion:heroSize*.23+size*.34;
+        const side=enemy.x>=defenderX?1:-1;
+        const goal=defenderX+side*separation,gap=goal-enemy.x;
+        const depthGoal=Math.max(1,Math.min(5,defenderDepth+(unit.id===state.targetId?0:.75)));
+        const step=Math.sign(gap)*Math.min(Math.abs(gap),reducedMotion.matches?Math.abs(gap):size*.85*dt);
+        const oldDepth=enemy.depth;
+        if(Math.abs(gap)>.01){enemy.x+=step;enemy.depth+=(depthGoal-enemy.depth)*Math.min(1,Math.abs(step/gap));}
+        else if(dt>0)enemy.depth=depthGoal;
+        if(!reducedMotion.matches&&dt>0){enemy.distance+=Math.hypot(step,(enemy.depth-oldDepth)*laneStep)/size;enemy.moving=Math.abs(step)>.001;if(enemy.moving)usedTime=dt;}
+        if(Math.abs(step)>1e-6)enemy.direction=step>0?3:1;
+      }
+      actors.hero.element.style.left=`${heroX}px`;
+      for(const id of Object.keys(enemyDefinitions))actors[id].element.style.left=`${actors[id].x}px`;
+      projectFormation();return usedTime;
+    }
+    // Only melee enemies chase the wolf or hero; ranged enemies fire from their positions.
     if(canMove&&ranged&&state.companion){
       const pose=state.enemyTargetId==='companion'?companion?.getPose():null;
       const defenderX=pose?.x??(state.enemyTargetId==='companion'?heroX-heroSize*.83:heroX);
@@ -783,7 +822,7 @@
       for(const unit of state.enemies){
         if(unit.hp<=0)continue;
         const enemy=actors[unit.id];
-        if(unit.type==='dragon')continue; // Fire breath has long-range reach: hover, never chase.
+        if(unit.projectile!=='melee')continue; // Archers and dragon hold their ranged positions.
         const enemySize=enemy.element.offsetWidth;
         // Exact shared stopping distance with the wolf's pursuit logic:
         // wolf.destination = enemy.x - (enemySize*.32 + wolfSize*.18).
@@ -1031,19 +1070,20 @@
     const pose=state.enemyTargetId==='companion'?companion?.getPose():null;
     const defenderX=state.enemyTargetId==='companion'?pose?.x??heroX-heroSize*.83:heroX;
     const defenderDepth=state.enemyTargetId==='companion'?pose?.depth??actors.hero.depth:actors.hero.depth;
-    const enemyCanAttack=wolfBattle?Object.fromEntries(state.enemies.map(enemy=>{
+    const enemyCanAttack=Object.fromEntries(state.enemies.map(enemy=>{
       const actor=actors[enemy.id],size=actor.element.offsetWidth;
       const wolfContact=window.EmberCompanion?.contact||{enemy:.56,companion:.18};
       const reach=state.enemyTargetId==='companion'
         ?size*wolfContact.enemy+heroSize*wolfContact.companion+.01
         :heroSize*.23+size*.34+.01;
+      if(enemy.projectile==='arrow'||(!wolfBattle&&enemy.type!=='swordsman'))return [enemy.id,enemy.hp>0];
       return [enemy.id,Boolean(enemy.hp>0
         &&(enemy.type==='dragon'&&state.enemyTargetId==='hero'
           ||Math.abs(actor.x-defenderX)<=reach)
-        &&Math.abs(actor.depth-defenderDepth)<=.06
+        &&Math.abs(actor.depth-defenderDepth)<=(enemy.type==='swordsman'?.76:.06)
         &&(enemy.type!=='dragon'||state.enemyTargetId==='hero'
           ||(actor.dive||0)>=.92))];
-    })):undefined;
+    }));
     return {
       heroCanAttack:Boolean(target && (ranged || inReach(target,actors[target].x))),
       heroCloseRange:Boolean(target && inReach(target,actors[target].x)),
@@ -1055,9 +1095,10 @@
       enemyCanAttackHero:wolfBattle?Object.fromEntries(state.enemies.map(enemy=>{
         const actor=actors[enemy.id],size=actor.element.offsetWidth;
         const reach=heroSize*.23+size*.34+.01;
+        if(enemy.projectile==='arrow')return [enemy.id,enemy.hp>0];
         return [enemy.id,Boolean(enemy.hp>0
           &&(enemy.type==='dragon'||Math.abs(actor.x-heroX)<=reach)
-          &&Math.abs(actor.depth-actors.hero.depth)<=.06
+          &&Math.abs(actor.depth-actors.hero.depth)<=(enemy.type==='swordsman'?.76:.06)
           &&(enemy.type!=='dragon'||(actor.dive||0)<=.08))];
       })):undefined
     };
@@ -1176,7 +1217,7 @@
     gold: () => ['КОШЕЛЁК','Золото',`В кошельке ${wallet} золота. За каждого врага — 5 монет, за все ${battle.getState().waveCount} волны — ${battle.getState().totalEnemies*5}. Монеты сохраняются и при поражении. Сохранение — на этом устройстве.`],
     crystals: () => ['КОШЕЛЁК','Кристаллы','Редкие кристаллы для особых находок. Их история начнётся в следующих главах.'],
     rewards: () => ['НАГРАДЫ','Трофеи первого боя',`За каждого из ${battle.getState().totalEnemies} врагов — 5 монет. Полный проход приносит ${battle.getState().totalEnemies*5} монет; бонуса за победу нет. Сейчас в кошельке: ${wallet}.`],
-    map: () => ['ГЛАВА I','Забытый лес',`Битва 1–1: один лучник, два лучника, орк${dragonBoss?', затем красный дракон':''}. После победы или поражения бой начинается заново автоматически.`],
+    map: () => ['ГЛАВА I','Забытый лес',`Битва 1–1: один лучник, два мечника и два лучника, орк${dragonBoss?', затем красный дракон':''}. После победы или поражения бой начинается заново автоматически.`],
     fist: () => ['УМЕНИЕ','Натиск',starterWeapon?.id === 'sword' ? 'Мечник чередует короткий, рубящий и обратный удар. Третий удар наносит на 50% больше урона до брони. Щит смягчает каждый второй удар ближнего боя наполовину и открывает контратаку. Натиск откроется на 3 уровне.' : 'Откроется на 3 уровне. Сейчас герой использует базовую атаку своего оружия.'],
     dash: () => ['УМЕНИЕ','Рывок','Откроется на 5 уровне. В нужный момент решает один быстрый шаг.'],
     fire: () => ['УМЕНИЕ','Внутренний огонь','Откроется на 10 уровне. Сила, которую ещё предстоит пробудить.']

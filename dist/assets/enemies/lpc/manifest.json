@@ -301,6 +301,29 @@
       "credits": "credits/mage/CREDITS.txt",
       "license": "CC-BY-SA 3.0",
       "sha256": "1cc4f8a62f34d60725cf3cc1c9f08bea8124ceb4756ee9533db0b50abb9cb58b"
+    },
+    {
+      "id": "skeleton-swordsman",
+      "name": "Скелет-мечник",
+      "role": "melee",
+      "sheet": "skeleton-sword-walk.svg",
+      "animation": "walk",
+      "width": 576,
+      "height": 256,
+      "frames": 9,
+      "idleFrame": 0,
+      "leftFacingRow": 1,
+      "attack": {
+        "sheet": "skeleton-sword-attack.svg",
+        "animation": "slash",
+        "width": 768,
+        "height": 512,
+        "frames": 6,
+        "tile": 128,
+        "origin": 32
+      },
+      "credits": "credits/skeleton/swordsman.md",
+      "revision": "86a3719ee4a7e2e9fb27c7c152e29a741d3e930a"
     }
   ],
   "attribution": "CREDITS.txt"

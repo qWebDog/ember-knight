@@ -1162,3 +1162,16 @@ test('live Orc attacks every 1.5 seconds after contact without banking attacks w
  for(let i=1;i<hits.length;i++)assert.ok(Math.abs(hits[i].at-hits[i-1].at-1.5)<1e-8);
  assert.ok(hits.every(e=>e.damage===6));
 });
+
+test('mixed wave adds two melee skeletons before ranged enemies and holds their attacks out of range',()=>{
+ const battle=createDefaultBattle({skeletonSwordsEnabled:true,heroDamage:500,heroMaxHp:2000});
+ for(let i=0;i<200&&battle.state.waveIndex!==1;i++)battle.advance(.1);
+ assert.equal(battle.state.waveIndex,1);assert.equal(battle.state.totalEnemies,6);
+ assert.deepEqual(battle.state.enemies.map(e=>[e.id,e.projectile]),[['skeletonSword1','melee'],['skeletonSword2','melee'],['archer2','arrow'],['archer3','arrow']]);
+ battle.updateHeroStats({heroDamage:1});
+ const held=battle.advance(3.6,{heroCanAttack:false,enemyCanAttack:{skeletonSword1:false,skeletonSword2:false}});
+ assert.ok(!held.some(e=>e.type==='attack'&&e.sourceId.startsWith('skeletonSword')));
+ assert.ok(held.some(e=>e.type==='attack'&&e.sourceId==='archer2'));
+ const hits=battle.advance(1.6,{heroCanAttack:false}).filter(e=>e.type==='attack'&&e.sourceId.startsWith('skeletonSword'));
+ assert.equal(hits.length,2);assert.ok(hits.every(e=>e.damage===5&&e.targetId==='hero'));
+});

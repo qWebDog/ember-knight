@@ -12,7 +12,7 @@ const combatSource = fs.readFileSync(path.join(dist, 'combat.js'), 'utf8');
 
 // The real game controller and combat engine run together. Only browser surfaces,
 // image decoding and the animation clock are replaced; no combat logic is mocked.
-function createHarness({skin = 'bronze', preference, search = '', weapon, outfit, outfitColor, magic, reducedMotion = false, fieldWidth = 800, modelSize = 64, arenaHeight = 400, fieldHeight = 180, fieldBottomGap = 62, roadGround = 36, viewportHeight = 800, combatOptions = {}, savedProgression, legacyGold, storageBlocked = false, wolfEquipped = false, dragonBoss = false} = {}) {
+function createHarness({skin = 'bronze', preference, search = '', weapon, outfit, outfitColor, magic, reducedMotion = false, fieldWidth = 800, modelSize = 64, arenaHeight = 400, fieldHeight = 180, fieldBottomGap = 62, roadGround = 36, viewportHeight = 800, combatOptions = {}, savedProgression, legacyGold, storageBlocked = false, wolfEquipped = false, dragonBoss = false, mixedWave = false} = {}) {
   const storage = new Map([['ember.character.v1', JSON.stringify({version:1, skin, name:'Тестовый герой', level:1,weapon,outfit,outfitColor,magic})]]);
   if (wolfEquipped) storage.set('ember.equipment.v1',
     JSON.stringify({version:1,byClass:{
@@ -23,9 +23,9 @@ function createHarness({skin = 'bronze', preference, search = '', weapon, outfit
   if (legacyGold !== undefined) storage.set('ember.test.gold.v1', String(legacyGold));
   const nodes = new Map(), pendingImages = [], loadedPaths = [], raf = [], resizeCallbacks = [], events = [];
   let battle, skillMount, now = 0, restarts = 0;
-  const actorIds=['hero','archer1','archer2','archer3','orc',...(dragonBoss?['dragon']:[])];
+  const actorIds=['hero','archer1','archer2','archer3','orc',...(mixedWave?['skeletonSword1','skeletonSword2']:[]),...(dragonBoss?['dragon']:[])];
   const enemyIds=actorIds.filter(id=>id!=='hero');
-  const spawnRatios={hero:.18,archer1:.70,archer2:.62,archer3:.82,orc:.60,dragon:.76};
+  const spawnRatios={hero:.18,archer1:.70,archer2:.62,archer3:.82,orc:.60,skeletonSword1:.51,skeletonSword2:.60,dragon:.76};
   const restartStates=[];
 
   class Element {
@@ -144,9 +144,9 @@ function createHarness({skin = 'bronze', preference, search = '', weapon, outfit
     set src(value) {
       this.path = value;
       const data = fs.readFileSync(path.join(dist, value));
-      if(value.endsWith('skeleton-walk.svg')){
-        const svg=data.toString('utf8');assert.match(svg,/<svg[^>]+width="576"[^>]+height="256"/);
-        this.width=this.naturalWidth=576;this.height=this.naturalHeight=256;
+      if(value.endsWith('.svg')){
+        const svg=data.toString('utf8'),size=svg.match(/<svg[^>]+width="(\d+)"[^>]+height="(\d+)"/);assert.ok(size);
+        this.width=this.naturalWidth=Number(size[1]);this.height=this.naturalHeight=Number(size[2]);
       }else{
         assert.equal(data.subarray(1,4).toString(), 'PNG');
         this.width = this.naturalWidth = data.readUInt32BE(16); this.height = this.naturalHeight = data.readUInt32BE(20);
@@ -182,7 +182,7 @@ function createHarness({skin = 'bronze', preference, search = '', weapon, outfit
     context,{filename:'dragon.js'});
   const createBattle = window.EmberCombat.createBattle;
   window.EmberCombat.createBattle = options => {
-    battle = createBattle({...options,...combatOptions});
+    battle = createBattle({...options,skeletonSwordsEnabled:mixedWave,...combatOptions});
     const advance = battle.advance;
     battle.advance = (seconds, availability) => {
       const emitted = advance(seconds, availability);
@@ -1183,7 +1183,7 @@ test('equipped wolf starts animating immediately in the SECOND and THIRD wave en
  }
 });
 
-test('equipped Archer wolf intercepts enemies: they move into range, stop, then strike the wolf instead of hero',async()=>{
+test('stationary archers shoot the equipped wolf instead of the hero',async()=>{
  const ui=createHarness({weapon:'bow',outfit:'wanderer',wolfEquipped:true,
    combatOptions:{heroDamage:1,heroMaxHp:600}});
  await ui.loadAllImages();
@@ -1193,7 +1193,7 @@ test('equipped Archer wolf intercepts enemies: they move into range, stop, then 
  ui.runUntil(()=>ui.events.some(e=>e.sourceId==='archer1'&&e.targetId==='companion'),20);
  const strike=ui.events.find(e=>e.sourceId==='archer1'&&e.targetId==='companion'&&e.type==='attack');
  assert.equal(strike.damage,7);
- assert.ok(actorX(ui,'archer1')<start,'enemy must first run toward the wolf');
+ assert.ok(Math.abs(actorX(ui,'archer1')-start)<.1,'archer stays at its spawn point');
  const restingX=actorX(ui,'archer1');
  ui.runFor(.2);
  assert.ok(Math.abs(actorX(ui,'archer1')-restingX)<.1,
@@ -1205,7 +1205,7 @@ test('equipped Archer wolf intercepts enemies: they move into range, stop, then 
  assert.ok(ui.events.some(e=>e.sourceId==='hero'&&e.projectile==='arrow'),
    'Archer keeps shooting while the wolf tanks');
 });
-test('after the wolf falls, living enemies abandon its position and walk to the Archer',async()=>{
+test('after the wolf falls, stationary archers switch fire to the hero',async()=>{
  const ui=createHarness({weapon:'bow',outfit:'wanderer',wolfEquipped:true,
    combatOptions:{companionMaxHp:14,heroDamage:1,heroMaxHp:600}});
  await ui.loadAllImages();
@@ -1216,7 +1216,7 @@ test('after the wolf falls, living enemies abandon its position and walk to the 
  assert.equal(ui.state().hero.hp,600);
  const previous=actorX(ui,'archer1');
  ui.runFor(.6);
- assert.ok(actorX(ui,'archer1')<previous-.1,'enemy resumes advancing towards the hero');
+ assert.ok(Math.abs(actorX(ui,'archer1')-previous)<.1,'archer switches targets without walking');
  assert.equal(ui.node('#companion-wolf').dataset.motion,'die');
  assert.equal(ui.node('#companion-health-fill').style.width,'0%');
  ui.runUntil(()=>ui.events.some(e=>e.type==='attack'&&e.targetId==='hero'&&e.sourceId==='archer1'),12);
@@ -1483,21 +1483,23 @@ test('a Mage with a legacy saved ice choice actually alternates both spells auto
  assert.ok(!ui.actorIds.includes('mage'),'no new NPC is introduced');
 });
 
-test('skeleton uses distinct distance-driven walk frames while pursuing the wolf',async()=>{
- const ui=createHarness({weapon:'bow',outfit:'wanderer',wolfEquipped:true,combatOptions:{heroDamage:1,heroMaxHp:1500,companionMaxHp:1500}});
+test('mixed second wave has two advancing swordsmen and two stationary archers',async()=>{
+ const ui=createHarness({weapon:'bow',outfit:'wanderer',mixedWave:true,wolfEquipped:true,combatOptions:{heroDamage:100,heroMaxHp:2000,companionMaxHp:2000}});
  await ui.loadAllImages();
- const actor=ui.node('[data-fighter="archer1"]'),canvas=ui.node('#enemy-archer1');
- const gait=new Set();let previous=actorX(ui,'archer1');
+ ui.runUntil(()=>ui.state().waveIndex===1,35);
+ ui.battle.updateHeroStats({heroDamage:1});
+ assert.deepEqual(ui.state().enemies.map(e=>e.id),['skeletonSword1','skeletonSword2','archer2','archer3']);
+ const ids=['skeletonSword1','skeletonSword2'],origins=ids.map(id=>actorX(ui,id)),archers=['archer2','archer3'].map(id=>actorX(ui,id));
+ const gait=new Set();
  for(let i=0;i<100;i++){
    ui.frame(100);
-   const x=actorX(ui,'archer1'),draw=canvas.draws.at(-1),dx=x-previous;
-   if(Math.abs(dx)>.001&&actor.dataset.motion==='walk'){
-     assert.ok(draw.src.endsWith('skeleton-walk.svg'));
-     assert.equal(draw.crop[1],dx<0?64:192);
-     gait.add(draw.crop[0]);
-   }
-   previous=x;
-   if(gait.size>=3)break;
+   const actor=ui.node('[data-fighter="skeletonSword1"]'),draw=ui.node('#enemy-skeletonSword1').draws.at(-1);
+   if(actor.dataset.motion==='walk'){assert.ok(draw.src.endsWith('skeleton-sword-walk.svg'));gait.add(draw.crop[0]);}
+   if(gait.size>=3&&ui.events.some(e=>e.type==='attack'&&e.sourceId==='skeletonSword1'))break;
  }
- assert.ok(gait.size>=3,'skeleton legs change frame while physically walking');
+ assert.ok(gait.size>=3);
+ assert.ok(ids.every((id,i)=>Math.abs(actorX(ui,id)-origins[i])>5));
+ assert.ok(['archer2','archer3'].every((id,i)=>Math.abs(actorX(ui,id)-archers[i])<.1));
+ assert.ok(ui.events.some(e=>e.type==='attack'&&e.sourceId==='skeletonSword1'&&e.targetId==='companion'));
+ assert.ok(ui.events.some(e=>e.type==='attack'&&e.sourceId==='archer2'&&e.targetId==='companion'));
 });
