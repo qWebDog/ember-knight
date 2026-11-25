@@ -24,6 +24,24 @@
   const loadout = loadouts?.selection(character) || null;
   const starterWeapon = loadout ? loadouts.weapon(loadout.weapon) : null;
   const starterOutfit = loadout ? loadouts.outfit(loadout.weapon,loadout.outfit) : null;
+  const mageTalentHUD=starterWeapon?.id==='wand';
+  // Mage has no manual autoplay toggle in the HUD; ignore a legacy off preference.
+  if(mageTalentHUD)auto=true;
+  $('#legacy-battle-abilities').hidden=mageTalentHUD;
+  $('#battle-talents').hidden=!mageTalentHUD;
+  const hudTalentCatalog=window.EmberProgression.talentCatalog||[];
+  let hudTalentKey=null;
+  function renderBattleTalents(state){
+    if(!mageTalentHUD)return;
+    const ids=state.activeTalents||[],key=ids.join('|');
+    if(key===hudTalentKey)return;hudTalentKey=key;
+    for(let i=0;i<3;i++){
+      const slot=$('#battle-talent-slot-'+i),icon=$('#battle-talent-icon-'+i),talent=hudTalentCatalog.find(t=>t.id===ids[i]);
+      slot.dataset.empty=String(!talent);slot.dataset.talent=talent?.id||'';slot.dataset.branch=talent?String(talent.branch):'';
+      slot.setAttribute('aria-label',talent?.name||'Свободный слот');slot.setAttribute('title',talent?.name||'Свободный слот');
+      icon.setAttribute('href','#'+(talent?.icon||'mage-mana'));
+    }
+  }
   // Every Mage casts both elements, even with an old saved magic value.
   const heroMagic = starterWeapon?.id==='wand'?'both':null;
   // Do not apply Warrior upgrades to Mage spells. Gold stays shared in one
@@ -355,6 +373,7 @@
   }
   function updateControls() {
     const state = battle.getState(), ended = ['victory','defeat'].includes(state.phase);
+    renderBattleTalents(state);
     arena.classList.toggle('is-paused', !ready || !auto || dialog.open || document.hidden);
     battlefield.classList.toggle('is-between-waves',state.phase==='intermission'||(state.phase==='paused'&&state.completedWaves>state.waveIndex));
     autoButton.disabled = !ready;
@@ -1175,6 +1194,7 @@
     actors.hero.element.style.setProperty('--sphere-hp',String(fraction));
   }
   function render(state) {
+    renderBattleTalents(state);
     renderSceneTransition(state);
     if(sceneTransition?.phase==='wave-out'||sceneTransition?.phase==='victory'){
       companion?.followExit({
