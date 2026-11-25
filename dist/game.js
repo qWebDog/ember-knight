@@ -620,12 +620,12 @@
     }
     return effect.lockedTarget;
   }
-  function preserveIncomingAim(at){
+  function preserveIncomingAim(at,reservedSource){
     const field=battlefield.getBoundingClientRect(),target=actors.hero.element.getBoundingClientRect();
     for(const effect of effects){
       if(!targetsArcher(effect))continue;
       const launch=effect.at+(effect.type==='spell'?effect.appearDuration:0);
-      if(launch<=at+1e-6)lockArcherTarget(effect,field,target);
+      if(launch<=at+1e-6||(effect.type==='arrow'&&effect.sourceId===reservedSource&&launch<=at+.05))lockArcherTarget(effect,field,target);
     }
   }
   function handleEvents(events) {
@@ -633,10 +633,14 @@
       if(event.type==='archerSkill'){
         if(event.skill==='retreat'||event.skill==='evasion'){
           if(event.dodgeShot){
-            preserveIncomingAim(event.at);
+            preserveIncomingAim(event.at,event.targetId);
             const from=currentRetreatOffset(),max=Math.max(0,Math.min(battlefield.clientWidth*.14,battlefield.clientWidth*(window.innerWidth>700?.18:.22)-actors.hero.element.offsetWidth*.65));
             archerRetreatOffset=Math.min(max,from+actors.hero.element.offsetWidth*.75);
-            archerRetreatMotion={from,to:archerRetreatOffset,at:event.at};
+            const depth=actors.hero.depth;
+            // At the rear boundary, step across the road instead of jumping in place.
+            const sideStep=archerRetreatOffset-from<actors.hero.element.offsetWidth*.20;
+            const nextDepth=sideStep?(depth<=3?Math.min(5,depth+2):Math.max(1,depth-2)):depth;
+            archerRetreatMotion={from,to:archerRetreatOffset,at:event.at,depth,toDepth:nextDepth};
             archerEvadeAt=event.at;actors.hero.lastKey=null;
           }
           addEffect('block','hero','hero',event.skill==='retreat'?'Отступление':'Уклонение',event.at);
@@ -646,6 +650,8 @@
         else if(event.skill==='rendingBite')addEffect('heavy','companion',event.targetId,'Кровотечение',event.at);
         else if(event.skill==='arrowDance')addEffect('block','hero','hero','Танец стрел',event.at);
         else if(event.skill==='arrowRain')addEffect('block','hero','hero','Град стрел',event.at);
+      }else if(event.type==='enemyWindup'){
+        const actor=actors[event.sourceId];if(actor){actor.animation={at:event.at,duration:event.animationDuration};actor.dodgeWindupUntil=event.at+event.animationDuration;actor.moving=false;actor.lastKey=null;}
       }else if(event.type==='arrowLaunch'){
         const source=actors[event.sourceId];
         if(!event.dodgeShot){source.animation={at:event.at-event.animationDuration*arrowReleaseFrame/arrowPoseFrames,duration:event.animationDuration};source.lastKey=null;}
@@ -691,7 +697,7 @@
         if(event.sourceId==='hero'&&event.projectile==='arrow'&&event.arrowType&&!event.dot)addArcherArrowImpact(event);
         // Visual bow wind-up already began before impact. Do not restart it
         // at the moment the arrow reaches its target.
-        if (!event.impact&&!event.dot&&event.projectile!=='arrow'&&event.sourceId!=='companion')
+        if (!event.impact&&!event.dot&&!event.windup&&event.projectile!=='arrow'&&event.sourceId!=='companion')
           actors[event.sourceId].animation = {at:event.sourceId==='orc'?event.at:activeTime,duration:event.animationDuration || .66,
             variant:event.variant,heavy:event.heavy,counter:event.counter,swipe:event.dragonSwipe};
         if (event.impact) {
@@ -906,7 +912,7 @@
       clearStatus(actor);actor.poseAnimation=null;actor.poseAge=100;
       actor.x=null;actor.distance=0;actor.moving=false;actor.direction=1;
       actor.depth=actor.defaultLane;
-      actor.animation=null;actor.hitAt=-10;actor.blockAt=-10;actor.lastKey=null;
+      actor.animation=null;actor.dodgeWindupUntil=-1;actor.hitAt=-10;actor.blockAt=-10;actor.lastKey=null;
       if(actor.type==='dragon'){
         actor.dive=0;actor.diveClock=null;
         actor.breathStartedAt=null;actor.breathUntil=-1;
@@ -917,10 +923,13 @@
   }
   // Range holds only melee cooldowns; archers shoot throughout the approach.
   function currentRetreatOffset(){
-    if(!archerRetreatMotion||reducedMotion.matches)return archerRetreatOffset;
+    if(!archerRetreatMotion)return archerRetreatOffset;
     const motion=archerRetreatMotion,age=Math.max(0,activeTime-motion.at);
-    if(age>=dodgeTiming.duration){archerRetreatMotion=null;return archerRetreatOffset;}
-    return motion.from+(motion.to-motion.from)*dodgeArt.offset(age,dodgeTiming);
+    // Most displacement happens before the reserved impact at +.32s.
+    const progress=reducedMotion.matches?1:dodgeArt.offset(age*1.4,dodgeTiming);
+    actors.hero.depth=motion.depth+(motion.toDepth-motion.depth)*progress;
+    if(age>=dodgeTiming.duration||reducedMotion.matches){archerRetreatMotion=null;return archerRetreatOffset;}
+    return motion.from+(motion.to-motion.from)*progress;
   }
   function updateMovement(dt,state) {
     const activeIds=new Set(state.enemies.map(enemy=>enemy.id));
@@ -987,7 +996,7 @@
         const side=enemy.x>=defenderX?1:-1;
         const goal=defenderX+side*separation;
         if(!wolf&&state.hero.sphere?.hp>0&&Math.abs(enemy.x-defenderX)<separation)enemy.x=goal;
-        if(isFrozen(unit,state))continue;
+        if(isFrozen(unit,state)||activeTime<(enemy.dodgeWindupUntil??-1))continue;
         const gap=goal-enemy.x;
         const depthGoal=Math.max(1,Math.min(5,defenderDepth+(unit.id===state.targetId?0:.75)));
         const step=Math.sign(gap)*Math.min(Math.abs(gap),reducedMotion.matches?Math.abs(gap):size*.85*dt);
@@ -1022,7 +1031,7 @@
         const goalX=defenderX+separation;
         if(state.enemyTargetId!=='companion'&&state.hero.sphere?.hp>0&&enemy.x<goalX)enemy.x=goalX;
         const gap=goalX-enemy.x;
-        if(isFrozen(unit,state))continue;
+        if(isFrozen(unit,state)||activeTime<(enemy.dodgeWindupUntil??-1))continue;
         const speed=enemySize*.85;
         const distance=reducedMotion.matches?Math.abs(gap):Math.min(Math.abs(gap),speed*dt);
         const step=Math.sign(gap)*distance;
@@ -1064,7 +1073,7 @@
         gap=0;
       }
       previousSeparation=separation;
-      if(gap>.01){
+      if(gap>.01&&activeTime>=(enemy.dodgeWindupUntil??-1)){
         const heroSpeed=ranged?0:heroSize*.85,enemySpeed=isFrozen(melee,state)?0:enemySize*.85,closingSpeed=heroSpeed+enemySpeed;
         usedTime=reducedMotion.matches||!closingSpeed?0:Math.min(dt,gap/closingSpeed);
         const time=reducedMotion.matches&&closingSpeed?gap/closingSpeed:usedTime;
@@ -1083,7 +1092,7 @@
         moving=enemy.x-heroX-separation>.01&&closingSpeed>0;heroMoving=moving&&heroSpeed>0;enemy.moving=moving&&enemySpeed>0;
       }
       if(enemy.x-heroX-separation<=.01){
-        if(ranged){if(!isFrozen(melee,state))enemy.depth=actors.hero.depth;}
+        if(ranged){if(!isFrozen(melee,state)&&activeTime>=(enemy.dodgeWindupUntil??-1))enemy.depth=actors.hero.depth;}
         else actors.hero.depth=enemy.depth;
         pairContacted=Math.abs(enemy.depth-actors.hero.depth)<=1e-4;
       }
