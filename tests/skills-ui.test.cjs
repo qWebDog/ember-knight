@@ -95,9 +95,13 @@ test('the panel stays in the lower viewport grid with compact portrait and lands
  const css=fs.readFileSync(path.join(dist,'skills.css'),'utf8'),gameCSS=fs.readFileSync(path.join(dist,'game.css'),'utf8'),base=css.match(/\.skills-panel\{([^}]*)\}/)?.[1]||'';
  assert.match(base,/min-height:0/);assert.match(base,/overflow:hidden/);assert.match(base,/grid-template-rows:[^;]*minmax\(0,1fr\)/);assert.match(gameCSS,/\.game-screen\{[^}]*grid-template-rows:52% minmax\(0,1fr\)/);assert.match(gameCSS,/html\{[^}]*overflow:hidden/);assert.match(gameCSS,/body\{[^}]*overflow:hidden/);
  assert.match(css,/@media\(max-width:700px\)/);assert.match(css,/@media\(orientation:portrait\) and \(max-height:700px\)/);assert.ok(/@media\(orientation:landscape\) and \(max-height:600px\)\{\s*\.skills-panel\{[^}]*grid-template-columns:minmax\(0,[\d.]+fr\) minmax\(0,[\d.]+fr\)/.test(css),'compact landscape must place the tree and detail in two flexible columns');assert.doesNotMatch(base,/overflow(?:-y)?:\s*(?:auto|scroll)/);const treeRules=[...css.matchAll(/\.skills-tree\{([^}]*)\}/g)].map(match=>match[1]).join(';');assert.match(treeRules,/overflow-y:auto/);assert.match(treeRules,/overflow-x:hidden/);assert.match(treeRules,/overscroll-behavior:contain/);
- for(const dependency of ['progression.js?v=archer-tree-2','skills-ui.js?v=mage-branches-1'])
-   assert.ok(html.indexOf(`src="${dependency}"`)<html.indexOf('src="game.js?v=mage-dual-1"'),
+ const gameScript=html.search(/src="game\.js(?:\?[^"]*)?"/);
+ assert.ok(gameScript>=0,'game script must be present');
+ for(const dependency of ['progression.js?v=archer-tree-2','skills-ui.js?v=mage-branches-1']){
+   const dependencyIndex=html.indexOf(`src="${dependency}"`);
+   assert.ok(dependencyIndex>=0&&dependencyIndex<gameScript,
      'the dependencies must load before the game mounts the panel');
+ }
 });
 
 test('Mage displays only Mage skills and its chosen branches can be bought independently',()=>{
