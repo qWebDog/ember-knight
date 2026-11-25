@@ -120,7 +120,7 @@ test('game invokes the corrected wolf animation controller and exposes class com
  assert.match(html,/data-equipment-slot="companion"/);
  assert.doesNotMatch(html,/data-equipment-slot="boots"/);
  assert.match(html,/id="companion-wolf"/);
- assert.match(html,/src="companion\.js\?v=wolf-fallen-exit-1"/);
+ assert.match(html,/src="companion\.js\?v=wolf-carry-transitions-1"/);
  assert.match(js,/companion\?\.render\(/);
  assert.match(js,/direction:walkDirection/);
  assert.match(js,/action:wolfFallen\|\|wolfDefeatedWithHero\?'die':null/);
@@ -315,4 +315,18 @@ test('fallen wolf never follows hero exit displacement or changes lane or facing
  h.actor.render({time:15.5,x:150});
  assert.equal(h.element.dataset.motion,'revive');
  assert.equal(h.actor.getPose().x,fallen.x);
+});
+
+test('carried wolf is placed at exact destination and remains dead until revival',async()=>{
+ const h=harness();await h.actor.load();h.store.equip('companion','wolf');
+ assert.equal(h.actor.placeFallen(196,4),true);
+ h.actor.advance({time:3,heroX:144,heroDepth:3,companionAlive:false});
+ h.actor.render({time:3,x:144,depth:3,laneStep:9,action:'die',actionAge:3,alive:false});
+ assert.equal(h.actor.getPose().x,196);assert.equal(h.actor.getPose().depth,4);
+ assert.equal(h.element.dataset.motion,'die');
+ assert.equal(h.actor.followExit({heroX:300,heroDepth:2}),false);
+ assert.equal(h.actor.getPose().x,196);
+ h.actor.startSkill('revive',4);
+ h.actor.advance({time:4.1,heroX:144,companionAlive:true});
+ assert.equal(h.actor.getPose().x,196);
 });
