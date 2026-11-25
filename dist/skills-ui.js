@@ -30,21 +30,21 @@
     overload:{name:"Перегрузка",branch:'control',category:'Мастерство',icon:'mage-overload',benefit:"+8% частоты усиленного удара (+50% урона)",total:level=>level*8+'% частоты перегрузки',requires:"Эхо заклинаний"},
     archmage:{name:"Архимаг",branch:'control',category:'Мастерство',icon:'mage-archmage',benefit:"+5% ускорения 3 кастов после каждых 6",total:level=>(10+level*5)+'% сокращения интервала',requires:"Перегрузка"}
   });
-  const archerDetails={marksmanship:{name:"Меткий выстрел",branch:'attack',category:"Стрелы",icon:'skill-bow',benefit:"+2 к урону стрел",total:level=>"+2 к урону стрел"},
-wolfBond:{name:"Связь со зверем",branch:'defense',category:"Звери",icon:'skill-shield',benefit:"+15% здоровья и +10% урона волка",total:level=>"+15% здоровья и +10% урона волка"},
-quickdraw:{name:"Быстрый выстрел",branch:'control',category:"Тактика",icon:'bolt',benefit:"+5% к скорости стрельбы",total:level=>"+5% к скорости стрельбы"},
-piercing:{name:"Пробивная стрела",branch:'attack',category:"Стрелы",icon:'skill-bow',benefit:"20–60% пробития брони, до 3 целей",total:level=>"20–60% пробития брони, до 3 целей"},
-poison:{name:"Ядовитая стрела",branch:'attack',category:"Стрелы",icon:'mage-absorb',benefit:"10–30% урона в секунду, 5 с, до 3 эффектов",total:level=>"10–30% урона в секунду, 5 с, до 3 эффектов"},
-explosive:{name:"Взрывная стрела",branch:'attack',category:"Стрелы",icon:'flame',benefit:"40–80% урона ближайшим врагам",total:level=>"40–80% урона ближайшим врагам"},
-barbed:{name:"Зазубренная стрела",branch:'attack',category:"Стрелы",icon:'swords',benefit:"0,5–1,5% здоровья цели в секунду, 4 с",total:level=>"0,5–1,5% здоровья цели в секунду, 4 с"},
-doubleShot:{name:"Двойной выстрел",branch:'attack',category:"Стрелы",icon:'mage-echo',benefit:"Вторая стрела: 60% урона, каждая 12–4-я атака",total:level=>"Вторая стрела: 60% урона, каждая 12–4-я атака"},
-arrowRain:{name:"Град стрел",branch:'attack',category:"Стрелы",icon:'mage-chaos',benefit:"5–9 стрел, восстановление 30–18 с",total:level=>"5–9 стрел, восстановление 30–18 с"},
-rendingBite:{name:"Раздирающий укус",branch:'defense',category:"Звери",icon:'swords',benefit:"Каждый третий укус: кровотечение 4 с",total:level=>"Каждый третий укус: кровотечение 4 с"},
-guardian:{name:"Защитник",branch:'defense',category:"Звери",icon:'skill-shield',benefit:"10–30% сопротивления урону волка",total:level=>"10–30% сопротивления урону волка"},
-alpha:{name:"Альфа-хищник",branch:'defense',category:"Звери",icon:'mage-overload',benefit:"Рык ослабляет врагов, ускоряет укусы; волк возвращается после гибели",total:level=>"Рык ослабляет врагов, ускоряет укусы; волк возвращается после гибели"},
-evasion:{name:"Уклонение",branch:'control',category:"Тактика",icon:'mage-echo',benefit:"5–25% уклонения от прямых атак",total:level=>"5–25% уклонения от прямых атак"},
-retreat:{name:"Отступающий выстрел",branch:'control',category:"Тактика",icon:'skill-bow',benefit:"Отступление и выстрел при сближении, 12–4 с",total:level=>"Отступление и выстрел при сближении, 12–4 с"},
-arrowDance:{name:"Танец стрел",branch:'control',category:"Тактика",icon:'mage-chaos',benefit:"На 5 с ускоряет стрельбу, уклонение и восстановление отступления",total:level=>"На 5 с ускоряет стрельбу, уклонение и восстановление отступления"}};
+  const archerDetails={marksmanship:{name:"Меткий выстрел",branch:'attack',category:"Стрелы",icon:'skill-bow',benefit:"+2 к урону стрел",total:level=>`+${2*level} к урону стрел`},
+wolfBond:{name:"Связь со зверем",branch:'defense',category:"Звери",icon:'skill-shield',benefit:"+15% здоровья и +10% урона волка",total:level=>`+${15*level}% здоровья, +${10*level}% урона волка`},
+quickdraw:{name:"Быстрый выстрел",branch:'control',category:"Тактика",icon:'bolt',benefit:"+5% к скорости стрельбы",total:level=>`+${5*level}% к скорости стрельбы`},
+piercing:{name:"Пробивная стрела",branch:'attack',category:"Стрелы",icon:'skill-bow',benefit:"20–60% пробития брони, до 3 целей",total:level=>`${10+10*level}% пробития брони, до 3 целей; готова через ${12-2*level} атак`},
+poison:{name:"Ядовитая стрела",branch:'attack',category:"Стрелы",icon:'mage-absorb',benefit:"10–30% урона в секунду, 5 с, до 3 эффектов",total:level=>`${5+5*level}% урона/с, 5 с, до 3 эффектов; готова через ${12-2*level} атак`},
+explosive:{name:"Взрывная стрела",branch:'attack',category:"Стрелы",icon:'flame',benefit:"40–80% урона ближайшим врагам",total:level=>`${30+10*level}% урона соседям; готова через ${12-2*level} атак`},
+barbed:{name:"Зазубренная стрела",branch:'attack',category:"Стрелы",icon:'swords',benefit:"0,5–1,5% здоровья цели в секунду, 4 с",total:level=>`${((level+1)*.25).toFixed(2).replace(/0$/,'').replace('.',',')}% макс. HP/с, 4 с; готова через ${12-2*level} атак`},
+doubleShot:{name:"Двойной выстрел",branch:'attack',category:"Стрелы",icon:'mage-echo',benefit:"Вторая стрела: 60% урона, каждая 12–4-я атака",total:level=>`Вторая стрела: 60% базового урона, каждая ${14-2*level}-я атака`},
+arrowRain:{name:"Град стрел",branch:'attack',category:"Стрелы",icon:'mage-chaos',benefit:"5–9 стрел, восстановление 30–18 с",total:level=>`${4+level} стрел, восстановление ${33-3*level} с`},
+rendingBite:{name:"Раздирающий укус",branch:'defense',category:"Звери",icon:'swords',benefit:"Каждый третий укус: кровотечение 4 с",total:level=>`Каждый 3-й укус: ${20+10*level}% урона/с, 4 с`},
+guardian:{name:"Защитник",branch:'defense',category:"Звери",icon:'skill-shield',benefit:"10–30% сопротивления урону волка",total:level=>`${5+5*level}% сопротивления урону волка`},
+alpha:{name:"Альфа-хищник",branch:'defense',category:"Звери",icon:'mage-overload',benefit:"Рык ослабляет врагов, ускоряет укусы; волк возвращается после гибели",total:level=>`Рык 5 с: −${5*level}% урона врагов, +${10*level}% скорости укусов; возврат ${24-2*level} с`},
+evasion:{name:"Уклонение",branch:'control',category:"Тактика",icon:'mage-echo',benefit:"5–25% уклонения от прямых атак",total:level=>`${5*level}% прямых атак без урона`},
+retreat:{name:"Отступающий выстрел",branch:'control',category:"Тактика",icon:'skill-bow',benefit:"Отступление и выстрел при сближении, 12–4 с",total:level=>`Отступление с выстрелом, восстановление ${14-2*level} с`},
+arrowDance:{name:"Танец стрел",branch:'control',category:"Тактика",icon:'mage-chaos',benefit:"На 5 с ускоряет стрельбу, уклонение и восстановление отступления",total:level=>`5 с: +${5*level}% скорости стрельбы, +10 п.п. уклонения, −50% восстановления отступления`}};
   const archerPaths={attack:['piercing','poison','explosive','barbed','doubleShot','arrowRain'],defense:['rendingBite','guardian','alpha'],control:['evasion','retreat','arrowDance']};
   const magePaths={attack:['strongBurn','iceShards','fusion','chaos'],defense:['protectiveSphere','absorption','rebirth'],control:['echo','overload','archmage']};
   function mount({root,store,heroLevel=1,classId=store?.classId||'sword'}={}) {
@@ -54,7 +54,7 @@ arrowDance:{name:"Танец стрел",branch:'control',category:"Тактик
     const activeDetails=mage?mageDetails:archer?archerDetails:details;
     const catalogById=Object.fromEntries(store.catalog.map(item=>[item.id,item]));
     const requirements=id=>[].concat(catalogById[id]?.requires||[]);
-    const requirementLabel=id=>requirements(id).map(key=>`${activeDetails[key].name} ${catalogById[id]?.requiredRank===5?'V':'III'}`).join(' + ');
+    const requirementLabel=id=>catalogById[id]?.requiredCount===2?'Любые две стрелы III уровня':requirements(id).map(key=>`${activeDetails[key].name} ${catalogById[id]?.requiredRank===5?'V':'III'}`).join(' + ');
     const depth=id=>requirements(id).length?1+Math.max(...requirements(id).map(depth)):0;
     const labels={sword:'ВОИН',bow:'ЛУЧНИК',wand:'МАГ'};
     root.dataset.heroClass=classId;
@@ -79,7 +79,7 @@ arrowDance:{name:"Танец стрел",branch:'control',category:"Тактик
         const slots=[...branch.querySelectorAll('[data-skill-future]'),...branch.querySelectorAll('[data-mage-slot]'),...(archer?branch.querySelectorAll('[data-archer-slot]'):[])];
         slots.forEach((future,i)=>{
           const id=(mage?magePaths:archerPaths)[branch.dataset.branch][i];if(!id)return;
-          future.hidden=false;future.disabled=false;future.dataset.skillId=id;future.dataset.mageAdvanced='true';future.dataset.skillDepth=String(depth(id));future.dataset.skillRequires=requirements(id).join(' ');
+          future.hidden=false;future.disabled=false;future.dataset.skillId=id;future.dataset.mageAdvanced='true';future.dataset.skillDepth=String(depth(id));future.dataset.skillRequires=requirements(id).join(' ');if(catalogById[id]?.requiredCount)future.dataset.skillRequiredCount=String(catalogById[id].requiredCount);if(archer&&branch.dataset.branch==='attack')future.dataset.arrowSlot=String(i+1);
           future.querySelector('use').setAttribute('href',`#${activeDetails[id].icon}`);
           future.querySelector('span').setAttribute('data-skill-node-rank','');
           future.setAttribute('title',activeDetails[id].name);nodes.push(future);
@@ -114,7 +114,7 @@ arrowDance:{name:"Танец стрел",branch:'control',category:"Тактик
       $('[data-skill-category]').textContent=entry.category;
       $('[data-skill-name]').textContent=entry.name;
       $('[data-skill-rank]').textContent=`Уровень ${quote.level}/${quote.maxLevel}`;
-      $('[data-skill-benefit]').textContent=quote.reason==='locked'?`Требуется: ${requirementLabel(selected)}`:quote.reason==='max'?`${entry.total(quote.level)} · Максимум`:`Следующий уровень: ${entry.benefit}`;
+      $('[data-skill-benefit]').textContent=quote.reason==='locked'?`Требуется: ${requirementLabel(selected)}`:quote.reason==='max'?`${entry.total(quote.level)} · Максимум`:`Следующий уровень: ${archer?entry.total(quote.level+1):entry.benefit}`;
       $('[data-skill-benefit]').dataset.feedback='';
       $('[data-skill-icon-use]').setAttribute('href',`#${entry.icon}`);
       upgrade.dataset.upgrade=selected;upgrade.disabled=!quote.canBuy;
