@@ -292,6 +292,9 @@
           actors[id].images.idle = actors[id].images.attack = {image,frames:1,row:0,still:0};
         }
       }));
+      // Dedicated distance-driven gait: the bow atlas is reserved for attacks.
+      const skeletonWalk = await loadImage('assets/enemies/lpc/skeleton-walk.svg');
+      actors.archer1.images.walk = {image:skeletonWalk,frames:9,row:1};
       actors.archer2.images = {...actors.archer1.images};
       actors.archer3.images = {...actors.archer1.images};
       actors.orc.images.walk = { ...actors.orc.images.idle,still:undefined };
