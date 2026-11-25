@@ -54,7 +54,7 @@ arrowDance:{name:"Танец стрел",branch:'control',category:"Тактик
     const activeDetails=mage?mageDetails:archer?archerDetails:details;
     const catalogById=Object.fromEntries(store.catalog.map(item=>[item.id,item]));
     const requirements=id=>[].concat(catalogById[id]?.requires||[]);
-    const requirementLabel=id=>requirements(id).map(key=>`${activeDetails[key].name} III`).join(' + ');
+    const requirementLabel=id=>requirements(id).map(key=>`${activeDetails[key].name} ${catalogById[id]?.requiredRank===5?'V':'III'}`).join(' + ');
     const depth=id=>requirements(id).length?1+Math.max(...requirements(id).map(depth)):0;
     const labels={sword:'ВОИН',bow:'ЛУЧНИК',wand:'МАГ'};
     root.dataset.heroClass=classId;

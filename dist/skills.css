@@ -150,8 +150,8 @@
 .skills-panel[data-hero-class="bow"] [data-skill-id="barbed"] svg use,
 .skills-panel[data-hero-class="bow"][data-selected="barbed"] .skill-detail-icon svg use{opacity:0}
 
-/* Arrow types are independently purchasable. Grid placement is visual, not a prerequisite. */
-.skills-panel[data-hero-class="bow"] [data-branch="attack"] .skill-fork{visibility:hidden}
+/* Marksmanship V opens all four independent arrow types. */
+.skills-panel[data-hero-class="bow"] [data-branch="attack"] .skill-fork{visibility:visible}
 .skills-panel[data-hero-class="bow"] [data-branch="attack"] [data-skill-depth="0"].skill-future:before{display:none}
 .skills-panel[data-hero-class="bow"] [data-skill-id="piercing"],.skills-panel[data-hero-class="bow"] [data-skill-id="poison"]{grid-row:1}
 .skills-panel[data-hero-class="bow"] [data-skill-id="explosive"],.skills-panel[data-hero-class="bow"] [data-skill-id="barbed"]{grid-row:2}
@@ -159,3 +159,6 @@
 .skills-panel[data-hero-class="bow"] [data-skill-id="arrowRain"]{grid-row:4}
 .skills-panel[data-hero-class="bow"] [data-branch="attack"] [data-skill-id="doubleShot"]:before{display:block;height:6px}
 .skills-panel[data-hero-class="bow"] [data-branch="attack"] [data-skill-id="arrowRain"]:before{display:block}
+
+/* The second visual row is also unlocked directly by Marksmanship V, not by the first arrow row. */
+.skills-panel[data-hero-class="bow"] [data-skill-id="explosive"]:before,.skills-panel[data-hero-class="bow"] [data-skill-id="barbed"]:before{display:none}

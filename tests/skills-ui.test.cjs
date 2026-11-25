@@ -97,7 +97,7 @@ test('the panel stays in the lower viewport grid with compact portrait and lands
  assert.match(css,/@media\(max-width:700px\)/);assert.match(css,/@media\(orientation:portrait\) and \(max-height:700px\)/);assert.ok(/@media\(orientation:landscape\) and \(max-height:600px\)\{\s*\.skills-panel\{[^}]*grid-template-columns:minmax\(0,[\d.]+fr\) minmax\(0,[\d.]+fr\)/.test(css),'compact landscape must place the tree and detail in two flexible columns');assert.doesNotMatch(base,/overflow(?:-y)?:\s*(?:auto|scroll)/);const treeRules=[...css.matchAll(/\.skills-tree\{([^}]*)\}/g)].map(match=>match[1]).join(';');assert.match(treeRules,/overflow-y:auto/);assert.match(treeRules,/overflow-x:hidden/);assert.match(treeRules,/overscroll-behavior:contain/);
  const gameScript=html.search(/src="game\.js(?:\?[^"]*)?"/);
  assert.ok(gameScript>=0,'game script must be present');
- for(const dependency of ['progression.js?v=archer-arrow-choice-1','skills-ui.js?v=archer-skills-1']){
+ for(const dependency of ['progression.js?v=archer-marksmanship-v-1','skills-ui.js?v=archer-marksmanship-v-1']){
    const dependencyIndex=html.indexOf(`src="${dependency}"`);
    assert.ok(dependencyIndex>=0&&dependencyIndex<gameScript,
      'the dependencies must load before the game mounts the panel');
@@ -217,7 +217,7 @@ test('Mage uses the approved transparent 13-cell battle-effect PNG atlas, with u
  const ids=["sorcery","strongBurn","iceShards","fusion","chaos","barrier","protectiveSphere","absorption","rebirth","channel","echo","overload","archmage"];
  const ui=createPanel({classId:'wand',gold:100});
  for(const [i,id] of ids.entries()){assert.ok(css.includes('[data-skill-id="'+id+'"]'));assert.ok(css.includes('[data-selected="'+id+'"] .skill-detail-icon{--mage-icon-position:'+i*100/12+'%}'));ui.clickSkill(id);assert.equal(ui.root.dataset.selected,id);}
- assert.match(css,/background-size:1300% 100%/);assert.match(html,/skills\.css\?v=archer-arrow-choice-1/);
+ assert.match(css,/background-size:1300% 100%/);assert.match(html,/skills\.css\?v=archer-marksmanship-v-1/);
 });
 
-test('Archer arrow types can be selected and upgraded in any order, no prerequisite UI',()=>{const ui=createPanel({classId:'bow',gold:1000});for(const id of ['barbed','explosive','poison','piercing']){const node=ui.node('[data-skill-id="'+id+'"]');assert.equal(node.dataset.skillDepth,'0');assert.equal(node.dataset.skillRequires,'');assert.equal(node.classList.contains('is-locked'),false);ui.clickSkill(id);assert.equal(ui.node('#skill-upgrade').disabled,false);ui.upgrade();assert.equal(ui.store.quote(id).level,1);}assert.equal(ui.store.quote('marksmanship').level,0);assert.equal(ui.store.quote('doubleShot').reason,'locked');});
+test('Four Archer arrow types show Marksmanship V requirement and unlock together',()=>{const ui=createPanel({classId:'bow',gold:1000}),ids=['barbed','explosive','poison','piercing'];for(const id of ids){const node=ui.node('[data-skill-id="'+id+'"]');assert.equal(node.dataset.skillDepth,'1');assert.equal(node.dataset.skillRequires,'marksmanship');assert.equal(node.classList.contains('is-locked'),true);ui.clickSkill(id);assert.equal(ui.node('#skill-upgrade').disabled,true);assert.equal(ui.node('[data-skill-benefit]').textContent,'Требуется: Меткий выстрел V');}ui.clickSkill('marksmanship');for(let i=0;i<4;i++)ui.upgrade();ui.clickSkill('poison');assert.equal(ui.node('#skill-upgrade').disabled,true);ui.clickSkill('marksmanship');ui.upgrade();for(const id of ids){ui.clickSkill(id);assert.equal(ui.node('#skill-upgrade').disabled,false);ui.upgrade();assert.equal(ui.store.quote(id).level,1);}assert.equal(ui.store.quote('marksmanship').level,5);assert.equal(ui.store.quote('doubleShot').reason,'locked');});
