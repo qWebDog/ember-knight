@@ -93,7 +93,7 @@ test('published HTML mounts dragon before game, adds boss actor, and scales atla
  const game=fs.readFileSync(path.join(dist,'game.js'),'utf8');
  const css=fs.readFileSync(path.join(dist,'game.css'),'utf8');
  assert.ok(html.includes('src="dragon.js?v=dragon-open-mouth-5"'));
- assert.ok(html.indexOf('src="dragon.js?v=dragon-open-mouth-5"')<html.indexOf('src="game.js?v=mage-resonance-1"'));
+ assert.ok(html.indexOf('src="dragon.js?v=dragon-open-mouth-5"')<html.indexOf('src="game.js?v=mage-resonance-2"'));
  assert.ok(html.includes('data-fighter="dragon"'));
  assert.ok(html.includes('id="enemy-dragon"'));
  assert.ok(html.includes('1/4'));

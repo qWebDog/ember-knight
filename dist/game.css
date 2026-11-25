@@ -122,5 +122,5 @@ dialog{width:min(380px,calc(100% - 32px));max-height:calc(var(--app-height) - 32
 .barrier-impact{position:absolute;z-index:602;pointer-events:none;width:calc(var(--enemy-size)*1.05);height:calc(var(--enemy-size)*1.05);image-rendering:pixelated;transform-origin:50% 50%}
 @media(prefers-reduced-motion:reduce){.barrier-impact{display:none}}
 
-.mage-advanced-effect{position:absolute;transform:translate(-50%,-50%);z-index:603;pointer-events:none;image-rendering:pixelated}.mage-advanced-effect[data-skill="echo"]{z-index:602;pointer-events:none}
+.mage-advanced-effect{position:absolute;transform:translate(-50%,-50%);z-index:603;pointer-events:none;image-rendering:pixelated}.mage-advanced-effect[data-skill="echo"]{z-index:604;pointer-events:none;filter:drop-shadow(0 0 3px #9e58ff88)}
 @media(prefers-reduced-motion:reduce){.mage-advanced-effect{display:none}}

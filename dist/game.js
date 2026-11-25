@@ -317,7 +317,7 @@
       statusImage = statusAtlas;
       if(starterWeapon?.id==='wand'){
         await Promise.all(['burn','shards','sphere','impact'].map(async effect=>{mageEffects[effect]=await loadImage(effect==='sphere'?'assets/magic/mage-sphere-v2.svg':effect==='impact'?'assets/magic/mage-barrier-impact.svg':`assets/magic/mage-${effect}.png`);}));
-        mageEffects.advanced=await Promise.all(mageSkillRows.map(skill=>loadImage(`assets/magic/mage-${skill}.png`)));
+        mageEffects.advanced=await Promise.all(mageSkillRows.map(skill=>loadImage(skill==='echo'?'assets/magic/mage-echo-resonance-v2.png':`assets/magic/mage-${skill}.png`)));
       }
       actors.orc.images.attack = orcAttack ? {image:orcAttack,frames:6,row:1,tile:128,origin:32} : { ...actors.orc.images.idle,frames:1 };
       const face = $('#avatar').getContext('2d'); face.imageSmoothingEnabled = false;
@@ -557,7 +557,7 @@
     const resonance=event.skill==='echo'&&Number.isFinite(event.echoReleaseAt);
     effects.push({type:'mage-advanced',element,row,sourceId:event.sourceId,targetId:event.targetId,at:event.at,
       resonance,releaseAt:event.releaseAt,echoReleaseAt:event.echoReleaseAt,
-      duration:resonance?event.echoReleaseAt-event.at+.24:event.skill==='archmage'?.9:.6,lastKey:null});
+      duration:resonance?event.echoReleaseAt-event.at+.40:event.skill==='archmage'?.9:.6,lastKey:null});
   }
   function handleEvents(events) {
     for (const event of events) {
@@ -1048,10 +1048,10 @@
           // Align with the projectile origin at the tip of the Mage's weapon.
           // Frame 2 is the primary release, frame 3 the actual echo release.
           const release=effect.releaseAt-effect.at,echo=effect.echoReleaseAt-effect.at;
-          frame=age+1e-6<release?(age<release/2?0:1):age+1e-6<echo?2:3+Math.min(2,Math.max(0,Math.floor((age-echo+1e-6)/.08)));
+          frame=age+1e-6<release?(age<release/2?0:1):age+1e-6<echo?2:3+Math.min(2,Math.max(0,Math.floor((age-echo+1e-6)/.14)));
           effect.element.style.left=(bounds.left+bounds.width*.88-field.left)+'px';
           effect.element.style.top=(bounds.top+bounds.height*.67-field.top)+'px';
-          effect.element.style.width=effect.element.style.height=(bounds.width*1.15)+'px';
+          effect.element.style.width=effect.element.style.height=(bounds.width*1.65)+'px';
         }else{
           effect.element.style.left=(bounds.left+bounds.width/2-field.left)+'px';effect.element.style.top=(bounds.top+bounds.height/2-field.top)+'px';
           effect.element.style.width=effect.element.style.height=(bounds.width*(effect.row===2?2.7:1.9))+'px';
