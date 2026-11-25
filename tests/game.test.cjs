@@ -1673,3 +1673,33 @@ test('All four special arrows fly with the exact same original image, dimensions
 });
 
 test('Double shot renders two independently visible original arrows and both hits coincide with their arrival',async()=>{const ui=createHarness({weapon:'bow',outfit:'wanderer',savedProgression:{version:1,gold:0,levels:{},archerLevels:{marksmanship:5,doubleShot:5}}});await ui.loadAllImages();runFramesUntil(ui,()=>arrowsFrom(ui,'hero').filter(e=>e.dataset.double&&!e.hidden).length===2,25);const pair=arrowsFrom(ui,'hero').filter(e=>e.dataset.double&&!e.hidden);assert.deepEqual(pair.map(e=>e.dataset.double).sort(),['1','2']);assert.ok(pair.every(e=>e.src==='assets/projectiles/arrow.png'&&e.width===192&&e.height===30));assert.equal(pair[0].dataset.releaseAt,pair[1].dataset.releaseAt);assert.equal(pair[0].dataset.impactAt,pair[1].dataset.impactAt);ui.frame(48);assert.notEqual(pair[0].style.top,pair[1].style.top);runFramesUntil(ui,()=>pair.every(e=>!ui.node('.battlefield').children.includes(e)),2);assert.ok(ui.events.some(e=>e.type==='attack'&&e.sourceId==='hero'&&e.double&&e.extraArrow));});
+
+test('Enemy arrow keeps its launch aim and passes the archer without damage on dodge',async()=>{
+ const ui=createHarness({weapon:'bow',outfit:'wanderer',combatOptions:{heroDamage:1,heroMaxHp:10000,archer_evasion:5}});
+ await ui.loadAllImages();
+ const hostile=()=>arrowsFrom(ui,'archer1').filter(e=>!e.hidden&&e.dataset.target==='hero');
+ runFramesUntil(ui,()=>hostile().some(e=>e.dataset.missed==='true'),20);
+ const arrow=hostile().find(e=>e.dataset.missed==='true'),aim=arrow.dataset.aimX,angle=arrow.style.transform;
+ const miss=ui.events.find(e=>e.type==='attack'&&e.sourceId==='archer1'&&e.evaded);
+ assert.ok(miss);assert.equal(miss.damage,0);assert.ok(Number.isFinite(Number(aim)));
+ ui.frame(32);
+ assert.equal(arrow.dataset.aimX,aim);assert.equal(arrow.style.transform,angle);
+ assert.ok(Number.parseFloat(arrow.style.left)<Number(aim),'missed arrow continues along the original ray');
+ runFramesUntil(ui,()=>!ui.node('.battlefield').children.includes(arrow),2);
+});
+test('Dragon projectiles retain their original aim while archer dodges',async()=>{
+ const ui=createHarness({weapon:'bow',outfit:'wanderer',dragonBoss:true,combatOptions:{heroDamage:300,heroMaxHp:1800,archer_evasion:5}});
+ await ui.loadAllImages();ui.runUntil(()=>ui.state().waveIndex===3,45);ui.battle.updateHeroStats({heroDamage:1});
+ const aimed=new Map();let moved=false,missed=false;const initial=ui.heroX();
+ for(let i=0;i<1800&&!(moved&&missed);i++){
+   ui.frame(20);
+   for(const orb of ui.spells().filter(e=>e.dataset.dragonVolley==='true'&&e.dataset.aimX!==undefined)){
+     const aim=[orb.dataset.aimX,orb.dataset.aimY];
+     if(aimed.has(orb))assert.deepEqual(aim,aimed.get(orb),'fireball aim cannot follow the moving archer');
+     else aimed.set(orb,aim);
+     if(orb.dataset.missed==='true')missed=true;
+   }
+   if(ui.events.some(e=>e.type==='archerSkill'&&e.skill==='evasion'&&e.dodgeShot)&&Math.abs(ui.heroX()-initial)>1)moved=true;
+ }
+ assert.ok(missed);assert.ok(moved);assert.ok(ui.events.some(e=>e.type==='attack'&&e.sourceId==='dragon'&&e.evaded&&e.damage===0));
+});
