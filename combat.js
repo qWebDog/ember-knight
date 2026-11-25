@@ -372,9 +372,11 @@
         pendingImpacts.push({sourceId,targetId:target.id,damage,magic,at:impactTick,castAt,castId,overloaded});
         if(echo){
           const echoAt=impactTick+Math.round(.18*TICKS),echoId=castId+':echo';
-          events.push({type:'mageSkill',skill:'echo',sourceId:'hero',targetId:'hero',at:castAt});
-          events.push({type:'cast',sourceId,targetId:target.id,projectile:'magic',magic,echo:true,at:castAt,impactAt:echoAt/TICKS,castId:echoId,appearDuration:timing.appearDuration,flightDuration:timing.flightDuration+.18,impactDuration:.32,animationDuration:0,castInterval:interval/TICKS});
-          pendingImpacts.push({sourceId,targetId:target.id,damage:Math.max(1,Math.floor(damage*.5)),magic,echo:true,at:echoAt,castAt,castId:echoId});
+          const releaseAt=castAt+timing.appearDuration,echoReleaseAt=releaseAt+.18;
+          // Echo is released from the resonating portal, not charged as a second simultaneous cast.
+          events.push({type:'mageSkill',skill:'echo',sourceId:'hero',targetId:'hero',at:castAt,releaseAt,echoReleaseAt});
+          events.push({type:'cast',sourceId,targetId:target.id,projectile:'magic',magic,echo:true,at:echoReleaseAt,impactAt:echoAt/TICKS,castId:echoId,appearDuration:0,flightDuration:timing.flightDuration,impactDuration:.32,animationDuration:0,castInterval:interval/TICKS});
+          pendingImpacts.push({sourceId,targetId:target.id,damage:Math.max(1,Math.floor(damage*.5)),magic,echo:true,at:echoAt,castAt:echoReleaseAt,castId:echoId});
         }
         if(sourceId==='hero'&&magic==='ice'&&shardRank>0){
           const shardAt=impactTick+Math.round(.12*TICKS),shardId=castId+':shards';
