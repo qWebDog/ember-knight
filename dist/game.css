@@ -143,9 +143,11 @@ dialog{width:min(380px,calc(100% - 32px));max-height:calc(var(--app-height) - 32
 @media(orientation:landscape) and (max-height:600px){.battle-talents{width:220px;gap:2px}.battle-talent-slot{height:28px}.battle-talent-slot svg{width:20px;height:20px}}
 
 /* Four approved raster arrow rows, with matching hit frames. */
-/* 192 units of the 320-wide flight canvas are the actual arrow body.
-   1.0333333333 * 192 / 320 = .62, exactly the normal arrow's CSS width.
-   Its 30-unit thickness uses the same pixel scale. The rest is transparent FX. */
-.projectile.arrow[data-arrow-type]{width:calc(var(--enemy-size)*1.0333333333);height:calc(var(--enemy-size)*.31);aspect-ratio:320/96;image-rendering:pixelated}
+/* Color-only filters preserve the exact original alpha mask.
+   No separate flight size, shadow, blur, aura or thick trail. */
+.projectile.arrow[data-arrow-type="piercing"]{filter:grayscale(1) brightness(1.35)}
+.projectile.arrow[data-arrow-type="poison"]{filter:grayscale(1) sepia(1) saturate(4) hue-rotate(65deg) brightness(1.1)}
+.projectile.arrow[data-arrow-type="explosive"]{filter:grayscale(1) sepia(1) saturate(5) hue-rotate(345deg) brightness(1.12)}
+.projectile.arrow[data-arrow-type="barbed"]{filter:grayscale(1) sepia(1) saturate(6) hue-rotate(315deg) brightness(.95)}
 .archer-arrow-impact{position:absolute;z-index:602;pointer-events:none;width:calc(var(--enemy-size)*1.15);height:calc(var(--enemy-size)*1.15);transform:translate(-50%,-50%);image-rendering:pixelated}
 @media(prefers-reduced-motion:reduce){.archer-arrow-impact{display:none}}

@@ -1646,4 +1646,27 @@ test('Hero profile opens without freezing battle and generic info still pauses i
  const held=fullSnapshot(ui);ui.runFor(.5);assert.deepEqual(fullSnapshot(ui),held);ui.node('#game-dialog').close();
 });
 
-test('Special arrows match the normal shaft size and have a fixed tip across flight frames',async()=>{const tips=[[[29,15.5],[30,15.5],[31,15.5],[32,15.5]],[[28,14.5],[29,14.5],[31,14.5],[31,14.5]],[[29,14],[30,14],[31,14],[31,14]],[[29,13.5],[30,13.5],[31,13.5],[32,13.5]]];const kinds=['piercing','poison','explosive','barbed'];for(let row=0;row<kinds.length;row++){const kind=kinds[row],ui=createHarness({weapon:'bow',outfit:'wanderer',savedProgression:{version:1,gold:0,levels:{},archerLevels:{marksmanship:5,[kind]:5}}});await ui.loadAllImages();runFramesUntil(ui,()=>arrowsFrom(ui,'hero').some(e=>e.dataset.arrowType===kind&&!e.hidden),20);const arrow=arrowsFrom(ui,'hero').find(e=>e.dataset.arrowType===kind);assert.ok(arrow);assert.equal(arrow.width,320);assert.equal(arrow.height,96);runFramesUntil(ui,()=>!ui.node('.battlefield').children.includes(arrow),2);assert.deepEqual([...new Set(arrow.draws.map(draw=>draw.crop[0]/32))],[0,1,2,3]);for(const draw of arrow.draws){assert.equal(draw.src,'assets/projectiles/archer-arrow-sprites-v1.png');assert.equal(draw.crop[1],32*row);const frame=draw.crop[0]/32,[tipX,tipY]=tips[row][frame],[x,y,w,h]=draw.destination;assert.ok(Math.abs(x+tipX*w/32-256)<1e-6);assert.ok(Math.abs(y+tipY*h/32-48)<1e-6);assert.ok(Math.abs((tipX-4)*w/32-192)<1e-6);assert.equal(h*8/32,30);}assert.ok(ui.events.some(e=>e.type==='attack'&&e.arrowType===kind&&!e.dot));}const css=fs.readFileSync(path.join(dist,'game.css'),'utf8');assert.match(css,/\.projectile\.arrow\[data-arrow-type\]\{width:calc\(var\(--enemy-size\)\*1\.0333333333\);height:calc\(var\(--enemy-size\)\*\.31\)/);});
+test('All four special arrows fly with the exact same original image, dimensions and orientation as ordinary arrows; impact art remains separate',async()=>{
+ const kinds=['piercing','poison','explosive','barbed'];
+ for(const [row,kind] of kinds.entries()){
+  const ui=createHarness({weapon:'bow',outfit:'wanderer',savedProgression:{version:1,gold:0,levels:{},archerLevels:{marksmanship:5,[kind]:5}}});await ui.loadAllImages();
+  runFramesUntil(ui,()=>arrowsFrom(ui,'hero').some(e=>!e.dataset.arrowType&&!e.hidden),20);
+  const normal=arrowsFrom(ui,'hero').find(e=>!e.dataset.arrowType&&!e.hidden);
+  runFramesUntil(ui,()=>arrowsFrom(ui,'hero').some(e=>e.dataset.arrowType===kind&&!e.hidden),20);
+  const special=arrowsFrom(ui,'hero').find(e=>e.dataset.arrowType===kind&&!e.hidden);
+  assert.equal(special.selector,normal.selector);assert.equal(special.selector,'created:img');
+  assert.equal(special.src,normal.src);assert.equal(special.src,'assets/projectiles/arrow.png');
+  assert.deepEqual([special.width,special.height],[normal.width,normal.height]);assert.deepEqual([special.width,special.height],[192,30]);
+  assert.equal(special.className,normal.className);assert.equal(special.draws.length,0);
+  assert.ok(Math.abs(parseFloat(special.style.transform.split('rotate(')[1]))>90,'same left-facing original image rotation');
+  runFramesUntil(ui,()=>!ui.node('.battlefield').children.includes(special),2);
+  assert.ok(ui.events.some(e=>e.type==='attack'&&e.arrowType===kind&&!e.dot));
+  const impact=ui.node('.battlefield').children.find(e=>e.className==='archer-arrow-impact'&&e.dataset.arrowType===kind);
+  assert.ok(impact);assert.deepEqual([impact.width,impact.height],[32,32]);
+  runFramesUntil(ui,()=>!ui.node('.battlefield').children.includes(impact),2);
+  assert.ok(impact.draws.length>0);assert.ok(impact.draws.every(draw=>draw.src==='assets/projectiles/archer-arrow-sprites-v1.png'&&draw.crop[1]===row*32&&draw.crop[0]>=128));
+ }
+ const css=fs.readFileSync(path.join(dist,'game.css'),'utf8');assert.match(css,/\.projectile\.arrow\{display:block;width:calc\(var\(--enemy-size\)\*\.62\);height:auto;aspect-ratio:192\/30/);
+ for(const kind of kinds){const rule=css.match(new RegExp('\\.projectile\\.arrow\\[data-arrow-type="'+kind+'"\\]\\{([^}]+)\\}'));assert.ok(rule);assert.match(rule[1],/^filter:[^;]+$/);assert.doesNotMatch(rule[1],/blur|shadow|opacity|url\(/);}
+ assert.doesNotMatch(gameSource,/arrowFlightCanvas|drawArcherArrowFlight/);
+});
