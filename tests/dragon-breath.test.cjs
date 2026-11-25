@@ -7,7 +7,7 @@ const combat=require('../dist/combat.js');
 function bossFight({wolfHp=70}={}){
  const b=combat.createBattle({
    heroWeapon:'bow',heroProjectile:'arrow',dragonBossEnabled:true,
-   companionEnabled:true,companionMaxHp:wolfHp,heroDamage:1,heroMaxHp:1200
+   companionEnabled:true,companionMaxHp:wolfHp,heroDamage:1,heroMaxHp:12000
  });
  // Skip only the existing three waves using the legitimate wolf attack API.
  for(const wave of [['archer1'],['archer2','archer3'],['orc']]){
@@ -24,16 +24,16 @@ function bossFight({wolfHp=70}={}){
 const available={enemyCanAttack:{dragon:true},enemyCanAttackHero:{dragon:true}};
 
 test('dragon swipes at living wolf without any fire, even across multiple attack cycles',()=>{
- const b=bossFight({wolfHp:700});
+ const b=bossFight({wolfHp:7000});
  const emitted=b.advance(5.6,available);
  const attacks=emitted.filter(e=>e.type==='attack'&&e.sourceId==='dragon');
  assert.equal(attacks.length,2);
  assert.ok(attacks.every(e=>e.targetId==='companion'&&e.projectile==='claw'
-   &&e.dragonSwipe===true&&e.damage===240));
+   &&e.dragonSwipe===true&&e.damage===2400));
  assert.equal(emitted.filter(e=>e.type==='cast'&&e.sourceId==='dragon').length,0);
  assert.equal(emitted.filter(e=>e.breath).length,0);
- assert.equal(b.state.companion.hp,220);
- assert.equal(b.state.hero.hp,1200);
+ assert.equal(b.state.companion.hp,2200);
+ assert.equal(b.state.hero.hp,12000);
  assert.equal(b.state.reward,20);
 });
 
@@ -50,7 +50,7 @@ test('dragon holds its physical attack until the wolf actually reaches melee dis
 });
 
 test('after defeating the wolf the dragon switches to five mouth-fire volleys against hero only',()=>{
- const b=bossFight({wolfHp:400});
+ const b=bossFight({wolfHp:4000});
  const swipes=b.advance(5.6,available);
  assert.equal(swipes.filter(e=>e.type==='attack'&&e.projectile==='claw').length,2);
  assert.equal(swipes.filter(e=>e.type==='death'&&e.id==='companion').length,1);
@@ -60,7 +60,7 @@ test('after defeating the wolf the dragon switches to five mouth-fire volleys ag
  const emitted=b.advance(4.3,available);
  const casts=emitted.filter(e=>e.type==='cast'&&e.sourceId==='dragon');
  assert.deepEqual([combat.dragonBreath.bursts,combat.dragonBreath.spacing,
-   combat.dragonBreath.damage],[5,.26,60]);
+   combat.dragonBreath.damage],[5,.26,600]);
  assert.equal(casts.length,5);
  assert.deepEqual(casts.map(e=>e.burstIndex),[0,1,2,3,4]);
  for(const cast of casts){
@@ -74,8 +74,8 @@ test('after defeating the wolf the dragon switches to five mouth-fire volleys ag
    assert.equal(Number((casts[i].at-casts[i-1].at).toFixed(2)),.26);
  const hits=emitted.filter(e=>e.type==='attack'&&e.sourceId==='dragon');
  assert.equal(hits.length,5);
- assert.ok(hits.every(e=>e.breath&&e.damage===60&&e.targetId==='hero'));
- assert.equal(b.state.hero.hp,900);
+ assert.ok(hits.every(e=>e.breath&&e.damage===600&&e.targetId==='hero'));
+ assert.equal(b.state.hero.hp,9000);
 });
 
 test('unequipped wolf also causes five flames directed only at hero',()=>{
@@ -102,7 +102,7 @@ test('pause during breathing holds all later cast and impact events',()=>{
  const continued=b.advance(1.7,available);
  assert.equal(continued.filter(e=>e.type==='cast'&&e.sourceId==='dragon').length,4);
  assert.equal(continued.filter(e=>e.type==='attack'&&e.sourceId==='dragon').length,5);
- assert.equal(b.state.hero.hp,900);
+ assert.equal(b.state.hero.hp,9000);
 });
 
 test('killing dragon mid-breath cancels unreleased volleys and in-flight fire damage',()=>{
@@ -110,7 +110,7 @@ test('killing dragon mid-breath cancels unreleased volleys and in-flight fire da
  b.setCompanionEnabled(false);
  const first=b.advance(2.8,available);
  assert.equal(first.filter(e=>e.type==='cast'&&e.sourceId==='dragon').length,1);
- b.updateHeroStats({heroDamage:2000});
+ b.updateHeroStats({heroDamage:20000});
  const after=b.advance(.8,available);
  assert.ok(after.some(e=>e.type==='death'&&e.id==='dragon'));
  assert.equal(b.state.phase,'victory');
@@ -162,10 +162,20 @@ test('five dragon fireballs form one finite volley with a clear pause before the
  assert.ok(spells.every(e=>e.breath&&e.magic==='fire'&&e.projectile==='breath'));
  assert.deepEqual(spells.map(e=>e.burstIndex),[0,1,2,3,4]);
  assert.equal(events.filter(e=>e.type==='attack'&&e.sourceId==='dragon').length,5);
- assert.equal(b.state.hero.hp,900);
+ assert.equal(b.state.hero.hp,9000);
  assert.equal(b.advance(.09,available).filter(e=>e.sourceId==='dragon').length,0,
    'all five fireballs ended and there is a visible gap before the next salvo');
  events=b.advance(.21,available);
  assert.equal(events.filter(e=>e.type==='cast'&&e.sourceId==='dragon').length,1,
    'next volley is scheduled on a new distinct attack interval');
+});
+
+test('dragon one-shots the normal wolf and does not boost its base health',()=>{
+ const b=bossFight();
+ assert.equal(b.state.companion.maxHp,70);
+ assert.equal(b.state.enemies[0].maxHp,18000);
+ assert.equal(b.state.enemies[0].armor,300);
+ const hit=b.advance(2.8,available);
+ assert.ok(hit.some(e=>e.sourceId==='dragon'&&e.targetId==='companion'&&e.damage===2400));
+ assert.equal(b.state.companion.hp,0);
 });
