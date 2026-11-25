@@ -97,7 +97,7 @@ test('the panel stays in the lower viewport grid with compact portrait and lands
  assert.match(css,/@media\(max-width:700px\)/);assert.match(css,/@media\(orientation:portrait\) and \(max-height:700px\)/);assert.ok(/@media\(orientation:landscape\) and \(max-height:600px\)\{\s*\.skills-panel\{[^}]*grid-template-columns:minmax\(0,[\d.]+fr\) minmax\(0,[\d.]+fr\)/.test(css),'compact landscape must place the tree and detail in two flexible columns');assert.doesNotMatch(base,/overflow(?:-y)?:\s*(?:auto|scroll)/);const treeRules=[...css.matchAll(/\.skills-tree\{([^}]*)\}/g)].map(match=>match[1]).join(';');assert.match(treeRules,/overflow-y:auto/);assert.match(treeRules,/overflow-x:hidden/);assert.match(treeRules,/overscroll-behavior:contain/);
  const gameScript=html.search(/src="game\.js(?:\?[^"]*)?"/);
  assert.ok(gameScript>=0,'game script must be present');
- for(const dependency of ['progression.js?v=mage-elemental-tree-1','skills-ui.js?v=mage-elemental-tree-1']){
+ for(const dependency of ['progression.js?v=mage-tree-topology-1','skills-ui.js?v=mage-tree-topology-1']){
    const dependencyIndex=html.indexOf(`src="${dependency}"`);
    assert.ok(dependencyIndex>=0&&dependencyIndex<gameScript,
      'the dependencies must load before the game mounts the panel');
@@ -177,4 +177,33 @@ test('mage tier two nodes select locked details then become purchasable at rank 
 
 test('mage tree exposes all thirteen nodes and both elemental branches in attack',()=>{
  const ui=createPanel({classId:'wand',gold:1000});assert.equal(ui.root.querySelectorAll('[data-skill-id]').length,13);assert.equal(ui.node('[data-branch="attack"]').querySelectorAll('[data-skill-id]').length,5);ui.clickSkill('fusion');assert.match(ui.node('[data-skill-benefit]').textContent,/Сильный ожог.*Ледяные осколки/);assert.equal(ui.node('#skill-upgrade').disabled,true);
+});
+
+test('mage branch depth and parents match the progression catalog; only elements split and merge',()=>{
+ const ui=createPanel({classId:'wand',gold:2000});
+ const groups={attack:[['sorcery',0,''],['strongBurn',1,'sorcery'],['iceShards',1,'sorcery'],['fusion',2,'strongBurn iceShards'],['chaos',3,'fusion']],defense:[['barrier',0,''],['protectiveSphere',1,'barrier'],['absorption',2,'protectiveSphere'],['rebirth',3,'absorption']],control:[['channel',0,''],['echo',1,'channel'],['overload',2,'echo'],['archmage',3,'overload']]};
+ for(const [branch,entries] of Object.entries(groups)){
+  const group=ui.node('[data-branch="'+branch+'"]');
+  assert.equal(group.querySelectorAll('[data-skill-id]').length,entries.length);
+  for(const [id,depth,parents] of entries){
+   const node=group.querySelector('[data-skill-id="'+id+'"]'),item=ui.store.catalog.find(x=>x.id===id);
+   assert.equal(node.dataset.skillDepth,String(depth));
+   assert.equal(node.dataset.skillRequires||'',parents);
+   assert.equal([].concat(item.requires||[]).join(' '),parents);
+   assert.equal(node.querySelector('use').getAttribute('href'),'#'+item.icon);
+   assert.notEqual(item.icon,'bolt');
+   assert.ok(html.includes('id="'+item.icon+'"'));
+  }
+ }
+ ui.clickSkill('fusion');assert.equal(ui.node('[data-skill-benefit]').textContent,'Требуется: Сильный ожог III + Ледяные осколки III');
+ for(const id of ['sorcery','strongBurn']){ui.clickSkill(id);for(let i=0;i<3;i++)ui.upgrade();}
+ ui.clickSkill('fusion');assert.equal(ui.node('#skill-upgrade').disabled,true);
+ ui.clickSkill('iceShards');for(let i=0;i<3;i++)ui.upgrade();
+ ui.clickSkill('fusion');assert.equal(ui.node('#skill-upgrade').disabled,false);
+ ui.clickSkill('chaos');assert.equal(ui.node('#skill-upgrade').disabled,true);
+ ui.clickSkill('fusion');for(let i=0;i<3;i++)ui.upgrade();
+ ui.clickSkill('chaos');assert.equal(ui.node('#skill-upgrade').disabled,false);
+ for(const [ids] of [[['barrier','protectiveSphere','absorption','rebirth']],[['channel','echo','overload','archmage']]]){
+  for(let i=0;i<ids.length-1;i++){ui.clickSkill(ids[i+1]);assert.equal(ui.node('#skill-upgrade').disabled,true);ui.clickSkill(ids[i]);for(let n=0;n<3;n++)ui.upgrade();ui.clickSkill(ids[i+1]);assert.equal(ui.node('#skill-upgrade').disabled,false);}
+ }
 });

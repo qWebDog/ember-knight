@@ -12,23 +12,23 @@
     tempo:{name:'Натиск',branch:'control',category:'Контроль',icon:'bolt',benefit:'+5% к скорости атаки',total:level=>`+${level*5}% к скорости атаки`}
   };
   const mageDetails={
-    sorcery:{name:'Сила стихий',branch:'attack',category:'Стихии',icon:'flame',benefit:'+2 к урону заклинаний',total:level=>`+${level*2} к урону заклинаний`},
+    sorcery:{name:'Сила стихий',branch:'attack',category:'Стихии',icon:'mage-elements',benefit:'+2 к урону заклинаний',total:level=>`+${level*2} к урону заклинаний`},
     barrier:{name:'Магический барьер',branch:'defense',category:'Аркана',icon:'skill-shield',benefit:'+20 к максимуму здоровья',total:level=>`+${level*20} к максимуму здоровья`},
-    channel:{name:'Поток маны',branch:'control',category:'Мастерство',icon:'bolt',benefit:'+5% к скорости заклинаний',total:level=>`+${level*5}% к скорости заклинаний`}
+    channel:{name:'Поток маны',branch:'control',category:'Мастерство',icon:'mage-mana',benefit:'+5% к скорости заклинаний',total:level=>`+${level*5}% к скорости заклинаний`}
   };
   Object.assign(mageDetails,{
     strongBurn:{name:'Сильный ожог',branch:'attack',category:'Стихии',icon:'flame',benefit:'+0,25 с горения и +1 урона за тик',total:level=>`+${level*.25} с, +${level} урона за тик`,requires:'Сила стихий'},
-    protectiveSphere:{name:'Защитная сфера',branch:'defense',category:'Аркана',icon:'skill-shield',benefit:'20 прочности на I уровне, затем +10',total:level=>`${10+level*10} прочности`,requires:'Магический барьер'},
-    iceShards:{name:'Ледяные осколки',branch:'attack',category:'Стихии',icon:'bolt',benefit:'+3 урона дополнительного залпа',total:level=>`${level*3} урона залпа`,requires:'Сила стихий'}
+    protectiveSphere:{name:'Защитная сфера',branch:'defense',category:'Аркана',icon:'mage-sphere',benefit:'20 прочности на I уровне, затем +10',total:level=>`${10+level*10} прочности`,requires:'Магический барьер'},
+    iceShards:{name:'Ледяные осколки',branch:'attack',category:'Стихии',icon:'mage-ice',benefit:'+3 урона дополнительного залпа',total:level=>`${level*3} урона залпа`,requires:'Сила стихий'}
   });
   Object.assign(mageDetails,{
-    fusion:{name:"Слияние стихий",branch:'attack',category:'Стихии',icon:'flame',benefit:"+4 урона реакции",total:level=>level*4+' урона реакции',requires:"Сильный ожог III + Ледяные осколки"},
-    chaos:{name:"Стихийный хаос",branch:'attack',category:'Стихии',icon:'flame',benefit:"+5 урона всем врагам при каждой 3-й реакции",total:level=>level*5+' урона хаоса',requires:"Слияние стихий"},
-    absorption:{name:"Поглощение",branch:'defense',category:'Аркана',icon:'skill-shield',benefit:"+4 прочности за убийство",total:level=>level*4+' прочности за убийство',requires:"Защитная сфера"},
-    rebirth:{name:"Перерождение",branch:'defense',category:'Аркана',icon:'skill-shield',benefit:"+10% здоровья при спасении, раз за бой",total:level=>level*10+'% здоровья, раз за бой',requires:"Поглощение"},
-    echo:{name:"Эхо заклинаний",branch:'control',category:'Мастерство',icon:'bolt',benefit:"+1 резонанс за каст (10 = эхо, 50% урона)",total:level=>level*10+'% частоты эха',requires:"Поток маны"},
-    overload:{name:"Перегрузка",branch:'control',category:'Мастерство',icon:'bolt',benefit:"+8% частоты усиленного удара (+50% урона)",total:level=>level*8+'% частоты перегрузки',requires:"Эхо заклинаний"},
-    archmage:{name:"Архимаг",branch:'control',category:'Мастерство',icon:'bolt',benefit:"+5% ускорения 3 кастов после каждых 6",total:level=>(10+level*5)+'% сокращения интервала',requires:"Перегрузка"}
+    fusion:{name:"Слияние стихий",branch:'attack',category:'Стихии',icon:'mage-fusion',benefit:"+4 урона реакции",total:level=>level*4+' урона реакции',requires:"Сильный ожог III + Ледяные осколки"},
+    chaos:{name:"Стихийный хаос",branch:'attack',category:'Стихии',icon:'mage-chaos',benefit:"+5 урона всем врагам при каждой 3-й реакции",total:level=>level*5+' урона хаоса',requires:"Слияние стихий"},
+    absorption:{name:"Поглощение",branch:'defense',category:'Аркана',icon:'mage-absorb',benefit:"+4 прочности за убийство",total:level=>level*4+' прочности за убийство',requires:"Защитная сфера"},
+    rebirth:{name:"Перерождение",branch:'defense',category:'Аркана',icon:'mage-rebirth',benefit:"+10% здоровья при спасении, раз за бой",total:level=>level*10+'% здоровья, раз за бой',requires:"Поглощение"},
+    echo:{name:"Эхо заклинаний",branch:'control',category:'Мастерство',icon:'mage-echo',benefit:"+1 резонанс за каст (10 = эхо, 50% урона)",total:level=>level*10+'% частоты эха',requires:"Поток маны"},
+    overload:{name:"Перегрузка",branch:'control',category:'Мастерство',icon:'mage-overload',benefit:"+8% частоты усиленного удара (+50% урона)",total:level=>level*8+'% частоты перегрузки',requires:"Эхо заклинаний"},
+    archmage:{name:"Архимаг",branch:'control',category:'Мастерство',icon:'mage-archmage',benefit:"+5% ускорения 3 кастов после каждых 6",total:level=>(10+level*5)+'% сокращения интервала',requires:"Перегрузка"}
   });
   const archerDetails={
     marksmanship:{name:'Меткий выстрел',branch:'attack',category:'Атака',icon:'skill-bow',benefit:'+2 к урону стрел',total:level=>`+${level*2} к урону стрел`},
@@ -46,6 +46,10 @@
     const $=selector=>root.querySelector(selector);
     const mage=classId==='wand', archer=classId==='bow';
     const activeDetails=mage?mageDetails:archer?archerDetails:details;
+    const catalogById=Object.fromEntries(store.catalog.map(item=>[item.id,item]));
+    const requirements=id=>[].concat(catalogById[id]?.requires||[]);
+    const requirementLabel=id=>requirements(id).map(key=>`${activeDetails[key].name} III`).join(' + ');
+    const depth=id=>requirements(id).length?1+Math.max(...requirements(id).map(depth)):0;
     const labels={sword:'ВОИН',bow:'ЛУЧНИК',wand:'МАГ'};
     root.dataset.heroClass=classId;
     root.setAttribute('aria-label',`Древо навыков: ${labels[classId]||labels.sword}`);
@@ -62,12 +66,13 @@
         attack:'Стихии',defense:'Аркана',control:'Мастерство'
       }[branch.dataset.branch];
       node.dataset.skillId=activeIds[index];
+      if(mage)node.dataset.skillDepth='0';
       node.querySelector('use').setAttribute('href',`#${activeDetails[activeIds[index]].icon}`);
       if(mage){
         const slots=[...branch.querySelectorAll('[data-skill-future]'),...branch.querySelectorAll('[data-mage-slot]')];
         slots.forEach((future,i)=>{
           const id=magePaths[branch.dataset.branch][i];if(!id)return;
-          future.hidden=false;future.disabled=false;future.dataset.skillId=id;future.dataset.mageAdvanced='true';
+          future.hidden=false;future.disabled=false;future.dataset.skillId=id;future.dataset.mageAdvanced='true';future.dataset.skillDepth=String(depth(id));future.dataset.skillRequires=requirements(id).join(' ');
           future.querySelector('use').setAttribute('href',`#${activeDetails[id].icon}`);
           future.querySelector('span').setAttribute('data-skill-node-rank','');
           future.setAttribute('title',activeDetails[id].name);nodes.push(future);
@@ -95,7 +100,7 @@
         node.classList.toggle('is-max',rank.level===rank.maxLevel);
         node.classList.toggle('is-locked',rank.reason==='locked');
         node.setAttribute('aria-pressed',String(active));
-        node.setAttribute('aria-label',`${item.name}, уровень ${rank.level} из ${rank.maxLevel}${rank.reason==='locked'?', требуется '+item.requires+' III':''}`);
+        node.setAttribute('aria-label',`${item.name}, уровень ${rank.level} из ${rank.maxLevel}${rank.reason==='locked'?', требуется '+requirementLabel(id):''}`);
         node.dataset.level=String(rank.level);
         node.querySelector('[data-skill-node-rank]').textContent=`${rank.level}/${rank.maxLevel}`;
       }
@@ -103,7 +108,7 @@
       $('[data-skill-category]').textContent=entry.category;
       $('[data-skill-name]').textContent=entry.name;
       $('[data-skill-rank]').textContent=`Уровень ${quote.level}/${quote.maxLevel}`;
-      $('[data-skill-benefit]').textContent=quote.reason==='locked'?`Требуется: ${entry.requires} III`:quote.reason==='max'?`${entry.total(quote.level)} · Максимум`:`Следующий уровень: ${entry.benefit}`;
+      $('[data-skill-benefit]').textContent=quote.reason==='locked'?`Требуется: ${requirementLabel(selected)}`:quote.reason==='max'?`${entry.total(quote.level)} · Максимум`:`Следующий уровень: ${entry.benefit}`;
       $('[data-skill-benefit]').dataset.feedback='';
       $('[data-skill-icon-use]').setAttribute('href',`#${entry.icon}`);
       upgrade.dataset.upgrade=selected;upgrade.disabled=!quote.canBuy;
@@ -111,7 +116,7 @@
       $('[data-skill-upgrade-label]').textContent=quote.reason==='locked'?'Закрыто':quote.reason==='max'?'Максимум':quote.canBuy?'Улучшить':'Не хватает монет';
       $('[data-skill-price-wrap]').hidden=quote.cost===null;
       $('[data-skill-price]').textContent=quote.cost===null?'':String(quote.cost);
-      upgrade.setAttribute('aria-label',quote.reason==='locked'?`Требуется ${entry.requires} III`:quote.reason==='max'?`${entry.name}: максимальный уровень`:`Улучшить ${entry.name} за ${quote.cost} монет${quote.canBuy?'':', не хватает монет'}`);
+      upgrade.setAttribute('aria-label',quote.reason==='locked'?`Требуется ${requirementLabel(selected)}`:quote.reason==='max'?`${entry.name}: максимальный уровень`:`Улучшить ${entry.name} за ${quote.cost} монет${quote.canBuy?'':', не хватает монет'}`);
     }
     function select(id) {
       if(!Object.prototype.hasOwnProperty.call(activeDetails,id)||destroyed)return false;
