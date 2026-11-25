@@ -104,6 +104,8 @@
   const spellImages = {};
   const pendingIceImpacts = new Map();
   let statusImage = null;
+  const mageSkillRows=['thermal','steam','chaos','absorption','rebirth','echo','overload','archmage'];
+  const mageEffectTile=64;
   const mageEffects={};let sphereCanvas=null,sphereHitAt=-Infinity,sphereDrawKey=null;
   const sphereTile=128,sphereBreakDuration=.56;
   let laneStep = 0;
@@ -313,7 +315,10 @@
         ...['fire','ice','shadow'].map(async magic=>{spellImages[magic]=await loadImage(`assets/magic/${magic}.png`);})
       ]);
       statusImage = statusAtlas;
-      if(starterWeapon?.id==='wand')await Promise.all(['burn','shards','sphere','impact','advanced'].map(async effect=>{mageEffects[effect]=await loadImage(effect==='sphere'?'assets/magic/mage-sphere-v2.svg':effect==='impact'?'assets/magic/mage-barrier-impact.svg':effect==='advanced'?'assets/magic/mage-advanced.svg':`assets/magic/mage-${effect}.png`);}));
+      if(starterWeapon?.id==='wand'){
+        await Promise.all(['burn','shards','sphere','impact'].map(async effect=>{mageEffects[effect]=await loadImage(effect==='sphere'?'assets/magic/mage-sphere-v2.svg':effect==='impact'?'assets/magic/mage-barrier-impact.svg':`assets/magic/mage-${effect}.png`);}));
+        mageEffects.advanced=await Promise.all(mageSkillRows.map(skill=>loadImage(`assets/magic/mage-${skill}.png`)));
+      }
       actors.orc.images.attack = orcAttack ? {image:orcAttack,frames:6,row:1,tile:128,origin:32} : { ...actors.orc.images.idle,frames:1 };
       const face = $('#avatar').getContext('2d'); face.imageSmoothingEnabled = false;
       const avatarTile=loadout?starterWeapon.walk.tile:64, avatarOrigin=loadout?starterWeapon.walk.origin:0;
@@ -543,11 +548,10 @@
       if(enhanced)ctx.drawImage(mageEffects.burn,frame*32,0,32,32,0,0,64,64);else ctx.drawImage(statusImage,frame*width,row*height,width,height,0,0,64,64);actor.statusKey=key;
     }
   }
-  const mageSkillRows=['thermal','steam','chaos','absorption','rebirth','echo','overload','archmage'];
   function addMageSkillEffect(event){
     const row=mageSkillRows.indexOf(event.skill);
-    if(row<0||!mageEffects.advanced||reducedMotion.matches)return;
-    const element=document.createElement('canvas');element.width=128;element.height=128;element.className='mage-advanced-effect';
+    if(row<0||!mageEffects.advanced?.[row]||reducedMotion.matches)return;
+    const element=document.createElement('canvas');element.width=mageEffectTile;element.height=mageEffectTile;element.className='mage-advanced-effect';
     element.dataset.skill=event.skill;element.dataset.target=event.targetId;element.setAttribute('aria-hidden','true');
     battlefield.appendChild(element);
     effects.push({type:'mage-advanced',element,row,sourceId:event.sourceId,targetId:event.targetId,at:event.at,duration:event.skill==='archmage'?.9:.6,lastKey:null});
@@ -1038,7 +1042,7 @@
         const bounds=actor.getBoundingClientRect(),frame=Math.min(5,Math.max(0,Math.floor(age/effect.duration*6)));
         effect.element.style.left=(bounds.left+bounds.width/2-field.left)+'px';effect.element.style.top=(bounds.top+bounds.height/2-field.top)+'px';
         effect.element.style.width=effect.element.style.height=(bounds.width*(effect.row===2?2.7:1.9))+'px';effect.element.dataset.frame=String(frame);
-        if(effect.lastKey!==frame){const ctx=effect.element.getContext('2d');ctx.clearRect(0,0,128,128);ctx.imageSmoothingEnabled=false;ctx.drawImage(mageEffects.advanced,frame*128,effect.row*128,128,128,0,0,128,128);effect.lastKey=frame;}
+        if(effect.lastKey!==frame){const ctx=effect.element.getContext('2d');ctx.clearRect(0,0,mageEffectTile,mageEffectTile);ctx.imageSmoothingEnabled=false;ctx.drawImage(mageEffects.advanced[effect.row],frame*mageEffectTile,0,mageEffectTile,mageEffectTile,0,0,mageEffectTile,mageEffectTile);effect.lastKey=frame;}
         continue;
       }
       if(effect.type==='barrier-impact'){
