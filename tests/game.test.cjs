@@ -1925,3 +1925,22 @@ test('fractional combat damage is displayed as an integer without changing actua
  assert.equal(hit.damage,3.6);
  assert.ok(ui.node('.battlefield').children.some(e=>e.className.includes('damage-number')&&e.textContent==='−4'));
 });
+
+
+test('poison badge tracks real stacks and timer, coexists with bleed and freezes on pause',async()=>{
+ const ui=createHarness({weapon:'bow',outfit:'wanderer',combatOptions:{heroDamage:1,heroMaxHp:10000,archer_poison:5,archer_barbed:5}});
+ await ui.loadAllImages();
+ const actor=ui.node('[data-fighter="archer1"]');
+ const poison=()=>actor.children.find(e=>e.className==='poison-indicator');
+ const bleed=()=>actor.children.find(e=>e.className==='bleed-indicator');
+ ui.runUntil(()=>!!poison(),20);
+ const status=ui.state().enemies.find(e=>e.id==='archer1').poisoning;
+ assert.ok(status.remaining>0&&status.remaining<=5);
+ assert.equal(Number(poison().dataset.stacks),status.count);
+ ui.runUntil(()=>!!poison()&&!!bleed(),20);
+ assert.equal(poison().style.marginLeft,'12px');assert.equal(bleed().style.marginLeft,'-12px');
+ ui.node('#auto-button').click();const frozen=poison().dataset.remaining;
+ ui.runFor(1);assert.equal(poison().dataset.remaining,frozen);
+ ui.node('#auto-button').click();ui.battle.updateHeroStats({heroDamage:1000});
+ ui.runUntil(()=>!poison(),8);
+});
