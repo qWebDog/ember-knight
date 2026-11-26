@@ -1260,3 +1260,29 @@ test('automatic victory continuation preserves dead wolf and its remaining reviv
  assert.ok(revival);assert.equal(b.state.companion.hp,7);
  b.restart();assert.equal(b.state.companion.hp,7);
 });
+
+test('approved Beast Fury replaces damage resistance and increases bite cadence only below half HP',()=>{
+ const b=createDefaultBattle({heroWeapon:'bow',heroProjectile:'arrow',heroDamage:1,heroMaxHp:1000,companionEnabled:true,companionMaxHp:30,archer_guardian:5,archer_rendingBite:1,archer_wolfBond:2});
+ assert.equal(b.state.companion.maxHp,39);
+ assert.equal(b.state.wolfAttackSpeed,1);
+ assert.deepEqual(b.state.wolfSkills,{bond:2,fury:false,rendingNext:false});
+ for(let i=0;i<3;i++){
+   assert.equal(b.state.wolfSkills.rendingNext,i===2);
+   const events=b.companionStrike(b.state.targetId,7);
+   assert.equal(events.some(e=>e.skill==='rendingBite'),i===2);
+   assert.equal(events.find(e=>e.type==='attack').damage,8);
+ }
+ assert.equal(b.state.wolfSkills.rendingNext,false);
+ b.advance(2);assert.equal(b.state.companion.hp,32,'old Guardian reduction removed');
+ b.advance(4);assert.equal(b.state.companion.hp,18);
+ assert.equal(b.state.wolfSkills.fury,true);assert.equal(b.state.wolfAttackSpeed,1.75);
+ b.advance(20);assert.equal(b.state.companion.hp,0);
+ assert.equal(b.state.wolfSkills.fury,false);assert.equal(b.state.wolfAttackSpeed,1);
+});
+test('approved wolf effect atlases are raster PNGs with exact frame geometry',()=>{
+ const fs=require('node:fs'),path=require('node:path');
+ for(const [name,width] of [['wolf-rend-game.png',768],['wolf-power-fx.png',1344]]){
+  const data=fs.readFileSync(path.join(__dirname,'../dist/assets/companions',name));
+  assert.equal(data.subarray(1,4).toString(),'PNG');assert.equal(data.readUInt32BE(16),width);assert.equal(data.readUInt32BE(20),64);
+ }
+});

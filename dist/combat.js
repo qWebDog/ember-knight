@@ -149,11 +149,13 @@
       }
       return shots;
     }
+    // guardian is the stable saved skill ID; its gameplay is now Beast Fury.
+    const wolfFury=()=>Boolean(archer&&companionEnabled&&companion?.hp>0&&archerRanks.guardian&&companion.hp<companion.maxHp*.5);
     function getState() {
       const target = enemies.find(enemy => enemy.hp > 0);
       const waiting = phase === 'intermission' || (phase === 'paused' && pausedFrom === 'intermission');
       return {
-        ...(mage?{activeTalents:[...activeTalents]}:{}),...(archer&&archerRanks.alpha?{wolfAttackSpeed:elapsed<roarUntil?1+.1*archerRanks.alpha:1}:{}),...(archer&&(archerRanks.arrowDance||archerRanks.alpha)?{archerEffects:{dance:elapsed<danceUntil,roar:companionEnabled&&companion?.hp>0&&elapsed<roarUntil}}:{}),phase, elapsed:elapsed / TICKS, hero:{...hero,...(sphere?{sphere:{...sphere}}:{})},
+        ...(mage?{activeTalents:[...activeTalents]}:{}),...(archer&&(archerRanks.alpha||archerRanks.guardian)?{wolfAttackSpeed:(elapsed<roarUntil?1+.1*archerRanks.alpha:1)*(wolfFury()?1+.15*archerRanks.guardian:1)}:{}),...(archer&&companionEnabled&&(archerRanks.rendingBite||archerRanks.guardian||archerRanks.wolfBond)?{wolfSkills:{bond:archerRanks.wolfBond,fury:wolfFury(),rendingNext:!!archerRanks.rendingBite&&(wolfBites+1)%3===0}}:{}),...(archer&&(archerRanks.arrowDance||archerRanks.alpha)?{archerEffects:{dance:elapsed<danceUntil,roar:companionEnabled&&companion?.hp>0&&elapsed<roarUntil}}:{}),phase, elapsed:elapsed / TICKS, hero:{...hero,...(sphere?{sphere:{...sphere}}:{})},
         companion:companionEnabled?{...companion,alive:companion.hp>0}:null,
         enemyTargetId:currentEnemyTarget().id,
         enemies:enemies.map(({arrowDots,...enemy}) => ({...enemy,status:enemy.status ? {type:enemy.status.type,startedAt:enemy.status.startedAt/TICKS,endsAt:enemy.status.endsAt/TICKS,...(enemy.status.enhanced?{enhanced:true}:{})} : null,alive:enemy.hp > 0})),
@@ -353,7 +355,7 @@
         if(revivePreview&&target.id==='companion'&&!metadata?.previewDeath)return;
         let reflected=0,evaded=false;
         if(archer&&sourceId!=='hero'&&sourceId!=='companion'&&damage>0){
-          if(target.id==='companion'&&archerRanks.guardian)damage*=1-(.05+.05*archerRanks.guardian);
+          // Beast Fury changes bite cadence, not incoming damage.
           if(elapsed<roarUntil)damage*=1-.05*archerRanks.alpha;
           if(target.id==='hero'&&!metadata?.dot){
             // Incoming ballistic projectiles aim once, at release. A dodge
