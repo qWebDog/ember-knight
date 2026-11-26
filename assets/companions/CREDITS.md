@@ -12,3 +12,5 @@ Artwork: **[LPC] Wolf Animation**, originally published by William.Thompsonj.
 The original pack includes six alternate colors and animations for walking, running, biting, howling and dying. The first color variation is in use. Side-view idle, walking, running, biting, howling and dying source frame ranges are now mapped separately, with the original side-view frame heights preserved. The cosmetic companion uses walking, resting, periodic howling and a visual death pose on hero defeat; biting and running are available to future behavior logic but do not yet deal damage. No original artwork is redrawn.
 
 Battle behavior added by Ember Knight: the wolf is available only to the Archer. It runs to the current enemy, lands a bite for 7 base damage before armor after a 0.25-second wind-up, and returns to its Archer when the wave ends. The Archer's own shot schedule is unchanged. The original artwork is unmodified.
+
+Active gray wolf: user-approved generated sprite art, normalized to the original 640 × 384 layout in wolf-gray.png. Wolf-gray-carry.png adapts the existing Archer carry poses with the new wolf. Original LPC artwork remains unmodified in wolf.png.

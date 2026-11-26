@@ -503,3 +503,5 @@ Separate from Universal LPC character artwork.
 Wolf companion sprite ([LPC] Wolf Animation): Stephen "Redshrike" Challener (artist), William.Thompsonj (contributor). CC BY 4.0. https://opengameart.org/content/lpc-wolf-animation . Original wolf sheet preserved as assets/companions/wolf.png; full attribution in assets/companions/CREDITS.md.
 
 Red Dragon, four 820×644 PNG flight and attack sheets, created by Buko Studios and commissioned by PlayCraft, submitted by ZaPaper. CC BY 3.0. https://opengameart.org/content/red-dragon. Further attribution: assets/enemies/dragon/CREDITS.md.
+
+Active gray wolf: user-approved generated sprite art, normalized to the original 640 × 384 layout in wolf-gray.png. Wolf-gray-carry.png adapts the existing Archer carry poses with the new wolf. Original LPC artwork remains unmodified in wolf.png.
