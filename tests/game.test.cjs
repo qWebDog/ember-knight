@@ -171,7 +171,7 @@ function createHarness({skin = 'bronze', preference, search = '', weapon, outfit
   vm.runInContext(combatSource, context, {filename:'combat.js'});
   vm.runInContext(fs.readFileSync(path.join(dist,'archer-dodge.js'),'utf8'), context, {filename:'archer-dodge.js'});
   vm.runInContext(fs.readFileSync(path.join(dist,'progression.js'),'utf8'), context, {filename:'progression.js'});
-  if(wolfEquipped){
+  if(wolfEquipped||search.includes('archerDemo=')){
     window.localStorage={
       getItem:key=>storage.get(key)??null,
       setItem:(key,value)=>storage.set(key,String(value))
@@ -1842,5 +1842,33 @@ test('wolf pickup, carry and putdown never switch a non-green Archer to the old 
   }
   ui.runUntil(()=>hero.dataset.wolfCarry==='',4);
   assert.equal(ui.node('#companion-wolf').dataset.motion,'die');
+ }
+});
+
+test('all-skills Archer demo creates an isolated fully trained character even from a Warrior save',async()=>{
+ const ui=createHarness({weapon:'sword',outfit:'militia',search:'?archerDemo=all',preference:'off'});
+ const saved=[...ui.storage];await ui.loadAllImages();
+ assert.equal(ui.state().hero.maxHp,10000);assert.equal(ui.state().companion.maxHp,42);
+ assert.equal(ui.state().wolfSkills.bond,5);
+ for(const id of ['marksmanship','piercing','poison','explosive','barbed','doubleShot','arrowRain','evasion','retreat','arrowDance','rendingBite','guardian','alpha','wolfBond'])assert.equal(ui.progression.quote(id).level,5,id);
+ assert.equal(ui.node('#archer-demo-nav').hidden,false);
+ ui.runUntil(()=>ui.events.some(e=>e.skill==='rendingBite'),30);
+ ui.node('#auto-button').click();assert.deepEqual([...ui.storage],saved);
+});
+test('solo demo makes direct enemy shots reach the fully trained Archer without wolf',async()=>{
+ const ui=createHarness({weapon:'wand',outfit:'acolyte',search:'?archerDemo=solo'});
+ const saved=[...ui.storage];await ui.loadAllImages();
+ assert.equal(ui.state().companion,null);assert.equal(ui.progression.quote('evasion').level,5);
+ ui.runFor(30);assert.ok(ui.events.some(e=>e.skill==='evasion'||e.skill==='retreat'));
+ assert.deepEqual([...ui.storage],saved);
+});
+test('demo carry and revive use isolated temporary Archer and original controlled previews',async()=>{
+ for(const mode of ['carry','revive']){
+  const ui=createHarness({weapon:'sword',outfit:'militia',search:'?archerDemo='+mode});
+  const saved=[...ui.storage];await ui.loadAllImages();
+  assert.equal(ui.state().companion.maxHp,1);
+  if(mode==='carry')ui.runUntil(()=>ui.node('[data-fighter="hero"]').dataset.wolfCarry==='walk',30);
+  else ui.runUntil(()=>ui.events.some(e=>e.skill==='wolfRevive'),12);
+  assert.deepEqual([...ui.storage],saved);
  }
 });

@@ -14,9 +14,25 @@
     if (saved?.version === 1 && skinIds.includes(saved.skin)) character = saved;
     auto = localStorage.getItem('ember.combat.auto.v1') !== 'off';
   } catch {}
+  const demoParam=new URLSearchParams(window.location.search).get('archerDemo');
+  const archerDemo=['all','solo','carry','revive'].includes(demoParam)?demoParam:null;
+  // Demo characters and their equipment/progression never write to the real save.
+  const demoRecords=new Map();
+  const demoStorage={getItem:key=>demoRecords.get(key)??null,setItem:(key,value)=>demoRecords.set(key,String(value))};
   let progressionStorage = null;
   try { progressionStorage = localStorage; } catch {}
   if (new URLSearchParams(window.location.search).get('battle') === 'test') auto = true;
+  if(archerDemo){
+    const savedArcher=character?.weapon==='bow';
+    character={version:1,skin:character?.skin||'light',name:'Лучник · демо',level:25,weapon:'bow',outfit:'wanderer',outfitColor:savedArcher?character.outfitColor||'forest':'forest'};
+    progressionStorage=demoStorage;auto=true;
+    const archerLevels=Object.fromEntries(window.EmberProgression.archerCatalog.map(item=>[item.id,item.maxLevel]));
+    demoStorage.setItem(window.EmberProgression.storageKey,JSON.stringify({version:1,gold:0,levels:{},archerLevels}));
+    let equipmentSave={version:1,byClass:{bow:{}}};
+    try{if(savedArcher){const saved=JSON.parse(localStorage.getItem('ember.equipment.v1'));if(saved?.version===1)equipmentSave=saved;const colors=localStorage.getItem('ember.equipment.colors.v1');if(colors)demoStorage.setItem('ember.equipment.colors.v1',colors);}}catch{}
+    equipmentSave.byClass??={};equipmentSave.byClass.bow={...equipmentSave.byClass.bow,companion:archerDemo==='solo'?'none':'wolf'};
+    demoStorage.setItem('ember.equipment.v1',JSON.stringify(equipmentSave));
+  }
   const loadouts = window.EmberLoadouts;
   const arrowSprite = 'assets/projectiles/arrow.png';
   const archerArrowSprite='assets/projectiles/archer-arrow-sprites-v1.png';
@@ -29,12 +45,13 @@
   const starterWeapon = loadout ? loadouts.weapon(loadout.weapon) : null;
   const starterOutfit = loadout ? loadouts.outfit(loadout.weapon,loadout.outfit) : null;
   // Opt-in visual QA: no saved ranks or rewards are modified.
-  const wolfPreviewMode=new URLSearchParams(window.location.search).get('wolfTest');
+  const wolfPreviewMode=archerDemo==='carry'?'1':archerDemo==='revive'?'revive':new URLSearchParams(window.location.search).get('wolfTest');
   const wolfRevivePreview=starterWeapon?.id==='bow'&&(wolfPreviewMode==='revive'||window.location.pathname?.endsWith('/wolf-revive.html'));
-  const reducedMotion=wolfRevivePreview?{matches:false}:motionPreference;
+  const reducedMotion=(wolfRevivePreview||archerDemo)?{matches:false}:motionPreference;
   const wolfDeathPreview=starterWeapon?.id==='bow'&&(wolfPreviewMode==='1'||wolfRevivePreview);
   const combatStats=()=>{
     const stats=progression.getStats();
+    if(archerDemo&&!wolfDeathPreview)return {...stats,heroDamage:2,heroMaxHp:10000,companionMaxHp:24,dodgeSeed:42};
     if(!wolfDeathPreview)return stats;
     return {...Object.fromEntries(Object.keys(stats).map(key=>[key,key.startsWith('archer_')?0:stats[key]])),
       heroDamage:wolfRevivePreview?1:20,heroAttackSpeed:1,heroMaxHp:10000,companionMaxHp:1,
@@ -65,7 +82,7 @@
   // atomic progression record; only the selected class's ranks affect combat.
   const progression = window.EmberProgression.createStore({storage:progressionStorage,classId:starterWeapon?.id||'sword',heroLevel:character?.level});
   wallet = progression.getState().gold;
-  const equipment = window.EmberEquipment?.createStore({classId:starterWeapon?.id||'sword'});
+  const equipment = window.EmberEquipment?.createStore({classId:starterWeapon?.id||'sword',...(archerDemo?{storage:demoStorage}:{})});
   const dyeEngine=window.EmberEquipmentDye?.create({canvasFactory:()=>document.createElement('canvas')});
   const equipmentArt = starterWeapon?.id==='sword' && equipment?.enabled
     ? window.EmberEquipmentArt?.create({loadImage,dye:dyeEngine,outfitColor:loadout?.outfitColor||'sand'}) : null;
@@ -545,7 +562,7 @@
   autoButton.addEventListener('click', () => {
     if (!ready) return;
     auto = !auto; syncPause();
-    try { localStorage.setItem('ember.combat.auto.v1',auto ? 'on' : 'off'); telegram?.HapticFeedback?.selectionChanged(); } catch {}
+    try { if(!archerDemo)localStorage.setItem('ember.combat.auto.v1',auto ? 'on' : 'off'); telegram?.HapticFeedback?.selectionChanged(); } catch {}
     $('#status').textContent = auto ? 'Бой продолжается' : 'Бой приостановлен';
   });
   document.addEventListener('visibilitychange', syncPause);
@@ -844,7 +861,7 @@
         let rewardSaved = true, receivedReward = event.reward;
         if(event.id!=='hero'&&event.reward>0&&!paidDeaths.has(event.id)){
           paidDeaths.add(event.id);
-          const award = wolfDeathPreview?{ok:true,awarded:0}:progression.awardGold(event.reward,starterWeapon?.id==='wand'?10:0);
+          const award = (wolfDeathPreview||archerDemo)?{ok:true,awarded:0}:progression.awardGold(event.reward,starterWeapon?.id==='wand'?10:0);
           rewardSaved = award.ok;
           if(award.ok){receivedReward=award.awarded;creditedRunGold+=receivedReward;if(receivedReward>0)addEffect('coin','hero',event.id,`+${receivedReward}`,event.at);}
         }
@@ -1458,6 +1475,7 @@
       bond:state.wolfSkills?.bond||0,fury:!!state.wolfSkills?.fury,rendingNext:!!state.wolfSkills?.rendingNext
     });
     const wolfElement=$('#companion-wolf');
+    if(archerDemo){const demo=$('#archer-demo-nav');if(demo){demo.hidden=false;demo.dataset.mode=archerDemo;}}
     if(wolfRevivePreview){const indicator=document.querySelector('#wolf-preview-indicator');if(indicator){indicator.hidden=false;indicator.textContent=state.companion?.hp===0?'ТЕСТ · Волк погиб · Воскрешение через 2 с':state.companion?'ТЕСТ · Воскрешение · 1 HP':'ТЕСТ · Экипируй волка';}}
     if(wolfElement){
       if(carrying)wolfElement.hidden=true;
@@ -1632,7 +1650,7 @@
     clearSceneTransition();
     prepareWave(battle.getState());
     resultPanel.hidden=true;lastFrameTime=null;
-    if(startAuto)try{localStorage.setItem('ember.combat.auto.v1','on');}catch{}
+    if(startAuto&&!archerDemo)try{localStorage.setItem('ember.combat.auto.v1','on');}catch{}
     render(battle.getState());syncPause();$('#status').textContent='Битва 1–1. Волна 1: один лучник.';
   }
   $('#replay-button').addEventListener('click',()=>{
