@@ -1804,12 +1804,13 @@ test('wolfTest=revive shows full revival animation two combat seconds after firs
  await ui.loadAllImages();
  const wolf=ui.node('#companion-wolf'),wallet=ui.progression.getState().gold;
  assert.equal(ui.state().companion.maxHp,1);
- assert.equal(ui.state().hero.damage,8);
+ assert.equal(ui.state().hero.damage,1);
  ui.runUntil(()=>ui.events.some(e=>e.type==='death'&&e.id==='companion'),15);
  const death=ui.events.find(e=>e.type==='death'&&e.id==='companion'),fallen=wolf.style.left;
  assert.equal(ui.state().companion.hp,0);
  ui.runUntil(()=>ui.events.some(e=>e.type==='archerSkill'&&e.skill==='wolfRevive'),5);
  const revived=ui.events.find(e=>e.type==='archerSkill'&&e.skill==='wolfRevive');
+ assert.equal(death.at,1);
  assert.ok(Math.abs(revived.at-death.at-2)<1e-6);
  assert.equal(ui.state().companion.hp,1);
  assert.equal(wolf.dataset.motion,'revive');
@@ -1820,5 +1821,7 @@ test('wolfTest=revive shows full revival animation two combat seconds after firs
  ui.runUntil(()=>wolf.dataset.motion!=='revive',1);
  assert.equal(wolf.children.filter(el=>el.className==='wolf-skill-fx').length,0);
  assert.equal(ui.state().waveIndex,0);
+ ui.runUntil(()=>ui.events.filter(e=>e.type==='archerSkill'&&e.skill==='wolfRevive').length===2,8);
+ assert.equal(ui.events.filter(e=>e.type==='death'&&e.id==='companion').length,2);
  assert.equal(ui.progression.getState().gold,wallet);
 });
