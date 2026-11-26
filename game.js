@@ -7,7 +7,7 @@
   const arena = $('.adventure'), battlefield = $('.battlefield'), dialog = $('#game-dialog');
   const dialogPausesBattle=()=>dialog.open&&dialog.dataset.mode!=='hero';
   const autoButton = $('#auto-button'), resultPanel = $('#battle-result'), sceneFade = $('#scene-fade');
-  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)');
   let character = null, auto = true, wallet = 0;
   try {
     const saved = JSON.parse(localStorage.getItem('ember.character.v1'));
@@ -30,14 +30,15 @@
   const starterOutfit = loadout ? loadouts.outfit(loadout.weapon,loadout.outfit) : null;
   // Opt-in visual QA: no saved ranks or rewards are modified.
   const wolfPreviewMode=new URLSearchParams(window.location.search).get('wolfTest');
-  const wolfRevivePreview=starterWeapon?.id==='bow'&&wolfPreviewMode==='revive';
+  const wolfRevivePreview=starterWeapon?.id==='bow'&&(wolfPreviewMode==='revive'||window.location.pathname?.endsWith('/wolf-revive.html'));
+  const reducedMotion=wolfRevivePreview?{matches:false}:motionPreference;
   const wolfDeathPreview=starterWeapon?.id==='bow'&&(wolfPreviewMode==='1'||wolfRevivePreview);
   const combatStats=()=>{
     const stats=progression.getStats();
     if(!wolfDeathPreview)return stats;
     return {...Object.fromEntries(Object.keys(stats).map(key=>[key,key.startsWith('archer_')?0:stats[key]])),
-      heroDamage:wolfRevivePreview?8:20,heroAttackSpeed:1,heroMaxHp:10000,companionMaxHp:1,
-      ...(wolfRevivePreview?{archer_alpha:1,wolfRevivePreview:true}:{})};
+      heroDamage:wolfRevivePreview?1:20,heroAttackSpeed:1,heroMaxHp:10000,companionMaxHp:1,
+      ...(wolfRevivePreview?{wolfRevivePreview:true}:{})};
   };
   if(wolfDeathPreview)auto=true;
   const mageTalentHUD=starterWeapon?.id==='wand';
@@ -1445,6 +1446,7 @@
       alive:state.hero.hp>0&&Boolean(state.companion?.hp>0)
     });
     const wolfElement=$('#companion-wolf');
+    if(wolfRevivePreview){const indicator=document.querySelector('#wolf-preview-indicator');if(indicator){indicator.hidden=false;indicator.textContent=state.companion?.hp===0?'ТЕСТ · Волк погиб · Воскрешение через 2 с':state.companion?'ТЕСТ · Воскрешение · 1 HP':'ТЕСТ · Экипируй волка';}}
     if(wolfElement){
       if(carrying)wolfElement.hidden=true;
       wolfElement.classList.toggle('is-hit',companionTime-companionHitAt<.16);
