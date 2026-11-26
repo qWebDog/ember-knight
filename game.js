@@ -1287,6 +1287,11 @@
       if(effect){effect.skillClip=skillClip;if(shot.double)effect.paired=addEffect('arrow',shot.sourceId,shot.targetId,null,releaseAt,{...opts,double:2});for(const e of [effect,effect.paired].filter(Boolean)){e.skillClip=skillClip;if(skillClip)e.element.dataset.skillAnimation=skillClip;}cuedArrows.set(key,effect);}
     }
   }
+  // Orc's native 64px tile has the head near y=21..30 and torso at y=34..48.
+  function impactPoint(id,bounds,field,defaultY=.4){
+    return {x:bounds.left+bounds.width*.5-field.left,
+      y:bounds.top+bounds.height*(id==='orc'?41/64:defaultY)-field.top};
+  }
   function renderEffects(state) {
     const field = battlefield.getBoundingClientRect();
     for (let i=effects.length-1;i>=0;i--) {
@@ -1303,7 +1308,8 @@
       if(effect.type==='archer-arrow-impact'){
         const actor=actors[effect.targetId]?.element;if(!actor){effect.element.remove();effects.splice(i,1);continue;}
         const bounds=actor.getBoundingClientRect();
-        effect.element.style.left=(bounds.left+bounds.width*.5-field.left)+'px';effect.element.style.top=(bounds.top+bounds.height*.42-field.top)+'px';
+        const point=impactPoint(effect.targetId,bounds,field,.42);
+        effect.element.style.left=point.x+'px';effect.element.style.top=point.y+'px';
         const frame=4+Math.min(3,Math.max(0,Math.floor(age/effect.duration*4)));effect.element.dataset.frame=String(frame);
         if(effect.lastKey!==frame){const ctx=effect.element.getContext('2d');ctx.clearRect(0,0,32,32);ctx.imageSmoothingEnabled=false;ctx.drawImage(archerArrowAtlas,frame*32,effect.arrowRow*32,32,32,0,0,32,32);effect.lastKey=frame;}
         continue;
@@ -1321,8 +1327,10 @@
           effect.element.style.top=(bounds.top+bounds.height*.67-field.top)+'px';
           effect.element.style.width=effect.element.style.height=(bounds.width*1.65)+'px';
         }else{
-          effect.element.style.left=(bounds.left+bounds.width/2-field.left)+'px';effect.element.style.top=(bounds.top+bounds.height/2-field.top)+'px';
-          effect.element.style.width=effect.element.style.height=(bounds.width*(effect.row===2?2.7:1.9))+'px';
+          const point=impactPoint(effect.targetId,bounds,field,.5);
+          effect.element.style.left=point.x+'px';effect.element.style.top=point.y+'px';
+          const scale=effect.targetId==='orc'?(effect.row===2?1.35:1.05):(effect.row===2?2.7:1.9);
+          effect.element.style.width=effect.element.style.height=(bounds.width*scale)+'px';
         }
         effect.element.dataset.frame=String(frame);
         if(effect.lastKey!==frame){const ctx=effect.element.getContext('2d');ctx.clearRect(0,0,mageEffectTile,mageEffectTile);ctx.imageSmoothingEnabled=false;ctx.drawImage(mageEffects.advanced[effect.row],frame*mageEffectTile,0,mageEffectTile,mageEffectTile,0,0,mageEffectTile,mageEffectTile);effect.lastKey=frame;}
@@ -1341,7 +1349,7 @@
       const targetElement=effect.targetId==='companion'?$('#companion-wolf'):actors[effect.targetId]?.element;
       if(!sourceElement||!targetElement){effect.element.remove();effects.splice(i,1);continue;}
       const target = targetElement.getBoundingClientRect(), source = sourceElement.getBoundingClientRect();
-      const p = Math.max(0,age/effect.duration), tx=target.left+target.width/2-field.left, ty=target.top+target.height*.4-field.top;
+      const p = Math.max(0,age/effect.duration), point=impactPoint(effect.targetId,target,field),tx=point.x,ty=point.y;
       if (effect.type === 'spell') {
         const phase=effect.landed?'impact':age+1e-6<effect.appearDuration?'appear':'flight';
         const row=phase==='appear'?0:phase==='flight'?1:2;
@@ -1372,7 +1380,8 @@
           sx=effect.lockedOrigin.x;sy=effect.lockedOrigin.y;
         }
         const barrier=aimAtBarrier(effect,state,target,field,sx,sy);
-        const hitX=aim?.x??barrier?.x??tx,hitY=aim?.y??barrier?.y??(target.top+target.height*.55-field.top);
+        const hitX=aim?.x??barrier?.x??tx,hitY=aim?.y??barrier?.y??impactPoint(effect.targetId,target,field,.55).y;
+        effect.element.dataset.impactX=String(hitX);effect.element.dataset.impactY=String(hitY);
         const progress=phase==='appear'?0:phase==='impact'?1:Math.min(1,phaseAge/effect.flightDuration);
         if(phase!=='impact'||effect.angle===null)effect.angle=Math.atan2(hitY-sy,hitX-sx)*180/Math.PI+180;
         effect.element.style.left=`${sx+(hitX-sx)*progress}px`;
@@ -1385,7 +1394,10 @@
           if(effect.shards){const f=phase==='appear'?Math.min(1,cell):phase==='flight'?2+cell%3:5+Math.min(2,Math.floor(cell/2));ctx.drawImage(effect.image,f*32,0,32,32,0,0,64,64);effect.element.style.transform=`translate(-50%,-50%) rotate(${effect.angle-180}deg)`;}else ctx.drawImage(effect.image,cell*64,row*64,64,64,0,0,64,64);effect.lastKey=key;
         }
       } else if (effect.floating) {
-        effect.element.style.left = `${tx}px`; effect.element.style.top = `${ty-p*22}px`; effect.element.style.opacity = String(1-p);
+        // Keep floating text beside the Orc instead of covering its head or badge.
+        const floatX=effect.targetId==='orc'?tx+target.width*.34:tx;
+        const floatY=effect.targetId==='orc'?target.top+target.height*.55-field.top:ty;
+        effect.element.style.left = floatX+'px'; effect.element.style.top = (floatY-p*22)+'px'; effect.element.style.opacity = String(1-p);
       } else {
         let sx=source.left+source.width*(effect.sourceId==='hero'?.7:.3)-field.left, sy=source.top+source.height*.45-field.top;
         if(effect.dodgeShot){
@@ -1406,6 +1418,7 @@
         }
         const barrier=effect.type==='arrow'?aimAtBarrier(effect,state,target,field,sx,sy):null;
         const hitX=aim?.x??barrier?.x??tx,hitY=aim?.y??barrier?.y??ty;
+        if(effect.type==='arrow'){effect.element.dataset.impactX=String(hitX);effect.element.dataset.impactY=String(hitY);}
         const arc=rain?Math.max(0,Math.min(source.width*.8,Math.max(0,sy-8)*.85,Math.abs(hitX-sx)*.35)):0;
         if(effect.type==='arrow'){
           const angle=Math.atan2(hitY-sy-4*arc*(1-2*p),hitX-sx)*180/Math.PI+180;
