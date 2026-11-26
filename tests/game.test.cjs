@@ -1872,3 +1872,19 @@ test('demo carry and revive use isolated temporary Archer and original controlle
   assert.deepEqual([...ui.storage],saved);
  }
 });
+
+test('bleeding icon renders over a live enemy with engine countdown and freezes when paused',async()=>{
+ const ui=createHarness({weapon:'bow',outfit:'wanderer',wolfEquipped:true,combatOptions:{heroDamage:1,heroMaxHp:10000,companionMaxHp:1000,archer_rendingBite:5}});
+ await ui.loadAllImages();
+ const actor=ui.node('[data-fighter="archer1"]');
+ const badge=()=>actor.children.find(child=>child.className==='bleed-indicator');
+ ui.runUntil(()=>!!badge(),25);
+ const first=Number(badge().dataset.remaining);assert.ok(first>0&&first<=4);
+ assert.equal(badge().dataset.stacks,'1');
+ ui.runFor(.5);assert.ok(Number(badge().dataset.remaining)<first);
+ ui.node('#auto-button').click();const frozen=badge().dataset.remaining;
+ ui.runFor(1);assert.equal(badge().dataset.remaining,frozen);
+ ui.node('#auto-button').click();
+ ui.battle.updateHeroStats({heroDamage:1000});
+ ui.runUntil(()=>!badge(),8);
+});

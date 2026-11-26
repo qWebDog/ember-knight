@@ -1447,6 +1447,67 @@
     sphereCanvas.style.opacity='1';
     actors.hero.element.style.setProperty('--sphere-hp',String(fraction));
   }
+
+  // A 24x24 raster-style badge. The ring drains clockwise using the actual
+  // combat clock; never an independent wall-clock animation.
+  const bleedDrop=[
+    '......k......',
+    '.....krk.....',
+    '.....krk.....',
+    '....krrdk....',
+    '...khrrddk...',
+    '..khhrrdddk..',
+    '..khlrrdddk..',
+    '.khhrrrddddk.',
+    '.khlrrrddddk.',
+    '.krrrrddddd k'.replace(' ',''),
+    '..krrdddddk..',
+    '...kdddddk...',
+    '....kkkkk....'
+  ];
+  const bleedPalette={k:'#180b10',d:'#8c1427',r:'#df263c',h:'#ff6770',l:'#ffd0be'};
+  function drawBleedBadge(canvas,fraction){
+    const ctx=canvas.getContext('2d');
+    ctx.imageSmoothingEnabled=false;ctx.clearRect(0,0,24,24);
+    for(let y=0;y<24;y++)for(let x=0;x<24;x++){
+      const dx=x-11.5,dy=y-11.5,r=Math.hypot(dx,dy);
+      if(r>=7.8&&r<=11.8){
+        const angle=(Math.atan2(dx,-dy)+Math.PI*2)%(Math.PI*2);
+        ctx.fillStyle=r<8.5||r>10.8?'#1a1114':angle<Math.PI*2*fraction?'#f34c4c':'#625357';
+        ctx.fillRect(x,y,1,1);
+      }
+    }
+    for(let y=0;y<bleedDrop.length;y++)for(let x=0;x<bleedDrop[y].length;x++){
+      const color=bleedPalette[bleedDrop[y][x]];if(!color)continue;
+      ctx.fillStyle=color;ctx.fillRect(x+5,y+5,1,1);
+    }
+  }
+  function renderBleeding(actor,unit,state){
+    const bleed=unit?.hp>0&&!['victory','defeat'].includes(state.phase)?unit.bleeding:null;
+    if(!bleed||bleed.count<1||bleed.remaining<=0||actor.element.hidden){
+      if(actor.bleedBadge){actor.bleedBadge.root.remove();actor.bleedBadge=null;}
+      return;
+    }
+    if(!actor.bleedBadge){
+      const root=document.createElement('div'),canvas=document.createElement('canvas'),count=document.createElement('span');
+      root.className='bleed-indicator';canvas.width=24;canvas.height=24;
+      canvas.setAttribute('aria-hidden','true');count.className='bleed-count';count.setAttribute('aria-hidden','true');
+      root.appendChild(canvas);root.appendChild(count);actor.element.appendChild(root);
+      actor.bleedBadge={root,canvas,count,key:null};
+    }
+    const badge=actor.bleedBadge;
+    if(Number.isFinite(actor.bar?.offsetTop))badge.root.style.top=(actor.bar.offsetTop-3)+'px';
+    const fraction=Math.max(0,Math.min(1,bleed.remaining/bleed.duration));
+    const frame=Math.ceil(fraction*48),key=frame+':'+bleed.count;
+    badge.root.dataset.stacks=String(bleed.count);badge.root.dataset.remaining=String(bleed.remaining);
+    badge.root.dataset.frame=String(frame);
+    badge.root.setAttribute('aria-label','Кровотечение: '+bleed.count+' эффект(а), '+bleed.remaining.toFixed(1)+' с');
+    if(badge.key!==key){
+      drawBleedBadge(badge.canvas,frame/48);
+      badge.count.textContent=String(bleed.count);badge.key=key;
+    }
+  }
+
   function render(state) {
     renderBattleTalents(state);
     renderSceneTransition(state);
@@ -1456,7 +1517,7 @@
       });
     }
     cueArrowShots(state);
-    for (const id of Object.keys(actors)) drawActor(id,state);
+    for (const id of Object.keys(actors)){drawActor(id,state);renderBleeding(actors[id],id==='hero'?state.hero:state.enemies.find(unit=>unit.id===id),state);}
     renderMageSphere(state);
     const carrying=paintWolfCarry();
     actors.hero.element.dataset.wolfCarry=wolfCarry?.stage||'';

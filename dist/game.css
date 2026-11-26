@@ -157,3 +157,10 @@ dialog{width:min(380px,calc(100% - 32px));max-height:calc(var(--app-height) - 32
 .companion-wolf.is-roaring canvas{filter:brightness(1.24) saturate(1.3) drop-shadow(0 2px 0 #091b12a0)}
 .fighter.is-arrow-dance.is-hit canvas:not(.status-effect){filter:brightness(1.8) sepia(.3)}
 .companion-wolf.is-roaring.is-hit canvas{filter:drop-shadow(0 0 3px #ed7777) drop-shadow(0 2px 0 #091b12a0)}
+
+/* Compact bleeding badge sits above the real health bar, independent of
+ * actor sprite scale, lane, and special dragon/orc canvas geometry. */
+.battlefield .fighter .bleed-indicator{position:absolute;left:50%;top:calc(8% - 3px);transform:translate(-50%,-100%);width:22px;height:22px;z-index:12;pointer-events:none;isolation:isolate}
+.battlefield .fighter .bleed-indicator canvas{position:static!important;display:block;width:100%!important;height:100%!important;max-width:none!important;transform:none!important;filter:none!important;animation:none!important;image-rendering:pixelated}
+.battlefield .fighter .bleed-count{position:absolute;bottom:-1px;right:-4px;color:#fff2df;font:bold 10px/10px system-ui,sans-serif;text-shadow:-1px -1px #190c0d,1px -1px #190c0d,-1px 1px #190c0d,1px 1px #190c0d;min-width:7px;text-align:center}
+@media(max-width:700px){.battlefield .fighter .bleed-indicator{width:19px;height:19px}.battlefield .fighter .bleed-count{font-size:9px;line-height:9px}}
