@@ -911,7 +911,7 @@ test('melee walking changes depth towards the current enemy and every strike rea
 
 function assertActualSpellRay(ui,spell){
  const source=ui.node('[data-fighter="hero"]').getBoundingClientRect(),target=ui.node(`[data-fighter="${spell.dataset.target}"]`).getBoundingClientRect(),field=ui.node('.battlefield').getBoundingClientRect();
- const sx=source.left+source.width*.88-field.left,sy=source.top+source.height*.67-field.top,tx=target.left+target.width/2-field.left,ty=target.top+target.height*.55-field.top;
+ const sx=source.left+source.width*.88-field.left,sy=source.top+source.height*.67-field.top,tx=target.left+target.width/2-field.left,ty=target.top+target.height*(spell.dataset.target==='orc'?41/64:.55)-field.top;
  const angle=Number(spell.style.transform.match(/rotate\(([-.0-9]+)deg\)/)[1]);
  almost(angle,Math.atan2(ty-sy,tx-sx)*180/Math.PI+180,1e-8,'the projectile aims at the target on its actual road row');
  const x=Number.parseFloat(spell.style.left),y=Number.parseFloat(spell.style.top),fraction=(x-sx)/(tx-sx);
@@ -1887,4 +1887,32 @@ test('bleeding icon renders over a live enemy with engine countdown and freezes 
  ui.node('#auto-button').click();
  ui.battle.updateHeroStats({heroDamage:1000});
  ui.runUntil(()=>!badge(),8);
+});
+
+test('Orc arrows and special impact sprites aim at the armored torso',async()=>{
+ const ui=createHarness({weapon:'bow',outfit:'wanderer',combatOptions:{heroDamage:120,heroMaxHp:10000,archer_barbed:5,archer_doubleShot:5,archer_arrowRain:5}});
+ await ui.loadAllImages();ui.runUntil(()=>ui.state().waveIndex===2,45);
+ ui.battle.updateHeroStats({heroDamage:1});
+ const orc=ui.node('[data-fighter="orc"]');orc.offsetWidth=128;
+ const aim=()=>{const b=orc.getBoundingClientRect(),f=ui.node('.battlefield').getBoundingClientRect();return b.top+b.height*41/64-f.top;};
+ const shots=()=>arrowsFrom(ui,'hero').filter(e=>e.dataset.target==='orc'&&!e.hidden&&e.dataset.impactY);
+ runFramesUntil(ui,()=>shots().length>0,20);
+ for(const arrow of shots())almost(Number(arrow.dataset.impactY),aim(),1e-6);
+ const impact=()=>ui.node('.battlefield').children.find(e=>e.className==='archer-arrow-impact'&&e.dataset.arrowType==='barbed');
+ runFramesUntil(ui,()=>!!impact(),20);almost(parseFloat(impact().style.top),aim(),1e-6);
+ const badge=orc.children.find(e=>e.className==='bleed-indicator');
+ assert.ok(badge);assert.equal(badge.dataset.stacks,'1');
+});
+test('Orc magic lands on the torso and status artwork fits its doubled model',async()=>{
+ const ui=createHarness({weapon:'wand',outfit:'acolyte',combatOptions:{heroDamage:120,heroMaxHp:10000}});
+ await ui.loadAllImages();ui.runUntil(()=>ui.state().waveIndex===2,45);
+ ui.battle.updateHeroStats({heroDamage:1});
+ const orc=ui.node('[data-fighter="orc"]');orc.offsetWidth=128;
+ const spell=()=>ui.spells().find(e=>e.dataset.target==='orc'&&e.dataset.phase==='impact');
+ runFramesUntil(ui,()=>!!spell(),20);
+ const b=orc.getBoundingClientRect(),f=ui.node('.battlefield').getBoundingClientRect();
+ almost(parseFloat(spell().style.top),b.top+b.height*41/64-f.top,1e-6);
+ const css=fs.readFileSync(path.join(dist,'game.css'),'utf8');
+ assert.ok(css.includes('[data-fighter="orc"]>canvas.status-effect{top:17%;width:84%;height:84%}'));
+ assert.ok(css.includes('[data-fighter="orc"] .bleed-indicator{top:calc(20% - 3px)}'));
 });
