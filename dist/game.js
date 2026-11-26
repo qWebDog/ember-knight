@@ -1446,7 +1446,7 @@
       alive:state.hero.hp>0&&Boolean(state.companion?.hp>0)
     });
     const wolfElement=$('#companion-wolf');
-    if(wolfRevivePreview){const indicator=document.querySelector('#wolf-preview-indicator');if(indicator)indicator.textContent=state.companion?.hp===0?'ТЕСТ · Волк погиб · Воскрешение через 2 с':state.companion?'ТЕСТ · Воскрешение · 1 HP':'ТЕСТ · Экипируй волка';}
+    if(wolfRevivePreview){const indicator=document.querySelector('#wolf-preview-indicator');if(indicator){indicator.hidden=false;indicator.textContent=state.companion?.hp===0?'ТЕСТ · Волк погиб · Воскрешение через 2 с':state.companion?'ТЕСТ · Воскрешение · 1 HP':'ТЕСТ · Экипируй волка';}}
     if(wolfElement){
       if(carrying)wolfElement.hidden=true;
       wolfElement.classList.toggle('is-hit',companionTime-companionHitAt<.16);
