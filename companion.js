@@ -85,13 +85,19 @@
     let image=null,inflight=null,lastKey=null,idleSince=null;
     let position=null,actorDepth=3,facing=3,motion='idle',engaged=false;
     let biteStarted=null,biteTarget=null,biteLanded=false,nextBiteAt=0;
-    let exitHeroX=null,skill=null,fx=null;
+    let exitHeroX=null,skill=null,fx=null,powerFx=null;
+    let rendImage=null,powerImage=null,skillArtPromise=null,rending=false,bondSince=null,furySince=null,lastBond=0,lastFury=false;
+    function loadSkillArt(){
+      if(skillArtPromise||!loadImage)return;
+      skillArtPromise=Promise.allSettled([loadImage('assets/companions/wolf-rend-game.png').then(a=>{if(a.width===768&&a.height===64)rendImage=a;}),loadImage('assets/companions/wolf-power-fx.png').then(a=>{if(a.width===1344&&a.height===64)powerImage=a;})]);
+    }
+    function clearPower(){if(powerFx){powerFx.remove?.();powerFx=null;}lastBond=0;lastFury=false;bondSince=null;furySince=null;}
     const biteImpact=3/12, biteDuration=5/12, biteInterval=1.25, biteDamage=7;
     const active=()=>store?.classId==='bow'&&store?.getState()?.companion==='wolf';
     function loaded(){return Boolean(image);}
     function clearEffect(){if(fx){fx.remove?.();fx=null;}}
     function reset(){
-      skill=null;clearEffect();
+      skill=null;clearEffect();clearPower();rending=false;
       position=null;actorDepth=3;facing=3;motion='idle';engaged=false;
       idleSince=null;biteStarted=null;biteTarget=null;biteLanded=false;nextBiteAt=0;
       exitHeroX=null;
@@ -129,7 +135,7 @@
     // bite-frame timing and when to request an engine-confirmed hit.
     function advance({dt=0,time=0,phase='running',entering=false,heroAlive=true,companionAlive=true,
       heroX=0,anchorX=null,heroSize=64,heroDepth=3,target=null,
-      exiting=false,reducedMotion=false,attackSpeed=1}={}){
+      exiting=false,reducedMotion=false,attackSpeed=1,rendingNext=false}={}){
       if(!active()||!image||!Number.isFinite(heroX)){
         if(position!==null)reset();
         return null;
@@ -207,7 +213,7 @@
       motion='idle';
       if(attacking&&time>=nextBiteAt){
         facing=destination<=target.x?3:1;
-        biteStarted=time;biteTarget=target.id;biteLanded=false;
+        biteStarted=time;biteTarget=target.id;biteLanded=false;rending=!!rendingNext;
         nextBiteAt=time+Math.max(.5,biteInterval/Math.max(1,attackSpeed));motion='bite';idleSince=null;
       }
       return null;
@@ -226,9 +232,9 @@
       return true;
     }
     function render({time=0,x=0,heroSize=64,depth=3,laneStep=0,moving=false,
-      direction=3,action=null,actionAge=0,reducedMotion=false,alive=true}={}){
+      direction=3,action=null,actionAge=0,reducedMotion=false,alive=true,bond=0,fury=false,rendingNext=false}={}){
       if(!element||!canvas||!image||!active()||(!alive&&action!=='die')){
-        clearEffect();if(element)element.hidden=true;
+        clearEffect();clearPower();if(element)element.hidden=true;
         return false;
       }
       element.hidden=false;
@@ -252,14 +258,18 @@
         mode==='bite'&&biteStarted!==null?Math.max(0,time-biteStarted):
         howl?cycle:time;
       const rect=frameAt(age,mode==='walk'||mode==='run',reducedMotion,face,mode);
-      const key=`${rect.sx}:${rect.sy}:${rect.sh}`;
+      if(alive&&(bond||fury||rendingNext||rending&&mode==='bite'))loadSkillArt();
+      const special=!reducedMotion&&mode==='bite'&&rending&&!!rendImage;
+      const rendFrame=age<biteImpact?Math.min(2,Math.floor(age/biteImpact*3)):Math.min(7,3+Math.floor((age-biteImpact)/(biteDuration-biteImpact)*5));
+      const key=special?`rend:${rendFrame}:${face}`:`${rect.sx}:${rect.sy}:${rect.sh}`;
       if(lastKey!==key){
         const ctx=canvas.getContext('2d');
-        canvas.width=tile;canvas.height=tile;
+        canvas.width=special?96:tile;canvas.height=tile;
         ctx.imageSmoothingEnabled=false;
-        ctx.clearRect(0,0,tile,tile);
-        ctx.drawImage(image,rect.sx,rect.sy,rect.sw,rect.sh,
-          rect.dx,rect.dy,rect.dw,rect.dh);
+        ctx.clearRect(0,0,canvas.width,tile);
+        if(canvas.style){canvas.style.width=special?'150%':'100%';canvas.style.marginLeft=special?'-25%':'';canvas.style.transform=special&&face===1?'scaleX(-1)':'';}
+        if(special)ctx.drawImage(rendImage,rendFrame*96,0,96,64,0,0,96,64);
+        else ctx.drawImage(image,rect.sx,rect.sy,rect.sw,rect.sh,rect.dx,rect.dy,rect.dw,rect.dh);
         lastKey=key;
       }
       const effectMode=!reducedMotion&&alive&&(mode==='howl'||mode==='revive')?mode:null;
@@ -273,6 +283,20 @@
         }
         paintEffect(fx.getContext('2d'),effectMode,age,face);
       }else clearEffect();
+      // The approved red energy frames are an independent raster layer over the
+      // original wolf: no new collision size, no interruption of pursuit or bite.
+      const powerActive=alive&&!action&&!effectMode&&(bond>0||fury);
+      if(powerActive&&powerImage&&canvasFactory){
+        if(!powerFx){powerFx=canvasFactory();powerFx.width=96;powerFx.height=64;powerFx.className='wolf-power-fx';Object.assign(powerFx.style,{position:'absolute',left:'-25%',top:'0',width:'150%',height:'100%',pointerEvents:'none',imageRendering:'pixelated',filter:'none',zIndex:'1'});powerFx.setAttribute?.('aria-hidden','true');element.appendChild(powerFx);}
+        if(bond!==lastBond||bondSince===null)bondSince=time;
+        if(fury&&!lastFury)furySince=time;
+        if(!fury)furySince=null;
+        const ctx=powerFx.getContext('2d');ctx.clearRect(0,0,96,64);ctx.imageSmoothingEnabled=false;
+        if(bond>0){const frame=reducedMotion?5:Math.min(5,Math.floor(Math.max(0,time-bondSince)*7));ctx.globalAlpha=.25+.15*Math.min(5,bond);ctx.drawImage(powerImage,(8+frame)*96,0,96,64,0,0,96,64);}
+        if(fury){const frame=reducedMotion?7:Math.min(7,Math.floor(Math.max(0,time-(furySince??time))*12));ctx.globalAlpha=1;ctx.drawImage(powerImage,frame*96,0,96,64,0,0,96,64);if(mode==='bite'&&!reducedMotion)ctx.drawImage(powerImage,(3+Math.min(3,Math.floor(age*12)))*96,0,96,64,0,0,96,64);}
+        ctx.globalAlpha=1;powerFx.style.transform=face===1?'scaleX(-1)':'';lastBond=bond;lastFury=fury;
+      }else clearPower();
+      element.dataset.wolfBond=alive?String(bond):'0';element.dataset.wolfFury=String(alive&&fury);element.dataset.wolfRending=String(special);
       element.dataset.skillEffect=effectMode||'';
       element.dataset.motion=rect.mode;
       element.dataset.facing=face===1?'left':'right';

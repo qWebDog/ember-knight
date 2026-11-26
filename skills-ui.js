@@ -40,7 +40,7 @@ barbed:{name:"Зазубренная стрела",branch:'attack',category:"С�
 doubleShot:{name:"Двойной выстрел",branch:'attack',category:"Стрелы",icon:'mage-echo',benefit:"Вторая стрела: 60% урона, каждая 12–4-я атака",total:level=>`Вторая стрела: 60% базового урона, каждая ${14-2*level}-я атака`},
 arrowRain:{name:"Град стрел",branch:'attack',category:"Стрелы",icon:'mage-chaos',benefit:"5–9 стрел, восстановление 30–18 с",total:level=>`${4+level} стрел, восстановление ${33-3*level} с`},
 rendingBite:{name:"Раздирающий укус",branch:'defense',category:"Звери",icon:'swords',benefit:"Каждый третий укус: кровотечение 4 с",total:level=>`Каждый 3-й укус: ${20+10*level}% урона/с, 4 с`},
-guardian:{name:"Защитник",branch:'defense',category:"Звери",icon:'skill-shield',benefit:"10–30% сопротивления урону волка",total:level=>`${5+5*level}% сопротивления урону волка`},
+guardian:{name:"Звериная ярость",branch:'defense',category:"Звери",icon:'flame',benefit:"При здоровье ниже 50% ускоряет укусы",total:level=>`+${15*level}% к скорости укусов при HP ниже 50%`},
 alpha:{name:"Альфа-хищник",branch:'defense',category:"Звери",icon:'mage-overload',benefit:"Рык ослабляет врагов, ускоряет укусы; волк возвращается после гибели",total:level=>`Рык 5 с: −${5*level}% урона врагов, +${10*level}% скорости укусов; возврат ${24-2*level} с`},
 evasion:{name:"Уклонение",branch:'control',category:"Тактика",icon:'mage-echo',benefit:"5–25% уклонения от прямых атак",total:level=>`${5*level}% прямых атак без урона`},
 retreat:{name:"Отступающий выстрел",branch:'control',category:"Тактика",icon:'skill-bow',benefit:"Отступление и выстрел при сближении, 12–4 с",total:level=>`Отступление с выстрелом, восстановление ${14-2*level} с`},
