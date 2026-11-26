@@ -151,14 +151,24 @@
     }
     // guardian is the stable saved skill ID; its gameplay is now Beast Fury.
     const wolfFury=()=>Boolean(archer&&companionEnabled&&companion?.hp>0&&archerRanks.guardian&&companion.hp<companion.maxHp*.5);
+    // Summarize actual independent damage-over-time instances. A refreshed
+    // barbed arrow is one stack; each live wolf bleed is another stack.
+    // The ring follows the last expiring stack and disappears on its final tick.
+    function bleedingSnapshot(unit,dots=unit.arrowDots){
+      if(unit.hp<=0)return {};
+      const active=(dots||[]).filter(dot=>['barbed','wolfBleed'].includes(dot.type)&&dot.left>0&&dot.at+(dot.left-1)*TICKS>elapsed);
+      if(!active.length)return {};
+      const endsAt=Math.max(...active.map(dot=>dot.at+(dot.left-1)*TICKS));
+      return {bleeding:{count:active.length,remaining:(endsAt-elapsed)/TICKS,duration:4,endsAt:endsAt/TICKS}};
+    }
     function getState() {
       const target = enemies.find(enemy => enemy.hp > 0);
       const waiting = phase === 'intermission' || (phase === 'paused' && pausedFrom === 'intermission');
       return {
-        ...(mage?{activeTalents:[...activeTalents]}:{}),...(archer&&(archerRanks.alpha||archerRanks.guardian)?{wolfAttackSpeed:(elapsed<roarUntil?1+.1*archerRanks.alpha:1)*(wolfFury()?1+.15*archerRanks.guardian:1)}:{}),...(archer&&companionEnabled&&(archerRanks.rendingBite||archerRanks.guardian||archerRanks.wolfBond)?{wolfSkills:{bond:archerRanks.wolfBond,fury:wolfFury(),rendingNext:!!archerRanks.rendingBite&&(wolfBites+1)%3===0}}:{}),...(archer&&(archerRanks.arrowDance||archerRanks.alpha)?{archerEffects:{dance:elapsed<danceUntil,roar:companionEnabled&&companion?.hp>0&&elapsed<roarUntil}}:{}),phase, elapsed:elapsed / TICKS, hero:{...hero,...(sphere?{sphere:{...sphere}}:{})},
-        companion:companionEnabled?{...companion,alive:companion.hp>0}:null,
+        ...(mage?{activeTalents:[...activeTalents]}:{}),...(archer&&(archerRanks.alpha||archerRanks.guardian)?{wolfAttackSpeed:(elapsed<roarUntil?1+.1*archerRanks.alpha:1)*(wolfFury()?1+.15*archerRanks.guardian:1)}:{}),...(archer&&companionEnabled&&(archerRanks.rendingBite||archerRanks.guardian||archerRanks.wolfBond)?{wolfSkills:{bond:archerRanks.wolfBond,fury:wolfFury(),rendingNext:!!archerRanks.rendingBite&&(wolfBites+1)%3===0}}:{}),...(archer&&(archerRanks.arrowDance||archerRanks.alpha)?{archerEffects:{dance:elapsed<danceUntil,roar:companionEnabled&&companion?.hp>0&&elapsed<roarUntil}}:{}),phase, elapsed:elapsed / TICKS, hero:{...hero,...bleedingSnapshot(hero),...(sphere?{sphere:{...sphere}}:{})},
+        companion:companionEnabled?{...companion,...bleedingSnapshot(companion),alive:companion.hp>0}:null,
         enemyTargetId:currentEnemyTarget().id,
-        enemies:enemies.map(({arrowDots,...enemy}) => ({...enemy,status:enemy.status ? {type:enemy.status.type,startedAt:enemy.status.startedAt/TICKS,endsAt:enemy.status.endsAt/TICKS,...(enemy.status.enhanced?{enhanced:true}:{})} : null,alive:enemy.hp > 0})),
+        enemies:enemies.map(({arrowDots,...enemy}) => ({...enemy,...bleedingSnapshot(enemy,arrowDots),status:enemy.status ? {type:enemy.status.type,startedAt:enemy.status.startedAt/TICKS,endsAt:enemy.status.endsAt/TICKS,...(enemy.status.enhanced?{enhanced:true}:{})} : null,alive:enemy.hp > 0})),
         targetId:target ? target.id : null,
         waveIndex,waveNumber:waveIndex+1,waveCount:activeWaves.length,completedWaves,
         defeatedCount,totalDefeated:defeatedCount,totalEnemies:activeTotalEnemies,reward,
