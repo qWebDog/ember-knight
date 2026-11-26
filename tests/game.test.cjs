@@ -1780,3 +1780,21 @@ test('Archer approaches, picks up, carries and puts down dead wolf on next wave'
  ui.runFor(.3);assert.equal(wolf.style.left,ground);
  assert.equal(ui.state().enemyTargetId,'hero');
 });
+
+test('wolfTest=1 makes equipped wolf die on first hit and carries it into next wave without awarding gold',async()=>{
+ const ui=createHarness({weapon:'bow',outfit:'wanderer',wolfEquipped:true,search:'?wolfTest=1'});
+ await ui.loadAllImages();
+ const hero=ui.node('[data-fighter="hero"]'),wallet=ui.progression.getState().gold;
+ assert.equal(ui.state().companion.maxHp,1);
+ assert.equal(ui.state().hero.damage,20);
+ ui.runUntil(()=>ui.events.some(e=>e.type==='death'&&e.id==='companion'),15);
+ assert.equal(ui.state().companion.hp,0);
+ ui.runUntil(()=>hero.dataset.wolfCarry==='lift',15);
+ ui.runUntil(()=>hero.dataset.wolfCarry==='walk',5);
+ ui.runUntil(()=>hero.dataset.wolfCarry==='lower',10);
+ ui.runUntil(()=>hero.dataset.wolfCarry==='',5);
+ assert.equal(ui.state().waveIndex,1);
+ assert.equal(ui.state().companion.hp,0);
+ assert.equal(ui.node('#companion-wolf').hidden,false);
+ assert.equal(ui.progression.getState().gold,wallet);
+});

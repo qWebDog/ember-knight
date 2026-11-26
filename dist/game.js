@@ -28,6 +28,15 @@
   const loadout = loadouts?.selection(character) || null;
   const starterWeapon = loadout ? loadouts.weapon(loadout.weapon) : null;
   const starterOutfit = loadout ? loadouts.outfit(loadout.weapon,loadout.outfit) : null;
+  // Opt-in visual QA: no saved ranks or rewards are modified.
+  const wolfDeathPreview=starterWeapon?.id==='bow'&&new URLSearchParams(window.location.search).get('wolfTest')==='1';
+  const combatStats=()=>{
+    const stats=progression.getStats();
+    if(!wolfDeathPreview)return stats;
+    return {...Object.fromEntries(Object.keys(stats).map(key=>[key,key.startsWith('archer_')?0:stats[key]])),
+      heroDamage:20,heroAttackSpeed:1,heroMaxHp:10000,companionMaxHp:1};
+  };
+  if(wolfDeathPreview)auto=true;
   const mageTalentHUD=starterWeapon?.id==='wand';
   // Mage has no manual autoplay toggle in the HUD; ignore a legacy off preference.
   if(mageTalentHUD)auto=true;
@@ -97,7 +106,7 @@
   const battle = window.EmberCombat.createBattle({heroName:name,heroProjectile:starterWeapon?.projectile,heroWeapon:starterWeapon?.id,heroMagic,
     dragonBossEnabled:dragonBoss,skeletonSwordsEnabled:true,
     companionEnabled:equipment?.classId==='bow'&&equipment.getState().companion==='wolf',
-    ...progression.getStats(),heroTalents:starterWeapon?.id==='wand'?progression.getTalents().equipped:[]});
+    ...combatStats(),heroTalents:starterWeapon?.id==='wand'?progression.getTalents().equipped:[]});
   battle.pause();
   let ready = false, assetError = false, lastFrameTime = null, restartRemaining = null, resultSummary = '';
   const paidDeaths = new Set();
@@ -205,7 +214,7 @@
       if(change?.type==='talents')battle.setTalents(progression.getTalents().equipped);
     }
     if(change?.type!=='purchase')return;
-    const current = battle.getState().hero, stats = progression.getStats();
+    const current = battle.getState().hero, stats = combatStats();
     const oldSpeed = current.attackSpeed || 1;
     if (current.damage !== stats.heroDamage || current.maxHp !== stats.heroMaxHp || oldSpeed !== stats.heroAttackSpeed || stats.heroBurnRank || stats.heroSphereRank || stats.heroShardRank || starterWeapon?.id==='wand'|| starterWeapon?.id==='bow') {
       const ratio = oldSpeed / stats.heroAttackSpeed;
@@ -375,6 +384,7 @@
       $('#status').textContent = dragonBoss
         ?'Бой готов: три волны и финальный красный дракон.'
         :'Бой готов: один лучник, смешанная волна скелетов, затем орк.';
+      if(wolfDeathPreview)$('#status').textContent='Тест переноски: волк 1 HP, награды не сохраняются.';
       render(battle.getState()); equipmentUI?.refreshPreview(); syncPause();
     } catch {
       assetError = true;
@@ -819,7 +829,7 @@
         let rewardSaved = true, receivedReward = event.reward;
         if(event.id!=='hero'&&event.reward>0&&!paidDeaths.has(event.id)){
           paidDeaths.add(event.id);
-          const award = progression.awardGold(event.reward,starterWeapon?.id==='wand'?10:0);
+          const award = wolfDeathPreview?{ok:true,awarded:0}:progression.awardGold(event.reward,starterWeapon?.id==='wand'?10:0);
           rewardSaved = award.ok;
           if(award.ok){receivedReward=award.awarded;creditedRunGold+=receivedReward;if(receivedReward>0)addEffect('coin','hero',event.id,`+${receivedReward}`,event.at);}
         }
@@ -1567,7 +1577,7 @@
     // This hit is confirmed by the combat engine, which owns HP, death
     // rewards, wave transitions and victory. No Archer shot is delayed.
     if(bite){
-      const events=battle.companionStrike?.(bite.targetId,bite.damage)||[];
+      const events=battle.companionStrike?.(bite.targetId,wolfDeathPreview?1:bite.damage)||[];
       handleEvents(events);
     }
   }
