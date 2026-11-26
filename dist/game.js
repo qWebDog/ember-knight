@@ -29,12 +29,15 @@
   const starterWeapon = loadout ? loadouts.weapon(loadout.weapon) : null;
   const starterOutfit = loadout ? loadouts.outfit(loadout.weapon,loadout.outfit) : null;
   // Opt-in visual QA: no saved ranks or rewards are modified.
-  const wolfDeathPreview=starterWeapon?.id==='bow'&&new URLSearchParams(window.location.search).get('wolfTest')==='1';
+  const wolfPreviewMode=new URLSearchParams(window.location.search).get('wolfTest');
+  const wolfRevivePreview=starterWeapon?.id==='bow'&&wolfPreviewMode==='revive';
+  const wolfDeathPreview=starterWeapon?.id==='bow'&&(wolfPreviewMode==='1'||wolfRevivePreview);
   const combatStats=()=>{
     const stats=progression.getStats();
     if(!wolfDeathPreview)return stats;
     return {...Object.fromEntries(Object.keys(stats).map(key=>[key,key.startsWith('archer_')?0:stats[key]])),
-      heroDamage:20,heroAttackSpeed:1,heroMaxHp:10000,companionMaxHp:1};
+      heroDamage:wolfRevivePreview?8:20,heroAttackSpeed:1,heroMaxHp:10000,companionMaxHp:1,
+      ...(wolfRevivePreview?{archer_alpha:1,wolfRevivePreview:true}:{})};
   };
   if(wolfDeathPreview)auto=true;
   const mageTalentHUD=starterWeapon?.id==='wand';
@@ -384,7 +387,7 @@
       $('#status').textContent = dragonBoss
         ?'Бой готов: три волны и финальный красный дракон.'
         :'Бой готов: один лучник, смешанная волна скелетов, затем орк.';
-      if(wolfDeathPreview)$('#status').textContent='Тест переноски: волк 1 HP, награды не сохраняются.';
+      if(wolfDeathPreview)$('#status').textContent=wolfRevivePreview?'Тест воскрешения: волк 1 HP, возрождение через 2 с.':'Тест переноски: волк 1 HP, награды не сохраняются.';
       render(battle.getState()); equipmentUI?.refreshPreview(); syncPause();
     } catch {
       assetError = true;
