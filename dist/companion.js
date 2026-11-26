@@ -1,17 +1,16 @@
 /* Original LPC wolf animation by Stephen "Redshrike" Challener,
  * contributed by William.Thompsonj, licensed CC BY 4.0.
  * https://opengameart.org/content/lpc-wolf-animation
- * The original wolf.png is preserved for attribution and rollback.
- * Active gray wolf uses the approved generated art, normalized to the same crop geometry.
+ * Original 640×384 sprite sheet is preserved without pixel modification.
  */
 (function(root,factory){'use strict';const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;if(root)root.EmberCompanion=api;})(typeof window!=='undefined'?window:null,function(){
   'use strict';
-  const path='assets/companions/wolf-gray.png',tile=64;
+  const path='assets/companions/wolf.png',tile=64;
   const sprite=Object.freeze({width:640,height:384,tile});
   // Shared with the battlefield movement and enemy range check.
   // Keep the wolf's head outside even a 2x Orc sprite when biting.
   const contact=Object.freeze({enemy:.56,companion:.18});
-  // The atlas retains the previous 10×6 layout of cropped animation strips:
+  // This wolf is NOT a 10×6 grid of full 64px-high animation frames:
   // side-facing actions share 64px rows as separate 32–40px-high strips.
   // Each strip starts at x=320; left-facing artwork is in the lower half.
   const strips=Object.freeze({
@@ -120,7 +119,7 @@
         asset.onload=()=>resolve(asset);asset.onerror=()=>reject(new Error('Wolf sprite unavailable'));
         asset.src=path;
       })).then(asset=>{
-        if(asset.width!==sprite.width||asset.height!==sprite.height)throw new Error('Unexpected gray wolf atlas geometry');
+        if(asset.width!==sprite.width||asset.height!==sprite.height)throw new Error('Unexpected LPC wolf geometry');
         image=asset;lastKey=null;return asset;
       }).catch(error=>{inflight=null;throw error;});
       return inflight;
@@ -282,10 +281,15 @@
     function paintPreview(ctx,pose){
       if(!image||!active()||!ctx)return false;
       const row=pose?.row??2;
-      // Approved atlas contains lateral views only; retain the same wolf
-      // silhouette in all equipment portraits instead of using the old animal.
-      const sy=row===0||row===1?248:56;
-      ctx.drawImage(image,320,sy,64,40,35,40,29,18);
+      // Original forward/backward wolf cells are only 23×63, packed every
+      // 32px. Side cells are 64×40. Preserve their aspect ratios.
+      if(row===0||row===2){
+        const sx=row===0?163:5;
+        ctx.drawImage(image,sx,65,23,63,44,30,12,30);
+      }else{
+        const sy=row===1?248:56;
+        ctx.drawImage(image,320,sy,64,40,35,40,29,18);
+      }
       return true;
     }
     return Object.freeze({load,loaded,reset,placeFallen,startSkill,advance,followExit,render,paintPreview,
