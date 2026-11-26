@@ -382,7 +382,7 @@
         events.push({type:'attack',sourceId,targetId:target.id,damage,hp:target.hp,at:elapsed/TICKS,projectile,...metadata,...(evaded?{evaded:true}:{})});
         if (target.hp === 0) {
           const enemy = target.id !== 'hero' && target.id !== 'companion';
-          if(target.id==='companion'&&archerRanks.alpha)wolfReviveAt=elapsed+(24-2*archerRanks.alpha)*TICKS;
+          if(target.id==='companion'&&archerRanks.alpha)wolfReviveAt=elapsed+Math.round((options.wolfRevivePreview===true?2:24-2*archerRanks.alpha)*TICKS);
           if(enemy)target.arrowDots=[];
           if (enemy) { const wasBurning=target.status?.type==='burn';defeatedCount++; reward += KILL_REWARD; target.status = null;
             if(sourceId==='hero'&&hasTalent('vampirism'))hero.hp=Math.min(hero.maxHp,hero.hp+hero.maxHp*.05);
