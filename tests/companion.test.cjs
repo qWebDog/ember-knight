@@ -120,7 +120,7 @@ test('game invokes the corrected wolf animation controller and exposes class com
  assert.match(html,/data-equipment-slot="companion"/);
  assert.doesNotMatch(html,/data-equipment-slot="boots"/);
  assert.match(html,/id="companion-wolf"/);
- assert.match(html,/src="companion\.js\?v=wolf-approved-skills-1"/);
+ assert.match(html,/src="companion\.js\?v=carry-appearance-1"/);
  assert.match(js,/companion\?\.render\(/);
  assert.match(js,/direction:walkDirection/);
  assert.match(js,/action:wolfFallen\|\|wolfDefeatedWithHero\?'die':null/);
@@ -329,4 +329,16 @@ test('carried wolf is placed at exact destination and remains dead until revival
  h.actor.startSkill('revive',4);
  h.actor.advance({time:4.1,heroX:144,companionAlive:true});
  assert.equal(h.actor.getPose().x,196);
+});
+
+test('carry recoloring transfers actual hero palette and leaves the wolf and alpha unchanged',()=>{
+ const atlas=Uint8ClampedArray.from([27,85,2,255,248,213,185,255,96,64,54,255,0,0,0,0,72,56,48,255]);
+ const a=Uint8ClampedArray.from([27,85,2,255,248,213,185,255,96,64,54,255]);
+ const b=Uint8ClampedArray.from([82,110,170,255,166,113,76,255,255,0,0,255]);
+ const result=wolf.recolorCarryPixels(atlas,a,b,{outfitColor:'blue',skin:'bronze'});
+ assert.deepEqual([...result],[82,110,170,255,166,113,76,255,96,64,54,255,0,0,0,0,72,56,48,255]);
+ const fallback=wolf.recolorCarryPixels(atlas,[],[],{outfitColor:'red',skin:'bronze'});
+ assert.notDeepEqual([...fallback.slice(0,8)],[...atlas.slice(0,8)]);
+ assert.deepEqual([...fallback.slice(8)],[...atlas.slice(8)]);
+ assert.deepEqual([...atlas.slice(0,4)],[27,85,2,255]);
 });

@@ -80,6 +80,62 @@
       }
     }
   }
+
+  // Carry art is authored in the forest/light palette. Transfer only known
+  // Ranger clothing/skin pixels; the wolf, bow, outlines and alpha stay intact.
+  const carryHood=new Set(['27,85,2','19,69,7','11,43,40','7,57,29','16,46,24','49,91,73']);
+  const carryCloth=new Set(['13,22,26','13,30,36','69,97,104','41,60,64','115,145,152','85,126,133','49,58,59','32,41,42','75,80,80']);
+  const carrySkin=new Set(['248,213,185','236,200,172','216,186,164']);
+  const carryColors={sand:[195,165,116],forest:[85,123,72],blue:[82,110,170],red:[152,82,90],purple:[148,106,180],gray:[139,141,150]};
+  const carrySkinColors={light:[248,213,185],amber:[221,169,113],olive:[193,157,105],bronze:[166,113,76],brown:[119,77,52],black:[78,52,38]};
+  const rgbKey=(data,i)=>data[i]+','+data[i+1]+','+data[i+2];
+  function recolorCarryPixels(pixels,reference,current,{outfitColor='forest',skin='light',dyes={}}={}){
+    const votes=new Map(),mapped=new Map();
+    for(let i=0;i+3<Math.min(reference.length,current.length);i+=4){
+      if(reference[i+3]!==255||current[i+3]!==255)continue;
+      const from=rgbKey(reference,i);
+      if(!carryHood.has(from)&&!carryCloth.has(from)&&!carrySkin.has(from))continue;
+      const to=rgbKey(current,i),v=votes.get(from)||new Map();
+      v.set(to,(v.get(to)||0)+1);votes.set(from,v);
+    }
+    for(const [from,v] of votes)mapped.set(from,[...v].sort((a,b)=>b[1]-a[1])[0][0].split(',').map(Number));
+    const result=new Uint8ClampedArray(pixels);
+    const shade=(rgb,base,source)=>{const y=(rgb[0]*.2126+rgb[1]*.7152+rgb[2]*.0722)/(source[0]*.2126+source[1]*.7152+source[2]*.0722);return base.map(v=>Math.min(255,Math.round(v*y)));};
+    for(let i=0;i<result.length;i+=4){
+      if(!result[i+3])continue;
+      const key=rgbKey(result,i),rgb=[result[i],result[i+1],result[i+2]];
+      const hood=carryHood.has(key),cloth=carryCloth.has(key),face=carrySkin.has(key);
+      if(!hood&&!cloth&&!face)continue;
+      let to=mapped.get(key);
+      // Keep a selected non-forest color even for hand-drawn pixels not found
+      // in the native walk sheet. Never recolor the wolf's brown fur.
+      const hoodColor=dyes.helmet&&dyes.helmet!=='original'?dyes.helmet:dyes.cape&&dyes.cape!=='original'?dyes.cape:outfitColor;
+      if(hood&&carryColors[hoodColor]&&hoodColor!=='forest'&&(!to||to.join(',')===key))to=shade(rgb,carryColors[hoodColor],[85,123,72]);
+      if(cloth&&carryColors[dyes.armor]&&(!to||to.join(',')===key))to=shade(rgb,carryColors[dyes.armor],[69,97,104]);
+      if(face&&skin!=='light'&&carrySkinColors[skin]&&(!to||to.join(',')===key))to=shade(rgb,carrySkinColors[skin],[248,213,185]);
+      if(to)for(let j=0;j<3;j++)result[i+j]=to[j];
+    }
+    return result;
+  }
+  function recolorCarryAtlas(atlas,reference,current,appearance,canvasFactory){
+    const read=(image,sy=0,h=image?.height||0)=>{
+      if(!image||!h)return new Uint8ClampedArray(0);
+      const c=canvasFactory();c.width=image.width;c.height=h;
+      const ctx=c.getContext('2d',{willReadFrequently:true});ctx.imageSmoothingEnabled=false;
+      ctx.drawImage(image,0,sy,image.width,h,0,0,image.width,h);
+      return ctx.getImageData(0,0,c.width,c.height).data;
+    };
+    const canvas=canvasFactory();canvas.width=atlas.width;canvas.height=atlas.height;
+    const ctx=canvas.getContext('2d',{willReadFrequently:true});
+    ctx.imageSmoothingEnabled=false;ctx.drawImage(atlas,0,0);
+    const data=ctx.getImageData(0,0,canvas.width,canvas.height);
+    const sameGeometry=reference&&current&&reference.width===current.width&&reference.height===current.height&&reference.height===512;
+    const a=sameGeometry?read(reference,384,128):new Uint8ClampedArray(0);
+    const b=sameGeometry?read(current,384,128):new Uint8ClampedArray(0);
+    data.data.set(recolorCarryPixels(data.data,a,b,appearance));
+    ctx.putImageData(data,0,0);canvas.src=atlas.src;return canvas;
+  }
+
   function create({element,store,loadImage,canvasFactory}={}){
     const canvas=element?.querySelector?.('canvas')||null;
     let image=null,inflight=null,lastKey=null,idleSince=null;
@@ -319,5 +375,5 @@
     return Object.freeze({load,loaded,reset,placeFallen,startSkill,advance,followExit,render,paintPreview,
       getPose:()=>({x:position,depth:actorDepth,facing,motion,engaged,biteStarted,biteTarget})});
   }
-  return Object.freeze({path,sprite,contact,strips,frameAt,skillDuration,paintEffect,create});
+  return Object.freeze({path,sprite,contact,strips,frameAt,skillDuration,paintEffect,recolorCarryPixels,recolorCarryAtlas,create});
 });
