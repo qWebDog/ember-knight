@@ -1751,7 +1751,8 @@ test('Archer approaches, picks up, carries and puts down dead wolf on next wave'
  const ui=createHarness({weapon:'bow',outfit:'wanderer',wolfEquipped:true,
   combatOptions:{companionMaxHp:7,heroDamage:1,heroMaxHp:10000}});
  await ui.loadAllImages();
- assert.ok(ui.loadedPaths.includes('assets/companions/wolf-carry.png'));
+ assert.ok(ui.loadedPaths.includes('assets/companions/wolf.png'));
+ assert.ok(!ui.loadedPaths.includes('assets/companions/wolf-carry.png'),'never load the fixed green character');
  ui.runUntil(()=>ui.events.some(e=>e.type==='death'&&e.id==='companion'),25);
  const wolf=ui.node('#companion-wolf'),fallenX=wolf.style.left,fallenDepth=wolf.style['--lane-offset'];
  const hero=ui.node('[data-fighter="hero"]'),sprite=ui.node('#player-sprite');
@@ -1767,7 +1768,7 @@ test('Archer approaches, picks up, carries and puts down dead wolf on next wave'
  ui.runUntil(()=>hero.dataset.wolfCarry==='walk',5);
  assert.equal(hero.dataset.motion,'wolf-carry');
  const carryX=ui.heroX();ui.runFor(.3);assert.ok(ui.heroX()>carryX);
- assert.ok(sprite.draws.some(d=>d.src==='assets/companions/wolf-carry.png'&&d.crop[2]===96));
+ assert.ok(sprite.draws.some(d=>d.src?.startsWith('composed-wolf-carry:')&&d.crop[2]===128));
  ui.runUntil(()=>ui.state().waveIndex===1,5);
  assert.equal(hero.dataset.wolfCarry,'entry');
  const entryElapsed=ui.state().elapsed;
@@ -1824,4 +1825,22 @@ test('wolfTest=revive shows full revival animation two combat seconds after firs
  ui.runUntil(()=>ui.events.filter(e=>e.type==='archerSkill'&&e.skill==='wolfRevive').length===2,8);
  assert.equal(ui.events.filter(e=>e.type==='death'&&e.id==='companion').length,2);
  assert.equal(ui.progression.getState().gold,wallet);
+});
+
+test('wolf pickup, carry and putdown never switch a non-green Archer to the old outfit',async()=>{
+ for(const [skin,outfitColor] of [['black','red'],['olive','blue']]){
+  const ui=createHarness({weapon:'bow',outfit:'wanderer',skin,outfitColor,wolfEquipped:true,search:'?wolfTest=1'});
+  await ui.loadAllImages();
+  const hero=ui.node('[data-fighter="hero"]'),sprite=ui.node('#player-sprite');
+  ui.runUntil(()=>hero.dataset.wolfCarry==='lift',30);
+  const expected='composed-wolf-carry:assets/characters/loadouts/bow/wanderer/'+outfitColor+'/'+skin+'-walk.png';
+  for(const stage of ['lift','walk','entry','lower']){
+   ui.runUntil(()=>hero.dataset.wolfCarry===stage,15);
+   ui.frame(16);
+   assert.ok(sprite.draws.some(d=>d.src===expected&&d.crop[2]===128),stage+' uses '+expected);
+   assert.ok(!sprite.draws.some(d=>d.src==='assets/companions/wolf-carry.png'));
+  }
+  ui.runUntil(()=>hero.dataset.wolfCarry==='',4);
+  assert.equal(ui.node('#companion-wolf').dataset.motion,'die');
+ }
 });
