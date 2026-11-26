@@ -80,6 +80,43 @@
       }
     }
   }
+
+  // Recompose carry poses from the *current* fully equipped native LPC walk
+  // sheet, not a recolored picture of the original Ranger. Every equipped
+  // layer (including the bow, quiver, helmet, armor, cape and skin) is already
+  // present in this image. Keep the exact native pixel scale and ground line.
+  const carryPose=Object.freeze({tile:128,frames:8,origin:32});
+  function buildCarryAtlas(hero,wolf,canvasFactory){
+    const w=hero?.naturalWidth||hero?.width,h=hero?.naturalHeight||hero?.height;
+    if(w!==1152||h!==512||!wolf||wolf.width!==640||wolf.height!==384)throw new Error('Invalid native carry sources');
+    const atlas=canvasFactory();atlas.width=carryPose.tile*carryPose.frames;atlas.height=carryPose.tile;
+    const ctx=atlas.getContext('2d');ctx.imageSmoothingEnabled=false;
+    // Five lift poses; the last four poses reuse real walking strides.
+    // The top moves with the crouch while the feet stay planted at y=94.
+    const crouch=[0,9,12,6,0,0,0,0];
+    const strides=[0,0,0,0,1,3,5,7];
+    const wolfX=[58,56,53,50,48,48,48,48],wolfY=[63,63,61,53,47,46,47,46];
+    const dead=frameAt(99,false,false,3,'die');
+    for(let i=0;i<8;i++){
+      const x=i*128,sx=strides[i]*128,sy=384,d=crouch[i];
+      // Preserve the full native equipment silhouette, including any pixels
+      // outside the central 64px character cell. Only bend the waist/knees.
+      if(d){
+        ctx.drawImage(hero,sx,sy,128,76,x,d,128,76);
+        ctx.drawImage(hero,sx,sy+76,128,20,x+0,76+d,128,20-d);
+        ctx.drawImage(hero,sx,sy+96,128,32,x,96,128,32);
+      }else ctx.drawImage(hero,sx,sy,128,128,x,0,128,128);
+      // The original wolf corpse is its own layer. It never inherits dyes.
+      ctx.drawImage(wolf,dead.sx,dead.sy,dead.sw,dead.sh,x+wolfX[i],wolfY[i],64,32);
+      // Place the actual equipped forearm in front of the lifted animal
+      // for the cradling pose, using pixels from this same walking frame.
+      // The rear/cape/weapon layers remain those of the current character.
+      if(i>=2)ctx.drawImage(hero,sx+57,sy+70,11,10,x+57,70+Math.round(d*.5),11,10);
+    }
+    atlas.src='composed-wolf-carry:'+hero.src;
+    return atlas;
+  }
+
   function create({element,store,loadImage,canvasFactory}={}){
     const canvas=element?.querySelector?.('canvas')||null;
     let image=null,inflight=null,lastKey=null,idleSince=null;
@@ -319,5 +356,5 @@
     return Object.freeze({load,loaded,reset,placeFallen,startSkill,advance,followExit,render,paintPreview,
       getPose:()=>({x:position,depth:actorDepth,facing,motion,engaged,biteStarted,biteTarget})});
   }
-  return Object.freeze({path,sprite,contact,strips,frameAt,skillDuration,paintEffect,create});
+  return Object.freeze({path,sprite,contact,strips,frameAt,skillDuration,paintEffect,carryPose,buildCarryAtlas,create});
 });

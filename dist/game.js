@@ -153,7 +153,7 @@
   // its x-coordinate moves while the legs stay on one static frame.
   let walkDistance = 0, walkDirection = 3, activeTime = 0, companionTime = 0;
   let companionDeathAt = null, companionHitAt = -10;
-  let carryAtlas=null,carryAtlasPromise=null,wolfCarry=null;
+  let carryAtlas=null,carryAtlasPromise=null,wolfCarry=null,carryWolfImage=null,carryHeroImage=null;
   let sceneTransition = null;
   // At the start of EACH wave the hero walks in at a deliberate pace
   // from fully off-screen. The battle clock stays on hold until arrival.
@@ -297,10 +297,21 @@
   function loadImage(path) {
     return new Promise((resolve,reject) => { const image = new Image(); image.onload = () => resolve(image); image.onerror = () => reject(new Error(path)); image.src = path; });
   }
+  function ensureCarryAtlas(){
+    const hero=actors.hero.images.walk?.image;
+    if(!hero||!carryWolfImage)return null;
+    if(hero!==carryHeroImage||!carryAtlas){
+      try{
+        carryAtlas=window.EmberCompanion.buildCarryAtlas(hero,carryWolfImage,()=>document.createElement('canvas'));
+        carryHeroImage=hero;
+      }catch{carryAtlas=null;carryHeroImage=null;}
+    }
+    return carryAtlas;
+  }
   function loadCarryAtlas(){
-    if(!carryAtlasPromise)carryAtlasPromise=loadImage('assets/companions/wolf-carry.png').then(image=>{
-      if(image.width===768&&image.height===64)carryAtlas=image;
-      return carryAtlas;
+    if(!carryAtlasPromise)carryAtlasPromise=loadImage(window.EmberCompanion.path).then(image=>{
+      if(image.width===640&&image.height===384)carryWolfImage=image;
+      return ensureCarryAtlas();
     }).catch(()=>{carryAtlasPromise=null;return null;});
     return carryAtlasPromise;
   }
@@ -418,7 +429,7 @@
   // Carry is a presentation-only transition. Combat time stays frozen
   // during the approach and lifting/lowering, not during normal combat.
   function beginWolfCarry(state){
-    if(wolfCarry||!carryAtlas||reducedMotion.matches||starterWeapon?.id!=='bow'||state.hero.hp<=0||state.companion?.hp!==0||companionDeathAt===null)return;
+    if(wolfCarry||!ensureCarryAtlas()||reducedMotion.matches||starterWeapon?.id!=='bow'||state.hero.hp<=0||state.companion?.hp!==0||companionDeathAt===null)return;
     const pose=companion?.getPose(),size=actors.hero.element.offsetWidth;
     if(!Number.isFinite(pose?.x))return;
     const to=pose.x-size*26/64,from=heroX??to,fromDepth=actors.hero.depth;
@@ -468,16 +479,16 @@
   }
   function paintWolfCarry(){
     const c=wolfCarry;
-    if(!c||c.stage==='approach'||!carryAtlas)return false;
+    if(!c||c.stage==='approach'||!ensureCarryAtlas())return false;
     const actor=actors.hero,canvas=actor.canvas;
     const frame=c.stage==='lift'?Math.min(4,Math.floor(c.age/.9*5)):
       c.stage==='lower'?Math.max(0,4-Math.floor(c.age/.9*5)):4+Math.floor(companionTime*8)%4;
-    const key='wolf-carry:'+frame;
+    const key='wolf-carry:'+frame+':'+carryAtlas.src;
     if(actor.lastKey!==key){
-      canvas.width=96;canvas.height=64;
-      const ctx=canvas.getContext('2d');ctx.imageSmoothingEnabled=false;ctx.clearRect(0,0,96,64);
-      ctx.drawImage(carryAtlas,frame*96,0,96,64,0,0,96,64);
-      canvas.style.width='150%';canvas.style.height='100%';canvas.style.left='0%';canvas.style.top='0%';
+      canvas.width=128;canvas.height=128;
+      const ctx=canvas.getContext('2d');ctx.imageSmoothingEnabled=false;ctx.clearRect(0,0,128,128);
+      ctx.drawImage(carryAtlas,frame*128,0,128,128,0,0,128,128);
+      canvas.style.width='200%';canvas.style.height='200%';canvas.style.left='-50%';canvas.style.top='-50%';
       actor.lastKey=key;
     }
     actor.element.dataset.motion=c.stage==='lift'?'wolf-pickup':c.stage==='lower'?'wolf-putdown':'wolf-carry';
@@ -1003,7 +1014,7 @@
     cuedArrows.clear();
     heroX=null;archerRetreatOffset=0;archerRetreatMotion=null;archerEvadeAt=-10;fieldWidth=null;walkDistance=0;walkDirection=3;moving=heroMoving=false;
     const deadWolf=state.companion?.hp===0;
-    const arrivingWithWolf=deadWolf&&wolfCarry?.stage==='walk'&&carryAtlas&&!reducedMotion.matches;
+    const arrivingWithWolf=deadWolf&&wolfCarry?.stage==='walk'&&ensureCarryAtlas()&&!reducedMotion.matches;
     wolfCarry=arrivingWithWolf?{stage:'entry',age:0}:null;
     companionTime=0;companionDeathAt=deadWolf?-1:null;companionHitAt=-10;
     companion?.reset();

@@ -120,7 +120,7 @@ test('game invokes the corrected wolf animation controller and exposes class com
  assert.match(html,/data-equipment-slot="companion"/);
  assert.doesNotMatch(html,/data-equipment-slot="boots"/);
  assert.match(html,/id="companion-wolf"/);
- assert.match(html,/src="companion\.js\?v=wolf-approved-skills-1"/);
+ assert.match(html,/src="companion\.js\?v=carry-live-equipment-1"/);
  assert.match(js,/companion\?\.render\(/);
  assert.match(js,/direction:walkDirection/);
  assert.match(js,/action:wolfFallen\|\|wolfDefeatedWithHero\?'die':null/);
@@ -329,4 +329,21 @@ test('carried wolf is placed at exact destination and remains dead until revival
  h.actor.startSkill('revive',4);
  h.actor.advance({time:4.1,heroX:144,companionAlive:true});
  assert.equal(h.actor.getPose().x,196);
+});
+
+test('carry atlas uses the fully equipped native hero on every frame, including actual armor and weapon art',()=>{
+ const draws=[],canvasFactory=()=>({getContext:()=>({drawImage:(...args)=>draws.push(args)})});
+ const wolfSource={width:640,height:384,src:'original-wolf'};
+ for(const src of ['composed-lpc:bow/blue/bronze/iron/royal/ember','composed-lpc:bow/red/black/royal/basic/steel']){
+  const hero={width:1152,height:512,src};
+  draws.length=0;const atlas=wolf.buildCarryAtlas(hero,wolfSource,canvasFactory);
+  assert.equal(atlas.width,1024);assert.equal(atlas.height,128);assert.equal(atlas.src,'composed-wolf-carry:'+src);
+  assert.equal(draws.filter(d=>d[0]===wolfSource).length,8);
+  assert.ok(draws.every(d=>d[0]===hero||d[0]===wolfSource));
+  for(const d of draws.filter(d=>d[0]===hero))assert.ok(d[1]>=0&&d[2]>=384&&d[1]+d[3]<=1152&&d[2]+d[4]<=512);
+  for(let frame=0;frame<8;frame++){
+   assert.ok(draws.some(d=>d[0]===hero&&d[5]>=frame*128&&d[5]<(frame+1)*128));
+   assert.ok(draws.some(d=>d[0]===wolfSource&&d[5]>=frame*128&&d[5]<(frame+1)*128));
+  }
+ }
 });
