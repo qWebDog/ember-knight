@@ -69,6 +69,8 @@
     };
     const mage=options.heroWeapon==='wand'&&config.projectile==='magic';
     const archer=options.heroWeapon==='bow'&&config.projectile==='arrow';
+    const revivePreview=archer&&options.wolfRevivePreview===true;
+    let previewDeathAt=Infinity;
     const rank=value=>Number.isFinite(value)?Math.max(0,Math.min(5,Math.floor(value))):0;
     let burnRank=mage?rank(options.heroBurnRank):0,sphereRank=mage?rank(options.heroSphereRank):0,shardRank=mage?rank(options.heroShardRank):0;
     const archerRanks=Object.fromEntries(["piercing","poison","explosive","barbed","doubleShot","arrowRain","rendingBite","guardian","alpha","evasion","retreat","arrowDance","wolfBond"].map(id=>[id,archer?rank(options['archer_'+id]):0]));
@@ -169,6 +171,7 @@
       mageCastIndex=0;orcHasAttacked=false;activeTalents=[...queuedTalents];powerCharged=false;regenAt=sphere?.hp>0?elapsed+3*TICKS:Infinity;
       nextHero = elapsed + heroTicks(sword ? swordSteps[0].interval : HERO_INTERVAL);
       nextEnemies = enemies.map(enemy => elapsed + Math.round(enemy.interval * TICKS));
+      if(revivePreview)previewDeathAt=elapsed+TICKS;
     }
     function restart({carryFallenWolf=false}={}) {
       // An automatic victory continuation can retain a fallen companion and
@@ -347,6 +350,7 @@
         return true;
       }
       function hit(sourceId,target,damage,projectile,metadata) {
+        if(revivePreview&&target.id==='companion'&&!metadata?.previewDeath)return;
         let reflected=0,evaded=false;
         if(archer&&sourceId!=='hero'&&sourceId!=='companion'&&damage>0){
           if(target.id==='companion'&&archerRanks.guardian)damage*=1-(.05+.05*archerRanks.guardian);
@@ -382,7 +386,7 @@
         events.push({type:'attack',sourceId,targetId:target.id,damage,hp:target.hp,at:elapsed/TICKS,projectile,...metadata,...(evaded?{evaded:true}:{})});
         if (target.hp === 0) {
           const enemy = target.id !== 'hero' && target.id !== 'companion';
-          if(target.id==='companion'&&archerRanks.alpha)wolfReviveAt=elapsed+Math.round((options.wolfRevivePreview===true?2:24-2*archerRanks.alpha)*TICKS);
+          if(target.id==='companion'&&(archerRanks.alpha||revivePreview))wolfReviveAt=elapsed+Math.round((revivePreview?2:24-2*archerRanks.alpha)*TICKS);
           if(enemy)target.arrowDots=[];
           if (enemy) { const wasBurning=target.status?.type==='burn';defeatedCount++; reward += KILL_REWARD; target.status = null;
             if(sourceId==='hero'&&hasTalent('vampirism'))hero.hp=Math.min(hero.maxHp,hero.hp+hero.maxHp*.05);
@@ -554,11 +558,13 @@
             if (enemy.status.type === 'burn') next = Math.min(next,enemy.status.nextTick);
           }
         });
-        if(archer&&companionEnabled&&companion.hp<=0&&archerRanks.alpha)next=Math.min(next,Math.max(elapsed,wolfReviveAt));
+        if(revivePreview&&companionEnabled&&companion.hp>0)next=Math.min(next,Math.max(elapsed,previewDeathAt));
+        if(archer&&companionEnabled&&companion.hp<=0&&(archerRanks.alpha||revivePreview))next=Math.min(next,Math.max(elapsed,wolfReviveAt));
         if (next > until) break;
         advanceClock(next);
-        if(archer&&companionEnabled&&companion.hp<=0&&wolfReviveAt<=elapsed&&archerRanks.alpha){companion.hp=companion.maxHp;wolfReviveAt=Infinity;events.push({type:'archerSkill',skill:'wolfRevive',sourceId:'companion',targetId:'companion',at:elapsed/TICKS});}
-        if(archer&&companionEnabled&&companion.hp>0&&archerRanks.alpha&&elapsed>=roarAt){roarUntil=elapsed+5*TICKS;roarAt=elapsed+20*TICKS;events.push({type:'archerSkill',skill:'roar',sourceId:'companion',targetId:'companion',at:elapsed/TICKS});}
+        if(revivePreview&&companionEnabled&&companion.hp>0&&previewDeathAt<=elapsed){previewDeathAt=Infinity;hit(enemies.find(e=>e.hp>0).id,companion,companion.hp,'arrow',{previewDeath:true,animationDuration:.6});}
+        if(archer&&companionEnabled&&companion.hp<=0&&wolfReviveAt<=elapsed&&(archerRanks.alpha||revivePreview)){companion.hp=companion.maxHp;wolfReviveAt=Infinity;if(revivePreview)previewDeathAt=elapsed+4*TICKS;events.push({type:'archerSkill',skill:'wolfRevive',sourceId:'companion',targetId:'companion',at:elapsed/TICKS});}
+        if(archer&&!revivePreview&&companionEnabled&&companion.hp>0&&archerRanks.alpha&&elapsed>=roarAt){roarUntil=elapsed+5*TICKS;roarAt=elapsed+20*TICKS;events.push({type:'archerSkill',skill:'roar',sourceId:'companion',targetId:'companion',at:elapsed/TICKS});}
         if(hasTalent('regeneration')&&sphere?.hp>0&&sphere.hp<sphere.maxHp&&regenAt===next){sphere.hp=Math.min(sphere.maxHp,sphere.hp+sphere.maxHp*.05);regenAt=elapsed+TICKS;}
         // Ties: hero action, counters, existing status ticks/expiry, impacts, then enemies.
         if (heroCanAttack && nextHero === next) {
