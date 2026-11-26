@@ -1443,7 +1443,8 @@
       actionAge:wolfFallen?Math.max(0,companionTime-companionDeathAt)
         :sceneTransition?.phase==='defeat'?Math.max(0,activeTime-sceneTransition.at):0,
       reducedMotion:reducedMotion.matches,
-      alive:state.hero.hp>0&&Boolean(state.companion?.hp>0)
+      alive:state.hero.hp>0&&Boolean(state.companion?.hp>0),
+      bond:state.wolfSkills?.bond||0,fury:!!state.wolfSkills?.fury,rendingNext:!!state.wolfSkills?.rendingNext
     });
     const wolfElement=$('#companion-wolf');
     if(wolfRevivePreview){const indicator=document.querySelector('#wolf-preview-indicator');if(indicator){indicator.hidden=false;indicator.textContent=state.companion?.hp===0?'ТЕСТ · Волк погиб · Воскрешение через 2 с':state.companion?'ТЕСТ · Воскрешение · 1 HP':'ТЕСТ · Экипируй волка';}}
@@ -1570,7 +1571,7 @@
       exiting:sceneTransition?.phase==='wave-out'||sceneTransition?.phase==='victory',
       heroAlive:state.hero.hp>0,
       companionAlive:Boolean(state.companion?.hp>0),
-      attackSpeed:state.wolfAttackSpeed||1,
+      attackSpeed:state.wolfAttackSpeed||1,rendingNext:!!state.wolfSkills?.rendingNext,
       heroX:heroX??0,
       // Resting point must never follow the hero's wave-exit movement.
       anchorX:battlefield.clientWidth*(window.innerWidth>700?.18:.22),
