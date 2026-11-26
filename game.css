@@ -168,3 +168,10 @@ dialog{width:min(380px,calc(100% - 32px));max-height:calc(var(--app-height) - 32
 /* Fit status art to the visible Orc body, with the ground line unchanged. */
 .battlefield .fighter[data-fighter="orc"]>canvas.status-effect{top:17%;width:84%;height:84%}
 .battlefield .fighter[data-fighter="orc"] .bleed-indicator{top:calc(20% - 3px)}
+
+/* Poison shares the bleeding badge dimensions and health-bar anchor. */
+.battlefield .fighter .poison-indicator{position:absolute;left:50%;top:calc(8% - 3px);transform:translate(-50%,-100%);width:22px;height:22px;z-index:12;pointer-events:none;isolation:isolate}
+.battlefield .fighter .poison-indicator canvas{position:static!important;display:block;width:100%!important;height:100%!important;max-width:none!important;transform:none!important;filter:none!important;animation:none!important;image-rendering:pixelated}
+.battlefield .fighter .poison-count{position:absolute;bottom:-1px;right:-4px;color:#e2ffcf;font:bold 10px/10px system-ui,sans-serif;text-shadow:-1px -1px #10240a,1px -1px #10240a,-1px 1px #10240a,1px 1px #10240a;min-width:7px;text-align:center}
+@media(max-width:700px){.battlefield .fighter .poison-indicator{width:19px;height:19px}.battlefield .fighter .poison-count{font-size:9px;line-height:9px}}
+.battlefield .fighter[data-fighter="orc"] .poison-indicator{top:calc(20% - 3px)}
