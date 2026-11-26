@@ -1751,7 +1751,7 @@ test('Archer approaches, picks up, carries and puts down dead wolf on next wave'
  const ui=createHarness({weapon:'bow',outfit:'wanderer',wolfEquipped:true,
   combatOptions:{companionMaxHp:7,heroDamage:1,heroMaxHp:10000}});
  await ui.loadAllImages();
- assert.ok(ui.loadedPaths.includes('assets/companions/wolf-carry.png'));
+ assert.ok(ui.loadedPaths.includes('assets/companions/wolf-gray-carry.png'));
  ui.runUntil(()=>ui.events.some(e=>e.type==='death'&&e.id==='companion'),25);
  const wolf=ui.node('#companion-wolf'),fallenX=wolf.style.left,fallenDepth=wolf.style['--lane-offset'];
  const hero=ui.node('[data-fighter="hero"]'),sprite=ui.node('#player-sprite');
@@ -1767,7 +1767,7 @@ test('Archer approaches, picks up, carries and puts down dead wolf on next wave'
  ui.runUntil(()=>hero.dataset.wolfCarry==='walk',5);
  assert.equal(hero.dataset.motion,'wolf-carry');
  const carryX=ui.heroX();ui.runFor(.3);assert.ok(ui.heroX()>carryX);
- assert.ok(sprite.draws.some(d=>d.src==='assets/companions/wolf-carry.png'&&d.crop[2]===96));
+ assert.ok(sprite.draws.some(d=>d.src==='assets/companions/wolf-gray-carry.png'&&d.crop[2]===96));
  ui.runUntil(()=>ui.state().waveIndex===1,5);
  assert.equal(hero.dataset.wolfCarry,'entry');
  const entryElapsed=ui.state().elapsed;
