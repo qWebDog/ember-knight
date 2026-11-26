@@ -1916,3 +1916,12 @@ test('Orc magic lands on the torso and status artwork fits its doubled model',as
  assert.ok(css.includes('[data-fighter="orc"]>canvas.status-effect{top:17%;width:84%;height:84%}'));
  assert.ok(css.includes('[data-fighter="orc"] .bleed-indicator{top:calc(20% - 3px)}'));
 });
+
+test('fractional combat damage is displayed as an integer without changing actual damage',async()=>{
+ const ui=createHarness({weapon:'bow',outfit:'wanderer',combatOptions:{heroDamage:3.6,heroMaxHp:10000}});
+ await ui.loadAllImages();
+ ui.runUntil(()=>ui.events.some(e=>e.type==='attack'&&e.sourceId==='hero'),15);
+ const hit=ui.events.find(e=>e.type==='attack'&&e.sourceId==='hero');
+ assert.equal(hit.damage,3.6);
+ assert.ok(ui.node('.battlefield').children.some(e=>e.className.includes('damage-number')&&e.textContent==='−4'));
+});

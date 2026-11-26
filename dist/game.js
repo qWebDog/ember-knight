@@ -832,7 +832,8 @@
           if(event.targetId==='companion')companionHitAt=companionTime;
           else if(actors[event.targetId])actors[event.targetId].hitAt=activeTime;
         }
-        if(event.damage>0)addEffect(event.counter ? 'counter' : event.heavy ? 'heavy' : 'damage',event.sourceId,event.targetId,event.counter ? `Ответ −${event.damage}` : `−${event.damage}`,event.at);
+        // Round presentation only; preserve fractional damage in the battle engine.
+        if(event.damage>0){const shown=Math.round(event.damage);addEffect(event.counter ? 'counter' : event.heavy ? 'heavy' : 'damage',event.sourceId,event.targetId,event.counter ? `Ответ −${shown}` : `−${shown}`,event.at);}
       } else if(event.type==='status'){
         syncFrozenActors(battle.getState());
       } else if (event.type === 'block') {
