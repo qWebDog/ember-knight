@@ -18,16 +18,12 @@ function harness(){
  const actor=wolf.create({element,store,loadImage:async src=>{loadPaths.push(src);return art;}});
  return {draws,ctx,canvas,element,actor,store,loadPaths};
 }
-test('wolf uses the new gray 640×384 atlas and preserves original CC BY 4.0 art',()=>{
+test('wolf includes the original 640×384 CC BY 4.0 atlas and attribution',()=>{
  const file=fs.readFileSync(path.join(dist,wolf.path));
  assert.equal(file.subarray(1,4).toString(),'PNG');
  assert.equal(file.readUInt32BE(16),640);
  assert.equal(file.readUInt32BE(20),384);
- assert.equal(wolf.path,'assets/companions/wolf-gray.png');
- assert.ok(file.length>1000);
- const original=fs.readFileSync(path.join(dist,'assets/companions/wolf.png'));
- assert.notDeepEqual(file,original);
- assert.ok(original.length>80000);
+ assert.ok(file.length>80000);
  const credits=fs.readFileSync(path.join(dist,'assets/companions/CREDITS.md'),'utf8');
  assert.match(credits,/Redshrike/);
  assert.match(credits,/William.Thompsonj/);
@@ -92,14 +88,14 @@ test('companion fall uses its one-shot death animation without altering gameplay
  h.actor.render({time:20,action:'die',actionAge:20,alive:false});
  assert.equal(h.draws.length,1,'death pose stays on its last frame once it ends');
 });
-test('equipment portrait uses the same gray wolf in all character directions',async()=>{
+test('equipment portrait preserves side and front/back wolf proportions',async()=>{
  const h=harness();await h.actor.load();
  assert.equal(h.actor.paintPreview(h.ctx,{row:2}),false);
  h.store.equip('companion','wolf');
  assert.equal(h.actor.paintPreview(h.ctx,{row:2}),true);
- assert.deepEqual(h.draws.at(-1).slice(1),[320,56,64,40,35,40,29,18]);
+ assert.deepEqual(h.draws.at(-1).slice(1),[5,65,23,63,44,30,12,30]);
  assert.equal(h.actor.paintPreview(h.ctx,{row:0}),true);
- assert.deepEqual(h.draws.at(-1).slice(1),[320,248,64,40,35,40,29,18]);
+ assert.deepEqual(h.draws.at(-1).slice(1),[163,65,23,63,44,30,12,30]);
  assert.equal(h.actor.paintPreview(h.ctx,{row:1}),true);
  assert.deepEqual(h.draws.at(-1).slice(1),[320,248,64,40,35,40,29,18]);
  assert.equal(h.actor.paintPreview(h.ctx,{row:3}),true);
@@ -124,13 +120,13 @@ test('game invokes the corrected wolf animation controller and exposes class com
  assert.match(html,/data-equipment-slot="companion"/);
  assert.doesNotMatch(html,/data-equipment-slot="boots"/);
  assert.match(html,/id="companion-wolf"/);
- assert.match(html,/src="companion\.js\?v=gray-wolf-1"/);
+ assert.match(html,/src="companion\.js\?v=wolf-carry-transitions-1"/);
  assert.match(js,/companion\?\.render\(/);
  assert.match(js,/direction:walkDirection/);
  assert.match(js,/action:wolfFallen\|\|wolfDefeatedWithHero\?'die':null/);
  assert.match(js,/if\(slot==='companion'\)/);
  assert.match(ui,/paintCompanion\?\.\(ctx,pose\)/);
- assert.match(css,/background:url\('assets\/companions\/wolf-gray\.png'\) -160px -28px\/320px 192px/);
+ assert.match(css,/background:url\('assets\/companions\/wolf\.png'\) -160px -28px\/320px 192px/);
 });
 
 test('Archer wolf runs to the enemy before starting its own timed bite',async()=>{

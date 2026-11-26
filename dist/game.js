@@ -298,7 +298,7 @@
     return new Promise((resolve,reject) => { const image = new Image(); image.onload = () => resolve(image); image.onerror = () => reject(new Error(path)); image.src = path; });
   }
   function loadCarryAtlas(){
-    if(!carryAtlasPromise)carryAtlasPromise=loadImage('assets/companions/wolf-gray-carry.png').then(image=>{
+    if(!carryAtlasPromise)carryAtlasPromise=loadImage('assets/companions/wolf-carry.png').then(image=>{
       if(image.width===768&&image.height===64)carryAtlas=image;
       return carryAtlas;
     }).catch(()=>{carryAtlasPromise=null;return null;});
