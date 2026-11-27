@@ -52,6 +52,8 @@ jobs:
           npx playwright install --with-deps chromium webkit
       - name: Verify physical touch targets in warrior skill tree
         run: node tests/warrior-tree-browser.cjs
+      - name: Verify visual PvP arena in mobile browsers
+        run: node tests/pvp-browser.cjs
       - name: Publish complete dist folder to gh-pages
         if: github.ref == 'refs/heads/main'
         shell: bash
