@@ -9,7 +9,7 @@
   function load(id,loadImage,skin='light'){
     const name=names[id]||'knight',tone=skinNames[skin]||'light',key=name+'/'+tone;
     if(!cache.has(key))cache.set(key,Promise.all(['body-'+tone,'bare-'+tone,...slots].map(async part=>{
-      const im=await loadImage('assets/characters/chibi/'+name+'/'+part+'.png?v=modular-4');
+      const im=await loadImage('assets/characters/chibi/'+name+'/'+part+'.png?v=modular-5');
       if((im.naturalWidth||im.width)!==256||(im.naturalHeight||im.height)!==256)throw Error('Invalid chibi atlas '+name+'/'+part);
       return [part.replace(/-(light|medium|dark)$/,''),im];
     })).then(entries=>({name,tone,images:Object.fromEntries(entries)})).catch(e=>{cache.delete(key);throw e;}));
@@ -35,16 +35,40 @@
     if(slot==='weapon')return item==='ember'?'#d9aa42':name==='archer'?'#69503f':'#b8d1e2';
     if(slot==='shield')return item==='royal'?'#b05243':'#819bad';return null;
   }
+  // Measure actual visible base/armor pixels, not the transparent cell edge.
+  // Cache all 16 ground contacts per atlas; this never reads pixels per frame.
+  const groundCache=new WeakMap(), groundY=63;
+  function contacts(im){
+    if(!im)return Array(16).fill(0);
+    if(groundCache.has(im))return groundCache.get(im);
+    const c=document.createElement('canvas');c.width=c.height=256;
+    const ctx=c.getContext('2d',{willReadFrequently:true});ctx.drawImage(im,0,0);
+    const a=ctx.getImageData(0,0,256,256).data,out=[];
+    for(let row=0;row<4;row++)for(let col=0;col<4;col++){
+      let bottom=0;
+      scan:for(let y=63;y>=0;y--)for(let x=0;x<64;x++){
+        if(a[((row*64+y)*256+col*64+x)*4+3]>0){bottom=y+1;break scan;}
+      }
+      out.push(bottom);
+    }
+    groundCache.set(im,out);return out;
+  }
+  function contact(hero,row,col,bare,equipped){
+    const index=row*4+col,body=hero.images[bare||equipped.helmet==='none'?'bare':'body'];
+    return Math.max(contacts(body)[index],bare||equipped.armor==='none'?0:contacts(hero.images.armor)[index])||58;
+  }
   function draw(ctx,hero,opts={}){
     if(!hero)return;const {direction=3,kind='idle',phase=0,frame=0,x=0,y=0,size=64,look={},dyes={},bare=false}=opts;
     const p=clamp(Number(phase)||0,0,1),wave=Math.sin(Math.PI*p),right=direction===1?-1:1;
     const col=kind==='walk'?((Math.floor(frame)%4+4)%4):0,row=rows[direction]??1,scale=size/64;
-    const equipped={...defaults[hero.name],...look};let dx=0,dy=0,angle=0;
+    const equipped={...defaults[hero.name],...look};let dx=0,angle=0;
     if(kind==='attack'){dx=right*2*wave;angle=right*.06*wave;}
     else if(kind==='block'){dx=-right*2*wave;angle=-right*.07*wave;}
     else if(kind==='dodge'){dx=-right*5*wave;angle=-right*.18*wave;}
-    else if(kind==='idle'){dy=-Math.min(1,Math.max(0,frame));}
-    ctx.save();ctx.imageSmoothingEnabled=false;ctx.translate(x+size/2+dx*scale,y+58*scale+dy*scale);ctx.rotate(angle);ctx.scale(scale,scale);ctx.translate(-32,-58);
+    const bottom=contact(hero,row,col,bare,equipped);
+    // Keep the oval in contact with the road even in the raised walk frames.
+    // Motion remains in the clothing, equipment and silhouette, not in flight.
+    ctx.save();ctx.imageSmoothingEnabled=false;ctx.translate(x+size/2+dx*scale,y+groundY*scale);ctx.rotate(angle);ctx.scale(scale,scale);ctx.translate(-32,-bottom);
     const layer=(part,im,offsetX=0,offsetY=0,rotation=0,pivotX=32,pivotY=43)=>{
       if(!im)return;ctx.save();ctx.translate(pivotX+offsetX,pivotY+offsetY);if(rotation)ctx.rotate(rotation);ctx.translate(-pivotX,-pivotY);ctx.drawImage(im,col*64,row*64,64,64,0,0,64,64);ctx.restore();
     };
@@ -72,10 +96,11 @@
     const ctx=atlas.getContext('2d');ctx.imageSmoothingEnabled=false;
     const crouch=[0,6,9,5,0,0,0,0],wolfX=[58,56,53,50,48,48,48,48],wolfY=[63,63,61,53,47,46,47,46];
     for(let i=0;i<8;i++){
-      draw(ctx,hero,{...opts,direction:3,kind:i>=5?'walk':'idle',frame:i-4,x:i*128+32,y:32+crouch[i]});
+      ctx.save();ctx.translate(0,95);ctx.scale(1,(64-crouch[i])/64);ctx.translate(0,-95);
+      draw(ctx,hero,{...opts,direction:3,kind:i>=5?'walk':'idle',frame:i-4,x:i*128+32,y:32});ctx.restore();
       ctx.drawImage(wolf,dead.sx,dead.sy,dead.sw,dead.sh,i*128+wolfX[i],wolfY[i],64,32);
     }
     atlas.src='chibi-modular-wolf-carry';return atlas;
   }
-  root.EmberChibiHeroes={load,draw,carry,rows,defaults,skinNames};
+  root.EmberChibiHeroes={load,draw,carry,rows,defaults,skinNames,groundY,contact};
 })(typeof window==='object'?window:globalThis);

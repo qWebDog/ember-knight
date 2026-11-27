@@ -46,7 +46,7 @@
     const bottom=Number(getComputedStyle(scene).getPropertyValue('--scene-bottom'))||122;
     const feet=Math.max(30,scene.clientHeight-bottom);
     const scale=Math.max(1,Math.min(5,Math.floor((feet-32)/47)));
-    stage.style.width=`${scale*64}px`;stage.style.height=`${scale*64}px`;stage.style.top=`${feet-62*scale}px`;
+    stage.style.width=`${scale*64}px`;stage.style.height=`${scale*64}px`;stage.style.top=`${feet-63*scale}px`;
     const artScale=Math.max(scene.clientWidth/760,feet/500,(scene.clientHeight-feet)/160);
     scene.style.backgroundSize=`${760*artScale}px ${660*artScale}px`;scene.style.backgroundPosition=`center ${feet-500*artScale}px`;
   }
