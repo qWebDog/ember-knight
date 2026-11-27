@@ -3,7 +3,7 @@
  */
 (function(root,factory){'use strict';const api=factory(root);if(typeof module==='object'&&module.exports)module.exports=api;if(root)root.EmberEquipmentUI=api;})(typeof window!=='undefined'?window:null,function(host){
   'use strict';
-  function mount({root,store,getSprite,loadItem,paintItem,paintBack,paintCompanion,paintHero,paintIcon,onEquip,outfitColor='sand'}={}){
+  function mount({root,store,getSprite,loadItem,paintItem,paintBack,paintHero,paintIcon,onEquip,outfitColor='sand'}={}){
     if(!root||!store||!host?.EmberEquipment)throw new TypeError('Equipment panel and store required');
     const data=host.EmberEquipment;
     const catalogue=data.catalogForClass(store.classId);
@@ -32,7 +32,6 @@
       const row=2;
       const pose={equipped:store.getState(),colors:store.getColors(),row,frame:0,kind:'idle',tile:64,origin:0};
       paintHero?.(ctx,pose);
-      if(store.enabled)paintCompanion?.(ctx,pose);
       preview.setAttribute('aria-label','Текущий облик героя спереди');
     }
     function createItemButton(item,current){

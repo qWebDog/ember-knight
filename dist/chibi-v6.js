@@ -84,6 +84,10 @@ function draw(ctx,hero,opts={}){
  // Carry the bow low on the far side: rear layer, below the face.
  // Profile-only; portrait and aiming poses retain their original geometry.
  const carryingBow=hero.name==='archer'&&kind==='walk'&&has('weapon')&&(direction===1||direction===3);
+ // Front-facing cards: stow the actual equipped bow diagonally across the
+ // back, behind the cape, quiver and body. No drawing hand in this pose.
+ const stowedBow=hero.name==='archer'&&kind==='idle'&&has('weapon')&&(direction===2||direction===0);
+ if(stowedBow)layer('weapon',40-53,35-41,60,53,41);
  const carryGripX=direction===1?8:55,carryGripY=41;
  const carryX=direction===1?28:35,carryY=46+[0,1,0,-1][col];
  if(carryingBow){
@@ -96,7 +100,7 @@ function draw(ctx,hero,opts={}){
  if(has('helmet'))layer('helmet');
  if(has('shield')&&hero.name==='mage')layer('shield');
  if(carryingBow)bowHand(ctx,carryX,carryY,hero.tone);
- if(has('weapon')&&!carryingBow){
+ if(has('weapon')&&!carryingBow&&!stowedBow){
   const side=direction===1,px=side?16:48;
   if(kind==='attack'&&hero.name==='knight'){
    const angles=swings[variant]||swings.basic,ext=variant==='swordThrust'?[0,-2,-3,0,6,6,2,0][k]:0;

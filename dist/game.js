@@ -259,7 +259,6 @@
         }
         if(!chibiHero)throw Error('New equipment not ready');
       },
-      paintCompanion:(ctx,pose)=>companion?.paintPreview(ctx,pose),
       onEquip:(_look,slot)=>{
         if(slot==='companion'){
           battle.setCompanionEnabled?.(equipment.classId==='bow'&&equipment.getState().companion==='wolf');
