@@ -14,7 +14,7 @@
   const progressButtons = [...document.querySelectorAll('[data-go-step]')];
   const cache = new Map();
   let selected='light', weapon='sword', step=0, furthest=0, direction=2, frame=0, saved=null;
-  let imageReady=false, loadingError=false, imageVersion=0, previewImage=null, previewDescriptor=null;
+  let imageReady=false, loadingError=false, imageVersion=0, previewHero=null;
   const rememberedColors={sword:'sand',bow:'forest',wand:'purple'};
   const directionNames=['Вид сзади','Левый бок','Вид спереди','Правый бок'];
   const telegram=window.Telegram?.WebApp;
@@ -55,19 +55,13 @@
     return cache.get(path);
   }
   function draw(){
-    if(!previewImage||!previewDescriptor)return;
-    const d=previewDescriptor,tile=d.tile||64,origin=d.origin||0,cell=step===0?frame:0;
-    if(canvas.width!==tile){canvas.width=tile;canvas.height=tile;}
-    const ctx=canvas.getContext('2d');ctx.clearRect(0,0,tile,tile);ctx.imageSmoothingEnabled=false;
-    // Preserve native LPC pixels, using one consistent scale for every class.
-    // The Archer's 128px tile includes a 32px origin margin; the Mage's 64px
-    // tile needs the same display scale as the Warrior, not half its size.
-    ctx.drawImage(previewImage,cell*tile,direction*tile,tile,tile,0,0,tile,tile);
-    canvas.style.width=`${tile/64*100}%`;canvas.style.height=`${tile/64*100}%`;
-    canvas.style.left=`${-origin/64*100}%`;
-    // Mage feet sit about three source pixels higher in its 64px walk tile.
-    // A small offset aligns its ground line without shrinking the character.
-    canvas.style.top=step>0&&weapon==='wand'?'4.6875%':`${-origin/64*100}%`;
+    if(!previewHero)return;
+    if(canvas.width!==64){canvas.width=64;canvas.height=64;}
+    const ctx=canvas.getContext('2d');ctx.clearRect(0,0,64,64);ctx.imageSmoothingEnabled=false;
+    const defaultColor={sword:'sand',bow:'forest',wand:'purple'}[weapon];
+    const dye=rememberedColors[weapon]===defaultColor?{}:{armor:rememberedColors[weapon],cape:rememberedColors[weapon]};
+    window.EmberChibiHeroes.draw(ctx,previewHero,{direction,bare:step===0,kind:'idle',frame,dyes:dye});
+    canvas.style.width='100%';canvas.style.height='100%';canvas.style.left='0%';canvas.style.top='0%';
     const description=step===0?'без экипировки':`${catalogue.weapon(weapon).name}, наряд ${outfit().name}, ${catalogue.color(rememberedColors[weapon]).name}${weapon==='wand'?', огонь и лёд':''}`;
     canvas.setAttribute('aria-label',`Странник: ${description}. Цвет кожи: ${skins.find(s=>s.id===selected).label}. ${directionNames[direction]}.`);
   }
@@ -78,12 +72,11 @@
   }
   async function loadPreview(){
     const version=++imageVersion;imageReady=false;loadingError=false;updateButton();
-    const path=step===0?`assets/characters/${selected}.png`:catalogue.path(choice(),selected,'walk');
     try {
-      const image=await getImage(path);if(version!==imageVersion)return;
-      previewImage=image;previewDescriptor=step===0?{tile:64,origin:0}:catalogue.weapon(weapon).walk;
+      const hero=await window.EmberChibiHeroes.load(step===0?'sword':weapon,getImage,selected);if(version!==imageVersion)return;
+      previewHero=hero;
       imageReady=true;draw();status.textContent=step===0?'Выбери оттенок кожи':`${catalogue.weapon(weapon).name}, ${appearanceLabel()}`;
-    }catch{if(version!==imageVersion)return;loadingError=true;status.textContent='Не удалось загрузить облик. Нажми «Повторить загрузку».';}
+    }catch(error){if(version!==imageVersion)return;loadingError=true;previewHero=null;canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height);status.textContent='Не удалось загрузить новый облик: '+(error?.message||String(error));}
     updateButton();
   }
   function markRadios(buttons,isSelected){let chosen=false;buttons.forEach(b=>{const yes=isSelected(b);chosen=chosen||yes;b.setAttribute('aria-checked',String(yes));b.classList.toggle('selected',yes);b.tabIndex=yes?0:-1;});if(!chosen&&buttons[0])buttons[0].tabIndex=0;}
@@ -172,7 +165,7 @@
     dialog.querySelectorAll('.dialog-close,.dialog-action').forEach(button=>button.addEventListener('click',()=>dialog.close()));
     dialog.addEventListener('click',event=>{const r=dialog.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)dialog.close();});
   });
-  $('#start-adventure').addEventListener('click',()=>{window.location.href='./';});
+  $('#start-adventure').addEventListener('click',()=>{window.location.href='./game-chibi-v3.html';});
   createButton.addEventListener('click',()=>{
     if(loadingError){loadPreview();return;}if(!imageReady)return;
     if(step<2){showStep(step+1);return;}
