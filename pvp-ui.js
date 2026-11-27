@@ -31,13 +31,32 @@ function consume(es){for(const e of es){
  if(e.type==='hit'){if(e.damage>0){numbers.push({...e,text:'−'+Math.round(e.damage)});flash[e.target]=e.at;}if(e.source==='archer'&&!e.dot&&arrowRows.includes(e.kind)&&e.damage>0)addFx('arrowAtlas',e.target,e.at,.32,{row:arrowRows.indexOf(e.kind)});log(e,names[e.source]+' → '+names[e.target]+': '+num(e.damage)+' · '+(labels[e.kind]||e.kind));}
  if(e.type==='sphere'){sphereHit=e.at;numbers.push({...e,text:'−'+Math.round(e.absorbed)+' щит',kind:'ice'});if(e.source!=='wolf')addFx('barrier','mage',e.at,.36,{row:e.source==='archer'?0:1,dx:Math.sign(pos(e.source).x-pos('mage').x)*EmberPvP.geometry.sphereRadius});if(e.hp<=0)sphereBroken=e.at;}
  if(e.type==='miss'){numbers.push({...e,text:'Уклонение'});log(e,'Лучник уклонился');}
- if(e.type==='death'){deaths[e.target]=e.at;log(e,names[e.target]+' повержен');}
+ if(e.type==='death'){deaths[e.target]=e.at;if(e.target!=='wolf'){delete poses[e.target];fx=fx.filter(f=>f.target!==e.target);}log(e,names[e.target]+' повержен');}
  if(e.type==='revive'){delete deaths[e.target];revivals[e.target]=e.at;if(e.target==='mage')addFx('rebirth','mage',e.at,.8);log(e,names[e.target]+' возвращается · '+num(e.hp)+' HP');}
  if(e.type==='absorb')addFx('absorption','mage',e.at,.6);
  if(e.type==='end'){running=false;finishedAt=performance.now();$('pause').disabled=true;$('outcome').hidden=false;$('outcome').textContent=e.winner==='draw'?'Ничья':names[e.winner]+' победил';log(e,$('outcome').textContent);}
 }}
 function atlas(im,frame,row,tile,x,y,size,flip=false){if(!im)return;ctx.save();ctx.translate(Math.round(x),Math.round(y));if(flip)ctx.scale(-1,1);ctx.drawImage(im,frame*tile,row*tile,tile,tile,-size/2,-size/2,size,size);ctx.restore();}
+// Pixel-art headstone, anchored to the same ground line as the LPC hero.
+const graveLetters=[['110','101','110','101','101'],['111','010','010','010','111'],['110','101','110','100','100']];
+function grave(p,age){
+ const progress=clamp(age/.38,0,1),rise=1-Math.pow(1-progress,3),s=playerScale;
+ ctx.save();ctx.translate(Math.round(p.x),Math.round(p.y));ctx.scale(s,s);
+ ctx.fillStyle='#302b24';ctx.fillRect(-15,-2,30,3);
+ ctx.fillStyle='#655b43';ctx.fillRect(-12,-3,24,2);ctx.fillRect(-16,-1,3,1);
+ if(progress<1){for(let i=0;i<6;i++){const d=i%2?1:-1,travel=progress*(5+Math.floor(i/2)*3);ctx.fillStyle=i%3===0?'#9b8d67':'#655b43';ctx.fillRect(Math.round(d*(8+travel)),-Math.round(Math.sin(progress*Math.PI)*(4+i%3*3)),2,2);}}
+ ctx.save();ctx.beginPath();ctx.rect(-20,-44,40,44);ctx.clip();ctx.translate(0,Math.round((1-rise)*33));
+ ctx.fillStyle='#292d2c';ctx.fillRect(-12,-25,24,23);ctx.fillRect(-9,-30,18,7);ctx.fillRect(-5,-32,10,3);ctx.fillRect(-14,-4,28,4);
+ ctx.fillStyle='#69716c';ctx.fillRect(-10,-24,20,20);ctx.fillRect(-7,-28,14,5);ctx.fillRect(-4,-30,8,3);
+ ctx.fillStyle='#929b8e';ctx.fillRect(-9,-24,2,18);ctx.fillRect(-7,-28,3,2);ctx.fillRect(-4,-30,8,1);
+ ctx.fillStyle='#4b5551';ctx.fillRect(8,-24,2,20);ctx.fillRect(-10,-6,20,2);ctx.fillRect(-12,-3,24,2);
+ ctx.fillStyle='#323a36';ctx.fillRect(-8,-22,16,10);
+ ctx.fillStyle='#e1e2ca';for(let l=0;l<3;l++)for(let y=0;y<5;y++)for(let x=0;x<3;x++)if(graveLetters[l][y][x]==='1')ctx.fillRect(-5+l*4+x,-20+y,1,1);
+ ctx.fillStyle='#454e48';ctx.fillRect(-7,-10,4,1);ctx.fillRect(2,-8,5,1);ctx.fillRect(5,-9,1,1);
+ ctx.restore();ctx.restore();
+}
 function sprite(id){const u=state.units[id],p=pos(id),now=time();if(id==='wolf'&&!state.wolfOn)return;const pose=poses[id],age=pose?now-pose.at:Infinity,attack=age>=0&&age<pose?.duration,dead=u.hp<=0,deathAge=now-(deaths[id]??now),right=id==='mage'?!swapped:swapped;
+if(dead&&id!=='wolf'){grave(p,deathAge);return;}
 ctx.save();ctx.fillStyle='#0b170d70';ctx.beginPath();ctx.ellipse(p.x,p.y-1,id==='wolf'?28:visualOffset(id,20),id==='wolf'?5:4,0,0,Math.PI*2);ctx.fill();
 if(id==='wolf'){
  const revived=revivals.wolf!==undefined&&now-revivals.wolf<1.08,moveAge=now-(revivals.wolf??0),moving=!dead&&u.moving,mode=dead?'die':revived?'revive':moving?'run':attack?(pose.kind==='howl'?'howl':'bite'):'idle';
@@ -49,7 +68,7 @@ if(id==='wolf'){
  let im=images[id+(attack?'Attack':'Walk')],tile=!attack&&id==='archer'?128:64,frames=id==='mage'?6:13,frame=attack?Math.min(frames-1,Math.floor(age/pose.duration*frames)):0,srcRow=row,flip=false;
  if(attack&&id==='archer'&&pose.kind==='evasion'&&dodgeAtlas){im=dodgeAtlas.image;tile=64;srcRow=0;frame=EmberArcherDodge.frameAt(age,EmberCombat.archerDodge);flip=!right;}
  else if(clip){im=clip.image;tile=64;srcRow=0;frame=Math.min(clip.frames-1,Math.floor(age/pose.duration*clip.frames));flip=!right;}
- ctx.save();ctx.translate(p.x,p.y);if(dead){ctx.rotate((right?1:-1)*Math.PI/2*clamp(deathAge/.35,0,1));ctx.globalAlpha=1-.35*clamp(deathAge/.5,0,1);}
+ ctx.save();ctx.translate(p.x,p.y);
  if(flip)ctx.scale(-1,1);ctx.drawImage(im,frame*tile,srcRow*tile,tile,tile,-tile*scale/2,-(tile/2+27)*scale,tile*scale,tile*scale);ctx.restore();
 }
 if(id==='mage'&&(u.sphere>0||now-sphereBroken<.56)){let fraction=u.sphere/u.sphereMax,pulse=Math.floor(now*7)%4,frame=u.sphere<=0?8+Math.min(3,Math.floor((now-sphereBroken)/.14)):fraction>.5?pulse:fraction>.25?4+pulse%2:6+pulse%2;atlas(images.sphere,frame,0,128,p.x,p.y-visualOffset(id,39),130);if(u.sphere>0&&now-sphereHit<.32)atlas(images.sphere,12+Math.min(3,Math.floor((now-sphereHit)/.08)),0,128,p.x,p.y-visualOffset(id,39),130);}
