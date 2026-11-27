@@ -81,13 +81,22 @@ function draw(ctx,hero,opts={}){
   ctx.save();ctx.translate(px+ox,py+oy);if(angle)ctx.rotate(angle*Math.PI/180);if(mirror)ctx.scale(-1,1);ctx.translate(-px,-py);
   ctx.drawImage(im,col*64,row*64,64,64,0,0,64,64);ctx.restore();
  }
+ // Carry the bow low on the far side: rear layer, below the face.
+ // Profile-only; portrait and aiming poses retain their original geometry.
+ const carryingBow=hero.name==='archer'&&kind==='walk'&&has('weapon')&&(direction===1||direction===3);
+ const carryGripX=direction===1?8:55,carryGripY=41;
+ const carryX=direction===1?28:35,carryY=46+[0,1,0,-1][col];
+ if(carryingBow){
+  layer('weapon',carryX-carryGripX,carryY-carryGripY,-sign*[55,59,55,51][col],carryGripX,carryGripY);
+ }
  if(has('cape'))layer('cape');
  if(has('shield')&&hero.name==='archer')layer('shield');
  layer('body');
  if(has('armor'))layer('armor');
  if(has('helmet'))layer('helmet');
  if(has('shield')&&hero.name==='mage')layer('shield');
- if(has('weapon')){
+ if(carryingBow)bowHand(ctx,carryX,carryY,hero.tone);
+ if(has('weapon')&&!carryingBow){
   const side=direction===1,px=side?16:48;
   if(kind==='attack'&&hero.name==='knight'){
    const angles=swings[variant]||swings.basic,ext=variant==='swordThrust'?[0,-2,-3,0,6,6,2,0][k]:0;
