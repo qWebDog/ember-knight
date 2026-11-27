@@ -96,6 +96,7 @@
     const sword = options.heroWeapon === 'sword' && config.projectile === 'melee';
     let phase, pausedFrom, elapsed, remainder, hero, enemies, nextHero, nextEnemies, reward;
     let comboIndex, meleeHits, heroBusyUntil, pendingCounters, pendingImpacts, pendingBreaths;
+    let shieldBashRank=sword?rank(options.warriorShieldBash):0,shieldBlocks=0;
     let mageCastIndex=0,orcHasAttacked=false;
     let waveIndex, completedWaves, defeatedCount, nextWaveAt;
     let companion,companionEverSummoned;
@@ -197,7 +198,7 @@
       // its remaining resurrection cooldown; explicit replay still resets.
       const preserve=carryFallenWolf&&phase==='victory'&&companionEnabled&&companion?.hp===0;
       const reviveRemaining=preserve?Math.max(0,wolfReviveAt-elapsed):Infinity;
-      elapsed = 0; remainder = 0; reward = 0; completedWaves = 0; defeatedCount = 0;
+      elapsed = 0; remainder = 0; reward = 0; completedWaves = 0; defeatedCount = 0; shieldBlocks=0;
       hero = {id:'hero',name:config.name,hp:config.maxHp,maxHp:config.maxHp,damage:config.damage,attackSpeed:config.attackSpeed};
       echoMeter=overloadMeter=archCount=archRemaining=reactionCount=echoCount=chaosCount=0;rebirthUsed=false;immuneUntil=0;powerCharged=false;
       sphere=sphereRank?{hp:sphereCapacity(),maxHp:sphereCapacity(),brokenAt:null}:null;
@@ -233,7 +234,8 @@
       return candidate;
     }
     function reserveCounter(targetId) {
-      pendingCounters.push({targetId,at:counterSlot(elapsed + heroTicks(COUNTER_DELAY))});
+      const bash=shieldBashRank>0&&++shieldBlocks%3===0?shieldBashRank:0;
+      pendingCounters.push({targetId,at:counterSlot(elapsed + heroTicks(COUNTER_DELAY)),...(bash?{bash}:{})});
       pendingCounters.sort((a,b) => a.at-b.at);
     }
     function setCompanionEnabled(enabled) {
@@ -284,6 +286,7 @@
     }
     function updateHeroStats(stats = {}) {
       const oldSpeed = config.attackSpeed;
+      if(sword&&stats.warriorShieldBash!==undefined)shieldBashRank=rank(stats.warriorShieldBash);
       if(archer){for(const key of Object.keys(archerRanks))if(stats['archer_'+key]!==undefined)archerRanks[key]=rank(stats['archer_'+key]);companion.maxHp=wolfMax();companion.hp=Math.min(companion.hp,companion.maxHp);}
       if(mage){
         for(const key of advancedKeys)if(stats[key]!==undefined)advanced[key]=rank(stats[key]);
@@ -618,7 +621,12 @@
           const counter = pendingCounters.shift(),target = enemies.find(enemy => enemy.id === counter.targetId && enemy.hp > 0);
           if (!target || hero.hp <= 0) continue;
           heroBusyUntil = elapsed + heroTicks(COUNTER_DURATION);
-          hit('hero',target,Math.max(1,config.damage-target.armor),'melee',{variant:'halfslash',comboStep:0,heavy:false,animationDuration:heroTicks(COUNTER_DURATION)/TICKS,counter:true});
+          if(counter.bash){
+            const duration=heroTicks(COUNTER_DURATION),impactAt=elapsed+Math.round(duration/2);
+            events.push({type:'warriorSkill',skill:'shieldBash',sourceId:'hero',targetId:target.id,at:elapsed/TICKS,impactAt:impactAt/TICKS,animationDuration:duration/TICKS});
+            pendingImpacts.push({sourceId:'hero',targetId:target.id,at:impactAt,shieldBash:counter.bash,damage:Math.max(1,config.damage*(.5+.1*counter.bash)-target.armor)});
+            pendingImpacts.sort((a,b)=>a.at-b.at);
+          }else hit('hero',target,Math.max(1,config.damage-target.armor),'melee',{variant:'halfslash',comboStep:0,heavy:false,animationDuration:heroTicks(COUNTER_DURATION)/TICKS,counter:true});
           if (enemies.every(enemy => enemy.hp === 0)) { clearWave(); break; }
         }
         if (phase !== 'running') continue;
@@ -665,6 +673,18 @@
           const impact = pendingImpacts.shift(),target = impact.targetId === 'hero' ? hero
             : impact.targetId === 'companion' ? companion : enemies.find(enemy => enemy.id === impact.targetId);
           if (!target || target.hp <= 0) continue;
+          if(impact.shieldBash){
+            if(hero.hp<=0)continue;
+            hit('hero',target,impact.damage,'melee',{variant:'shieldBash',comboStep:0,counter:true,windup:true,shieldBash:true});
+            if(target.hp>0){
+              const stun=Math.round((.4+.2*impact.shieldBash)*TICKS),index=enemies.indexOf(target);
+              nextEnemies[index]+=stun;
+              target.stunnedUntil=(elapsed+stun)/TICKS;
+              events.push({type:'warriorStun',sourceId:'hero',targetId:target.id,at:elapsed/TICKS,duration:stun/TICKS});
+            }
+            if(enemies.every(enemy=>enemy.hp===0)){clearWave();break;}
+            continue;
+          }
           if(impact.arrowKind){
             archerArrow(target,impact.damage,impact.arrowKind,{extraArrow:true,retreat:true,dodgeShot:!!impact.dodgeShot});
             if(enemies.every(enemy=>enemy.hp===0)){clearWave();break;}

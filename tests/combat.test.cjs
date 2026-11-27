@@ -1286,3 +1286,12 @@ test('approved wolf effect atlases are raster PNGs with exact frame geometry',()
   assert.equal(data.subarray(1,4).toString(),'PNG');assert.equal(data.readUInt32BE(16),width);assert.equal(data.readUInt32BE(20),64);
  }
 });
+
+
+test('learned shield bash replaces every third block counter and impacts halfway through clip',()=>{
+ const b=createDefaultBattle({heroWeapon:'sword',heroProjectile:'melee',heroMaxHp:100000,heroDamage:1,warriorShieldBash:5});
+ const events=b.advance(800);const bash=events.find(e=>e.type==='warriorSkill'&&e.skill==='shieldBash');
+ assert.ok(bash);const impact=events.find(e=>e.shieldBash&&e.type==='attack');assert.ok(impact);assert.equal(impact.at,bash.impactAt);
+ assert.equal(events.filter(e=>e.type==='block'&&e.at<=bash.at).length,3);
+ assert.ok(events.some(e=>e.type==='warriorStun'&&e.at===impact.at&&e.duration===1.4));
+});

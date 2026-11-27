@@ -9,7 +9,8 @@
   const details={
     power:{name:'Сила удара',branch:'attack',category:'Атака',icon:'swords',benefit:'+2 к урону',total:level=>`+${level*2} к урону`},
     vitality:{name:'Стойкость',branch:'defense',category:'Защита',icon:'skill-shield',benefit:'+20 к максимуму здоровья',total:level=>`+${level*20} к максимуму здоровья`},
-    tempo:{name:'Натиск',branch:'control',category:'Контроль',icon:'bolt',benefit:'+5% к скорости атаки',total:level=>`+${level*5}% к скорости атаки`}
+    tempo:{name:'Натиск',branch:'control',category:'Контроль',icon:'bolt',benefit:'+5% к скорости атаки',total:level=>`+${level*5}% к скорости атаки`},
+    shieldBash:{name:'Удар щитом',branch:'defense',category:'Защита',icon:'skill-shield',benefit:'Каждый третий блок: удар щитом и оглушение',total:level=>`${50+10*level}% базового урона, оглушение ${(0.4+.2*level).toFixed(1).replace('.',',')} с`}
   };
   const mageDetails={
     sorcery:{name:'Сила стихий',branch:'attack',category:'Стихии',icon:'mage-elements',benefit:'+2 к урону заклинаний',total:level=>`+${level*2} к урону заклинаний`},
@@ -86,6 +87,16 @@ arrowDance:{name:"Танец стрел",branch:'control',category:"Тактик
         });
       }
     }
+    if(!mage&&!archer){
+      const defense=Array.from(root.querySelectorAll('.skill-branch')).find(branch=>branch.dataset.branch==='defense');
+      const future=defense?.querySelector('[data-skill-future]');
+      if(future){
+        future.hidden=false;future.disabled=false;future.dataset.skillId='shieldBash';future.dataset.skillDepth='1';future.dataset.skillRequires='vitality';
+        future.querySelector('use').setAttribute('href','#skill-shield');
+        future.querySelector('span').setAttribute('data-skill-node-rank','');
+        future.setAttribute('title','Удар щитом');nodes.push(future);
+      }
+    }
     const upgrade=$('#skill-upgrade');
     let selected=null,destroyed=false;
     const removers=[];
@@ -114,7 +125,7 @@ arrowDance:{name:"Танец стрел",branch:'control',category:"Тактик
       $('[data-skill-category]').textContent=entry.category;
       $('[data-skill-name]').textContent=entry.name;
       $('[data-skill-rank]').textContent=`Уровень ${quote.level}/${quote.maxLevel}`;
-      $('[data-skill-benefit]').textContent=quote.reason==='locked'?`Требуется: ${requirementLabel(selected)}`:quote.reason==='max'?`${entry.total(quote.level)} · Максимум`:`Следующий уровень: ${archer?entry.total(quote.level+1):entry.benefit}`;
+      $('[data-skill-benefit]').textContent=quote.reason==='locked'?`Требуется: ${requirementLabel(selected)}`:quote.reason==='max'?`${entry.total(quote.level)} · Максимум`:`Следующий уровень: ${archer||selected==='shieldBash'?entry.total(quote.level+1):entry.benefit}`;
       $('[data-skill-benefit]').dataset.feedback='';
       $('[data-skill-icon-use]').setAttribute('href',`#${entry.icon}`);
       upgrade.dataset.upgrade=selected;upgrade.disabled=!quote.canBuy;
