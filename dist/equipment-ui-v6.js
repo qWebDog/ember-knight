@@ -175,7 +175,7 @@
     for(const button of slotNodes)listen(button,'click',()=>select(button.dataset.equipmentSlot));
     const unsubscribe=store.subscribe(()=>{if(!destroyed)render();});
     render();
-    return {render,select,open,refreshPreview:paintPreview,getDirection:()=>directions[orientation].row,destroy(){
+    return {render,select,open,refreshPreview:render,getDirection:()=>directions[orientation].row,destroy(){
       if(destroyed)return;destroyed=true;unsubscribe();
       for(const remove of handlers)remove();
     }};

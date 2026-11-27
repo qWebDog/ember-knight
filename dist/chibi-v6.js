@@ -6,7 +6,7 @@ const rows=[2,3,0,1],groundY=63,slots=['helmet','armor','cape','weapon','shield'
 const skinNames={light:'light',amber:'light',olive:'medium',bronze:'medium',brown:'medium',black:'dark',medium:'medium',dark:'dark'};
 const defaults=Object.fromEntries(['knight','archer','mage'].map(n=>[n,Object.fromEntries(slots.map(s=>[s,'basic']))]));
 const colors={sand:'#b5a07d',forest:'#648449',blue:'#5678b6',red:'#b44a43',purple:'#8656a6',gray:'#929ba5'};
-const cache=new Map(),tints=new WeakMap();
+const cache=new Map(),tints=new WeakMap(),bowLimbs=new WeakMap(),icons=new WeakMap();
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const path=n=>'assets/characters/chibi-v6/'+n+'.png';
 function load(id,loadImage,skin='light'){
@@ -24,6 +24,29 @@ function tinted(im,dye){
  const d=g.getImageData(0,0,256,256),a=d.data,t=[1,3,5].map(i=>parseInt(color.slice(i,i+2),16));
  for(let i=0;i<a.length;i+=4){if(!a[i+3])continue;const l=.213*a[i]+.715*a[i+1]+.072*a[i+2];if(l<30)continue;for(let j=0;j<3;j++)a[i+j]=clamp(Math.round(.2*a[i+j]+.8*t[j]*l/135),0,255);}
  g.putImageData(d,0,0);m.set(color,c);return c;
+}
+function bowLimb(im){
+ if(bowLimbs.has(im))return bowLimbs.get(im);
+ const c=document.createElement('canvas');c.width=c.height=256;const g=c.getContext('2d');g.drawImage(im,0,0);
+ // Remove only the original string pixels; leave limb and tips untouched.
+ for(let row=0;row<4;row++)for(let col=0;col<4;col++)for(let y=28;y<=53;y++){
+  const x=row===3?63-(y<=40?47:46):(y<=40?47:46);
+  g.clearRect(col*64+x,row*64+y,1,1);
+ }
+ bowLimbs.set(im,c);return c;
+}
+function line(g,x0,y0,x1,y1,color,width=1){
+ g.fillStyle=color;const n=Math.max(1,Math.ceil(Math.max(Math.abs(x1-x0),Math.abs(y1-y0))));
+ for(let i=0;i<=n;i++)g.fillRect(Math.round(x0+(x1-x0)*i/n),Math.round(y0+(y1-y0)*i/n),width,width);
+}
+function swingTrail(g,sign,px,py,a,b){
+ // Short stepped pixel arc, drawn only during the actual cut.
+ const start=(a-53)*Math.PI/180,end=(b-53)*Math.PI/180;
+ for(let i=0;i<16;i++){
+  const t=i/16,u=(i+1)/16,v=start+(end-start)*t,w=start+(end-start)*u;
+  const r=31;
+  line(g,px+sign*r*Math.cos(v),py+r*Math.sin(v),px+sign*r*Math.cos(w),py+r*Math.sin(w),i<10?'#8c9fb3':'#d7e6ed',i<10?1:2);
+ }
 }
 // Eight discrete poses: anticipation, wind-up, contact, follow-through, recovery.
 const swings={
@@ -58,14 +81,24 @@ function draw(ctx,hero,opts={}){
   const side=direction===1,px=side?16:48;
   if(kind==='attack'&&hero.name==='knight'){
    const angles=swings[variant]||swings.basic,ext=variant==='swordThrust'?[0,-2,-3,0,6,6,2,0][k]:0;
+   if(k>=4&&k<=5)swingTrail(ctx,sign,px+sign*ext,54,angles[k-1],angles[k]);
    layer('weapon',sign*ext,0,sign*angles[k],px,54);
   }else if(kind==='attack'&&hero.name==='mage'){
    layer('weapon',0,-[0,1,2,3,3,1,0,0][k],sign*wandAngles[k],px,53);
    if(k>=2&&k<=4){const xx=side?12:52,yy=30-k;ctx.fillStyle='#70b7f1';ctx.fillRect(xx-1,yy-3,3,7);ctx.fillRect(xx-3,yy-1,7,3);ctx.fillStyle='#e0f6ff';ctx.fillRect(xx,yy,1,1);}
   }else if(kind==='attack'&&hero.name==='archer'){
-   const before=p<releaseFraction,draw=before?Math.round(5*Math.min(1,p/Math.max(.01,releaseFraction))):0;
-   layer('weapon',-sign*Math.floor(draw/2),0,variant==='arrowRain'?sign*-30:0,px,42);
-   if(before){ctx.fillStyle='#e7d6a6';const xx=side?17:47;ctx.fillRect(side?xx-13:xx-4-draw,40,17+draw,1);ctx.fillStyle='#b9c5cb';ctx.fillRect(side?xx-14:xx+12,39,2,3);}
+   const before=p<releaseFraction,draw=before?Math.round(10*Math.min(1,p/Math.max(.01,releaseFraction))):0;
+   const original=hero.images.weapon,limbs=bowLimb(original),stringX=side?16:47,nock=stringX-sign*draw;
+   ctx.save();ctx.translate(px,42);if(variant==='arrowRain')ctx.rotate(sign*-30*Math.PI/180);ctx.translate(-px,-42);
+   ctx.drawImage(limbs,col*64,row*64,64,64,0,0,64,64);
+   line(ctx,stringX,27,nock,40,'#d8c69a');line(ctx,nock,40,stringX-sign,54,'#d8c69a');
+   if(before){
+    const tip=nock+sign*25;
+    line(ctx,nock,40,tip,40,'#b8a075');
+    line(ctx,tip-sign*2,39,tip,40,'#e2e8e6');line(ctx,tip,40,tip-sign*2,41,'#e2e8e6');
+    line(ctx,nock,39,nock+sign*3,39,'#eee4d2');
+   }
+   ctx.restore();
   }else layer('weapon');
  }
  if(has('shield')&&hero.name==='knight'){
@@ -76,7 +109,17 @@ function draw(ctx,hero,opts={}){
 }
 function drawItem(ctx,hero,slot,item='basic',dye='original'){
  if(item==='none'||!hero?.images[slot])return false;
- const im=tinted(hero.images[slot],dye);ctx.imageSmoothingEnabled=false;ctx.drawImage(im,0,64,64,64,0,0,64,64);return true;
+ const im=tinted(hero.images[slot],dye);
+ let icon=icons.get(im);if(!icon){
+  const c=document.createElement('canvas');c.width=c.height=64;const g=c.getContext('2d',{willReadFrequently:true});
+  g.drawImage(im,0,64,64,64,0,0,64,64);const a=g.getImageData(0,0,64,64).data;
+  let x0=64,y0=64,x1=-1,y1=-1;
+  for(let y=0;y<64;y++)for(let x=0;x<64;x++)if(a[(y*64+x)*4+3]){x0=Math.min(x0,x);y0=Math.min(y0,y);x1=Math.max(x1,x);y1=Math.max(y1,y);}
+  const w=x1-x0+1,h=y1-y0+1;if(w<=0||h<=0)return false;
+  icon={c,x0,y0,w,h};icons.set(im,icon);
+ }
+ const {c,x0,y0,w,h}=icon,scale=Math.min(2,52/Math.max(w,h));
+ ctx.imageSmoothingEnabled=false;ctx.drawImage(c,x0,y0,w,h,Math.round((64-w*scale)/2),Math.round((64-h*scale)/2),Math.round(w*scale),Math.round(h*scale));return true;
 }
 function carry(hero,wolf,dead,canvasFactory,opts={}){
  const c=canvasFactory();c.width=1024;c.height=128;const ctx=c.getContext('2d');ctx.imageSmoothingEnabled=false;
