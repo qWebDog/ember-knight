@@ -66,7 +66,7 @@ function createHarness({skin = 'bronze', preference, search = '', weapon, outfit
       return [node('.dialog-close'), node('.dialog-action')];
     }
     getContext() {
-      return {clearRect() {},fillRect(){},getImageData:(x,y,w,h)=>({data:new Uint8ClampedArray(w*h*4)}),putImageData(){},drawImage:(image, sx, sy, sw, sh, ...destination) => {
+      return {clearRect() {},fillRect(){},save(){},restore(){},translate(){},scale(){},getImageData:(x,y,w,h)=>({data:new Uint8ClampedArray(w*h*4)}),putImageData(){},drawImage:(image, sx, sy, sw, sh, ...destination) => {
         if(sw!==undefined)assert.ok(sx >= 0 && sy >= 0 && sx + sw <= image.width && sy + sh <= image.height,
           `crop exceeds ${image.src}: ${[sx,sy,sw,sh]}`);
         this.draws.push({src:image.src, crop:[sx,sy,sw,sh], destination});
@@ -610,10 +610,16 @@ test('sword combo selects all three native sheets and plays every one of the thi
 });
 
 test('shield guard and counter work against the final orc, freeze on pause, and reset before the next run',async()=>{
- const ui=createHarness({weapon:'sword',outfit:'militia'});await ui.loadAllImages();ui.runUntil(()=>ui.events.some(event=>event.type==='block'));
- const hero=ui.node('[data-fighter="hero"]'),guard=ui.node('#player-sprite').draws.at(-1),block=ui.events.find(event=>event.type==='block');
+ const ui=createHarness({weapon:'sword',outfit:'militia'});await ui.loadAllImages();runFramesUntil(ui,()=>ui.events.some(event=>event.type==='block'),120);
+ const hero=ui.node('[data-fighter="hero"]'),sprite=ui.node('#player-sprite'),block=ui.events.find(event=>event.type==='block');
+ const first=hero.dataset.blockFrame;
+ runFramesUntil(ui,()=>Number(hero.dataset.blockFrame)>=3&&hero.dataset.motion==='block',.3);
+ assert.notEqual(hero.dataset.blockFrame,first);
+ const guard=sprite.draws.find(d=>d.src.endsWith('-block.png'));
  assert.equal(ui.state().waveIndex,2);assert.equal(block.sourceId,'orc');assert.equal(block.blockedDamage,3);assert.equal(hero.dataset.motion,'block');
- assert.ok(guard.src.endsWith('-block.png'));assert.deepEqual(guard.crop,[0,192,64,64]);assert.equal(ui.node('#player-sprite').style.width,'100%');
+ assert.ok(guard?.src.endsWith('-block.png'));assert.deepEqual(guard.crop,[0,192,64,64]);assert.equal(sprite.style.width,'100%');
+ assert.ok(sprite.draws.some(d=>d.src.endsWith('-walk.png')&&d.crop[1]===226&&d.crop[2]===3&&d.crop[3]===1),'raised shield uses actual equipped walk atlas');
+ assert.equal(hero.classes.has('is-hit'),false,'block spark replaces whole-body hit flash');
  ui.node('#auto-button').click();const held=fullSnapshot(ui);ui.runFor(2);assert.deepEqual(fullSnapshot(ui),held);assert.equal(hero.classes.has('is-blocking'),true);
  ui.node('#auto-button').click();ui.runUntil(()=>ui.events.some(event=>event.counter));assert.equal(hero.dataset.counter,'true');assert.equal(hero.dataset.attack,'halfslash');
  ui.runUntil(()=>ui.state().phase==='victory');ui.runUntil(()=>!ui.node('#battle-result').hidden,2);ui.node('#replay-button').click();
