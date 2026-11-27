@@ -217,7 +217,7 @@ test('Mage uses the approved transparent 13-cell battle-effect PNG atlas, with u
  const ids=["sorcery","strongBurn","iceShards","fusion","chaos","barrier","protectiveSphere","absorption","rebirth","channel","echo","overload","archmage"];
  const ui=createPanel({classId:'wand',gold:100});
  for(const [i,id] of ids.entries()){assert.ok(css.includes('[data-skill-id="'+id+'"]'));assert.ok(css.includes('[data-selected="'+id+'"] .skill-detail-icon{--mage-icon-position:'+i*100/12+'%}'));ui.clickSkill(id);assert.equal(ui.root.dataset.selected,id);}
- assert.match(css,/background-size:1300% 100%/);assert.match(html,/skills\.css\?v=archer-tree-fix-1/);
+ assert.match(css,/background-size:1300% 100%/);assert.match(html,/href="skills\.css\?v=[a-z0-9-]+"/);
 });
 
 test('Four Archer arrow types show Marksmanship V requirement and unlock together',()=>{const ui=createPanel({classId:'bow',gold:1000}),ids=['barbed','explosive','poison','piercing'];for(const id of ids){const node=ui.node('[data-skill-id="'+id+'"]');assert.equal(node.dataset.skillDepth,'1');assert.equal(node.dataset.skillRequires,'marksmanship');assert.equal(node.classList.contains('is-locked'),true);ui.clickSkill(id);assert.equal(ui.node('#skill-upgrade').disabled,true);assert.equal(ui.node('[data-skill-benefit]').textContent,'Требуется: Меткий выстрел V');}ui.clickSkill('marksmanship');for(let i=0;i<4;i++)ui.upgrade();ui.clickSkill('poison');assert.equal(ui.node('#skill-upgrade').disabled,true);ui.clickSkill('marksmanship');ui.upgrade();for(const id of ids){ui.clickSkill(id);assert.equal(ui.node('#skill-upgrade').disabled,false);ui.upgrade();assert.equal(ui.store.quote(id).level,1);}assert.equal(ui.store.quote('marksmanship').level,5);assert.equal(ui.store.quote('doubleShot').reason,'locked');});
@@ -236,3 +236,15 @@ test('all four sword techniques unlock independently after Power III',()=>{const
 
 
 test('warrior mastery is a shared fifth attack node, with correct prerequisite text',()=>{const ui=createPanel({gold:500,levels:{power:3,swordThrust:3,swordDouble:2}});ui.clickSkill('swordMaster');assert.match(ui.node('[data-skill-benefit]').textContent,/Любые две техники меча III уровня/);assert.equal(ui.node('#skill-upgrade').disabled,true);ui.clickSkill('swordDouble');ui.upgrade();ui.clickSkill('swordMaster');assert.equal(ui.node('#skill-upgrade').disabled,false);ui.upgrade();assert.equal(ui.store.getStats().warrior_swordMaster,1);assert.equal(ui.node('[data-skill-id="swordMaster"]').dataset.skillDepth,'2');});
+
+
+test('Warrior exposes four distinct visible independent sword slots and a separate mastery slot',()=>{
+ const ids=['swordThrust','swordOverhead','swordDouble','swordCleave','swordMaster'],areas=['thrust','overhead','double','cleave','master'];
+ const ui=createPanel({gold:1000,levels:{power:2}}),css=fs.readFileSync(path.join(dist,'skills.css'),'utf8');
+ for(const [i,id] of ids.entries()){const node=ui.node('[data-skill-id="'+id+'"]');assert.equal(node.hidden,false);assert.equal(node.disabled,false);assert.equal(node.dataset.swordSlot,String(i+1));assert.ok(css.includes('[data-sword-slot="'+(i+1)+'"]{grid-area:'+areas[i]+'!important'));}
+ for(const id of ids.slice(0,4)){ui.clickSkill(id);assert.equal(ui.root.dataset.selected,id);assert.equal(ui.node('#skill-upgrade').disabled,true);}
+ ui.clickSkill('power');ui.upgrade();
+ for(const id of ids.slice(0,4)){ui.clickSkill(id);assert.equal(ui.root.dataset.selected,id);assert.equal(ui.node('#skill-upgrade').disabled,false);ui.upgrade();assert.equal(ui.store.quote(id).level,1);}
+ assert.equal(ui.store.quote('swordMaster').reason,'locked');
+ for(const classId of ['bow','wand']){const other=createPanel({classId});assert.equal(other.root.querySelectorAll('[data-sword-slot]').length,0);}
+});

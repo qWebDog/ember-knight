@@ -100,7 +100,7 @@ arrowDance:{name:"Танец стрел",branch:'control',category:"Тактик
         const slots=[...attack.querySelectorAll('[data-skill-future]'),...attack.querySelectorAll('[data-mage-slot]'),...attack.querySelectorAll('[data-archer-slot]')];
         ['swordThrust','swordOverhead','swordDouble','swordCleave','swordMaster'].forEach((id,i)=>{
           const node=slots[i];if(!node)return;
-          node.hidden=false;node.disabled=false;node.dataset.skillId=id;node.dataset.mageAdvanced='true';node.dataset.skillDepth=String(depth(id));node.dataset.skillRequires=requirements(id).join(' ');node.dataset.swordSlot=String(i+1);if(catalogById[id]?.requiredCount)node.dataset.skillRequiredCount=String(catalogById[id].requiredCount);
+          node.hidden=false;node.disabled=false;node.removeAttribute?.('hidden');node.removeAttribute?.('disabled');node.dataset.skillId=id;node.dataset.mageAdvanced='true';node.dataset.skillDepth=String(depth(id));node.dataset.skillRequires=requirements(id).join(' ');node.dataset.swordSlot=String(i+1);if(catalogById[id]?.requiredCount)node.dataset.skillRequiredCount=String(catalogById[id].requiredCount);
           node.querySelector('use').setAttribute('href','#swords');node.querySelector('span').setAttribute('data-skill-node-rank','');node.setAttribute('title',details[id].name);nodes.push(node);
         });
       }
