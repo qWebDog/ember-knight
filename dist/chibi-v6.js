@@ -39,6 +39,16 @@ function line(g,x0,y0,x1,y1,color,width=1){
  g.fillStyle=color;const n=Math.max(1,Math.ceil(Math.max(Math.abs(x1-x0),Math.abs(y1-y0))));
  for(let i=0;i<=n;i++)g.fillRect(Math.round(x0+(x1-x0)*i/n),Math.round(y0+(y1-y0)*i/n),width,width);
 }
+// A tiny independent 5x5 pixel grip, never a full arm.
+const handSkin={light:['#f2b284','#ce9369','#ffe0b4'],medium:['#d58759','#b26c44','#f2aa76'],dark:['#7c4a30','#693c25','#ad7952']};
+function bowHand(g,x,y,tone){
+ const [skin,shade,light]=handSkin[tone]||handSkin.light;
+ x=Math.round(x);y=Math.round(y);
+ g.fillStyle='#21140d';g.fillRect(x-1,y-2,3,5);g.fillRect(x-2,y-1,5,3);
+ g.fillStyle=skin;g.fillRect(x-1,y-1,3,3);
+ g.fillStyle=shade;g.fillRect(x-1,y+1,3,1);
+ g.fillStyle=light;g.fillRect(x-1,y-1,1,1);
+}
 function swingTrail(g,sign,px,py,a,b){
  // Short stepped pixel arc, drawn only during the actual cut.
  const start=(a-53)*Math.PI/180,end=(b-53)*Math.PI/180;
@@ -98,8 +108,16 @@ function draw(ctx,hero,opts={}){
     line(ctx,tip-sign*2,39,tip,40,'#e2e8e6');line(ctx,tip,40,tip-sign*2,41,'#e2e8e6');
     line(ctx,nock,39,nock+sign*3,39,'#eee4d2');
    }
+   // Hold the exact nock while drawing; after release the string snaps
+   // forward while the hand follows through, then returns to its idle grip.
+   const recovery=clamp((p-releaseFraction)/Math.max(.001,1-releaseFraction),0,1);
+   const gripX=before?nock:stringX-sign*Math.round((10+3*Math.sin(Math.PI*recovery))*(1-recovery));
+   bowHand(ctx,gripX,40,hero.tone);
    ctx.restore();
-  }else layer('weapon');
+  }else {
+   layer('weapon');
+   if(hero.name==='archer'&&(direction===1||direction===3))bowHand(ctx,side?16:47,40,hero.tone);
+  }
  }
  if(has('shield')&&hero.name==='knight'){
   const raise=kind==='block'||kind==='bash'?shieldMove[k]:0;
