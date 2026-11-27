@@ -99,6 +99,8 @@
     let shieldBashRank=sword?rank(options.warriorShieldBash):0,shieldBlocks=0;
     const swordSkills=['swordThrust','swordOverhead','swordDouble','swordCleave'];
     const swordRanks=Object.fromEntries(swordSkills.map(id=>[id,sword?rank(options['warrior_'+id]):0]));
+    let swordMaster=sword?rank(options.warrior_swordMaster):0;
+    const finisherMultiplier=()=>1+.2*swordMaster;
     let heavyCount=0,swordSkillCursor=0;
     function nextSwordSkill(){
       if(++heavyCount%2!==0)return null;
@@ -299,6 +301,7 @@
       const oldSpeed = config.attackSpeed;
       if(sword&&stats.warriorShieldBash!==undefined)shieldBashRank=rank(stats.warriorShieldBash);
       if(sword)for(const id of swordSkills)if(stats['warrior_'+id]!==undefined)swordRanks[id]=rank(stats['warrior_'+id]);
+      if(sword&&stats.warrior_swordMaster!==undefined)swordMaster=rank(stats.warrior_swordMaster);
       if(archer){for(const key of Object.keys(archerRanks))if(stats['archer_'+key]!==undefined)archerRanks[key]=rank(stats['archer_'+key]);companion.maxHp=wolfMax();companion.hp=Math.min(companion.hp,companion.maxHp);}
       if(mage){
         for(const key of advancedKeys)if(stats[key]!==undefined)advanced[key]=rank(stats[key]);
@@ -603,7 +606,7 @@
         // Ties: hero action, counters, existing status ticks/expiry, impacts, then enemies.
         if (heroCanAttack && nextHero === next) {
           const target = enemies.find(enemy => enemy.hp > 0),step = sword ? swordSteps[comboIndex] : null;
-          const damage = config.damage * (step?.heavy ? 1.5 : 1);
+          const damage = config.damage * (step?.heavy ? 1.5*finisherMultiplier() : 1);
           const metadata = step ? {variant:step.variant,comboStep:comboIndex+1,heavy:step.heavy,animationDuration:heroTicks(step.animationDuration*TICKS)/TICKS,counter:false} : {animationDuration:heroTicks((config.projectile === 'arrow' ? .9 : .66)*TICKS)/TICKS};
           // One automatic spell stream, alternating fire and ice. Neither
           // an extra attack nor a manual skill toggle is introduced.
@@ -631,7 +634,7 @@
               fractions.forEach((f,index)=>{
                 const multiplier=id==='swordThrust'||id==='swordCleave'?1.5:id==='swordOverhead'?1.5+.1*r:index===0?.9:.3+.1*r;
                 const armor=target.armor*(id==='swordThrust'?1-(.1+.1*r):1);
-                pendingImpacts.push({sourceId:'hero',targetId:target.id,at:elapsed+Math.round(duration*f),swordSkill:id,rank:r,damage:Math.max(1,config.damage*multiplier-armor),strike:index+1});
+                pendingImpacts.push({sourceId:'hero',targetId:target.id,at:elapsed+Math.round(duration*f),swordSkill:id,rank:r,damage:Math.max(1,config.damage*multiplier*finisherMultiplier()-armor),masterMultiplier:finisherMultiplier(),strike:index+1});
               });
               pendingImpacts.sort((a,b)=>a.at-b.at);
             }else hit('hero',target,Math.max(1,damage-target.armor),config.projectile,metadata);
@@ -702,7 +705,7 @@
             if(hero.hp<=0)continue;
             const neighbors=impact.swordSkill==='swordCleave'?nearby(target).filter(e=>e.hp>0):[];
             hit('hero',target,impact.damage,'melee',{variant:impact.swordSkill,comboStep:3,heavy:true,windup:true,swordSkill:impact.swordSkill,strike:impact.strike});
-            for(const e of neighbors)if(e.hp>0)hit('hero',e,Math.max(1,config.damage*(.1+.1*impact.rank)-e.armor),'melee',{variant:impact.swordSkill,heavy:true,windup:true,swordSkill:impact.swordSkill,splash:true});
+            for(const e of neighbors)if(e.hp>0)hit('hero',e,Math.max(1,config.damage*(.1+.1*impact.rank)*impact.masterMultiplier-e.armor),'melee',{variant:impact.swordSkill,heavy:true,windup:true,swordSkill:impact.swordSkill,splash:true});
             if(enemies.every(e=>e.hp===0)){clearWave();break;}
             continue;
           }

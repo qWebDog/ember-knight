@@ -161,3 +161,37 @@
 .skills-panel[data-hero-class="bow"] [data-branch="attack"] .skill-future[data-arrow-slot="6"]{grid-area:arrowRain!important}
 .skills-panel[data-hero-class="bow"] [data-branch="attack"] .skill-future[data-arrow-slot="5"]:before{display:block;height:12px}
 .skills-panel[data-hero-class="bow"] [data-branch="attack"] .skill-future[data-arrow-slot="6"]:before{display:block;height:12px}
+
+/* Warrior: four independent, non-overlapping technique slots and one mastery node.
+   Keep the complete attack path inside the scrolling tree, not under the detail panel. */
+.skills-panel[data-hero-class="sword"] .skills-tree{grid-auto-rows:max-content;align-content:start;align-items:start;touch-action:pan-y;-webkit-overflow-scrolling:touch}
+.skills-panel[data-hero-class="sword"] .skill-branch{min-height:184px;grid-template-rows:18px auto;align-content:start}
+.skills-panel[data-hero-class="sword"] .skill-path{grid-template-rows:34px 9px auto;align-content:start}
+.skills-panel[data-hero-class="sword"] .skill-node{width:30px;height:30px}
+.skills-panel[data-hero-class="sword"] .skill-growth{display:none}
+.skills-panel[data-hero-class="sword"] [data-branch="attack"] .skill-fork{width:50%;border-bottom:0}
+.skills-panel[data-hero-class="sword"] [data-branch="attack"] .skill-children{position:relative;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-areas:"thrust overhead" "double cleave" "master master";grid-template-rows:repeat(3,36px);gap:3px 0;padding:0;align-items:start;background:linear-gradient(var(--branch),var(--branch)) center top/1px 39px no-repeat,linear-gradient(var(--branch),var(--branch)) center 0/50% 1px no-repeat,linear-gradient(var(--branch),var(--branch)) center 39px/50% 1px no-repeat}
+.skills-panel[data-hero-class="sword"] [data-branch="attack"] .skill-children:before{content:"";position:absolute;left:25%;width:50%;height:6px;top:72px;box-sizing:border-box;border:1px solid var(--branch);border-top:0;opacity:.65;pointer-events:none}
+.skills-panel[data-hero-class="sword"] [data-sword-slot]:not([hidden]){display:grid!important;position:relative;width:min(32px,100%);height:27px;z-index:1;pointer-events:auto;touch-action:manipulation}
+.skills-panel[data-hero-class="sword"] [data-sword-slot] svg{width:20px;height:20px;pointer-events:none}
+.skills-panel[data-hero-class="sword"] [data-sword-slot] span{display:block;font-size:9px;line-height:10px;top:100%;pointer-events:none}
+.skills-panel[data-hero-class="sword"] [data-sword-slot="1"]{grid-area:thrust!important}
+.skills-panel[data-hero-class="sword"] [data-sword-slot="2"]{grid-area:overhead!important}
+.skills-panel[data-hero-class="sword"] [data-sword-slot="3"]{grid-area:double!important}
+.skills-panel[data-hero-class="sword"] [data-sword-slot="4"]{grid-area:cleave!important}
+.skills-panel[data-hero-class="sword"] [data-sword-slot="5"]{grid-area:master!important;color:#f1ca79;border-color:#b89b58}
+.skills-panel[data-hero-class="sword"] [data-sword-slot="5"]:before{height:6px}
+@media(orientation:portrait){
+  .skills-panel[data-hero-class="sword"]:has(.skill-detail[hidden]){grid-template-rows:44px minmax(0,1fr) 42px}
+}
+@media(orientation:portrait) and (max-height:700px){
+  .skills-panel[data-hero-class="sword"]:has(.skill-detail[hidden]){grid-template-rows:24px minmax(0,1fr) 32px}
+  .skills-panel[data-hero-class="sword"] .skill-branch{min-height:158px;grid-template-rows:14px auto}
+  .skills-panel[data-hero-class="sword"] .skill-path{grid-template-rows:28px 6px auto}
+  .skills-panel[data-hero-class="sword"] .skill-node{width:26px;height:26px}
+  .skills-panel[data-hero-class="sword"] .skill-node svg{width:19px;height:19px}
+  .skills-panel[data-hero-class="sword"] [data-branch="attack"] .skill-children{grid-template-rows:repeat(3,30px);gap:3px 0;background-size:1px 33px,50% 1px,50% 1px;background-position:center top,center 0,center 33px}
+  .skills-panel[data-hero-class="sword"] [data-branch="attack"] .skill-children:before{top:60px}
+  .skills-panel[data-hero-class="sword"] [data-sword-slot]:not([hidden]){height:22px}
+  .skills-panel[data-hero-class="sword"] [data-sword-slot] span{font-size:8px;line-height:9px}
+}

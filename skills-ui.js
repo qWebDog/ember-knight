@@ -16,7 +16,8 @@
     swordThrust:{name:'Колющий удар',branch:'attack',category:'Атака',icon:'swords',total:l=>`150% урона, пробитие ${10+10*l}% брони`},
     swordOverhead:{name:'Удар сверху',branch:'attack',category:'Атака',icon:'swords',total:l=>`${150+10*l}% базового урона`},
     swordDouble:{name:'Двойной удар',branch:'attack',category:'Атака',icon:'swords',total:l=>`Два удара: 90% и ${30+10*l}% урона`},
-    swordCleave:{name:'Круговое рассечение',branch:'attack',category:'Атака',icon:'swords',total:l=>`150% цели, ${10+10*l}% базового урона соседям`}
+    swordCleave:{name:'Круговое рассечение',branch:'attack',category:'Атака',icon:'swords',total:l=>`150% цели, ${10+10*l}% базового урона соседям`},
+    swordMaster:{name:'Мастер меча',branch:'attack',category:'Атака',icon:'swords',total:l=>`+${20*l}% урона завершающего удара и всех техник меча`}
   });
   const mageDetails={
     sorcery:{name:'Сила стихий',branch:'attack',category:'Стихии',icon:'mage-elements',benefit:'+2 к урону заклинаний',total:level=>`+${level*2} к урону заклинаний`},
@@ -61,7 +62,7 @@ arrowDance:{name:"Танец стрел",branch:'control',category:"Тактик
     const activeDetails=mage?mageDetails:archer?archerDetails:details;
     const catalogById=Object.fromEntries(store.catalog.map(item=>[item.id,item]));
     const requirements=id=>[].concat(catalogById[id]?.requires||[]);
-    const requirementLabel=id=>catalogById[id]?.requiredCount===2?'Любые две стрелы III уровня':requirements(id).map(key=>`${activeDetails[key].name} ${catalogById[id]?.requiredRank===5?'V':'III'}`).join(' + ');
+    const requirementLabel=id=>catalogById[id]?.requiredCount===2?(id==='swordMaster'?'Любые две техники меча III уровня':'Любые две стрелы III уровня'):requirements(id).map(key=>`${activeDetails[key].name} ${catalogById[id]?.requiredRank===5?'V':'III'}`).join(' + ');
     const depth=id=>requirements(id).length?1+Math.max(...requirements(id).map(depth)):0;
     const labels={sword:'ВОИН',bow:'ЛУЧНИК',wand:'МАГ'};
     root.dataset.heroClass=classId;
@@ -97,9 +98,9 @@ arrowDance:{name:"Танец стрел",branch:'control',category:"Тактик
       const attack=Array.from(root.querySelectorAll('.skill-branch')).find(branch=>branch.dataset.branch==='attack');
       if(attack){
         const slots=[...attack.querySelectorAll('[data-skill-future]'),...attack.querySelectorAll('[data-mage-slot]'),...attack.querySelectorAll('[data-archer-slot]')];
-        ['swordThrust','swordOverhead','swordDouble','swordCleave'].forEach((id,i)=>{
+        ['swordThrust','swordOverhead','swordDouble','swordCleave','swordMaster'].forEach((id,i)=>{
           const node=slots[i];if(!node)return;
-          node.hidden=false;node.disabled=false;node.dataset.skillId=id;node.dataset.mageAdvanced='true';node.dataset.skillDepth='1';node.dataset.skillRequires='power';
+          node.hidden=false;node.disabled=false;node.removeAttribute?.('hidden');node.removeAttribute?.('disabled');node.dataset.skillId=id;node.dataset.mageAdvanced='true';node.dataset.skillDepth=String(depth(id));node.dataset.skillRequires=requirements(id).join(' ');node.dataset.swordSlot=String(i+1);if(catalogById[id]?.requiredCount)node.dataset.skillRequiredCount=String(catalogById[id].requiredCount);
           node.querySelector('use').setAttribute('href','#swords');node.querySelector('span').setAttribute('data-skill-node-rank','');node.setAttribute('title',details[id].name);nodes.push(node);
         });
       }
