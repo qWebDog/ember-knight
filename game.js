@@ -237,7 +237,7 @@
     if(change?.type!=='purchase')return;
     const current = battle.getState().hero, stats = combatStats();
     const oldSpeed = current.attackSpeed || 1;
-    if (current.damage !== stats.heroDamage || current.maxHp !== stats.heroMaxHp || oldSpeed !== stats.heroAttackSpeed || stats.heroBurnRank || stats.heroSphereRank || stats.heroShardRank || starterWeapon?.id==='wand'|| starterWeapon?.id==='bow') {
+    if (current.damage !== stats.heroDamage || current.maxHp !== stats.heroMaxHp || oldSpeed !== stats.heroAttackSpeed || stats.heroBurnRank || stats.heroSphereRank || stats.heroShardRank || starterWeapon?.id==='wand'|| starterWeapon?.id==='bow'||stats.warriorShieldBash) {
       const ratio = oldSpeed / stats.heroAttackSpeed;
       const animation = actors.hero.animation;
       if (animation && ratio !== 1) {
@@ -807,6 +807,10 @@
           caster.animation={at:event.at,duration:event.animationDuration||.66};
         }
         addSpell(event);
+      } else if(event.type==='warriorSkill'&&event.skill==='shieldBash'){
+        actors.hero.animation={at:event.at,duration:event.animationDuration,variant:'shieldBash',counter:true};
+      } else if(event.type==='warriorStun'){
+        addEffect('block','hero',event.targetId,'Оглушение',event.at);
       } else if (event.type === 'attack') {
         if(event.evaded&&event.targetId==='hero'&&event.projectile==='arrow'){
           const arrow=effects.find(effect=>targetsArcher(effect)&&effect.type==='arrow'&&effect.sourceId===event.sourceId&&Math.abs(effect.at+effect.duration-event.at)<1e-5);
@@ -975,6 +979,16 @@
     {kind:'block',dx:0,dy:0,shield:[34,32]},
     {kind:'idle',dx:0,dy:0}
   ];
+  const bashFrames=[
+    {kind:'block',dx:0,dy:0,shield:[34,30]},
+    {kind:'block',dx:-1,dy:1,shield:[33,30]},
+    {kind:'block',dx:0,dy:1,shield:[34,30]},
+    {kind:'block',dx:2,dy:0,shield:[38,30]},
+    {kind:'block',dx:5,dy:0,shield:[40,30],spark:1},
+    {kind:'block',dx:5,dy:0,shield:[40,30],spark:2},
+    {kind:'block',dx:2,dy:0,shield:[36,30]},
+    {kind:'block',dx:0,dy:0,shield:[34,30]}
+  ];
   const guardShieldMask=[[24,26],[22,27],[22,28],[21,29],[21,29],[20,30],[20,30],[19,31],[19,31],[18,32],[18,32],[18,33],[18,32],[18,32],[18,31],[18,29],[18,28],[18,25]];
   function paintRaisedShield(ctx,walk,pose){
     // Copy the equipped heater shield face from its original walk atlas.
@@ -988,7 +1002,7 @@
       });
       ctx.restore();
     }
-    const x=48,y=35;
+    const x=pose.shield?Math.min(52,pose.shield[0]+14):48,y=35;
     if(pose.spark===1){
       ctx.fillStyle='#f3b747';ctx.fillRect(x-4,y,10,1);ctx.fillRect(x,y-5,1,11);
       ctx.fillStyle='#ffe6a0';
@@ -1016,7 +1030,9 @@
     const kind = evading ? 'dodge' : walking ? 'walk' : blocking ? 'block' : attacking ? 'attack' : 'idle';
     const skillClip=attacking&&actor.images.skills?.[actor.animation.skillClip];
     const blockFrame=blocking?Math.min(7,Math.max(0,Math.floor((activeTime-actor.blockAt)*8/(.28/(state.hero.attackSpeed||1))))):-1;
-    const guard=blockFrame>=0?guardFrames[blockFrame]:null;
+    const bashing=attacking&&actor.animation?.variant==='shieldBash';
+    const bashFrame=bashing?Math.min(7,Math.max(0,Math.floor(age/actor.animation.duration*8))):-1;
+    const guard=bashing?bashFrames[bashFrame]:blockFrame>=0?guardFrames[blockFrame]:null;
     const descriptor = guard?actor.images[guard.kind]:skillClip || attacking && actor.images.attacks?.[actor.animation.variant] || actor.images[kind];
     // LPC directions: 0=back, 1=left, 2=front, 3=right.
     // When moving toward a hero/wolf on the left, Orc must use the LEFT
@@ -1027,7 +1043,7 @@
     const row = evading||skillClip?0:walking ? (id==='hero'?walkDirection:actor.direction) : enemyFacing;
     const tile = descriptor.tile || 64, origin = descriptor.origin || 0;
     const cell = guard ? 0 : evading ? dodgeArt.frameAt(activeTime-archerEvadeAt,dodgeTiming) : walking ? 1 + Math.floor((distance / .75 % 1) * 8) : attacking ? Math.min(descriptor.frames-1,Math.floor((age+(actor.animation?.arrowCue?1e-6:0)) / actor.animation.duration * descriptor.frames)) : Number.isInteger(descriptor.still) ? descriptor.still : id === 'hero' && auto && unit.hp > 0 && !ended && !reducedMotion.matches ? Math.floor(activeTime / .65) % 2 : 0;
-    const key = `${kind}-${descriptor.image.src}-${cell}-${row}-${tile}-${origin}-${blockFrame}`;
+    const key = `${kind}-${descriptor.image.src}-${cell}-${row}-${tile}-${origin}-${blockFrame}-${bashFrame}`;
     if (!frozen&&actor.lastKey !== key) {
       actor.canvas.width = tile; actor.canvas.height = tile;
       const ctx = actor.canvas.getContext('2d'); ctx.clearRect(0,0,tile,tile); ctx.imageSmoothingEnabled = false;
@@ -1050,7 +1066,7 @@
       actor.element.dataset.counter = String(Boolean(attacking && actor.animation.counter));
       actor.element.classList.toggle('is-heavy',Boolean(attacking && actor.animation.heavy));
       actor.element.classList.toggle('is-blocking',Boolean(blocking));
-      if(id==='hero')actor.element.dataset.blockFrame=guard?String(blockFrame):'';
+      if(id==='hero'){actor.element.dataset.blockFrame=blocking?String(blockFrame):'';actor.element.dataset.bashFrame=bashing?String(bashFrame):'';}
     }
     actor.element.classList.toggle('is-defeated',unit.hp <= 0);
     actor.element.classList.toggle('is-target',id === state.targetId);

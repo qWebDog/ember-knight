@@ -12,7 +12,8 @@
   const catalog = Object.freeze([
     Object.freeze({id:'power', branch:'attack', name:'Сила удара', description:'Каждый уровень добавляет 2 к урону героя.', maxLevel:5, icon:'swords'}),
     Object.freeze({id:'vitality', branch:'defense', name:'Стойкость', description:'Каждый уровень добавляет 20 к максимальному здоровью.', maxLevel:5, icon:'shield'}),
-    Object.freeze({id:'tempo', branch:'control', name:'Натиск', description:'Каждый уровень ускоряет атаки на 5%.', maxLevel:5, icon:'bolt'})
+    Object.freeze({id:'tempo', branch:'control', name:'Натиск', description:'Каждый уровень ускоряет атаки на 5%.', maxLevel:5, icon:'bolt'}),
+    Object.freeze({id:'shieldBash',branch:'defense',name:'Удар щитом',description:'Каждый третий блок: контратака щитом, 60–100% базового урона и оглушение 0,6–1,4 с.',maxLevel:5,icon:'shield',requires:'vitality'})
   ]);
   // Mage upgrades are class-specific. Warrior data stays in the original
   // levels field so existing saves retain their exact ranks and wallet.
@@ -59,7 +60,7 @@
     const state = emptyState();
     if (!value || value.version !== 1) return state;
     state.gold = Number.isSafeInteger(value.gold) ? Math.max(0, Math.min(maxGold, value.gold)) : 0;
-    for (const item of catalog) state.levels[item.id] = normalizeRank(value.levels?.[item.id]);
+    for (const item of catalog) {const rank=normalizeRank(value.levels?.[item.id]);if(!item.requires||rank)state.levels[item.id]=rank;}
     if (value.mageLevels && typeof value.mageLevels === 'object' && !Array.isArray(value.mageLevels)) {
       state.mageLevels = emptyMageLevels();
       for (const item of mageCatalog) {const rank=normalizeRank(value.mageLevels[item.id]);if(!item.requires||rank>0)state.mageLevels[item.id]=rank;}
@@ -84,6 +85,7 @@
       heroDamage:12 + 2 * levels[ids[0]],
       heroMaxHp:200 + 20 * levels[ids[1]],
       heroAttackSpeed:1 + .05 * levels[ids[2]],
+      ...(classId==='sword'&&levels.shieldBash?{warriorShieldBash:levels.shieldBash}:{}),
       ...(classId==='bow'?Object.fromEntries(["piercing","poison","explosive","barbed","doubleShot","arrowRain","rendingBite","guardian","alpha","evasion","retreat","arrowDance","wolfBond"].filter(id=>levels[id]>0).map(id=>['archer_'+id,levels[id]])):{}),
       ...(classId==='wand'&&levels.strongBurn?{heroBurnRank:levels.strongBurn}:{}),
       ...(classId==='wand'&&levels.protectiveSphere?{heroSphereRank:levels.protectiveSphere}:{}),
@@ -101,11 +103,11 @@
     const item = classCatalog(classId).find(entry => entry.id === id);
     if (!item) return {id, level:0, maxLevel:0, cost:null, canBuy:false, reason:'unknown'};
     const level = classId === 'wand' ? (state.mageLevels?.[id] || 0)
-      : classId === 'bow' ? (state.archerLevels?.[id] || 0) : state.levels[id];
+      : classId === 'bow' ? (state.archerLevels?.[id] || 0) : (state.levels[id]||0);
     if (level >= item.maxLevel) return {id, level, maxLevel:item.maxLevel, cost:null, canBuy:false, reason:'max'};
     // Purchased ranks survive changed prerequisites (including old ice-shard saves).
     const requirements=item.requires?[].concat(item.requires):[];
-    const qualified=requirements.filter(key=>((classId==='bow'?state.archerLevels:state.mageLevels)?.[key]||0)>=(item.requiredRank??3)).length;
+    const qualified=requirements.filter(key=>((classId==='bow'?state.archerLevels:classId==='wand'?state.mageLevels:state.levels)?.[key]||0)>=(item.requiredRank??3)).length;
     if(!level&&qualified<(item.requiredCount??requirements.length))return {id,level,maxLevel:item.maxLevel,cost:null,canBuy:false,reason:'locked',requires:item.requires,...(item.requiredCount?{requiredCount:item.requiredCount}:{})};
     const cost = (item.baseCost??(item.requires?20:10)) + 10 * level;
     return {id, level, maxLevel:item.maxLevel, cost, canBuy:state.gold >= cost, reason:state.gold >= cost ? null : 'coins'};
