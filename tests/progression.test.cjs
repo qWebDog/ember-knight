@@ -23,7 +23,7 @@ test('UMD works in a browser without DOM and the catalog exposes all three branc
   assert.equal(typeof window.EmberProgression.createStore, 'function');
   assert.equal(window.EmberProgression.createStore().awardGold(10).ok, true);
   assert.deepEqual(catalog.map(item => [item.id,item.branch,item.name,item.maxLevel]), [
-    ['power','attack','Сила удара',5],['vitality','defense','Стойкость',5],['tempo','control','Натиск',5]
+    ['power','attack','Сила удара',5],['vitality','defense','Стойкость',5],['tempo','control','Натиск',5],['shieldBash','defense','Удар щитом',5]
   ]);
   assert.ok(Object.isFrozen(catalog) && catalog.every(Object.isFrozen));
 });

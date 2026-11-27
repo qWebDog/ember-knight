@@ -91,7 +91,7 @@ arrowDance:{name:"Танец стрел",branch:'control',category:"Тактик
       const defense=Array.from(root.querySelectorAll('.skill-branch')).find(branch=>branch.dataset.branch==='defense');
       const future=defense?.querySelector('[data-skill-future]');
       if(future){
-        future.hidden=false;future.disabled=false;future.dataset.skillId='shieldBash';future.dataset.skillDepth='1';future.dataset.skillRequires='vitality';
+        future.hidden=false;future.disabled=false;future.dataset.skillId='shieldBash';future.dataset.mageAdvanced='true';future.dataset.skillDepth='1';future.dataset.skillRequires='vitality';
         future.querySelector('use').setAttribute('href','#skill-shield');
         future.querySelector('span').setAttribute('data-skill-node-rank','');
         future.setAttribute('title','Удар щитом');nodes.push(future);

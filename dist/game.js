@@ -1002,7 +1002,7 @@
       });
       ctx.restore();
     }
-    const x=pose.shield?pose.shield[0]+14:48,y=35;
+    const x=pose.shield?Math.min(52,pose.shield[0]+14):48,y=35;
     if(pose.spark===1){
       ctx.fillStyle='#f3b747';ctx.fillRect(x-4,y,10,1);ctx.fillRect(x,y-5,1,11);
       ctx.fillStyle='#ffe6a0';
