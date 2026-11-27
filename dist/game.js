@@ -296,7 +296,6 @@
       },
       paintItem:(ctx,pose)=>equipmentArt?.draw(ctx,pose),
       paintBack:(ctx,pose)=>equipmentArt?.drawBack(ctx,pose),
-      paintCompanion:(ctx,pose)=>companion?.paintPreview(ctx,pose),
       onEquip:(_look,slot)=>{
         if(slot==='companion'){
           battle.setCompanionEnabled?.(equipment.classId==='bow'&&equipment.getState().companion==='wolf');
