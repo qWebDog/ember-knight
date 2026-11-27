@@ -46,6 +46,12 @@ jobs:
           EMBER_CLASS_LAYERS_BUILT: '1'
           EMBER_EQUIPMENT_ICONS_BUILT: '1'
         run: node --test tests/*.test.cjs
+      - name: Install browser test dependencies
+        run: |
+          npm install --no-save --no-package-lock playwright@1.51.1
+          npx playwright install --with-deps chromium webkit
+      - name: Verify physical touch targets in warrior skill tree
+        run: node tests/warrior-tree-browser.cjs
       - name: Publish complete dist folder to gh-pages
         if: github.ref == 'refs/heads/main'
         shell: bash

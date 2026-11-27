@@ -195,3 +195,28 @@
   .skills-panel[data-hero-class="sword"] [data-sword-slot]:not([hidden]){height:22px}
   .skills-panel[data-hero-class="sword"] [data-sword-slot] span{font-size:8px;line-height:9px}
 }
+
+/* Independent touch targets; keep the description outside the tree. */
+.skills-panel[data-hero-class="sword"] .skills-tree{position:relative;z-index:1;isolation:isolate;overflow-y:auto;overflow-x:hidden}
+.skills-panel[data-hero-class="sword"] .skill-branch{overflow:visible}
+.skills-panel[data-hero-class="sword"] [data-sword-slot]:not([hidden]){width:min(36px,100%);height:30px;min-height:30px;align-self:start}
+.skills-panel[data-hero-class="sword"] [data-sword-slot] span{position:static;transform:none;line-height:9px;font-size:9px;pointer-events:none}
+.skills-panel[data-hero-class="sword"] [data-sword-slot] svg{width:17px;height:17px}
+.skills-panel[data-hero-class="sword"] [data-branch="attack"] .skill-children{grid-template-rows:repeat(3,36px);gap:3px 0}
+@media(orientation:portrait){
+  .game-screen:has(> #skills-panel[data-hero-class="sword"]:not([hidden])){grid-template-rows:minmax(0,1fr) max(48%,min(350px,65%))}
+  #skills-panel[data-hero-class="sword"]{grid-template-areas:"heading" "tree" "detail" "tabs";grid-template-columns:minmax(0,1fr);grid-template-rows:28px minmax(0,1fr) 82px 32px;gap:3px;padding:5px 8px}
+  #skills-panel[data-hero-class="sword"][data-selected=""]{grid-template-rows:28px minmax(0,1fr) 0px 32px}
+  #skills-panel[data-hero-class="sword"] .skills-heading{grid-area:heading}
+  #skills-panel[data-hero-class="sword"] .skills-tree{grid-area:tree}
+  #skills-panel[data-hero-class="sword"] .skill-detail{grid-area:detail;overflow:hidden}
+  #skills-panel[data-hero-class="sword"] .skills-tabs{grid-area:tabs}
+  #skills-panel[data-hero-class="sword"] .skill-branch{min-height:177px;grid-template-rows:14px auto;gap:3px;padding:3px 4px}
+  #skills-panel[data-hero-class="sword"] .skill-path{grid-template-rows:29px 8px auto}
+  #skills-panel[data-hero-class="sword"] .skill-node{width:26px;height:26px}
+  #skills-panel[data-hero-class="sword"] .skill-node svg{width:19px;height:19px}
+  #skills-panel[data-hero-class="sword"] .skill-detail-copy h3{font-size:20px;line-height:22px}
+  #skills-panel[data-hero-class="sword"] .skill-detail-copy p{font-size:12px;line-height:14px}
+  #skills-panel[data-hero-class="sword"] .skills-title h2{font-size:22px;line-height:24px}
+  #skills-panel[data-hero-class="sword"] .skills-tab{flex-direction:row;font-size:11px;line-height:13px}
+}
