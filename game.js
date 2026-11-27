@@ -237,7 +237,7 @@
     if(change?.type!=='purchase')return;
     const current = battle.getState().hero, stats = combatStats();
     const oldSpeed = current.attackSpeed || 1;
-    if (current.damage !== stats.heroDamage || current.maxHp !== stats.heroMaxHp || oldSpeed !== stats.heroAttackSpeed || stats.heroBurnRank || stats.heroSphereRank || stats.heroShardRank || starterWeapon?.id==='wand'|| starterWeapon?.id==='bow'||stats.warriorShieldBash) {
+    if (current.damage !== stats.heroDamage || current.maxHp !== stats.heroMaxHp || oldSpeed !== stats.heroAttackSpeed || stats.heroBurnRank || stats.heroSphereRank || stats.heroShardRank || starterWeapon?.id==='wand'|| starterWeapon?.id==='bow'||stats.warriorShieldBash||Object.keys(stats).some(k=>k.startsWith('warrior_sword'))) {
       const ratio = oldSpeed / stats.heroAttackSpeed;
       const animation = actors.hero.animation;
       if (animation && ratio !== 1) {
@@ -809,6 +809,8 @@
         addSpell(event);
       } else if(event.type==='warriorSkill'&&event.skill==='shieldBash'){
         actors.hero.animation={at:event.at,duration:event.animationDuration,variant:'shieldBash',counter:true};
+      } else if(event.type==='warriorSkill'&&swordSkillFrames[event.skill]){
+        actors.hero.animation={at:event.at,duration:event.animationDuration,variant:event.skill,heavy:true,counter:false};
       } else if(event.type==='warriorStun'){
         addEffect('block','hero',event.targetId,'Оглушение',event.at);
       } else if (event.type === 'attack') {
@@ -1012,6 +1014,45 @@
       ctx.fillStyle='#e6a64d';for(const [dx,dy] of [[4,-4],[6,1],[2,5]])ctx.fillRect(x+dx,y+dy,1,1);
     }
   }
+  // Original approved preview pose parameters. Rebuild the clip with live
+  // equipment rather than loading a baked-in skin or weapon.
+  const swordSkillFrames={
+    swordThrust:[null,[-1,-1,1,37,45,5],[1,0,1,40,42,-3],[4,3,0,48,40,0],[5,3,0,48,40,0],[2,1,0,43,42,12],null],
+    swordOverhead:[null,[-1,-1,0,37,30,-95],[-1,0,0,39,22,-95],[1,1,0,42,26,-65],[3,2,1,45,39,28,[-80,30]],[2,1,1,43,47,70,[10,70]],null],
+    swordDouble:[null,[-1,0,0,38,33,-75],[2,2,1,45,43,35,[-70,35]],[0,0,1,40,46,100],[-1,0,0,37,47,135],[3,2,0,46,35,-35,[110,-35]],[1,0,0,42,37,-20],null],
+    swordCleave:[null,[-2,-1,1,33,43,150],[-1,0,1,35,42,130],[1,2,1,42,42,70,[155,70]],[3,2,0,46,38,-15,[85,-15]],[2,1,0,43,34,-45,[-5,-45]],null]
+  };
+  const swordPixelRuns=[[43,40,42],[44,39,42],[45,39,41],[46,39,41],[47,39,43],[48,39,45],[49,41,47],[50,43,49],[51,45,51],[52,47,53],[53,49,55],[54,51,55],[55,53,55]];
+  function scratch(actor,key){
+    const c=actor[key]||(actor[key]=document.createElement('canvas'));c.width=c.height=64;
+    const ctx=c.getContext('2d');ctx.imageSmoothingEnabled=false;ctx.clearRect(0,0,64,64);return {c,ctx};
+  }
+  function pixelLine(ctx,x0,y0,x1,y1,color,width=1){
+    ctx.fillStyle=color;const steps=Math.max(Math.abs(x1-x0),Math.abs(y1-y0),1),off=Math.floor((width-1)/2);
+    for(let i=0;i<=steps;i++)ctx.fillRect(Math.round(x0+(x1-x0)*i/steps)-off,Math.round(y0+(y1-y0)*i/steps)-off,width,width);
+  }
+  function drawSwordSkill(ctx,actor,pose,origin){
+    const source=actor.images.idle.image,body=scratch(actor,'swordSkillBody'),blade=scratch(actor,'swordSkillBlade');
+    const gearPose=equipmentArt?{equipped:equipment.getState(),colors:equipment.getColors(),row:3,frame:0,kind:'idle',variant:null,tile:64,origin:0}:null;
+    if(gearPose)equipmentArt.drawBack(body.ctx,gearPose);
+    body.ctx.drawImage(source,0,192,64,64,0,0,64,64);
+    if(gearPose)equipmentArt.draw(body.ctx,gearPose);
+    if(!pose){ctx.drawImage(body.c,0,0,64,64,origin,origin,64,64);return;}
+    // Sample the actual sleeve and skin palette before moving the sword.
+    const sample=(x,y,fallback)=>{const a=body.ctx.getImageData(x,y,1,1).data;return a[3]?'rgb('+a[0]+','+a[1]+','+a[2]+')':fallback;};
+    const cloth=sample(37,39,'#b7996a'),shade=sample(36,42,'#b78c41'),outline=sample(39,40,'#3e2613'),skin=sample(34,28,'#e4a47c'),light=sample(34,24,'#f9d5ba');
+    for(const [y,l,r] of swordPixelRuns){const w=r-l+1;blade.ctx.drawImage(source,l,192+y,w,1,l,y,w,1);body.ctx.clearRect(l,y,w,1);}
+    const [dx,lean,crouch,hx,hy,angle,trail]=pose,bx=origin+dx,by=origin+crouch;
+    for(let y=0;y<64;y++){
+      const shift=Math.round(lean*Math.max(0,Math.min(1,(52-y)/15))),oy=by+y-Math.round(crouch*Math.max(0,Math.min(1,(y-46)/16)));
+      ctx.drawImage(body.c,0,y,64,1,bx+shift,oy,64,1);
+    }
+    const sx=bx+37+lean,sy=by+39,x=bx+hx+lean,y=by+hy;
+    pixelLine(ctx,sx,sy,x,y,outline,6);pixelLine(ctx,sx,sy,x,y,cloth,4);pixelLine(ctx,sx,sy+1,x,y+1,shade);
+    ctx.fillStyle=skin;ctx.fillRect(x-1,y-1,4,4);ctx.fillStyle=light;ctx.fillRect(x,y-1,1,1);
+    if(trail){for(let i=0;i<24;i++){const a=(trail[0]+(trail[1]-trail[0])*i/24)*Math.PI/180,b=(trail[0]+(trail[1]-trail[0])*(i+1)/24)*Math.PI/180;const u=Math.round(x+19*Math.cos(a)),v=Math.round(y+19*Math.sin(a)),w=Math.round(x+19*Math.cos(b)),z=Math.round(y+19*Math.sin(b));pixelLine(ctx,u,v,w,z,'#998b63',3);pixelLine(ctx,u,v,w,z,'#e5d8b3',2);if(i>=17)pixelLine(ctx,u,v,w,z,'#fff4d8');}}
+    ctx.save();ctx.translate(x,y);ctx.rotate((angle-29)*Math.PI/180);ctx.drawImage(blade.c,0,0,64,64,-40,-46,64,64);ctx.restore();
+  }
   function drawActor(id, state) {
     const actor = actors[id], unit = id === 'hero' ? state.hero : state.enemies.find(enemy=>enemy.id===id);
     if(!unit){actor.element.hidden=true;clearStatus(actor);return;}
@@ -1029,6 +1070,8 @@
     const attacking = !evading&&!walking && !blocking && !ended && age >= 0 && age < (actor.animation?.duration || 0) && unit.hp > 0 && !reducedMotion.matches;
     const kind = evading ? 'dodge' : walking ? 'walk' : blocking ? 'block' : attacking ? 'attack' : 'idle';
     const skillClip=attacking&&actor.images.skills?.[actor.animation.skillClip];
+    const swordClip=id==='hero'&&attacking?swordSkillFrames[actor.animation?.variant]:null;
+    const swordFrame=swordClip?Math.min(swordClip.length-1,Math.max(0,Math.floor(age/actor.animation.duration*swordClip.length))):-1;
     const blockFrame=blocking?Math.min(7,Math.max(0,Math.floor((activeTime-actor.blockAt)*8/(.28/(state.hero.attackSpeed||1))))):-1;
     const bashing=attacking&&actor.animation?.variant==='shieldBash';
     const bashFrame=bashing?Math.min(7,Math.max(0,Math.floor(age/actor.animation.duration*8))):-1;
@@ -1041,12 +1084,14 @@
     const facingTargetX=defender?.x??heroX;
     const enemyFacing=['archer','swordsman'].includes(actor.type)?(facingTargetX>actor.x?3:1):descriptor.row;
     const row = evading||skillClip?0:walking ? (id==='hero'?walkDirection:actor.direction) : enemyFacing;
-    const tile = descriptor.tile || 64, origin = descriptor.origin || 0;
-    const cell = guard ? 0 : evading ? dodgeArt.frameAt(activeTime-archerEvadeAt,dodgeTiming) : walking ? 1 + Math.floor((distance / .75 % 1) * 8) : attacking ? Math.min(descriptor.frames-1,Math.floor((age+(actor.animation?.arrowCue?1e-6:0)) / actor.animation.duration * descriptor.frames)) : Number.isInteger(descriptor.still) ? descriptor.still : id === 'hero' && auto && unit.hp > 0 && !ended && !reducedMotion.matches ? Math.floor(activeTime / .65) % 2 : 0;
-    const key = `${kind}-${descriptor.image.src}-${cell}-${row}-${tile}-${origin}-${blockFrame}-${bashFrame}`;
+    const tile = swordClip?128:descriptor.tile || 64, origin = swordClip?32:descriptor.origin || 0;
+    const cell = swordClip?swordFrame:guard ? 0 : evading ? dodgeArt.frameAt(activeTime-archerEvadeAt,dodgeTiming) : walking ? 1 + Math.floor((distance / .75 % 1) * 8) : attacking ? Math.min(descriptor.frames-1,Math.floor((age+(actor.animation?.arrowCue?1e-6:0)) / actor.animation.duration * descriptor.frames)) : Number.isInteger(descriptor.still) ? descriptor.still : id === 'hero' && auto && unit.hp > 0 && !ended && !reducedMotion.matches ? Math.floor(activeTime / .65) % 2 : 0;
+    const key = `${kind}-${descriptor.image.src}-${cell}-${row}-${tile}-${origin}-${blockFrame}-${bashFrame}-${swordClip?actor.animation.variant:''}`;
     if (!frozen&&actor.lastKey !== key) {
       actor.canvas.width = tile; actor.canvas.height = tile;
       const ctx = actor.canvas.getContext('2d'); ctx.clearRect(0,0,tile,tile); ctx.imageSmoothingEnabled = false;
+      if(swordClip)drawSwordSkill(ctx,actor,swordClip[swordFrame],origin);
+      else {
       if(guard){ctx.save();ctx.translate(guard.dx,guard.dy);}
       const gearPose=id==='hero'&&equipmentArt?{equipped:equipment.getState(),colors:equipment.getColors(),row,frame:cell,kind:guard?guard.kind:kind,
         variant:attacking?(actor.animation?.variant||'slash'):null,tile,origin}:null;
@@ -1054,6 +1099,7 @@
       ctx.drawImage(descriptor.image,cell*tile,row*tile,tile,tile,0,0,tile,tile);
       if(gearPose)equipmentArt.draw(ctx,gearPose);
       if(guard){paintRaisedShield(ctx,actor.images.walk.image,guard);ctx.restore();}
+      }
       actor.lastKey = key;
       actor.canvas.style.width = `${tile / 64 * 100}%`; actor.canvas.style.height = `${tile / 64 * 100}%`;
       actor.canvas.style.left = `${-origin / 64 * 100}%`; actor.canvas.style.top = `${-origin / 64 * 100}%`;
@@ -1066,7 +1112,7 @@
       actor.element.dataset.counter = String(Boolean(attacking && actor.animation.counter));
       actor.element.classList.toggle('is-heavy',Boolean(attacking && actor.animation.heavy));
       actor.element.classList.toggle('is-blocking',Boolean(blocking));
-      if(id==='hero'){actor.element.dataset.blockFrame=blocking?String(blockFrame):'';actor.element.dataset.bashFrame=bashing?String(bashFrame):'';}
+      if(id==='hero'){actor.element.dataset.blockFrame=blocking?String(blockFrame):'';actor.element.dataset.bashFrame=bashing?String(bashFrame):'';actor.element.dataset.swordSkillFrame=swordClip?String(swordFrame):'';}
     }
     actor.element.classList.toggle('is-defeated',unit.hp <= 0);
     actor.element.classList.toggle('is-target',id === state.targetId);
