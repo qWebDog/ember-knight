@@ -13,11 +13,10 @@
   const colorButtons = [...document.querySelectorAll('[data-outfit-color]')];
   const progressButtons = [...document.querySelectorAll('[data-go-step]')];
   const cache = new Map();
-  let selected='light', weapon='sword', step=0, furthest=0, direction=2, frame=0, saved=null;
+  let selected='light', weapon='sword', step=0, furthest=0, frame=0, saved=null;
   let imageReady=false, loadingError=false, imageVersion=0, previewHero=null;
   const classPreviews=new Map();let classPreviewVersion=0;
   const rememberedColors={sword:'sand',bow:'forest',wand:'purple'};
-  const directionNames=['Вид сзади','Левый бок','Вид спереди','Правый бок'];
   const telegram=window.Telegram?.WebApp;
   try {telegram?.ready();telegram?.expand();telegram?.setHeaderColor('#111613');telegram?.setBackgroundColor('#111613');}catch{}
   try {
@@ -74,11 +73,11 @@
     const ctx=canvas.getContext('2d');ctx.clearRect(0,0,64,64);ctx.imageSmoothingEnabled=false;
     const defaultColor={sword:'sand',bow:'forest',wand:'purple'}[weapon];
     const dye=rememberedColors[weapon]===defaultColor?{}:{armor:rememberedColors[weapon],cape:rememberedColors[weapon]};
-    window.EmberChibiHeroes.draw(ctx,previewHero,{direction,bare:step===0,kind:'idle',frame,dyes:dye});
+    window.EmberChibiHeroes.draw(ctx,previewHero,{direction:2,bare:step===0,kind:'idle',frame,dyes:dye});
     canvas.dataset.spriteState='chibi';canvas.dataset.heroClass=step===0?'base':weapon;
     canvas.style.width='100%';canvas.style.height='100%';canvas.style.left='0%';canvas.style.top='0%';
     const description=step===0?'без экипировки':`${catalogue.weapon(weapon).name}, наряд ${outfit().name}, ${catalogue.color(rememberedColors[weapon]).name}${weapon==='wand'?', огонь и лёд':''}`;
-    canvas.setAttribute('aria-label',`Странник: ${description}. Цвет кожи: ${skins.find(s=>s.id===selected).label}. ${directionNames[direction]}.`);
+    canvas.setAttribute('aria-label',`Странник: ${description}. Цвет кожи: ${skins.find(s=>s.id===selected).label}. Вид спереди.`);
   }
   function updateButton(){
     createButton.disabled=!imageReady&&!loadingError;
@@ -129,50 +128,6 @@
   colorButtons.forEach(button=>button.addEventListener('click',()=>selectColor(button)));radioKeys(colorButtons,selectColor);
   progressButtons.forEach((button,i)=>button.addEventListener('click',()=>{if(i<=furthest)showStep(i);}));
   $('#back-button').addEventListener('click',()=>showStep(step-1));
-  function rotate(delta){direction=(direction+delta+4)%4;$('#view-label').textContent=directionNames[direction];haptic();draw();}
-  const preview = document.querySelector('#scene');
-  let swipe = null;
-  function cancelSwipe() {
-    const previous = swipe;
-    swipe = null;
-    preview.classList.remove('is-dragging');
-    if (previous && preview.hasPointerCapture(previous.id)) {
-      preview.releasePointerCapture(previous.id);
-    }
-  }
-  preview.addEventListener('pointerdown', event => {
-    // A second finger cancels rotation so pinch gestures cannot rotate the hero.
-    if (!event.isPrimary) { cancelSwipe(); return; }
-    if (swipe || event.button !== 0) return;
-    swipe = {id:event.pointerId, x:event.clientX, y:event.clientY};
-    preview.setPointerCapture(event.pointerId);
-    preview.classList.add('is-dragging');
-  });
-  preview.addEventListener('pointermove', event => {
-    if (!swipe || event.pointerId !== swipe.id) return;
-    const dx = event.clientX - swipe.x;
-    const dy = event.clientY - swipe.y;
-    // Lock out a gesture that starts vertically rather than interpreting it as a turn.
-    if (Math.abs(dy) >= 12 && Math.abs(dy) > Math.abs(dx) * 1.3) cancelSwipe();
-  });
-  preview.addEventListener('pointerup', event => {
-    if (!swipe || event.pointerId !== swipe.id) return;
-    const dx = event.clientX - swipe.x;
-    const dy = event.clientY - swipe.y;
-    cancelSwipe();
-    if (Math.abs(dx) >= 32 && Math.abs(dx) > Math.abs(dy) * 1.3) {
-      rotate(dx > 0 ? 1 : -1);
-    }
-  });
-  preview.addEventListener('pointercancel', cancelSwipe);
-  preview.addEventListener('lostpointercapture', cancelSwipe);
-  window.addEventListener('blur', cancelSwipe);
-  window.addEventListener('resize', cancelSwipe);
-  preview.addEventListener('keydown', event => {
-    if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
-    event.preventDefault();
-    rotate(event.key === 'ArrowRight' ? 1 : -1);
-  });
   function openDialog(id){const dialog=$(id);if(!dialog.open)dialog.showModal();}
   $('#help-button').addEventListener('click',()=>openDialog('#info-dialog'));
   $('#credits-button').addEventListener('click',()=>openDialog('#credits-dialog'));

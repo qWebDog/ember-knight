@@ -4,7 +4,7 @@
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#111613">
 <meta name="description" content="Создай своего героя в EMBER — пиксельной idle RPG. Твоя легенда начинается здесь.">
 <title>EMBER — Создание героя</title>
-<link rel="stylesheet" href="styles.css"><script src="https://telegram.org/js/telegram-web-app.js"></script><script src="loadouts.js" defer></script><script src="chibi-v6.js" defer></script><script src="creator-v6.js" defer></script><style>.character-shadow{bottom:0!important}.weapon-card>canvas{width:clamp(36px,7vw,64px);height:clamp(36px,7vw,64px);image-rendering:pixelated;flex-shrink:0}.wizard.has-magic .weapon-card>canvas{width:38px;height:38px}@media(max-height:420px) and (orientation:landscape){.weapon-card>canvas{width:32px;height:32px}}.weapon-card>canvas[data-sprite-state="error"]{outline:1px solid #b05243}</style>
+<link rel="stylesheet" href="styles.css"><script src="https://telegram.org/js/telegram-web-app.js"></script><script src="loadouts.js" defer></script><script src="chibi-v6.js?v=front-only-1" defer></script><script src="creator-v6.js?v=front-only-1" defer></script><style>.character-shadow{bottom:0!important}.weapon-card>canvas{width:clamp(36px,7vw,64px);height:clamp(36px,7vw,64px);image-rendering:pixelated;flex-shrink:0}.wizard.has-magic .weapon-card>canvas{width:38px;height:38px}@media(max-height:420px) and (orientation:landscape){.weapon-card>canvas{width:32px;height:32px}}.weapon-card>canvas[data-sprite-state="error"]{outline:1px solid #b05243}.scene{touch-action:pan-y pinch-zoom;cursor:default}</style>
 </head>
 <body><span aria-label="Версия сборки" style="position:fixed;top:env(safe-area-inset-top,0px);right:4px;z-index:9999;pointer-events:none;font:10px monospace;color:#eee;background:#202720;padding:2px 4px;border-radius:3px">CHIBI 6</span>
 <svg class="svg-defs" xmlns="http://www.w3.org/2000/svg"><defs>
@@ -18,18 +18,18 @@
 <symbol id="info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10v1"/></symbol>
 </defs></svg>
 <header class="topbar">
-<a class="brand" href="./" aria-label="EMBER — начало"><svg><use href="#flame"/></svg><span>EMBER</span><span class="brand-divider"></span><span class="brand-tag">IDLE RPG</span></a>
+<a class="brand" href="game-chibi-v6.html" aria-label="EMBER — начало"><svg><use href="#flame"/></svg><span>EMBER</span><span class="brand-divider"></span><span class="brand-tag">IDLE RPG</span></a>
 <div class="header-right"><span class="world-label">МАЛЕНЬКИЙ ГЕРОЙ. БОЛЬШАЯ ИСТОРИЯ.</span><button class="icon-button" id="help-button" aria-label="Об игре"><svg><use href="#info"/></svg></button></div>
 </header>
 <main>
 <div class="intro"><div><p class="eyebrow"><span></span> НОВАЯ ИСТОРИЯ</p><h1>Создай своего героя<span>.</span></h1><p class="intro-text">Каждая легенда начинается с первого шага. Сделай свой.</p></div><div class="chapter"><span>ГЛАВА</span><span class="chapter-number">I</span><span>НАЧАЛО ПУТИ</span></div></div>
 <section class="creator" aria-label="Создание персонажа">
 <div class="preview-panel">
-<div class="scene" id="scene" tabindex="0" role="group" aria-label="Предпросмотр персонажа. Поворот свайпом или клавишами влево и вправо" aria-describedby="swipe-hint view-label" aria-keyshortcuts="ArrowLeft ArrowRight"><div class="scene-top"><span class="location"><span class="tiny-diamond"></span> ЗАБЫТЫЙ ДВОР</span><span class="preview-tag">УРОВЕНЬ 1</span></div>
+<div class="scene" id="scene" role="group" aria-label="Предпросмотр персонажа спереди"><div class="scene-top"><span class="location"><span class="tiny-diamond"></span> ЗАБЫТЫЙ ДВОР</span><span class="preview-tag">УРОВЕНЬ 1</span></div>
 <div class="ambient-light"></div><div class="firefly f1"></div><div class="firefly f2"></div><div class="firefly f3"></div><div class="firefly f4"></div>
 <div class="sprite-stage"><div class="character-shadow"></div><canvas id="hero" width="64" height="64" aria-label="Персонаж без экипировки, вид спереди" role="img"></canvas></div>
 <div class="nameplate"><span class="nameplate-line"></span><div><strong>Странник</strong><span id="nameplate-subtitle">Твой путь начинается здесь</span></div><span class="nameplate-line"></span></div>
-<div class="rotation"><span id="view-label" role="status" aria-live="polite">Вид спереди</span><span id="swipe-hint">Проведи влево или вправо</span></div>
+<div class="rotation"><span id="view-label">Вид спереди</span></div>
 </div>
 <div class="preview-bottom"><span class="live-dot"></span><span id="preview-summary">Выбери цвет кожи</span><span class="pixel-badge">CHIBI</span></div>
 </div>
@@ -51,7 +51,7 @@
 <nav class="creation-progress" aria-label="Шаги создания"><button data-go-step="0" class="current" aria-current="step"><span>1</span> Кожа</button><i></i><button data-go-step="1" disabled><span>2</span> Оружие</button><i></i><button data-go-step="2" disabled><span>3</span> Цвет</button></nav>
 </main>
 <footer><span>НЕ СПЕШИ. ТВОЯ ЛЕГЕНДА ДОЖДЁТСЯ.</span><button id="credits-button">Пиксельный мир с душой <span>✦</span></button></footer>
-<dialog id="info-dialog"><button class="dialog-close" aria-label="Закрыть">×</button><p class="eyebrow">ДОБРО ПОЖАЛОВАТЬ В EMBER</p><h2>У каждой легенды<br>есть начало.</h2><p>Это первое окно idle RPG для Telegram. Выбери цвет кожи, затем меч со щитом, лук или палочку и цвет базового наряда. Маг использует огонь и лёд одновременно. Героя можно повернуть свайпом влево или вправо.</p><p>Мечу со щитом соответствует наряд «Ополченец», луку — «Странник», палочке — «Послушник». Цвет одежды можно выбрать отдельно от цвета кожи.</p><button class="dialog-action">Продолжить</button></dialog>
+<dialog id="info-dialog"><button class="dialog-close" aria-label="Закрыть">×</button><p class="eyebrow">ДОБРО ПОЖАЛОВАТЬ В EMBER</p><h2>У каждой легенды<br>есть начало.</h2><p>Это первое окно idle RPG для Telegram. Выбери цвет кожи, затем меч со щитом, лук или палочку и цвет базового наряда. Маг использует огонь и лёд одновременно. В выборе героя всегда показан вид спереди.</p><p>Мечу со щитом соответствует наряд «Ополченец», луку — «Странник», палочке — «Послушник». Цвет одежды можно выбрать отдельно от цвета кожи.</p><button class="dialog-action">Продолжить</button></dialog>
 <dialog id="success-dialog"><button class="dialog-close" aria-label="Закрыть">×</button><div class="success-sigil"><svg><use href="#flame"/></svg></div><p class="eyebrow">ПЕРВЫЙ ШАГ СДЕЛАН</p><h2>Герой создан.</h2><p>Странник готов к своей истории.<br>Облик сохранён на этом устройстве.</p><div class="saved-character"><span>Странник · Уровень 1</span><strong id="saved-skin"></strong></div><p id="saved-loadout"></p><p class="coming-soon">Забытый лес ждёт своего героя.</p><button class="dialog-action" id="start-adventure">В путь</button></dialog>
 <dialog id="credits-dialog"><button class="dialog-close" aria-label="Закрыть">×</button><p class="eyebrow">ПИКСЕЛИ С ИСТОРИЕЙ</p><h2>EMBER · CHIBI</h2><p>Новые герои состоят из независимых пиксельных слоёв тела и экипировки. В игре также используются другие спрайты LPC.</p><div id="credits-content"></div><p><a href="assets/CREDITS.txt" target="_blank" rel="noopener">Авторы и лицензии спрайтов</a></p><p><a href="https://liberatedpixelcup.github.io/Universal-LPC-Spritesheet-Character-Generator/" target="_blank" rel="noopener">Открыть генератор LPC</a></p><button class="dialog-action">Понятно</button></dialog>
 <div id="status" class="sr-only" role="status"></div>
