@@ -1298,3 +1298,6 @@ test('learned shield bash replaces every third block counter and impacts halfway
 
 
 test('sword techniques rotate on alternate finishers, with timed double strike',()=>{const b=createDefaultBattle({heroWeapon:'sword',heroProjectile:'melee',heroMaxHp:100000,heroDamage:1,warrior_swordThrust:5,warrior_swordOverhead:5,warrior_swordDouble:5,warrior_swordCleave:5});const ev=b.advance(800);const clips=ev.filter(e=>e.type==='warriorSkill'&&e.skill.startsWith('sword'));assert.deepEqual(clips.slice(0,4).map(e=>e.skill),['swordThrust','swordOverhead','swordDouble','swordCleave']);const d=clips[2];const hits=ev.filter(e=>e.swordSkill==='swordDouble'&&e.at>=d.at&&e.at<d.at+d.animationDuration);assert.deepEqual(hits.map(e=>e.strike),[1,2]);assert.ok(hits[0].at<hits[1].at);});
+
+
+test('mastery strengthens only regular finishers and both special sword hits, without changing cadence',()=>{const opts={heroWeapon:'sword',heroProjectile:'melee',heroMaxHp:100000,heroDamage:4,warrior_swordDouble:5};const get=rank=>createDefaultBattle({...opts,warrior_swordMaster:rank}).advance(10).filter(e=>e.type==='attack'&&e.sourceId==='hero');const base=get(0),master=get(5);assert.deepEqual(master.map(e=>e.at),base.map(e=>e.at));for(let i=0;i<base.length;i++){const b=base[i],m=master[i];assert.equal(m.damage,b.comboStep===3?b.damage*2:b.damage);}});

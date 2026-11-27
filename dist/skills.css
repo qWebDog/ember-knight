@@ -161,3 +161,21 @@
 .skills-panel[data-hero-class="bow"] [data-branch="attack"] .skill-future[data-arrow-slot="6"]{grid-area:arrowRain!important}
 .skills-panel[data-hero-class="bow"] [data-branch="attack"] .skill-future[data-arrow-slot="5"]:before{display:block;height:12px}
 .skills-panel[data-hero-class="bow"] [data-branch="attack"] .skill-future[data-arrow-slot="6"]:before{display:block;height:12px}
+
+/* Warrior attack: four independent techniques, then a shared mastery gate. */
+.skills-panel[data-hero-class="sword"] .skill-branch{min-height:216px;grid-template-rows:18px auto;align-content:start}
+.skills-panel[data-hero-class="sword"] .skill-path{grid-template-rows:40px 12px auto;align-content:start}
+.skills-panel[data-hero-class="sword"] .skill-node{width:34px;height:34px}
+.skills-panel[data-hero-class="sword"] .skill-growth{display:none}
+.skills-panel[data-hero-class="sword"] [data-branch="attack"] .skill-fork{width:50%;border-bottom:0}
+.skills-panel[data-hero-class="sword"] [data-branch="attack"] .skill-children{position:relative;grid-template-areas:"thrust overhead" "double cleave" "master master";grid-template-rows:repeat(3,36px);gap:12px 0;padding:0;align-items:start;background:linear-gradient(var(--branch),var(--branch)) center top/1px 48px no-repeat,linear-gradient(var(--branch),var(--branch)) center 0/50% 1px no-repeat,linear-gradient(var(--branch),var(--branch)) center 48px/50% 1px no-repeat}
+.skills-panel[data-hero-class="sword"] [data-branch="attack"] .skill-children:before{content:"";position:absolute;left:25%;width:50%;height:12px;top:84px;box-sizing:border-box;border:1px solid var(--branch);border-top:0;opacity:.65;pointer-events:none}
+.skills-panel[data-hero-class="sword"] [data-sword-slot]{width:30px;height:28px;z-index:1}
+.skills-panel[data-hero-class="sword"] [data-sword-slot] svg{width:20px;height:20px}
+.skills-panel[data-hero-class="sword"] [data-sword-slot] span{display:block;font-size:9px;line-height:10px;top:100%}
+.skills-panel[data-hero-class="sword"] [data-sword-slot="1"]{grid-area:thrust}
+.skills-panel[data-hero-class="sword"] [data-sword-slot="2"]{grid-area:overhead}
+.skills-panel[data-hero-class="sword"] [data-sword-slot="3"]{grid-area:double}
+.skills-panel[data-hero-class="sword"] [data-sword-slot="4"]{grid-area:cleave}
+.skills-panel[data-hero-class="sword"] [data-sword-slot="5"]{grid-area:master;color:#f1ca79;border-color:#b89b58}
+.skills-panel[data-hero-class="sword"] [data-sword-slot="5"]:before{height:12px}

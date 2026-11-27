@@ -233,3 +233,6 @@ test('shield bash opens after Vitality III and persists independently of other c
 
 
 test('all four sword techniques unlock independently after Power III',()=>{const ui=createPanel({gold:500,levels:{power:3}});for(const id of ['swordThrust','swordOverhead','swordDouble','swordCleave']){ui.clickSkill(id);assert.equal(ui.node('#skill-upgrade').disabled,false);ui.upgrade();assert.equal(ui.store.getStats()['warrior_'+id],1);}});
+
+
+test('warrior mastery is a shared fifth attack node, with correct prerequisite text',()=>{const ui=createPanel({gold:500,levels:{power:3,swordThrust:3,swordDouble:2}});ui.clickSkill('swordMaster');assert.match(ui.node('[data-skill-benefit]').textContent,/Любые две техники меча III уровня/);assert.equal(ui.node('#skill-upgrade').disabled,true);ui.clickSkill('swordDouble');ui.upgrade();ui.clickSkill('swordMaster');assert.equal(ui.node('#skill-upgrade').disabled,false);ui.upgrade();assert.equal(ui.store.getStats().warrior_swordMaster,1);assert.equal(ui.node('[data-skill-id="swordMaster"]').dataset.skillDepth,'2');});

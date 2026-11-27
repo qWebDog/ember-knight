@@ -14,10 +14,11 @@
     Object.freeze({id:'vitality', branch:'defense', name:'Стойкость', description:'Каждый уровень добавляет 20 к максимальному здоровью.', maxLevel:5, icon:'shield'}),
     Object.freeze({id:'tempo', branch:'control', name:'Натиск', description:'Каждый уровень ускоряет атаки на 5%.', maxLevel:5, icon:'bolt'}),
     Object.freeze({id:'shieldBash',branch:'defense',name:'Удар щитом',description:'Каждый третий блок: контратака щитом, 60–100% базового урона и оглушение 0,6–1,4 с.',maxLevel:5,icon:'shield',requires:'vitality'}),
-    Object.freeze({id:'swordThrust',branch:'attack',name:'Колющий удар',description:'Игнорирует 20–60% брони цели.',maxLevel:5,icon:'swords',requires:'power'}),
+    Object.freeze({id:'swordThrust',branch:'attack',name:'Колющий удар',description:'150% базового урона, игнорирует 20–60% брони цели.',maxLevel:5,icon:'swords',requires:'power'}),
     Object.freeze({id:'swordOverhead',branch:'attack',name:'Удар сверху',description:'Наносит 160–200% базового урона.',maxLevel:5,icon:'swords',requires:'power'}),
     Object.freeze({id:'swordDouble',branch:'attack',name:'Двойной удар',description:'Два попадания: 90% и 40–80% базового урона.',maxLevel:5,icon:'swords',requires:'power'}),
-    Object.freeze({id:'swordCleave',branch:'attack',name:'Круговое рассечение',description:'150% базового урона цели и 20–60% соседям.',maxLevel:5,icon:'swords',requires:'power'})
+    Object.freeze({id:'swordCleave',branch:'attack',name:'Круговое рассечение',description:'150% базового урона цели и 20–60% соседям.',maxLevel:5,icon:'swords',requires:'power'}),
+    Object.freeze({id:'swordMaster',branch:'attack',name:'Мастер меча',description:'Каждый уровень усиливает завершающий удар комбинации и все заменяющие его техники на 20%.',maxLevel:5,icon:'swords',requires:Object.freeze(['swordThrust','swordOverhead','swordDouble','swordCleave']),requiredCount:2,requiredRank:3})
   ]);
   // Mage upgrades are class-specific. Warrior data stays in the original
   // levels field so existing saves retain their exact ranks and wallet.
@@ -90,7 +91,7 @@
       heroMaxHp:200 + 20 * levels[ids[1]],
       heroAttackSpeed:1 + .05 * levels[ids[2]],
       ...(classId==='sword'&&levels.shieldBash?{warriorShieldBash:levels.shieldBash}:{}),
-      ...(classId==='sword'?Object.fromEntries(['swordThrust','swordOverhead','swordDouble','swordCleave'].filter(id=>levels[id]>0).map(id=>['warrior_'+id,levels[id]])):{}),
+      ...(classId==='sword'?Object.fromEntries(['swordThrust','swordOverhead','swordDouble','swordCleave','swordMaster'].filter(id=>levels[id]>0).map(id=>['warrior_'+id,levels[id]])):{}),
       ...(classId==='bow'?Object.fromEntries(["piercing","poison","explosive","barbed","doubleShot","arrowRain","rendingBite","guardian","alpha","evasion","retreat","arrowDance","wolfBond"].filter(id=>levels[id]>0).map(id=>['archer_'+id,levels[id]])):{}),
       ...(classId==='wand'&&levels.strongBurn?{heroBurnRank:levels.strongBurn}:{}),
       ...(classId==='wand'&&levels.protectiveSphere?{heroSphereRank:levels.protectiveSphere}:{}),
