@@ -18,116 +18,22 @@
   // Helms/armor use original LPC pose overlays; swords/shields are fully recomposed native LPC sheets.
   const supportedSlots=Object.freeze(['helmet','armor','weapon','shield','cape']);
   const archerSlots=Object.freeze([...supportedSlots,'companion']);
-  const catalog=Object.freeze({
-    helmet:Object.freeze([
-      {id:'none',name:'Без шлема',detail:'Открытая голова',tone:'#78867d'},
-      {id:'iron',name:'Бацинет LPC',detail:'Оригинальный LPC · 5 анимаций',tone:'#a3b5bb'},
-      {id:'royal',name:'Большой шлем LPC',detail:'Оригинальный LPC · 5 анимаций',tone:'#d4a955'}
-    ].map(Object.freeze)),
-    armor:Object.freeze([
-      {id:'basic',name:'Походная одежда',detail:'Начальный наряд',tone:'#806f59'},
-      {id:'iron',name:'Пластинчатая броня LPC',detail:'Оригинальный LPC · 5 анимаций',tone:'#9eabb1'},
-      {id:'royal',name:'Легионерская броня LPC',detail:'Оригинальный LPC · 5 анимаций',tone:'#c2a04c'}
-    ].map(Object.freeze)),
-    weapon:Object.freeze([
-      {id:'basic',name:'Начальный меч',detail:'Исходный LPC-меч',tone:'#b1aca4'},
-      {id:'steel',name:'Серебряный меч LPC',detail:'Оригинальный LPC · серебро',tone:'#d2e0dd'},
-      {id:'ember',name:'Золотой меч LPC',detail:'Оригинальный LPC · золото',tone:'#dcab37'}
-    ].map(Object.freeze)),
-    shield:Object.freeze([
-      {id:'basic',name:'Деревянный щит',detail:'Исходный LPC-щит',tone:'#7a6149'},
-      {id:'steel',name:'Стальной щит LPC',detail:'Анимированный heater · стальная палитра',tone:'#9cbdcb'},
-      {id:'royal',name:'Королевский щит LPC',detail:'Анимированный heater · красный и золото',tone:'#d1a44d'}
-    ].map(Object.freeze)),
-    cape:Object.freeze([
-      {id:'none',name:'Без плаща',detail:'Без дополнительного плаща',tone:'#737b69'},
-      {id:'tattered',name:'Потрёпанный плащ',detail:'LPC · полный набор анимаций',tone:'#a74348'},
-      {id:'solid',name:'Прямой плащ',detail:'LPC · полный набор анимаций',tone:'#7b5ba4'}
-    ].map(Object.freeze)),
-    companion:Object.freeze([
-      {id:'none',name:'Без компаньона',detail:'Доступно только лучнику',tone:'#738476'}
-    ].map(Object.freeze))
-  });
-  // Only the Archer can recruit the combat wolf; the slot stays visibly
-  // unavailable for Warrior and Mage. The shield key
-  // represents their class accessory (quiver or sash), never an off-hand shield.
-  const rangerCatalog=Object.freeze({...catalog,
-    companion:Object.freeze([
-      {id:'none',name:'Без компаньона',detail:'Нет помощника',tone:'#738476'},
-      {id:'wolf',name:'Боевой волк',detail:'Подбегает к врагам и кусает их, пока лучник стреляет',tone:'#866653'}
-    ].map(Object.freeze)),
-    cape:Object.freeze([
-      {id:'tattered',name:'Дорожный плащ',tone:'#5c805c'},
-      {id:'solid',name:'Прямой плащ',tone:'#af6c77'}
-    ].map(Object.freeze)),
-    helmet:Object.freeze([
-      {id:'basic',name:'Лесной капюшон',detail:'Исходный LPC-капюшон',tone:'#61774d'},
-      {id:'iron',name:'Бацинет',detail:'Родной LPC · walk и shoot',tone:'#a1b3bb'},
-      {id:'royal',name:'Большой шлем',detail:'Родной LPC · walk и shoot',tone:'#bdad80'}
-    ].map(Object.freeze)),
-    armor:Object.freeze([
-      {id:'basic',name:'Походная рубаха',detail:'Исходный наряд',tone:'#55726a'},
-      {id:'iron',name:'Кожаная броня',detail:'LPC · walk и shoot',tone:'#7a6042'},
-      {id:'royal',name:'Пластинчатая броня',detail:'LPC · walk и shoot',tone:'#9cb5bc'}
-    ].map(Object.freeze)),
-    weapon:Object.freeze([
-      {id:'basic',name:'Светлый лук',detail:'Исходный LPC-лук',tone:'#bca67b'},
-      {id:'steel',name:'Тёмный лук',detail:'Оригинальный LPC · dark',tone:'#594638'},
-      {id:'ember',name:'Золотой лук',detail:'Оригинальный LPC · gold',tone:'#d8ae52'}
-    ].map(Object.freeze)),
-    shield:Object.freeze([
-      {id:'basic',name:'Походный колчан',detail:'Исходный LPC-колчан',tone:'#78604a'},
-      {id:'steel',name:'Тёмный колчан',detail:'Перекраска LPC-слоя',tone:'#52616f'},
-      {id:'royal',name:'Алый колчан',detail:'Перекраска LPC-слоя',tone:'#ac5951'}
-    ].map(Object.freeze))
-  });
-  const mageCatalog=Object.freeze({...catalog,
-    cape:Object.freeze([
-      {id:'tattered',name:'Плащ послушника',tone:'#8c69b0'},
-      {id:'solid',name:'Прямой плащ',tone:'#af6c77'}
-    ].map(Object.freeze)),
-    helmet:Object.freeze([
-      {id:'basic',name:'Капюшон послушника',detail:'Исходный LPC-капюшон',tone:'#75548c'},
-      {id:'iron',name:'Синяя шляпа мага',detail:'Оригинальный LPC · blue',tone:'#6174a6'},
-      {id:'royal',name:'Фиолетовая шляпа',detail:'Оригинальный LPC · purple',tone:'#8862b4'}
-    ].map(Object.freeze)),
-    armor:Object.freeze([
-      {id:'basic',name:'Одеяние послушника',detail:'Исходная одежда',tone:'#8c6f98'},
-      {id:'iron',name:'Кожаная защита',detail:'Оригинальный LPC-доспех',tone:'#80614f'},
-      {id:'royal',name:'Магический жилет',detail:'Оригинальный LPC-жилет',tone:'#4d70a8'}
-    ].map(Object.freeze)),
-    weapon:Object.freeze([
-      {id:'basic',name:'Простая палочка',detail:'Исходная LPC-палочка',tone:'#87634d'},
-      {id:'steel',name:'Лазурная палочка',detail:'Перекраска LPC-слоя',tone:'#619ed0'},
-      {id:'ember',name:'Янтарная палочка',detail:'Перекраска LPC-слоя',tone:'#cd963d'}
-    ].map(Object.freeze)),
-    shield:Object.freeze([
-      {id:'basic',name:'Тёмный пояс',detail:'Исходный LPC-пояс',tone:'#504653'},
-      {id:'steel',name:'Синий пояс',detail:'LPC · палитра navy',tone:'#526c9b'},
-      {id:'royal',name:'Золотой пояс',detail:'LPC · палитра yellow',tone:'#d7ad54'}
-    ].map(Object.freeze))
-  });
-  // Every item portrait is an actual transparent icon extracted from the
-  // matching native LPC sprite layer during the Pages build.
-  const iconColors=Object.freeze(['sand','forest','blue','red','purple','gray']);
-  function itemIconPath(classId,slot,itemId,outfitColor='sand',dye='original'){
-    if(!['sword','bow','wand'].includes(classId))return null;
-    const itemCatalog=classId==='sword'?catalog:classId==='bow'?rangerCatalog:mageCatalog;
-    if(!Object.prototype.hasOwnProperty.call(itemCatalog,slot)
-      ||!itemCatalog[slot].some(item=>item.id===itemId))return null;
-    if(!['helmet','armor','weapon','shield','cape'].includes(slot))return null;
-    const colored=(slot==='armor'&&itemId==='basic'&&classId!=='bow')
-      ||(slot==='helmet'&&itemId==='basic'&&classId!=='sword')
-      ||(slot==='cape'&&itemId!=='none');
-    const color=iconColors.includes(outfitColor)?outfitColor:'sand';
-    if(dyeSlots.includes(slot)&&dyeIds.includes(dye)&&dye!=='original'
-      &&itemId!=='none'){
-      return 'assets/equipment/icons/dyes/'+classId+'/'+slot+'/'+itemId
-        +(colored?'/'+color:'/')+dye+'.png';
+  // The original LPC catalogue is retired. Only newly drawn items are selectable.
+  const items={
+    sword:{helmet:['Стальной шлем с плюмажем','#b0b5bf'],armor:['Стальная кираса','#9da3b1'],weapon:['Стальной меч','#c6cbd4'],shield:['Рыцарский щит','#c4a15d'],cape:['Алый плащ','#a74348']},
+    bow:{helmet:['Лесной капюшон','#61774d'],armor:['Кожаный нагрудник','#8c6745'],weapon:['Деревянный лук','#b38a56'],shield:['Колчан со стрелами','#78604a'],cape:['Лесной плащ','#5c805c']},
+    wand:{helmet:['Шляпа мага','#666ca4'],armor:['Мантия мага','#726ba5'],weapon:['Кристальная палочка','#86c3ef'],shield:['Пояс мага','#817152'],cape:['Синий плащ','#6b70ac']}
+  };
+  function makeCatalog(classId){
+    const result={};
+    for(const [slot,[name,tone]] of Object.entries(items[classId])){
+      result[slot]=Object.freeze([{id:'basic',name,tone,detail:'Новый отдельный слой EMBER'}, {id:'none',name:'Снять',tone:'#738476',detail:'Без предмета'}].map(Object.freeze));
     }
-    return 'assets/equipment/icons/'+classId+'/'+slot+'/'+itemId
-      +(colored?'/'+color:'')+'.png';
+    result.companion=Object.freeze([{id:'none',name:'Без компаньона',tone:'#738476'},...(classId==='bow'?[{id:'wolf',name:'Боевой волк',tone:'#866653'}]:[])].map(Object.freeze));
+    return Object.freeze(result);
   }
+  const catalog=makeCatalog('sword'),rangerCatalog=makeCatalog('bow'),mageCatalog=makeCatalog('wand');
+  function itemIconPath(){return null;} // thumbnails are rendered from the live PNG layer
   const catalogs=Object.freeze({sword:catalog,bow:rangerCatalog,wand:mageCatalog});
   const supportedByClass=Object.freeze({sword:supportedSlots,bow:archerSlots,wand:supportedSlots});
   const slotNames=Object.freeze({sword:Object.freeze({shield:'Щит'}),bow:Object.freeze({shield:'Колчан'}),wand:Object.freeze({shield:'Пояс'})});
@@ -199,7 +105,7 @@
     }
     function setColor(slot,color,itemId=state()[slot]){
       if(!dyeSlots.includes(slot)||!catalogForClass(classId)[slot]?.some(x=>x.id===itemId)||!dyeIds.includes(color))return {ok:false,reason:'invalid'};
-      if((slot==='helmet'&&itemId==='none')||(slot==='cape'&&itemId==='none'))return {ok:false,reason:'unsupported'};
+      if(itemId==='none')return {ok:false,reason:'unsupported'};
       if(getColor(slot,itemId)===color)return {ok:true,unchanged:true};
       try{
         const saved=JSON.parse(storage?.getItem?.(dyeKey)||'null');

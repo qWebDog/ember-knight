@@ -83,44 +83,16 @@
   const progression = window.EmberProgression.createStore({storage:progressionStorage,classId:starterWeapon?.id||'sword',heroLevel:character?.level});
   wallet = progression.getState().gold;
   const equipment = window.EmberEquipment?.createStore({classId:starterWeapon?.id||'sword',...(archerDemo?{storage:demoStorage}:{})});
-  const dyeEngine=window.EmberEquipmentDye?.create({canvasFactory:()=>document.createElement('canvas')});
-  const equipmentArt = starterWeapon?.id==='sword' && equipment?.enabled
-    ? window.EmberEquipmentArt?.create({loadImage,dye:dyeEngine,outfitColor:loadout?.outfitColor||'sand'}) : null;
   const ranged = starterWeapon && starterWeapon.projectile !== 'melee';
   const skin = character?.skin || 'light';
-  const swordEquipment = starterWeapon?.id==='sword' && equipment?.enabled && loadout && window.EmberSwordEquipment
-    ? window.EmberSwordEquipment.create({skin,color:loadout.outfitColor,loadImage,
-      standardPath:pose=>loadouts.path(loadout,skin,pose)}) : null;
-  const classEquipment = ['bow','wand'].includes(starterWeapon?.id) && equipment?.enabled && loadout && window.EmberClassEquipment
-    ? window.EmberClassEquipment.create({classId:starterWeapon.id,skin,color:loadout.outfitColor,
-      loadImage,standardPath:pose=>loadouts.path(loadout,skin,pose),
-      canvasFactory:()=>document.createElement('canvas'),dye:dyeEngine}) : null;
   const dodgeTiming=window.EmberCombat.archerDodge,dodgeArt=window.EmberArcherDodge;
   let chibiHero=null;
-  const chibiLook=()=>({look:equipment?.getState()||{},dyes:equipment?.getColors()||{}});
-  function paintChibiAvatar(){if(!chibiHero)return;const c=document.createElement('canvas');c.width=c.height=64;window.EmberChibiHeroes.draw(c.getContext('2d'),chibiHero,{...chibiLook(),direction:2});const face=$('#avatar').getContext('2d');face.clearRect(0,0,32,32);face.imageSmoothingEnabled=false;face.drawImage(c,12,0,40,40,0,0,32,32);}
-  let loadedClassSprites = null;
-  function applyClassSprites(images){
-    if(!images||!actors.hero.images.walk)return;
-    const sets=actors.hero.images;
-    for(const [kind,pose] of [['idle','walk'],['walk','walk'],['attack','attack']]){
-      if(sets[kind])sets[kind].image=images[pose];
-    }
-    if(starterWeapon?.id==='bow'){sets.dodge=dodgeArt.build(images.attack);sets.skills=dodgeArt.buildSkills(images.attack);}
-    actors.hero.lastKey=null;
-  }
-  let loadedSwordSprites = null;
-  function applySwordSprites(images){
-    if(!images||!actors.hero.images.walk)return;
-    const sets=actors.hero.images;
-    for(const [kind,pose] of [['idle','walk'],['walk','walk'],['attack','attack'],['block','block']]){
-      if(sets[kind])sets[kind].image=images[pose];
-    }
-    for(const variant of ['slash','halfslash','backslash']){
-      if(sets.attacks?.[variant])sets.attacks[variant].image=images[variant==='slash'?'attack':variant];
-    }
-    actors.hero.lastKey=null;
-  }
+  const chibiLook=()=>{
+    const dyes={...equipment?.getColors()},defaultColor={sword:'sand',bow:'forest',wand:'purple'}[starterWeapon?.id];
+    if(loadout?.outfitColor&&loadout.outfitColor!==defaultColor){for(const slot of ['armor','cape'])if(!dyes[slot]||dyes[slot]==='original')dyes[slot]=loadout.outfitColor;}
+    return {look:equipment?.getState()||{},dyes};
+  };
+  function paintChibiAvatar(){if(!chibiHero)return;const c=document.createElement('canvas');c.width=c.height=64;window.EmberChibiHeroes.draw(c.getContext('2d'),chibiHero,{...chibiLook(),direction:2});const face=$('#avatar').getContext('2d');face.clearRect(0,0,32,32);face.imageSmoothingEnabled=false;face.drawImage(c,10,8,44,44,0,0,32,32);}
   const name = typeof character?.name === 'string' && character.name.trim() ? character.name.slice(0,24) : 'Странник';
   const level = Number.isInteger(character?.level) ? Math.max(1,Math.min(99,character.level)) : 1;
   $('#player-name').textContent = name;
@@ -276,7 +248,8 @@
       root:equipmentPanel,store:equipment,
       outfitColor:loadout?.outfitColor||'sand',
       getSprite:()=>actors.hero.images.idle,
-      paintHero:(ctx,pose)=>{if(!chibiHero)return false;window.EmberChibiHeroes.draw(ctx,chibiHero,{look:pose.equipped,dyes:pose.colors,direction:pose.row});return true;},
+      paintHero:(ctx,pose)=>{if(!chibiHero)return false;window.EmberChibiHeroes.draw(ctx,chibiHero,{...chibiLook(),direction:pose.row});return true;},
+      paintIcon:(ctx,slot,id,dye)=>{if(chibiHero)window.EmberChibiHeroes.drawItem(ctx,chibiHero,slot,id,dye);},
       loadItem:async(slot,id,colors)=>{
         // Stage the original wolf image before committing an equipment choice.
         // Companion selection must not rebuild the hero's LPC armor or bow.
@@ -284,23 +257,8 @@
           if(id==='wolf'){await companion?.load();await loadCarryAtlas();}
           return;
         }
-        if(chibiHero)return; // All modular layers are already loaded.
-        const nextLook={...equipment.getState(),[slot]:id};
-        // Stage every layer before saving a selection. In particular, a new
-        // shield must have its native foreground ready over the chest armor.
-        if(classEquipment){
-          loadedClassSprites=await classEquipment.load(nextLook,colors||equipment.getColors(nextLook));
-        }else{
-          const changingWeapon=slot==='weapon'||slot==='shield';
-          const [_,images]=await Promise.all([
-            equipmentArt?.prepareLook(nextLook,colors||equipment.getColors(nextLook)),
-            changingWeapon&&swordEquipment?swordEquipment.load(nextLook):Promise.resolve(null)
-          ]);
-          if(images)loadedSwordSprites=images;
-        }
+        if(!chibiHero)throw Error('New equipment not ready');
       },
-      paintItem:(ctx,pose)=>equipmentArt?.draw(ctx,pose),
-      paintBack:(ctx,pose)=>equipmentArt?.drawBack(ctx,pose),
       paintCompanion:(ctx,pose)=>companion?.paintPreview(ctx,pose),
       onEquip:(_look,slot)=>{
         if(slot==='companion'){
@@ -308,8 +266,6 @@
           companionDeathAt=null;wolfCarry=null;
           companion?.reset();
         }
-        if(slot!=='companion'&&classEquipment&&loadedClassSprites)applyClassSprites(loadedClassSprites);
-        if((slot==='weapon'||slot==='shield')&&loadedSwordSprites)applySwordSprites(loadedSwordSprites);
         actors.hero.lastKey=null;carryAtlas=null;carryHeroImage=null;paintChibiAvatar();
         if(ready)render(battle.getState());
         equipmentUI?.refreshPreview();
@@ -320,15 +276,9 @@
     return new Promise((resolve,reject) => { const image = new Image(); image.onload = () => resolve(image); image.onerror = () => reject(new Error(path)); image.src = path; });
   }
   function ensureCarryAtlas(){
-    const hero=actors.hero.images.walk?.image;
-    if(!hero||!carryWolfImage)return null;
-    if(chibiHero){const key=JSON.stringify(chibiLook());if(carryHeroImage!==key||!carryAtlas){const dead=window.EmberCompanion.frameAt(99,false,false,3,'die');carryAtlas=window.EmberChibiHeroes.carry(chibiHero,carryWolfImage,dead,()=>document.createElement('canvas'),chibiLook());carryHeroImage=key;}return carryAtlas;}
-    if(hero!==carryHeroImage||!carryAtlas){
-      try{
-        carryAtlas=window.EmberCompanion.buildCarryAtlas(hero,carryWolfImage,()=>document.createElement('canvas'));
-        carryHeroImage=hero;
-      }catch{carryAtlas=null;carryHeroImage=null;}
-    }
+    if(!chibiHero||!carryWolfImage)return null;
+    const key=JSON.stringify(chibiLook());
+    if(carryHeroImage!==key||!carryAtlas){const dead=window.EmberCompanion.frameAt(99,false,false,3,'die');carryAtlas=window.EmberChibiHeroes.carry(chibiHero,carryWolfImage,dead,()=>document.createElement('canvas'),chibiLook());carryHeroImage=key;}
     return carryAtlas;
   }
   function loadCarryAtlas(){
@@ -341,38 +291,14 @@
   async function loadAssets() {
     ready = false; assetError = false; updateControls();
     try {
-      let idle;
       chibiHero=await window.EmberChibiHeroes.load(starterWeapon?.id||'sword',loadImage,skin);
-      if (loadout) {
-        const swordSprites=swordEquipment?await swordEquipment.load(equipment.getState()):null;
-        const classSprites=classEquipment?await classEquipment.load(equipment.getState(),equipment.getColors()):null;
-        if(swordSprites)loadedSwordSprites=swordSprites;
-        if(classSprites)loadedClassSprites=classSprites;
-        const walk = classSprites?.walk||swordSprites?.walk||await loadImage(loadouts.path(loadout,skin,'walk'));
-        const attack = classSprites?.attack||swordSprites?.attack||await loadImage(loadouts.path(loadout,skin,'attack'));
-        idle = walk;
-        actors.hero.images.idle = {image:walk,row:3,still:0,...starterWeapon.walk};
-        actors.hero.images.walk = {image:walk,row:3,...starterWeapon.walk};
-        actors.hero.images.attack = {image:attack,row:3,...starterWeapon.attack};
-        if(starterWeapon.id==='bow'){actors.hero.images.dodge=dodgeArt.build(attack);actors.hero.images.skills=dodgeArt.buildSkills(attack);}
-        if (starterWeapon.attacks) {
-          const variants = await Promise.all(Object.entries(starterWeapon.attacks).map(async ([variant,geometry]) => {
-            const image = variant === 'slash' ? attack : (swordSprites?.[variant]||await loadImage(loadouts.path(loadout,skin,variant)));
-            return [variant,{image,row:3,...geometry}];
-          }));
-          actors.hero.images.attacks = Object.fromEntries(variants);
-        }
-        if (starterWeapon.block) {
-          const block = swordSprites?.block||await loadImage(loadouts.path(loadout,skin,'block'));
-          actors.hero.images.block = {image:block,row:3,still:0,...starterWeapon.block};
-        }
-      } else {
-        idle = await loadImage(`assets/characters/${skin}.png`).catch(() => loadImage('assets/characters/light.png'));
-        actors.hero.images.idle = {image:idle,frames:2,row:3};
-        const walk = await loadImage(`assets/characters/combat/${skin}-walk.png`).catch(() => loadImage('assets/characters/combat/light-walk.png'));
-        actors.hero.images.walk = {image:walk,frames:9,row:3};
-        const attack = await loadImage(`assets/characters/combat/${skin}-attack.png`).catch(() => null);
-        actors.hero.images.attack = attack ? {image:attack,frames:6,row:3} : actors.hero.images.idle;
+      const im=chibiHero.images.body,pose=(frames=4,extra={})=>({image:im,row:3,tile:64,origin:0,frames,...extra});
+      const sets=actors.hero.images={idle:pose(1,{still:0}),walk:pose(4),attack:pose(starterWeapon?.id==='bow'?13:8)};
+      if(starterWeapon?.id==='sword'){sets.block=pose(8,{still:0});sets.attacks=Object.fromEntries(['slash','halfslash','backslash'].map(v=>[v,pose(8)]));}
+      if(starterWeapon?.id==='bow'){
+        sets.dodge=pose(10);
+        // Preserve the original release fractions, not the LPC art.
+        sets.skills=Object.fromEntries(Object.entries({doubleShot:[12,8],arrowRain:[9,6],dance0:[6,4],dance1:[5,3],dance2:[6,4]}).map(([name,[frames,releaseFrame]])=>[name,pose(frames,{releaseFrame,skill:name})]));
       }
       await Promise.all([
         ['orc','orc-walk.png','orc-left.png',9,0],
@@ -409,12 +335,7 @@
         mageEffects.advanced=await Promise.all(mageSkillRows.map(skill=>loadImage(skill==='echo'?'assets/magic/mage-echo-resonance-v2.png':`assets/magic/mage-${skill}.png`)));
       }
       actors.orc.images.attack = orcAttack ? {image:orcAttack,frames:6,row:1,tile:128,origin:32} : { ...actors.orc.images.idle,frames:1 };
-      const face = $('#avatar').getContext('2d'); face.imageSmoothingEnabled = false;
-      const avatarTile=loadout?starterWeapon.walk.tile:64, avatarOrigin=loadout?starterWeapon.walk.origin:0;
-      face.drawImage(idle,avatarOrigin+19,avatarTile*2+avatarOrigin+12,26,26,0,0,32,32);paintChibiAvatar();
-      // Helmet/armor are native pose overlays; sword/shield are complete, recomposed LPC sheets.
-      if(equipmentArt)try{await equipmentArt.prepareLook(equipment.getState(),equipment.getColors());}
-      catch{$('#status').textContent='Не удалось загрузить часть LPC-экипировки.';}
+      paintChibiAvatar();
       // A missing cosmetic image should never block combat or hero creation.
       if(equipment?.getState().companion==='wolf')try{await companion?.load();await loadCarryAtlas();}catch{}
       ready = true;
@@ -427,8 +348,8 @@
       render(battle.getState()); equipmentUI?.refreshPreview(); syncPause();
     } catch (error) {
       assetError = true;
-      console.error('Chibi build 3 asset load failed',error);
-      $('#result-title').textContent = 'Не удалось загрузить бой · CHIBI 3';
+      console.error('Chibi build 6 asset load failed',error);
+      $('#result-title').textContent = 'Не удалось загрузить бой · CHIBI 6';
       $('#result-copy').textContent = 'Ошибка загрузки: '+(error?.message||String(error));
       $('#replay-button').textContent = 'Повторить загрузку'; resultPanel.hidden = false;
       $('#status').textContent = 'Не удалось загрузить спрайты боя.'; updateControls();
@@ -999,29 +920,6 @@
     {kind:'block',dx:2,dy:0,shield:[36,30]},
     {kind:'block',dx:0,dy:0,shield:[34,30]}
   ];
-  const guardShieldMask=[[24,26],[22,27],[22,28],[21,29],[21,29],[20,30],[20,30],[19,31],[19,31],[18,32],[18,32],[18,33],[18,32],[18,32],[18,31],[18,29],[18,28],[18,25]];
-  function paintRaisedShield(ctx,walk,pose){
-    // Copy the equipped heater shield face from its original walk atlas.
-    if(pose.shield){
-      ctx.save();
-      ctx.translate(pose.shield[0]+17,pose.shield[1]);
-      ctx.scale(-1,1);
-      guardShieldMask.forEach(([left,right],y)=>{
-        const width=right-left+1;
-        ctx.drawImage(walk,left,3*64+34+y,width,1,left-18,y,width,1);
-      });
-      ctx.restore();
-    }
-    const x=pose.shield?Math.min(52,pose.shield[0]+14):48,y=35;
-    if(pose.spark===1){
-      ctx.fillStyle='#f3b747';ctx.fillRect(x-4,y,10,1);ctx.fillRect(x,y-5,1,11);
-      ctx.fillStyle='#ffe6a0';
-      for(let n=-2;n<=2;n++){ctx.fillRect(x+n,y+n,1,1);ctx.fillRect(x+n,y-n,1,1);}
-      ctx.fillStyle='#fff9da';ctx.fillRect(x-1,y-1,3,3);
-    }else if(pose.spark===2){
-      ctx.fillStyle='#e6a64d';for(const [dx,dy] of [[4,-4],[6,1],[2,5]])ctx.fillRect(x+dx,y+dy,1,1);
-    }
-  }
   // Original approved preview pose parameters. Rebuild the clip with live
   // equipment rather than loading a baked-in skin or weapon.
   const swordSkillFrames={
@@ -1030,37 +928,6 @@
     swordDouble:[null,[-1,0,0,38,33,-75],[2,2,1,45,43,35,[-70,35]],[0,0,1,40,46,100],[-1,0,0,37,47,135],[3,2,0,46,35,-35,[110,-35]],[1,0,0,42,37,-20],null],
     swordCleave:[null,[-2,-1,1,33,43,150],[-1,0,1,35,42,130],[1,2,1,42,42,70,[155,70]],[3,2,0,46,38,-15,[85,-15]],[2,1,0,43,34,-45,[-5,-45]],null]
   };
-  const swordPixelRuns=[[43,40,42],[44,39,42],[45,39,41],[46,39,41],[47,39,43],[48,39,45],[49,41,47],[50,43,49],[51,45,51],[52,47,53],[53,49,55],[54,51,55],[55,53,55]];
-  function scratch(actor,key){
-    const c=actor[key]||(actor[key]=document.createElement('canvas'));c.width=c.height=64;
-    const ctx=c.getContext('2d');ctx.imageSmoothingEnabled=false;ctx.clearRect(0,0,64,64);return {c,ctx};
-  }
-  function pixelLine(ctx,x0,y0,x1,y1,color,width=1){
-    ctx.fillStyle=color;const steps=Math.max(Math.abs(x1-x0),Math.abs(y1-y0),1),off=Math.floor((width-1)/2);
-    for(let i=0;i<=steps;i++)ctx.fillRect(Math.round(x0+(x1-x0)*i/steps)-off,Math.round(y0+(y1-y0)*i/steps)-off,width,width);
-  }
-  function drawSwordSkill(ctx,actor,pose,origin){
-    const source=actor.images.idle.image,body=scratch(actor,'swordSkillBody'),blade=scratch(actor,'swordSkillBlade');
-    const gearPose=equipmentArt?{equipped:equipment.getState(),colors:equipment.getColors(),row:3,frame:0,kind:'idle',variant:null,tile:64,origin:0}:null;
-    if(gearPose)equipmentArt.drawBack(body.ctx,gearPose);
-    body.ctx.drawImage(source,0,192,64,64,0,0,64,64);
-    if(gearPose)equipmentArt.draw(body.ctx,gearPose);
-    if(!pose){ctx.drawImage(body.c,0,0,64,64,origin,origin,64,64);return;}
-    // Sample the actual sleeve and skin palette before moving the sword.
-    const sample=(x,y,fallback)=>{const a=body.ctx.getImageData(x,y,1,1).data;return a[3]?'rgb('+a[0]+','+a[1]+','+a[2]+')':fallback;};
-    const cloth=sample(37,39,'#b7996a'),shade=sample(36,42,'#b78c41'),outline=sample(39,40,'#3e2613'),skin=sample(34,28,'#e4a47c'),light=sample(34,24,'#f9d5ba');
-    for(const [y,l,r] of swordPixelRuns){const w=r-l+1;blade.ctx.drawImage(source,l,192+y,w,1,l,y,w,1);body.ctx.clearRect(l,y,w,1);}
-    const [dx,lean,crouch,hx,hy,angle,trail]=pose,bx=origin+dx,by=origin+crouch;
-    for(let y=0;y<64;y++){
-      const shift=Math.round(lean*Math.max(0,Math.min(1,(52-y)/15))),oy=by+y-Math.round(crouch*Math.max(0,Math.min(1,(y-46)/16)));
-      ctx.drawImage(body.c,0,y,64,1,bx+shift,oy,64,1);
-    }
-    const sx=bx+37+lean,sy=by+39,x=bx+hx+lean,y=by+hy;
-    pixelLine(ctx,sx,sy,x,y,outline,6);pixelLine(ctx,sx,sy,x,y,cloth,4);pixelLine(ctx,sx,sy+1,x,y+1,shade);
-    ctx.fillStyle=skin;ctx.fillRect(x-1,y-1,4,4);ctx.fillStyle=light;ctx.fillRect(x,y-1,1,1);
-    if(trail){for(let i=0;i<24;i++){const a=(trail[0]+(trail[1]-trail[0])*i/24)*Math.PI/180,b=(trail[0]+(trail[1]-trail[0])*(i+1)/24)*Math.PI/180;const u=Math.round(x+19*Math.cos(a)),v=Math.round(y+19*Math.sin(a)),w=Math.round(x+19*Math.cos(b)),z=Math.round(y+19*Math.sin(b));pixelLine(ctx,u,v,w,z,'#998b63',3);pixelLine(ctx,u,v,w,z,'#e5d8b3',2);if(i>=17)pixelLine(ctx,u,v,w,z,'#fff4d8');}}
-    ctx.save();ctx.translate(x,y);ctx.rotate((angle-29)*Math.PI/180);ctx.drawImage(blade.c,0,0,64,64,-40,-46,64,64);ctx.restore();
-  }
   function drawActor(id, state) {
     const actor = actors[id], unit = id === 'hero' ? state.hero : state.enemies.find(enemy=>enemy.id===id);
     if(!unit){actor.element.hidden=true;clearStatus(actor);return;}
@@ -1097,22 +964,14 @@
     const key = `${kind}-${descriptor.image.src}-${cell}-${row}-${tile}-${origin}-${blockFrame}-${bashFrame}-${swordClip?actor.animation.variant:''}`;
     if(id==='hero'&&chibiHero){
       const phase=evading?(activeTime-archerEvadeAt)/dodgeTiming.duration:blocking?(activeTime-actor.blockAt)/(.28/(state.hero.attackSpeed||1)):attacking?age/actor.animation.duration:0;
-      const motion=bashing?'block':kind,dir=walking?walkDirection:3,frame=walking?Math.floor(distance/.75*4)%4:Math.floor(activeTime/.65)%2;
-      const chibiKey=['chibi',motion,dir,frame,Math.floor(phase*24),JSON.stringify(chibiLook())].join(':');
-      if(!frozen&&actor.lastKey!==chibiKey){actor.canvas.width=actor.canvas.height=64;const ctx=actor.canvas.getContext('2d');ctx.clearRect(0,0,64,64);window.EmberChibiHeroes.draw(ctx,chibiHero,{...chibiLook(),direction:dir,kind:motion,phase,frame});actor.canvas.style.width=actor.canvas.style.height='100%';actor.canvas.style.left=actor.canvas.style.top='0%';actor.lastKey=chibiKey;}
+      const motion=bashing?'bash':kind,dir=walking?walkDirection:3,frame=walking?Math.floor(distance/.75*4)%4:0;
+      const variant=actor.animation?.skillClip||actor.animation?.variant||'basic',releaseFraction=skillClip?skillClip.releaseFrame/skillClip.frames:arrowReleaseFrame/arrowPoseFrames;
+      const chibiKey=['chibi6',motion,dir,frame,Math.floor(phase*8),variant,JSON.stringify(chibiLook())].join(':');
+      if(!frozen&&actor.lastKey!==chibiKey){actor.canvas.width=actor.canvas.height=128;const ctx=actor.canvas.getContext('2d');ctx.clearRect(0,0,128,128);window.EmberChibiHeroes.draw(ctx,chibiHero,{...chibiLook(),direction:dir,kind:motion,phase,frame,variant,releaseFraction,x:32,y:32});actor.canvas.style.width=actor.canvas.style.height='200%';actor.canvas.style.left=actor.canvas.style.top='-50%';actor.lastKey=chibiKey;}
     }else if (!frozen&&actor.lastKey !== key) {
       actor.canvas.width = tile; actor.canvas.height = tile;
       const ctx = actor.canvas.getContext('2d'); ctx.clearRect(0,0,tile,tile); ctx.imageSmoothingEnabled = false;
-      if(swordClip)drawSwordSkill(ctx,actor,swordClip[swordFrame],origin);
-      else {
-      if(guard){ctx.save();ctx.translate(guard.dx,guard.dy);}
-      const gearPose=id==='hero'&&equipmentArt?{equipped:equipment.getState(),colors:equipment.getColors(),row,frame:cell,kind:guard?guard.kind:kind,
-        variant:attacking?(actor.animation?.variant||'slash'):null,tile,origin}:null;
-      if(gearPose)equipmentArt.drawBack(ctx,gearPose);
       ctx.drawImage(descriptor.image,cell*tile,row*tile,tile,tile,0,0,tile,tile);
-      if(gearPose)equipmentArt.draw(ctx,gearPose);
-      if(guard){paintRaisedShield(ctx,actor.images.walk.image,guard);ctx.restore();}
-      }
       actor.lastKey = key;
       actor.canvas.style.width = `${tile / 64 * 100}%`; actor.canvas.style.height = `${tile / 64 * 100}%`;
       actor.canvas.style.left = `${-origin / 64 * 100}%`; actor.canvas.style.top = `${-origin / 64 * 100}%`;

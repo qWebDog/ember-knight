@@ -3,7 +3,7 @@
  */
 (function(root,factory){'use strict';const api=factory(root);if(typeof module==='object'&&module.exports)module.exports=api;if(root)root.EmberEquipmentUI=api;})(typeof window!=='undefined'?window:null,function(host){
   'use strict';
-  function mount({root,store,getSprite,loadItem,paintItem,paintBack,paintCompanion,paintHero,onEquip,outfitColor='sand'}={}){
+  function mount({root,store,getSprite,loadItem,paintItem,paintBack,paintCompanion,paintHero,paintIcon,onEquip,outfitColor='sand'}={}){
     if(!root||!store||!host?.EmberEquipment)throw new TypeError('Equipment panel and store required');
     const data=host.EmberEquipment;
     const catalogue=data.catalogForClass(store.classId);
@@ -60,11 +60,7 @@
       ctx.clearRect(0,0,64,64);
       const tile=descriptor.tile||64,origin=descriptor.origin||0,row=directions[orientation].row;
       const pose={equipped:store.getState(),colors:store.getColors(),row,frame:0,kind:'idle',tile:64,origin:0};
-      if(!paintHero?.(ctx,pose)){
-        if(store.enabled)paintBack?.(ctx,pose);
-        ctx.drawImage(descriptor.image,origin,tile*row+origin,64,64,0,0,64,64);
-        if(store.enabled)paintItem?.(ctx,pose);
-      }
+      paintHero?.(ctx,pose);
       if(store.enabled)paintCompanion?.(ctx,pose);
       preview.setAttribute('aria-label','Текущий облик героя '+directions[orientation].name+'. Проведи влево или вправо для поворота.');
     }
@@ -86,13 +82,10 @@
         sprite.setAttribute('aria-hidden','true');
         artwork.append(sprite);
       }else{
-        const image=items.ownerDocument.createElement('img');
-        image.className='equipment-item-image';
-        image.src=data.itemIconPath(store.classId,slot,item.id,outfitColor,store.getColor(slot,item.id));
-        image.alt='';
-        image.loading='lazy';
-        image.decoding='async';
-        artwork.append(image);
+        const icon=items.ownerDocument.createElement('canvas');
+        icon.width=icon.height=64;icon.className='equipment-item-image';icon.setAttribute('aria-hidden','true');
+        paintIcon?.(icon.getContext('2d'),slot,item.id,store.getColor(slot,item.id));
+        artwork.append(icon);
       }
       const label=items.ownerDocument.createElement('span');
       label.className='equipment-item-copy';
@@ -103,7 +96,7 @@
       button.addEventListener('click',async()=>{
         if(destroyed||busy||!store.enabled||!enabledSlots.includes(slot))return;
         if(store.getState()[slot]===item.id){message(slot==='companion'?'Этот компаньон уже выбран.':'Этот предмет уже надет.');return;}
-        busy=true;message(slot==='companion'?'Готовим компаньона…':'Загружаем анимации LPC…');render();
+        busy=true;message(slot==='companion'?'Готовим компаньона…':'Готовим новый предмет…');render();
         try{
           await loadItem?.(slot,item.id,store.getColors({...store.getState(),[slot]:item.id}));
           if(destroyed)return;
@@ -113,7 +106,7 @@
             onEquip?.(result.state,slot,item.id);
           }else message(result.reason==='storage'?'Не удалось сохранить экипировку.':'Предмет недоступен.');
         }catch{
-          if(!destroyed)message(slot==='companion'?'Не удалось загрузить волка. Выбор не изменён.':'Не удалось загрузить оригинальные LPC-спрайты. Выбор не изменён.');
+          if(!destroyed)message(slot==='companion'?'Не удалось загрузить волка. Выбор не изменён.':'Не удалось загрузить новый предмет. Выбор не изменён.');
         }finally{busy=false;if(!destroyed)render();}
       });
       return button;
@@ -135,7 +128,7 @@
         button.disabled=busy;
         button.addEventListener('click',async()=>{
           if(destroyed||busy||store.getColor(slot,id)===item.id)return;
-          busy=true;message('Применяем цвет LPC…');render();
+          busy=true;message('Применяем цвет…');render();
           try{
             const nextColors=store.getColors(store.getState(),slot,item.id);
             await loadItem?.(slot,id,nextColors);
@@ -146,7 +139,7 @@
               onEquip?.(store.getState(),slot,id);
             }else message('Не удалось сохранить выбранный цвет.');
           }catch{
-            if(!destroyed)message('Не удалось загрузить цветные LPC-анимации.');
+            if(!destroyed)message('Не удалось применить цвет.');
           }finally{busy=false;if(!destroyed)render();}
         });
         return button;
