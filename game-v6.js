@@ -964,10 +964,12 @@
     const key = `${kind}-${descriptor.image.src}-${cell}-${row}-${tile}-${origin}-${blockFrame}-${bashFrame}-${swordClip?actor.animation.variant:''}`;
     if(id==='hero'&&chibiHero){
       const phase=evading?(activeTime-archerEvadeAt)/dodgeTiming.duration:blocking?(activeTime-actor.blockAt)/(.28/(state.hero.attackSpeed||1)):attacking?age/actor.animation.duration:0;
-      const motion=bashing?'bash':kind,dir=walking?walkDirection:3,frame=walking?Math.floor(distance/.75*4)%4:0;
+      const targetX=actors[state.targetId]?.x;
+      const dir=walking?(walkDirection===1?1:3):(Number.isFinite(targetX)&&Number.isFinite(heroX)&&Math.abs(targetX-heroX)>.01?(targetX<heroX?1:3):(walkDirection===1?1:3));
+      const motion=bashing?'bash':kind,frame=walking?Math.floor(distance/.75*4)%4:0;
       const variant=actor.animation?.skillClip||actor.animation?.variant||'basic',releaseFraction=skillClip?skillClip.releaseFrame/skillClip.frames:arrowReleaseFrame/arrowPoseFrames;
-      const chibiKey=['chibi6',motion,dir,frame,Math.floor(phase*16),phase>=releaseFraction,variant,JSON.stringify(chibiLook())].join(':');
-      if(!frozen&&actor.lastKey!==chibiKey){actor.canvas.width=actor.canvas.height=128;const ctx=actor.canvas.getContext('2d');ctx.clearRect(0,0,128,128);window.EmberChibiHeroes.draw(ctx,chibiHero,{...chibiLook(),direction:dir,kind:motion,phase,frame,variant,releaseFraction,x:32,y:32});actor.canvas.style.width=actor.canvas.style.height='200%';actor.canvas.style.left=actor.canvas.style.top='-50%';actor.lastKey=chibiKey;}
+      const chibiKey=['chibi6-front-only',motion,dir,frame,Math.floor(phase*16),phase>=releaseFraction,variant,JSON.stringify(chibiLook())].join(':');
+      if(!frozen&&actor.lastKey!==chibiKey){actor.element.dataset.facing=dir===1?'left':'right';actor.canvas.width=actor.canvas.height=128;const ctx=actor.canvas.getContext('2d');ctx.clearRect(0,0,128,128);window.EmberChibiHeroes.draw(ctx,chibiHero,{...chibiLook(),direction:dir,kind:motion,phase,frame,variant,releaseFraction,x:32,y:32});actor.canvas.style.width=actor.canvas.style.height='200%';actor.canvas.style.left=actor.canvas.style.top='-50%';actor.lastKey=chibiKey;}
     }else if (!frozen&&actor.lastKey !== key) {
       actor.canvas.width = tile; actor.canvas.height = tile;
       const ctx = actor.canvas.getContext('2d'); ctx.clearRect(0,0,tile,tile); ctx.imageSmoothingEnabled = false;

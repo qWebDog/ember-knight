@@ -59,7 +59,7 @@ const shieldMove=[0,1,3,5,6,4,2,0],wandAngles=[0,-15,-32,-50,-22,12,8,0];
 function draw(ctx,hero,opts={}){
  if(!hero)return;
  const {direction=3,kind='idle',phase=0,frame=0,x=0,y=0,size=64,look={},dyes={},bare=false,variant='basic',releaseFraction=9/13}=opts;
- const row=rows[direction]??1,col=kind==='walk'?((Math.floor(frame)%4+4)%4):0,scale=size/64,sign=direction===1?-1:1;
+ const row=rows[direction===0?2:direction]??1,col=kind==='walk'?((Math.floor(frame)%4+4)%4):0,scale=size/64,sign=direction===1?-1:1;
  const p=clamp(Number(phase)||0,0,.999999),k=Math.floor(p*8),eq={...defaults[hero.name],...look};
  const has=s=>!bare&&eq[s]!=='none';
  const crouch=kind==='dodge'?[0,1,3,4,4,2,1,0][k]:0;
