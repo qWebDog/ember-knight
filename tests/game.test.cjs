@@ -66,7 +66,7 @@ function createHarness({skin = 'bronze', preference, search = '', weapon, outfit
       return [node('.dialog-close'), node('.dialog-action')];
     }
     getContext() {
-      return {clearRect() {},fillRect(){},save(){},restore(){},translate(){},scale(){},getImageData:(x,y,w,h)=>({data:new Uint8ClampedArray(w*h*4)}),putImageData(){},drawImage:(image, sx, sy, sw, sh, ...destination) => {
+      return {clearRect() {},fillRect(){},save(){},restore(){},translate(){},scale(){},rotate(){},getImageData:(x,y,w,h)=>({data:new Uint8ClampedArray(w*h*4)}),putImageData(){},drawImage:(image, sx, sy, sw, sh, ...destination) => {
         if(sw!==undefined)assert.ok(sx >= 0 && sy >= 0 && sx + sw <= image.width && sy + sh <= image.height,
           `crop exceeds ${image.src}: ${[sx,sy,sw,sh]}`);
         this.draws.push({src:image.src, crop:[sx,sy,sw,sh], destination});

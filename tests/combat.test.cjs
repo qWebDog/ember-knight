@@ -1295,3 +1295,6 @@ test('learned shield bash replaces every third block counter and impacts halfway
  assert.equal(events.filter(e=>e.type==='block'&&e.at<=bash.at).length,3);
  assert.ok(events.some(e=>e.type==='warriorStun'&&e.at===impact.at&&e.duration===1.4));
 });
+
+
+test('sword techniques rotate on alternate finishers, with timed double strike',()=>{const b=createDefaultBattle({heroWeapon:'sword',heroProjectile:'melee',heroMaxHp:100000,heroDamage:1,warrior_swordThrust:5,warrior_swordOverhead:5,warrior_swordDouble:5,warrior_swordCleave:5});const ev=b.advance(800);const clips=ev.filter(e=>e.type==='warriorSkill'&&e.skill.startsWith('sword'));assert.deepEqual(clips.slice(0,4).map(e=>e.skill),['swordThrust','swordOverhead','swordDouble','swordCleave']);const d=clips[2];const hits=ev.filter(e=>e.swordSkill==='swordDouble'&&e.at>=d.at&&e.at<d.at+d.animationDuration);assert.deepEqual(hits.map(e=>e.strike),[1,2]);assert.ok(hits[0].at<hits[1].at);});

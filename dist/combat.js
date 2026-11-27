@@ -97,6 +97,17 @@
     let phase, pausedFrom, elapsed, remainder, hero, enemies, nextHero, nextEnemies, reward;
     let comboIndex, meleeHits, heroBusyUntil, pendingCounters, pendingImpacts, pendingBreaths;
     let shieldBashRank=sword?rank(options.warriorShieldBash):0,shieldBlocks=0;
+    const swordSkills=['swordThrust','swordOverhead','swordDouble','swordCleave'];
+    const swordRanks=Object.fromEntries(swordSkills.map(id=>[id,sword?rank(options['warrior_'+id]):0]));
+    let heavyCount=0,swordSkillCursor=0;
+    function nextSwordSkill(){
+      if(++heavyCount%2!==0)return null;
+      for(let i=0;i<swordSkills.length;i++){
+        const index=(swordSkillCursor+i)%swordSkills.length,id=swordSkills[index];
+        if(swordRanks[id]){swordSkillCursor=(index+1)%swordSkills.length;return {id,rank:swordRanks[id]};}
+      }
+      return null;
+    }
     let mageCastIndex=0,orcHasAttacked=false;
     let waveIndex, completedWaves, defeatedCount, nextWaveAt;
     let companion,companionEverSummoned;
@@ -198,7 +209,7 @@
       // its remaining resurrection cooldown; explicit replay still resets.
       const preserve=carryFallenWolf&&phase==='victory'&&companionEnabled&&companion?.hp===0;
       const reviveRemaining=preserve?Math.max(0,wolfReviveAt-elapsed):Infinity;
-      elapsed = 0; remainder = 0; reward = 0; completedWaves = 0; defeatedCount = 0; shieldBlocks=0;
+      elapsed = 0; remainder = 0; reward = 0; completedWaves = 0; defeatedCount = 0; shieldBlocks=0; heavyCount=0;swordSkillCursor=0;
       hero = {id:'hero',name:config.name,hp:config.maxHp,maxHp:config.maxHp,damage:config.damage,attackSpeed:config.attackSpeed};
       echoMeter=overloadMeter=archCount=archRemaining=reactionCount=echoCount=chaosCount=0;rebirthUsed=false;immuneUntil=0;powerCharged=false;
       sphere=sphereRank?{hp:sphereCapacity(),maxHp:sphereCapacity(),brokenAt:null}:null;
@@ -287,6 +298,7 @@
     function updateHeroStats(stats = {}) {
       const oldSpeed = config.attackSpeed;
       if(sword&&stats.warriorShieldBash!==undefined)shieldBashRank=rank(stats.warriorShieldBash);
+      if(sword)for(const id of swordSkills)if(stats['warrior_'+id]!==undefined)swordRanks[id]=rank(stats['warrior_'+id]);
       if(archer){for(const key of Object.keys(archerRanks))if(stats['archer_'+key]!==undefined)archerRanks[key]=rank(stats['archer_'+key]);companion.maxHp=wolfMax();companion.hp=Math.min(companion.hp,companion.maxHp);}
       if(mage){
         for(const key of advancedKeys)if(stats[key]!==undefined)advanced[key]=rank(stats[key]);
@@ -610,7 +622,20 @@
             if(plan.double&&target.hp>0)archerArrow(target,damage*.6,kind,{...shotMeta,extraArrow:true});
             if(plan.rain){rainLeft--;if(rainLeft>0)interval=Math.max(1,heroTicks(.65*TICKS));}
             interval=Math.max(1,Math.round(interval/plan.speed));
-          }else if (config.projectile !== 'magic') hit('hero',target,Math.max(1,damage-target.armor),config.projectile,metadata);
+          }else if (config.projectile !== 'magic'){
+            const special=sword&&step.heavy?nextSwordSkill():null;
+            if(special){
+              const duration=heroTicks(step.animationDuration*TICKS),r=special.rank,id=special.id;
+              const fractions=id==='swordDouble'?[2/8,5/8]:[id==='swordOverhead'||id==='swordCleave'?4/7:3/7];
+              events.push({type:'warriorSkill',skill:id,sourceId:'hero',targetId:target.id,at:elapsed/TICKS,animationDuration:duration/TICKS});
+              fractions.forEach((f,index)=>{
+                const multiplier=id==='swordThrust'||id==='swordCleave'?1.5:id==='swordOverhead'?1.5+.1*r:index===0?.9:.3+.1*r;
+                const armor=target.armor*(id==='swordThrust'?1-(.1+.1*r):1);
+                pendingImpacts.push({sourceId:'hero',targetId:target.id,at:elapsed+Math.round(duration*f),swordSkill:id,rank:r,damage:Math.max(1,config.damage*multiplier-armor),strike:index+1});
+              });
+              pendingImpacts.sort((a,b)=>a.at-b.at);
+            }else hit('hero',target,Math.max(1,damage-target.armor),config.projectile,metadata);
+          }
           if (sword) {
             heroBusyUntil = elapsed + heroTicks(step.animationDuration*TICKS);
             comboIndex = (comboIndex+1) % swordSteps.length; nextHero += heroTicks(swordSteps[comboIndex].interval);
@@ -673,6 +698,14 @@
           const impact = pendingImpacts.shift(),target = impact.targetId === 'hero' ? hero
             : impact.targetId === 'companion' ? companion : enemies.find(enemy => enemy.id === impact.targetId);
           if (!target || target.hp <= 0) continue;
+          if(impact.swordSkill){
+            if(hero.hp<=0)continue;
+            const neighbors=impact.swordSkill==='swordCleave'?nearby(target).filter(e=>e.hp>0):[];
+            hit('hero',target,impact.damage,'melee',{variant:impact.swordSkill,comboStep:3,heavy:true,windup:true,swordSkill:impact.swordSkill,strike:impact.strike});
+            for(const e of neighbors)if(e.hp>0)hit('hero',e,Math.max(1,config.damage*(.1+.1*impact.rank)-e.armor),'melee',{variant:impact.swordSkill,heavy:true,windup:true,swordSkill:impact.swordSkill,splash:true});
+            if(enemies.every(e=>e.hp===0)){clearWave();break;}
+            continue;
+          }
           if(impact.shieldBash){
             if(hero.hp<=0)continue;
             hit('hero',target,impact.damage,'melee',{variant:'shieldBash',comboStep:0,counter:true,windup:true,shieldBash:true});

@@ -67,7 +67,7 @@ test('the actual panel selects three distinct branches and exposes only the avai
  const ui=createPanel({gold:30});assert.equal(ui.node('.skills-title p').textContent.trim(),'ВОИН');assert.equal(ui.node('[data-skill-hero-level]').textContent,'7');assert.equal(ui.node('[data-skill-gold]').textContent,'30');
  const cases=[['power','attack','Сила удара','+2 к урону'],['vitality','defense','Стойкость','+20 к максимуму здоровья'],['tempo','control','Натиск','+5% к скорости атаки']];
  for(const [id,branch,name,benefit]of cases){ui.clickSkill(id);assert.equal(ui.root.dataset.selected,id);assert.equal(ui.node('#skill-detail').dataset.branch,branch);assert.equal(ui.node('[data-skill-name]').textContent,name);assert.match(ui.node('[data-skill-benefit]').textContent,new RegExp(benefit.replace(/[+%]/g,'\\$&')));assert.equal(ui.node('#skill-upgrade').dataset.upgrade,id);assert.equal(ui.node('[data-skill-price]').textContent,'10');assert.equal(ui.node('[data-skill-rank]').textContent,'Уровень 0/5');for(const [other]of cases)assert.equal(ui.node(`[data-skill-id="${other}"]`).getAttribute('aria-pressed'),String(other===id));}
- const future=ui.root.querySelectorAll('[data-skill-future]');assert.equal(future.length,6);for(const node of future){if(node.dataset.skillId==='shieldBash'){assert.equal(node.disabled,false);assert.ok(node.classList.contains('is-locked'));continue;}assert.equal(node.disabled,true);assert.match(node.getAttribute('aria-label'),/скоро/i);node.click();}assert.equal(ui.root.dataset.selected,'tempo');
+ const future=ui.root.querySelectorAll('[data-skill-future]');assert.equal(future.length,6);for(const node of future){if(node.dataset.skillId==='shieldBash'||node.dataset.skillId?.startsWith('sword')){assert.equal(node.disabled,false);assert.ok(node.classList.contains('is-locked'));continue;}assert.equal(node.disabled,true);assert.match(node.getAttribute('aria-label'),/скоро/i);node.click();}assert.equal(ui.root.dataset.selected,'tempo');
  const tabs=ui.root.querySelectorAll('[data-skill-tab]');assert.equal(tabs.length,3);assert.equal(tabs[0].getAttribute('aria-current'),'page');assert.deepEqual(tabs.slice(1).map(tab=>tab.disabled),[true,true]);
  assert.equal(ui.controller.select('shadow'),false);assert.equal(ui.root.dataset.selected,'tempo');
 });
@@ -230,3 +230,6 @@ test('shield bash opens after Vitality III and persists independently of other c
  const ui=createPanel({gold:100,levels:{vitality:3}});ui.clickSkill('shieldBash');assert.equal(ui.node('#skill-upgrade').disabled,false);ui.upgrade();assert.equal(ui.store.quote('shieldBash').level,1);assert.equal(ui.store.getStats().warriorShieldBash,1);
  const restored=createPanel({saved:JSON.parse(ui.storage.get('ember.progress.v1'))});assert.equal(restored.store.quote('shieldBash').level,1);
 });
+
+
+test('all four sword techniques unlock independently after Power III',()=>{const ui=createPanel({gold:500,levels:{power:3}});for(const id of ['swordThrust','swordOverhead','swordDouble','swordCleave']){ui.clickSkill(id);assert.equal(ui.node('#skill-upgrade').disabled,false);ui.upgrade();assert.equal(ui.store.getStats()['warrior_'+id],1);}});

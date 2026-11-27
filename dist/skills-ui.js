@@ -12,6 +12,12 @@
     tempo:{name:'Натиск',branch:'control',category:'Контроль',icon:'bolt',benefit:'+5% к скорости атаки',total:level=>`+${level*5}% к скорости атаки`},
     shieldBash:{name:'Удар щитом',branch:'defense',category:'Защита',icon:'skill-shield',benefit:'Каждый третий блок: удар щитом и оглушение',total:level=>`${50+10*level}% базового урона, оглушение ${(0.4+.2*level).toFixed(1).replace('.',',')} с`}
   };
+  Object.assign(details,{
+    swordThrust:{name:'Колющий удар',branch:'attack',category:'Атака',icon:'swords',total:l=>`150% урона, пробитие ${10+10*l}% брони`},
+    swordOverhead:{name:'Удар сверху',branch:'attack',category:'Атака',icon:'swords',total:l=>`${150+10*l}% базового урона`},
+    swordDouble:{name:'Двойной удар',branch:'attack',category:'Атака',icon:'swords',total:l=>`Два удара: 90% и ${30+10*l}% урона`},
+    swordCleave:{name:'Круговое рассечение',branch:'attack',category:'Атака',icon:'swords',total:l=>`150% цели, ${10+10*l}% базового урона соседям`}
+  });
   const mageDetails={
     sorcery:{name:'Сила стихий',branch:'attack',category:'Стихии',icon:'mage-elements',benefit:'+2 к урону заклинаний',total:level=>`+${level*2} к урону заклинаний`},
     barrier:{name:'Магический барьер',branch:'defense',category:'Аркана',icon:'skill-shield',benefit:'+20 к максимуму здоровья',total:level=>`+${level*20} к максимуму здоровья`},
@@ -88,6 +94,15 @@ arrowDance:{name:"Танец стрел",branch:'control',category:"Тактик
       }
     }
     if(!mage&&!archer){
+      const attack=Array.from(root.querySelectorAll('.skill-branch')).find(branch=>branch.dataset.branch==='attack');
+      if(attack){
+        const slots=[...attack.querySelectorAll('[data-skill-future]'),...attack.querySelectorAll('[data-mage-slot]'),...attack.querySelectorAll('[data-archer-slot]')];
+        ['swordThrust','swordOverhead','swordDouble','swordCleave'].forEach((id,i)=>{
+          const node=slots[i];if(!node)return;
+          node.hidden=false;node.disabled=false;node.dataset.skillId=id;node.dataset.mageAdvanced='true';node.dataset.skillDepth='1';node.dataset.skillRequires='power';
+          node.querySelector('use').setAttribute('href','#swords');node.querySelector('span').setAttribute('data-skill-node-rank','');node.setAttribute('title',details[id].name);nodes.push(node);
+        });
+      }
       const defense=Array.from(root.querySelectorAll('.skill-branch')).find(branch=>branch.dataset.branch==='defense');
       const future=defense?.querySelector('[data-skill-future]');
       if(future){
@@ -125,7 +140,7 @@ arrowDance:{name:"Танец стрел",branch:'control',category:"Тактик
       $('[data-skill-category]').textContent=entry.category;
       $('[data-skill-name]').textContent=entry.name;
       $('[data-skill-rank]').textContent=`Уровень ${quote.level}/${quote.maxLevel}`;
-      $('[data-skill-benefit]').textContent=quote.reason==='locked'?`Требуется: ${requirementLabel(selected)}`:quote.reason==='max'?`${entry.total(quote.level)} · Максимум`:`Следующий уровень: ${archer||selected==='shieldBash'?entry.total(quote.level+1):entry.benefit}`;
+      $('[data-skill-benefit]').textContent=quote.reason==='locked'?`Требуется: ${requirementLabel(selected)}`:quote.reason==='max'?`${entry.total(quote.level)} · Максимум`:`Следующий уровень: ${archer||selected==='shieldBash'||selected.startsWith('sword')?entry.total(quote.level+1):entry.benefit}`;
       $('[data-skill-benefit]').dataset.feedback='';
       $('[data-skill-icon-use]').setAttribute('href',`#${entry.icon}`);
       upgrade.dataset.upgrade=selected;upgrade.disabled=!quote.canBuy;
