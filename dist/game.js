@@ -342,7 +342,7 @@
     ready = false; assetError = false; updateControls();
     try {
       let idle;
-      chibiHero=await window.EmberChibiHeroes.load(starterWeapon?.id||'sword',loadImage,skin).catch(error=>{console.warn('Chibi art unavailable',error);return null;});
+      chibiHero=await window.EmberChibiHeroes.load(starterWeapon?.id||'sword',loadImage,skin);
       if (loadout) {
         const swordSprites=swordEquipment?await swordEquipment.load(equipment.getState()):null;
         const classSprites=classEquipment?await classEquipment.load(equipment.getState(),equipment.getColors()):null;
@@ -425,10 +425,11 @@
         :'Бой готов: один лучник, смешанная волна скелетов, затем орк.';
       if(wolfDeathPreview)$('#status').textContent=wolfRevivePreview?'Тест воскрешения: волк 1 HP, возрождение через 2 с.':'Тест переноски: волк 1 HP, награды не сохраняются.';
       render(battle.getState()); equipmentUI?.refreshPreview(); syncPause();
-    } catch {
+    } catch (error) {
       assetError = true;
-      $('#result-title').textContent = 'Не удалось загрузить бой';
-      $('#result-copy').textContent = 'Проверь соединение и попробуй ещё раз.';
+      console.error('Chibi build 3 asset load failed',error);
+      $('#result-title').textContent = 'Не удалось загрузить бой · CHIBI 3';
+      $('#result-copy').textContent = 'Ошибка загрузки: '+(error?.message||String(error));
       $('#replay-button').textContent = 'Повторить загрузку'; resultPanel.hidden = false;
       $('#status').textContent = 'Не удалось загрузить спрайты боя.'; updateControls();
     }

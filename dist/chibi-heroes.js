@@ -9,7 +9,7 @@
   function load(id,loadImage,skin='light'){
     const name=names[id]||'knight',tone=skinNames[skin]||'light',key=name+'/'+tone;
     if(!cache.has(key))cache.set(key,Promise.all(['body-'+tone,'bare-'+tone,...slots].map(async part=>{
-      const im=await loadImage('assets/characters/chibi/'+name+'/'+part+'.png?v=modular-1');
+      const im=await loadImage('assets/characters/chibi/'+name+'/'+part+'.png?v=modular-3');
       if((im.naturalWidth||im.width)!==256||(im.naturalHeight||im.height)!==256)throw Error('Invalid chibi atlas '+name+'/'+part);
       return [part.replace(/-(light|medium|dark)$/,''),im];
     })).then(entries=>({name,tone,images:Object.fromEntries(entries)})).catch(e=>{cache.delete(key);throw e;}));
