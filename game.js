@@ -96,6 +96,9 @@
       loadImage,standardPath:pose=>loadouts.path(loadout,skin,pose),
       canvasFactory:()=>document.createElement('canvas'),dye:dyeEngine}) : null;
   const dodgeTiming=window.EmberCombat.archerDodge,dodgeArt=window.EmberArcherDodge;
+  let chibiHero=null;
+  const chibiLook=()=>({look:equipment?.getState()||{},dyes:equipment?.getColors()||{}});
+  function paintChibiAvatar(){if(!chibiHero)return;const c=document.createElement('canvas');c.width=c.height=64;window.EmberChibiHeroes.draw(c.getContext('2d'),chibiHero,{...chibiLook(),direction:2});const face=$('#avatar').getContext('2d');face.clearRect(0,0,32,32);face.imageSmoothingEnabled=false;face.drawImage(c,12,0,40,40,0,0,32,32);}
   let loadedClassSprites = null;
   function applyClassSprites(images){
     if(!images||!actors.hero.images.walk)return;
@@ -273,6 +276,7 @@
       root:equipmentPanel,store:equipment,
       outfitColor:loadout?.outfitColor||'sand',
       getSprite:()=>actors.hero.images.idle,
+      paintHero:(ctx,pose)=>{if(!chibiHero)return false;window.EmberChibiHeroes.draw(ctx,chibiHero,{look:pose.equipped,dyes:pose.colors,direction:pose.row});return true;},
       loadItem:async(slot,id,colors)=>{
         // Stage the original wolf image before committing an equipment choice.
         // Companion selection must not rebuild the hero's LPC armor or bow.
@@ -280,6 +284,7 @@
           if(id==='wolf'){await companion?.load();await loadCarryAtlas();}
           return;
         }
+        if(chibiHero)return; // All modular layers are already loaded.
         const nextLook={...equipment.getState(),[slot]:id};
         // Stage every layer before saving a selection. In particular, a new
         // shield must have its native foreground ready over the chest armor.
@@ -305,7 +310,7 @@
         }
         if(slot!=='companion'&&classEquipment&&loadedClassSprites)applyClassSprites(loadedClassSprites);
         if((slot==='weapon'||slot==='shield')&&loadedSwordSprites)applySwordSprites(loadedSwordSprites);
-        actors.hero.lastKey=null;
+        actors.hero.lastKey=null;carryAtlas=null;carryHeroImage=null;paintChibiAvatar();
         if(ready)render(battle.getState());
         equipmentUI?.refreshPreview();
       }
@@ -317,6 +322,7 @@
   function ensureCarryAtlas(){
     const hero=actors.hero.images.walk?.image;
     if(!hero||!carryWolfImage)return null;
+    if(chibiHero){const key=JSON.stringify(chibiLook());if(carryHeroImage!==key||!carryAtlas){const dead=window.EmberCompanion.frameAt(99,false,false,3,'die');carryAtlas=window.EmberChibiHeroes.carry(chibiHero,carryWolfImage,dead,()=>document.createElement('canvas'),chibiLook());carryHeroImage=key;}return carryAtlas;}
     if(hero!==carryHeroImage||!carryAtlas){
       try{
         carryAtlas=window.EmberCompanion.buildCarryAtlas(hero,carryWolfImage,()=>document.createElement('canvas'));
@@ -336,6 +342,7 @@
     ready = false; assetError = false; updateControls();
     try {
       let idle;
+      chibiHero=await window.EmberChibiHeroes.load(starterWeapon?.id||'sword',loadImage,skin).catch(error=>{console.warn('Chibi art unavailable',error);return null;});
       if (loadout) {
         const swordSprites=swordEquipment?await swordEquipment.load(equipment.getState()):null;
         const classSprites=classEquipment?await classEquipment.load(equipment.getState(),equipment.getColors()):null;
@@ -404,7 +411,7 @@
       actors.orc.images.attack = orcAttack ? {image:orcAttack,frames:6,row:1,tile:128,origin:32} : { ...actors.orc.images.idle,frames:1 };
       const face = $('#avatar').getContext('2d'); face.imageSmoothingEnabled = false;
       const avatarTile=loadout?starterWeapon.walk.tile:64, avatarOrigin=loadout?starterWeapon.walk.origin:0;
-      face.drawImage(idle,avatarOrigin+19,avatarTile*2+avatarOrigin+12,26,26,0,0,32,32);
+      face.drawImage(idle,avatarOrigin+19,avatarTile*2+avatarOrigin+12,26,26,0,0,32,32);paintChibiAvatar();
       // Helmet/armor are native pose overlays; sword/shield are complete, recomposed LPC sheets.
       if(equipmentArt)try{await equipmentArt.prepareLook(equipment.getState(),equipment.getColors());}
       catch{$('#status').textContent='Не удалось загрузить часть LPC-экипировки.';}
@@ -1087,7 +1094,12 @@
     const tile = swordClip?128:descriptor.tile || 64, origin = swordClip?32:descriptor.origin || 0;
     const cell = swordClip?swordFrame:guard ? 0 : evading ? dodgeArt.frameAt(activeTime-archerEvadeAt,dodgeTiming) : walking ? 1 + Math.floor((distance / .75 % 1) * 8) : attacking ? Math.min(descriptor.frames-1,Math.floor((age+(actor.animation?.arrowCue?1e-6:0)) / actor.animation.duration * descriptor.frames)) : Number.isInteger(descriptor.still) ? descriptor.still : id === 'hero' && auto && unit.hp > 0 && !ended && !reducedMotion.matches ? Math.floor(activeTime / .65) % 2 : 0;
     const key = `${kind}-${descriptor.image.src}-${cell}-${row}-${tile}-${origin}-${blockFrame}-${bashFrame}-${swordClip?actor.animation.variant:''}`;
-    if (!frozen&&actor.lastKey !== key) {
+    if(id==='hero'&&chibiHero){
+      const phase=evading?(activeTime-archerEvadeAt)/dodgeTiming.duration:blocking?(activeTime-actor.blockAt)/(.28/(state.hero.attackSpeed||1)):attacking?age/actor.animation.duration:0;
+      const motion=bashing?'block':kind,dir=walking?walkDirection:3,frame=walking?Math.floor(distance/.75*4)%4:Math.floor(activeTime/.65)%2;
+      const chibiKey=['chibi',motion,dir,frame,Math.floor(phase*24),JSON.stringify(chibiLook())].join(':');
+      if(!frozen&&actor.lastKey!==chibiKey){actor.canvas.width=actor.canvas.height=64;const ctx=actor.canvas.getContext('2d');ctx.clearRect(0,0,64,64);window.EmberChibiHeroes.draw(ctx,chibiHero,{...chibiLook(),direction:dir,kind:motion,phase,frame});actor.canvas.style.width=actor.canvas.style.height='100%';actor.canvas.style.left=actor.canvas.style.top='0%';actor.lastKey=chibiKey;}
+    }else if (!frozen&&actor.lastKey !== key) {
       actor.canvas.width = tile; actor.canvas.height = tile;
       const ctx = actor.canvas.getContext('2d'); ctx.clearRect(0,0,tile,tile); ctx.imageSmoothingEnabled = false;
       if(swordClip)drawSwordSkill(ctx,actor,swordClip[swordFrame],origin);
