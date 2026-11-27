@@ -4,7 +4,17 @@ const paths={mageWalk:'assets/characters/loadouts/wand/acolyte/purple/light-walk
 // Presentation only: retain the original combat geometry and wolf size.
 // Match the PvE 64px LPC cell in CSS pixels, not the internal canvas units.
 let playerScale=59/64,playerVisualFactor=playerScale/1.75;
+function alignArenaRoad(){
+ const arena=canvas.closest('.arena'), box=canvas.getBoundingClientRect();
+ if(!arena||!box.width||!box.height)return;
+ const w=arena.clientWidth,h=arena.clientHeight,feet=277*box.height/canvas.height;
+ const scale=Math.max(w/1280,feet/522,(h-feet)/(720-522));
+ const size=`${1280*scale}px ${720*scale}px`,position=`center ${feet-522*scale}px`;
+ if(arena.style.backgroundSize!==size)arena.style.backgroundSize=size;
+ if(arena.style.backgroundPosition!==position)arena.style.backgroundPosition=position;
+}
 function syncPlayerScale(){
+ alignArenaRoad();
  const width=canvas.getBoundingClientRect().width;
  if(!(width>0))return;
  const cssSize=parseFloat(getComputedStyle(canvas).getPropertyValue('--pve-player-size'));
