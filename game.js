@@ -972,14 +972,16 @@
   }
   // Approved eight-frame shield clip, assembled from the currently equipped
   // right-facing native LPC idle/guard poses (including all live overlays).
+  // Eight-frame guard: fast raise, contact flash, recoil, recovery.
+  // Keep the native LPC atlas, live equipment, and existing .28s timing.
   const guardFrames=[
     {kind:'idle',dx:0,dy:0},
-    {kind:'idle',dx:0,dy:1},
     {kind:'block',dx:0,dy:0,shield:[34,32]},
-    {kind:'block',dx:0,dy:0,shield:[35,30]},
-    {kind:'block',dx:-2,dy:1,shield:[35,30],spark:1},
-    {kind:'block',dx:-1,dy:0,shield:[35,30],spark:2},
-    {kind:'block',dx:0,dy:0,shield:[34,32]},
+    {kind:'block',dx:0,dy:0,shield:[35,29]},
+    {kind:'block',dx:0,dy:0,shield:[35,29],spark:1,guardFlash:true},
+    {kind:'block',dx:-3,dy:0,shield:[35,30],spark:2,guardFlash:true},
+    {kind:'block',dx:-2,dy:0,shield:[34,30],spark:3,guardFlash:true},
+    {kind:'block',dx:-1,dy:0,shield:[34,32]},
     {kind:'idle',dx:0,dy:0}
   ];
   const bashFrames=[
@@ -1005,7 +1007,25 @@
       });
       ctx.restore();
     }
-    const x=pose.shield?Math.min(52,pose.shield[0]+14):48,y=35;
+    const x=pose.shield?Math.min(52,pose.shield[0]+14):48,y=pose.guardFlash?pose.shield[1]+8:35;
+    if(pose.guardFlash){
+      // Compact warm pixel spark at the leading edge of the raised shield.
+      if(pose.spark===1){
+        ctx.fillStyle='#d89335';
+        for(const [dx,dy,w,h] of [[-6,0,13,1],[0,-6,1,13],[-4,-4,2,2],[4,-4,2,2],[-4,4,2,2],[4,4,2,2]])ctx.fillRect(x+dx,y+dy,w,h);
+        ctx.fillStyle='#ffcf66';
+        for(let n=-3;n<=3;n++){ctx.fillRect(x+n,y+n,1,1);ctx.fillRect(x+n,y-n,1,1);}
+        ctx.fillRect(x-4,y,9,1);ctx.fillRect(x,y-4,1,9);
+        ctx.fillStyle='#fff8d6';ctx.fillRect(x-1,y-1,3,3);
+      }else if(pose.spark===2){
+        ctx.fillStyle='#edb24f';
+        for(const [dx,dy] of [[5,-5],[8,-2],[7,3],[3,6],[-3,-5]])ctx.fillRect(x+dx,y+dy,1,1);
+      }else if(pose.spark===3){
+        ctx.fillStyle='#ad7636';
+        for(const [dx,dy] of [[9,-6],[10,4],[4,8]])ctx.fillRect(x+dx,y+dy,1,1);
+      }
+      return;
+    }
     if(pose.spark===1){
       ctx.fillStyle='#f3b747';ctx.fillRect(x-4,y,10,1);ctx.fillRect(x,y-5,1,11);
       ctx.fillStyle='#ffe6a0';
