@@ -97,6 +97,7 @@
     let phase, pausedFrom, elapsed, remainder, hero, enemies, nextHero, nextEnemies, reward;
     let comboIndex, meleeHits, heroBusyUntil, pendingCounters, pendingImpacts, pendingBreaths;
     let shieldBashRank=sword?rank(options.warriorShieldBash):0,shieldBlocks=0;
+    let strongShieldRank=sword?rank(options.warrior_strongShield):0,bastionRank=sword?rank(options.warrior_bastion):0,rangedShieldHits=0;
     const swordSkills=['swordThrust','swordOverhead','swordDouble','swordCleave'];
     const swordRanks=Object.fromEntries(swordSkills.map(id=>[id,sword?rank(options['warrior_'+id]):0]));
     let swordMaster=sword?rank(options.warrior_swordMaster):0;
@@ -200,7 +201,7 @@
       dodgeUntil=0;dodgeSince=Infinity;enemyDodgeChecks=[];
       waveIndex = index; phase = 'running'; pausedFrom = null; nextWaveAt = null;
       enemies = activeWaves[index].map(unit => ({...archetypes[unit.type],...unit,hp:archetypes[unit.type].maxHp,status:null}));
-      comboIndex = 0; meleeHits = 0; heroBusyUntil = elapsed; pendingCounters = []; pendingImpacts = []; pendingBreaths = [];rainLeft=0;
+      comboIndex = 0; meleeHits = 0; rangedShieldHits=0; heroBusyUntil = elapsed; pendingCounters = []; pendingImpacts = []; pendingBreaths = [];rainLeft=0;
       mageCastIndex=0;orcHasAttacked=false;activeTalents=[...queuedTalents];powerCharged=false;regenAt=sphere?.hp>0?elapsed+3*TICKS:Infinity;
       nextHero = elapsed + heroTicks(sword ? swordSteps[0].interval : HERO_INTERVAL);
       nextEnemies = enemies.map(enemy => elapsed + Math.round(enemy.interval * TICKS));
@@ -300,6 +301,8 @@
     function updateHeroStats(stats = {}) {
       const oldSpeed = config.attackSpeed;
       if(sword&&stats.warriorShieldBash!==undefined)shieldBashRank=rank(stats.warriorShieldBash);
+      if(sword&&stats.warrior_strongShield!==undefined)strongShieldRank=rank(stats.warrior_strongShield);
+      if(sword&&stats.warrior_bastion!==undefined)bastionRank=rank(stats.warrior_bastion);
       if(sword)for(const id of swordSkills)if(stats['warrior_'+id]!==undefined)swordRanks[id]=rank(stats['warrior_'+id]);
       if(sword&&stats.warrior_swordMaster!==undefined)swordMaster=rank(stats.warrior_swordMaster);
       if(archer){for(const key of Object.keys(archerRanks))if(stats['archer_'+key]!==undefined)archerRanks[key]=rank(stats['archer_'+key]);companion.maxHp=wolfMax();companion.hp=Math.min(companion.hp,companion.maxHp);}
@@ -403,6 +406,10 @@
               damage=0;evaded=true;
             }
           }
+        }
+        if(sword&&bastionRank&&target.id==='hero'&&sourceId!=='hero'&&damage>0&&!metadata?.dot&&['arrow','magic'].includes(projectile)&&++rangedShieldHits%2===0){
+          const blockedDamage=damage*(.1+.1*bastionRank);damage-=blockedDamage;
+          events.push({type:'block',sourceId,targetId:'hero',blockedDamage,projectile,skill:'bastion',at:elapsed/TICKS});
         }
         if(target.id==='hero'&&elapsed<immuneUntil)damage=0;
         if(target.id==='hero'&&sphere?.hp>0&&damage>0){
@@ -762,7 +769,7 @@
             nextEnemies[index]+=Math.round(enemy.interval*TICKS)+DODGE_LEAD;continue;
           }
           if (defender.id==='hero' && sword && enemy.projectile === 'melee' && ++meleeHits % 2 === 0) {
-            const blockedDamage = damage*.5; damage -= blockedDamage; blocked = true;
+            const blockedDamage = damage*(.5+.05*strongShieldRank); damage -= blockedDamage; blocked = true;
             events.push({type:'block',sourceId:enemy.id,targetId:'hero',blockedDamage,at:elapsed/TICKS});
           }
           if(enemy.type==='dragon'){

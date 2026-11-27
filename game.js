@@ -848,7 +848,7 @@
         // The real LPC guard pose interrupts the swing; the following counter
         // starts its own animation instead of resuming a stale attack frame.
         actors.hero.animation = null;
-        addEffect('block',event.sourceId,'hero','Блок',event.at);
+        addEffect('block',event.sourceId,'hero',event.skill==='bastion'?'Оплот':'Блок',event.at);
       } else if (event.type === 'death') {
         if(event.id==='companion'){
           companionDeathAt=companionTime;
