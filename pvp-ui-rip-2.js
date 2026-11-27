@@ -8,8 +8,8 @@ function alignArenaRoad(){
  const arena=canvas.closest('.arena'), box=canvas.getBoundingClientRect();
  if(!arena||!box.width||!box.height)return;
  const w=arena.clientWidth,h=arena.clientHeight,feet=277*box.height/canvas.height;
- const scale=Math.max(w/1280,feet/522,(h-feet)/(720-522));
- const size=`${1280*scale}px ${720*scale}px`,position=`center ${feet-522*scale}px`;
+ const scale=Math.max(w/1280,feet/510,(h-feet)/(720-510));
+ const size=`${1280*scale}px ${720*scale}px`,position=`center ${feet-510*scale}px`;
  if(arena.style.backgroundSize!==size)arena.style.backgroundSize=size;
  if(arena.style.backgroundPosition!==position)arena.style.backgroundPosition=position;
 }

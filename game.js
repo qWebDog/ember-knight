@@ -211,9 +211,9 @@
     // Measure the fixed middle of the road, cancelling the hero's current row.
     const feet = fighter.bottom - bounds.top - fighter.height * 2 / 64 - (actors.hero.depth-3)*laneStep;
     // Keep feet on the selected forest's road while covering any viewport.
-    // Source art 1280×720: clear road spans approximately y=455..600.
-    // Anchor the middle lane at y=522 without stretching or exposing empty edges.
-    const sceneW = 1280, sceneH = 720, roadY = 522;
+    // Source art 1280×720: clear road spans approximately y=410..595.
+    // Anchor the middle lane at y=510 without stretching or exposing empty edges.
+    const sceneW = 1280, sceneH = 720, roadY = 510;
     const scale = Math.max(bounds.width / sceneW, feet / roadY, (bounds.height - feet) / (sceneH - roadY));
     const art = $('.battle-landscape');
     art.style.backgroundSize = `${sceneW * scale}px ${sceneH * scale}px`;
