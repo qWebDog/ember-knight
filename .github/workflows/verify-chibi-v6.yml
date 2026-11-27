@@ -1,0 +1,27 @@
+name: Verify modular EMBER heroes
+on:
+  push:
+    branches: [chibi-v6-rework]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save --no-package-lock playwright@1.51.1
+      - run: npx playwright install --with-deps chromium webkit
+      - run: node tests/chibi-v6-browser.cjs
+      - run: node tests/pvp-browser.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: chibi-v6-browser-screenshots
+          path: |
+            /tmp/chibi-v6-*.png
+            /tmp/ember-pvp-*.png
