@@ -13,10 +13,7 @@ const ids=['swordThrust','swordOverhead','swordDouble','swordCleave','swordMaste
    for(const [width,height] of [[390,844],[375,667],[390,600],[320,568],[390,500],[844,390]]){
     const page=await browser.newPage({viewport:{width,height},hasTouch:true,isMobile:true,deviceScaleFactor:1});
     try{
-     await page.setContent(html);
-     await page.addStyleTag({content:css});
-     await page.addScriptTag({content:read('progression.js')});
-     await page.addScriptTag({content:read('skills-ui.js')});
+     await page.setContent(html.replace('</head>','<style>'+css.replace(/url\([^)]*\)/g,'none')+'</style></head>').replace('</body>','<script>'+read('progression.js')+'</script><script>'+read('skills-ui.js')+'</script></body>'),{waitUntil:'domcontentloaded'});
      await page.evaluate(height=>{
       document.documentElement.style.setProperty('--app-height',height+'px');
       const data=new Map([['ember.progress.v1',JSON.stringify({version:1,gold:1000,levels:{power:3,swordThrust:3,swordOverhead:3}})]]);
