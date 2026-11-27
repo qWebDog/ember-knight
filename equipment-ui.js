@@ -3,7 +3,7 @@
  */
 (function(root,factory){'use strict';const api=factory(root);if(typeof module==='object'&&module.exports)module.exports=api;if(root)root.EmberEquipmentUI=api;})(typeof window!=='undefined'?window:null,function(host){
   'use strict';
-  function mount({root,store,getSprite,loadItem,paintItem,paintBack,paintCompanion,onEquip,outfitColor='sand'}={}){
+  function mount({root,store,getSprite,loadItem,paintItem,paintBack,onEquip,outfitColor='sand'}={}){
     if(!root||!store||!host?.EmberEquipment)throw new TypeError('Equipment panel and store required');
     const data=host.EmberEquipment;
     const catalogue=data.catalogForClass(store.classId);
@@ -63,7 +63,6 @@
       if(store.enabled)paintBack?.(ctx,pose);
       ctx.drawImage(descriptor.image,origin,tile*row+origin,64,64,0,0,64,64);
       if(store.enabled)paintItem?.(ctx,pose);
-      if(store.enabled)paintCompanion?.(ctx,pose);
       preview.setAttribute('aria-label','Текущий облик героя '+directions[orientation].name+'. Проведи влево или вправо для поворота.');
     }
     function createItemButton(item,current){
