@@ -14,8 +14,7 @@
   const progressButtons = [...document.querySelectorAll('[data-go-step]')];
   const cache = new Map();
   let selected='light', weapon='sword', step=0, furthest=0, direction=2, frame=0, saved=null;
-  let imageReady=false, loadingError=false, imageVersion=0, previewHero=null;
-  const classPreviews=new Map();let classPreviewVersion=0;
+  let imageReady=false, loadingError=false, imageVersion=0, previewImage=null, previewDescriptor=null;
   const rememberedColors={sword:'sand',bow:'forest',wand:'purple'};
   const directionNames=['Вид сзади','Левый бок','Вид спереди','Правый бок'];
   const telegram=window.Telegram?.WebApp;
@@ -46,7 +45,7 @@
     const bottom=Number(getComputedStyle(scene).getPropertyValue('--scene-bottom'))||122;
     const feet=Math.max(30,scene.clientHeight-bottom);
     const scale=Math.max(1,Math.min(5,Math.floor((feet-32)/47)));
-    stage.style.width=`${scale*64}px`;stage.style.height=`${scale*64}px`;stage.style.top=`${feet-63*scale}px`;
+    stage.style.width=`${scale*64}px`;stage.style.height=`${scale*64}px`;stage.style.top=`${feet-62*scale}px`;
     const artScale=Math.max(scene.clientWidth/760,feet/500,(scene.clientHeight-feet)/160);
     scene.style.backgroundSize=`${760*artScale}px ${660*artScale}px`;scene.style.backgroundPosition=`center ${feet-500*artScale}px`;
   }
@@ -55,28 +54,20 @@
     if(!cache.has(path))cache.set(path,new Promise((resolve,reject)=>{const im=new Image();im.onload=()=>resolve(im);im.onerror=()=>{cache.delete(path);reject(new Error(path));};im.src=path;}));
     return cache.get(path);
   }
-  async function drawClassChoices(){
-    const version=++classPreviewVersion,tone=selected;
-    await Promise.all(weaponButtons.map(async button=>{
-      const id=button.dataset.weapon,card=button.querySelector('canvas');if(!card)return;
-      const ctx=card.getContext('2d');ctx.clearRect(0,0,64,64);card.dataset.spriteState='loading';
-      try{
-        const hero=await window.EmberChibiHeroes.load(id,getImage,tone);if(version!==classPreviewVersion)return;
-        const defaultColor={sword:'sand',bow:'forest',wand:'purple'}[id],color=rememberedColors[id];
-        window.EmberChibiHeroes.draw(ctx,hero,{direction:2,dyes:color===defaultColor?{}:{armor:color,cape:color}});
-        card.dataset.spriteState='chibi';classPreviews.set(id,hero);
-      }catch(error){if(version!==classPreviewVersion)return;card.dataset.spriteState='error';console.error('CHIBI class preview',id,error);}
-    }));
-  }
   function draw(){
-    if(!previewHero)return;
-    if(canvas.width!==64){canvas.width=64;canvas.height=64;}
-    const ctx=canvas.getContext('2d');ctx.clearRect(0,0,64,64);ctx.imageSmoothingEnabled=false;
-    const defaultColor={sword:'sand',bow:'forest',wand:'purple'}[weapon];
-    const dye=rememberedColors[weapon]===defaultColor?{}:{armor:rememberedColors[weapon],cape:rememberedColors[weapon]};
-    window.EmberChibiHeroes.draw(ctx,previewHero,{direction,bare:step===0,kind:'idle',frame,dyes:dye});
-    canvas.dataset.spriteState='chibi';canvas.dataset.heroClass=step===0?'base':weapon;
-    canvas.style.width='100%';canvas.style.height='100%';canvas.style.left='0%';canvas.style.top='0%';
+    if(!previewImage||!previewDescriptor)return;
+    const d=previewDescriptor,tile=d.tile||64,origin=d.origin||0,cell=step===0?frame:0;
+    if(canvas.width!==tile){canvas.width=tile;canvas.height=tile;}
+    const ctx=canvas.getContext('2d');ctx.clearRect(0,0,tile,tile);ctx.imageSmoothingEnabled=false;
+    // Preserve native LPC pixels, using one consistent scale for every class.
+    // The Archer's 128px tile includes a 32px origin margin; the Mage's 64px
+    // tile needs the same display scale as the Warrior, not half its size.
+    ctx.drawImage(previewImage,cell*tile,direction*tile,tile,tile,0,0,tile,tile);
+    canvas.style.width=`${tile/64*100}%`;canvas.style.height=`${tile/64*100}%`;
+    canvas.style.left=`${-origin/64*100}%`;
+    // Mage feet sit about three source pixels higher in its 64px walk tile.
+    // A small offset aligns its ground line without shrinking the character.
+    canvas.style.top=step>0&&weapon==='wand'?'4.6875%':`${-origin/64*100}%`;
     const description=step===0?'без экипировки':`${catalogue.weapon(weapon).name}, наряд ${outfit().name}, ${catalogue.color(rememberedColors[weapon]).name}${weapon==='wand'?', огонь и лёд':''}`;
     canvas.setAttribute('aria-label',`Странник: ${description}. Цвет кожи: ${skins.find(s=>s.id===selected).label}. ${directionNames[direction]}.`);
   }
@@ -86,12 +77,13 @@
     createButton.querySelector('span').textContent=loadingError?'Повторить загрузку':!imageReady?'Загружаем героя…':step===0?'Далее':step===1?'Выбрать цвет':saved?'Сохранить героя':'Создать персонажа';
   }
   async function loadPreview(){
-    const version=++imageVersion;imageReady=false;loadingError=false;previewHero=null;canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height);canvas.dataset.spriteState='loading';updateButton();if(step===1)drawClassChoices();
+    const version=++imageVersion;imageReady=false;loadingError=false;updateButton();
+    const path=step===0?`assets/characters/${selected}.png`:catalogue.path(choice(),selected,'walk');
     try {
-      const hero=await window.EmberChibiHeroes.load(step===0?'sword':weapon,getImage,selected);if(version!==imageVersion)return;
-      previewHero=hero;
+      const image=await getImage(path);if(version!==imageVersion)return;
+      previewImage=image;previewDescriptor=step===0?{tile:64,origin:0}:catalogue.weapon(weapon).walk;
       imageReady=true;draw();status.textContent=step===0?'Выбери оттенок кожи':`${catalogue.weapon(weapon).name}, ${appearanceLabel()}`;
-    }catch(error){if(version!==imageVersion)return;loadingError=true;previewHero=null;canvas.dataset.spriteState='error';canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height);status.textContent='Не удалось загрузить новый облик: '+(error?.message||String(error));$('#preview-summary').textContent=status.textContent;$('#nameplate-subtitle').textContent='Ошибка CHIBI 4';}
+    }catch{if(version!==imageVersion)return;loadingError=true;status.textContent='Не удалось загрузить облик. Нажми «Повторить загрузку».';}
     updateButton();
   }
   function markRadios(buttons,isSelected){let chosen=false;buttons.forEach(b=>{const yes=isSelected(b);chosen=chosen||yes;b.setAttribute('aria-checked',String(yes));b.classList.toggle('selected',yes);b.tabIndex=yes?0:-1;});if(!chosen&&buttons[0])buttons[0].tabIndex=0;}
@@ -180,7 +172,7 @@
     dialog.querySelectorAll('.dialog-close,.dialog-action').forEach(button=>button.addEventListener('click',()=>dialog.close()));
     dialog.addEventListener('click',event=>{const r=dialog.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)dialog.close();});
   });
-  $('#start-adventure').addEventListener('click',()=>{window.location.href='./game-chibi-v3.html?v=chibi-4';});
+  $('#start-adventure').addEventListener('click',()=>{window.location.href='./';});
   createButton.addEventListener('click',()=>{
     if(loadingError){loadPreview();return;}if(!imageReady)return;
     if(step<2){showStep(step+1);return;}
