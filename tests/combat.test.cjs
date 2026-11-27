@@ -1076,12 +1076,12 @@ test('enemies cannot attack a wolf until within melee reach; their cooldowns are
    companionEnabled:true,heroDamage:1,heroMaxHp:240});
  const events=battle.advance(3.6,{enemyCanAttack:{archer1:false}});
  assert.equal(events.some(e=>e.sourceId==='archer1'),false);
- assert.equal(battle.state.companion.hp,23);
+ assert.equal(battle.state.companion.hp,70);
  assert.equal(battle.state.hero.hp,240);
  assert.equal(battle.getArrowSchedule().find(s=>s.sourceId==='archer1').at,5.4);
  const after=battle.advance(1.8,{enemyCanAttack:{archer1:true}});
  assert.equal(after.filter(e=>e.sourceId==='archer1'&&e.targetId==='companion').length,1);
- assert.equal(battle.state.companion.hp,16);
+ assert.equal(battle.state.companion.hp,63);
 });
 test('wolf tanking cannot be forced for other classes and first-time live equip initializes HP once',()=>{
  for(const [weapon,projectile] of [['sword','melee'],['wand','magic'],['sword','arrow']]){
@@ -1093,13 +1093,13 @@ test('wolf tanking cannot be forced for other classes and first-time live equip 
  const battle=createDefaultBattle({heroWeapon:'bow',heroProjectile:'arrow',companionEnabled:false});
  assert.equal(battle.state.companion,null);
  assert.equal(battle.setCompanionEnabled(true),true);
- assert.equal(battle.state.companion.hp,23);
+ assert.equal(battle.state.companion.hp,70);
  battle.advance(1.8);
- assert.equal(battle.state.companion.hp,16);
+ assert.equal(battle.state.companion.hp,63);
  battle.setCompanionEnabled(false);
  assert.equal(battle.state.companion,null);
  battle.setCompanionEnabled(true);
- assert.equal(battle.state.companion.hp,16,'unequipping preserves current health');
+ assert.equal(battle.state.companion.hp,63,'unequipping preserves current health');
 });
 
 test('simultaneous enemy hits do not teleport damage onto the hero at the instant the wolf dies',()=>{
@@ -1301,3 +1301,6 @@ test('sword techniques rotate on alternate finishers, with timed double strike',
 
 
 test('mastery strengthens only regular finishers and both special sword hits, without changing cadence',()=>{const opts={heroWeapon:'sword',heroProjectile:'melee',heroMaxHp:100000,heroDamage:4,warrior_swordDouble:5};const get=rank=>createDefaultBattle({...opts,warrior_swordMaster:rank}).advance(10).filter(e=>e.type==='attack'&&e.sourceId==='hero');const base=get(0),master=get(5);assert.deepEqual(master.map(e=>e.at),base.map(e=>e.at));for(let i=0;i<base.length;i++){const b=base[i],m=master[i];assert.equal(m.damage,b.comboStep===3?b.damage*2:b.damage);}});
+
+
+test('restored normal wolf health scales with bond while isolated QA overrides remain intact',()=>{const options={heroWeapon:'bow',heroProjectile:'arrow',companionEnabled:true};for(let rank=0;rank<=5;rank++){const b=createDefaultBattle({...options,archer_wolfBond:rank});assert.ok(Math.abs(b.state.companion.maxHp-70*(1+.15*rank))<1e-9);assert.equal(b.state.companion.hp,b.state.companion.maxHp);}const demo=createDefaultBattle({...options,companionMaxHp:24,archer_wolfBond:5});assert.equal(demo.state.companion.maxHp,42);const qa=createDefaultBattle({...options,companionMaxHp:1,wolfRevivePreview:true});assert.equal(qa.state.companion.hp,1);});

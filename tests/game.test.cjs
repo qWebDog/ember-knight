@@ -1194,7 +1194,7 @@ test('stationary archers shoot the equipped wolf instead of the hero',async()=>{
  const ui=createHarness({weapon:'bow',outfit:'wanderer',wolfEquipped:true,
    combatOptions:{heroDamage:1,heroMaxHp:600}});
  await ui.loadAllImages();
- assert.equal(ui.state().companion.hp,23);
+ assert.equal(ui.state().companion.hp,70);
  assert.equal(ui.state().enemyTargetId,'companion');
  const archer=ui.node('[data-fighter="archer1"]'),start=actorX(ui,'archer1');
  ui.runUntil(()=>ui.events.some(e=>e.sourceId==='archer1'&&e.targetId==='companion'),20);
@@ -1206,8 +1206,8 @@ test('stationary archers shoot the equipped wolf instead of the hero',async()=>{
  assert.ok(Math.abs(actorX(ui,'archer1')-restingX)<.1,
    'enemy must stop moving while fighting the wolf');
  assert.equal(ui.state().hero.hp,600,'the Archer takes no damage while wolf survives');
- assert.equal(ui.state().companion.hp,16);
- assert.equal(ui.node('#companion-health-fill').style.width,`${16/23*100}%`);
+ assert.equal(ui.state().companion.hp,63);
+ assert.equal(ui.node('#companion-health-fill').style.width,`${63/70*100}%`);
  assert.equal(ui.node('#companion-wolf').hidden,false);
  assert.ok(ui.events.some(e=>e.sourceId==='hero'&&e.projectile==='arrow'),
    'Archer keeps shooting while the wolf tanks');
