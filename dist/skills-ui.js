@@ -13,6 +13,8 @@
     shieldBash:{name:'Удар щитом',branch:'defense',category:'Защита',icon:'skill-shield',benefit:'Каждый третий блок: удар щитом и оглушение',total:level=>`${50+10*level}% базового урона, оглушение ${(0.4+.2*level).toFixed(1).replace('.',',')} с`}
   };
   Object.assign(details,{
+    strongShield:{name:'Крепкий щит',branch:'defense',category:'Защита',icon:'warrior-strong-shield',total:l=>`Блок поглощает ${50+5*l}% урона ближнего боя`},
+    bastion:{name:'Оплот',branch:'defense',category:'Защита',icon:'warrior-bastion',total:l=>`Каждое второе попадание стрелой или магией: блок ${10+10*l}% урона`},
     swordThrust:{name:'Колющий удар',branch:'attack',category:'Атака',icon:'swords',total:l=>`150% урона, пробитие ${10+10*l}% брони`},
     swordOverhead:{name:'Удар сверху',branch:'attack',category:'Атака',icon:'swords',total:l=>`${150+10*l}% базового урона`},
     swordDouble:{name:'Двойной удар',branch:'attack',category:'Атака',icon:'swords',total:l=>`Два удара: 90% и ${30+10*l}% урона`},
@@ -105,13 +107,13 @@ arrowDance:{name:"Танец стрел",branch:'control',category:"Тактик
         });
       }
       const defense=Array.from(root.querySelectorAll('.skill-branch')).find(branch=>branch.dataset.branch==='defense');
-      const future=defense?.querySelector('[data-skill-future]');
-      if(future){
-        future.hidden=false;future.disabled=false;future.dataset.skillId='shieldBash';future.dataset.mageAdvanced='true';future.dataset.skillDepth='1';future.dataset.skillRequires='vitality';
-        future.querySelector('use').setAttribute('href','#skill-shield');
-        future.querySelector('span').setAttribute('data-skill-node-rank','');
-        future.setAttribute('title','Удар щитом');nodes.push(future);
-      }
+      const defenseSlots=defense?[...defense.querySelectorAll('[data-skill-future]'),...defense.querySelectorAll('[data-mage-slot]')]:[];
+      ['shieldBash','strongShield','bastion'].forEach((id,i)=>{
+        const node=defenseSlots[i];if(!node)return;
+        node.hidden=false;node.disabled=false;node.removeAttribute?.('hidden');node.removeAttribute?.('disabled');
+        node.dataset.skillId=id;node.dataset.mageAdvanced='true';node.dataset.skillDepth=String(depth(id));node.dataset.skillRequires=requirements(id).join(' ');node.dataset.defenseSlot=String(i+1);
+        node.querySelector('use').setAttribute('href','#'+details[id].icon);node.querySelector('span').setAttribute('data-skill-node-rank','');node.setAttribute('title',details[id].name);nodes.push(node);
+      });
     }
     const upgrade=$('#skill-upgrade');
     let selected=null,destroyed=false;
@@ -141,7 +143,7 @@ arrowDance:{name:"Танец стрел",branch:'control',category:"Тактик
       $('[data-skill-category]').textContent=entry.category;
       $('[data-skill-name]').textContent=entry.name;
       $('[data-skill-rank]').textContent=`Уровень ${quote.level}/${quote.maxLevel}`;
-      $('[data-skill-benefit]').textContent=quote.reason==='locked'?`Требуется: ${requirementLabel(selected)}`:quote.reason==='max'?`${entry.total(quote.level)} · Максимум`:`Следующий уровень: ${archer||selected==='shieldBash'||selected.startsWith('sword')?entry.total(quote.level+1):entry.benefit}`;
+      $('[data-skill-benefit]').textContent=quote.reason==='locked'?`Требуется: ${requirementLabel(selected)}`:quote.reason==='max'?`${entry.total(quote.level)} · Максимум`:`Следующий уровень: ${archer||['shieldBash','strongShield','bastion'].includes(selected)||selected.startsWith('sword')?entry.total(quote.level+1):entry.benefit}`;
       $('[data-skill-benefit]').dataset.feedback='';
       $('[data-skill-icon-use]').setAttribute('href',`#${entry.icon}`);
       upgrade.dataset.upgrade=selected;upgrade.disabled=!quote.canBuy;
