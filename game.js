@@ -663,6 +663,45 @@
     battlefield.appendChild(element);
     effects.push({type:'bastion-arrow-break',element,sourceId:event.sourceId,targetId:'hero',at:event.at,duration:.58,lastKey:null});
   }
+  function shatterBastionMagic(event){
+    if(reducedMotion.matches)return;
+    const field=battlefield.getBoundingClientRect(),target=actors.hero.element.getBoundingClientRect();
+    const match=effects.find(e=>e.type==='spell'&&e.targetId==='hero'&&e.castId===event.castId);
+    const magic=match?.magic||event.magic||'fire';
+    if(match){match.element.remove();effects.splice(effects.indexOf(match),1);}
+    const point=bastionShieldPoint(target,field),scale=target.width/64;
+    const element=document.createElement('canvas');element.width=element.height=96;
+    element.className='bastion-magic-break';element.dataset.magic=magic;element.dataset.castId=event.castId||'';
+    element.setAttribute('aria-hidden','true');
+    Object.assign(element.style,{position:'absolute',pointerEvents:'none',zIndex:'602',imageRendering:'pixelated',width:96*scale+'px',height:96*scale+'px',left:point.x-24*scale+'px',top:point.y-32*scale+'px'});
+    battlefield.appendChild(element);
+    effects.push({type:'bastion-magic-break',element,sourceId:event.sourceId,targetId:'hero',at:event.at,duration:.48,magic,lastKey:null});
+  }
+  function paintBastionFire(ctx,frame,magic){
+    ctx.clearRect(0,0,96,96);
+    const colors=magic==='ice'?['#27628d','#65c8f0','#c9f7ff']:magic==='shadow'?['#563077','#ae73da','#f0d5ff']:['#b33412','#ff9b24','#fff1a1'];
+    if(frame<3){
+      const h=[9,13,10][frame],w=[5,8,5][frame];
+      for(let y=-h;y<=h;y++){
+        const width=Math.max(1,Math.round(w*(1-Math.abs(y)/(h+1))));
+        ctx.fillStyle=colors[0];ctx.fillRect(24,32+y,width+2,1);
+        ctx.fillStyle=colors[1];ctx.fillRect(24,32+y,width,1);
+        if(Math.abs(y)<h*.65){ctx.fillStyle=colors[2];ctx.fillRect(24,32+y,Math.max(1,width-2),1);}
+      }
+    }
+    const jets=[[2.5,-3.1,9],[3.5,-1.7,12],[4.4,-.3,12],[3.5,1.7,10],[2.6,3,8],[1.4,-3.8,5],[1.6,3.5,5]];
+    const clamp=v=>Math.max(3,Math.min(92,Math.round(v)));
+    for(const [vx,vy,len] of jets){
+      if(frame>=9&&len>9)continue;
+      const t=frame+.5,x=clamp(26+vx*t),y=clamp(32+vy*t+.065*t*t);
+      const l=Math.max(1,Math.round(len*(1-frame/12))),norm=Math.hypot(vx,vy),ex=clamp(x+vx/norm*l),ey=clamp(y+vy/norm*l);
+      ctx.globalAlpha=frame>=8?Math.max(.12,(12-frame)/4):1;
+      pixelLine(ctx,x,y,ex,ey,colors[0],frame<5?4:2);
+      pixelLine(ctx,x,y,ex,ey,colors[1],frame<5?2:1);
+      if(frame<6)pixelLine(ctx,x,y,Math.round((x+ex)/2),Math.round((y+ey)/2),colors[2],1);
+      ctx.globalAlpha=1;
+    }
+  }
   function paintBastionArrow(ctx,frame){
     ctx.clearRect(0,0,96,96);
     // The shield contact is (24,32), the boot/road line is y=57.
@@ -883,8 +922,9 @@
       } else if(event.type==='status'){
         syncFrozenActors(battle.getState());
       } else if (event.type === 'block') {
-        actors.hero.blockAt = activeTime;actors.hero.blockStyle=event.skill==='bastion'&&event.projectile==='arrow'?'bastionArrow':event.skill||'normal';actors.hero.lastKey=null;
+        actors.hero.blockAt = activeTime;actors.hero.blockStyle=event.skill==='bastion'?(event.projectile==='arrow'?'bastionArrow':'bastionMagic'):event.skill||'normal';actors.hero.lastKey=null;
         if(actors.hero.blockStyle==='bastionArrow')shatterBastionArrow(event);
+        if(actors.hero.blockStyle==='bastionMagic')shatterBastionMagic(event);
         // The real LPC guard pose interrupts the swing; the following counter
         // starts its own animation instead of resuming a stale attack frame.
         actors.hero.animation = null;
@@ -1147,7 +1187,7 @@
     const walkingOut=id==='hero'&&(sceneTransition?.phase==='wave-out'||sceneTransition?.phase==='victory');
     const distance = id === 'hero' ? walkDistance : actor.distance;
     const walking = (id==='hero'?heroMoving:actor.moving) && distance > 0 && unit.hp > 0 && (!ended||walkingOut) && !reducedMotion.matches && actor.images.walk?.frames > 1;
-    const preBastion=id==='hero'&&!ended&&unit.hp>0&&effects.some(e=>e.type==='arrow'&&e.bastionBlock&&e.targetId==='hero'&&e.at+e.duration-activeTime>0&&e.at+e.duration-activeTime<=.11);
+    const preBastion=id==='hero'&&!ended&&unit.hp>0&&effects.some(e=>['arrow','spell'].includes(e.type)&&e.bastionBlock&&e.targetId==='hero'&&(e.type==='spell'?e.impactAt:e.at+e.duration)-activeTime>0&&(e.type==='spell'?e.impactAt:e.at+e.duration)-activeTime<=.11);
     const blocking = (!walking||preBastion) && !ended && unit.hp > 0 && !reducedMotion.matches && actor.images.block && (preBastion||activeTime - actor.blockAt < .28/(state.hero.attackSpeed||1));
     const evading=id==='hero'&&starterWeapon?.id==='bow'&&!!actor.images.dodge&&!ended&&!walkingOut&&unit.hp>0&&!reducedMotion.matches&&activeTime>=archerEvadeAt&&activeTime-archerEvadeAt<dodgeTiming.duration;
     const attacking = !evading&&!walking && !blocking && !ended && age >= 0 && age < (actor.animation?.duration || 0) && unit.hp > 0 && !reducedMotion.matches;
@@ -1158,7 +1198,7 @@
     const blockFrame=blocking?Math.min(7,Math.max(0,Math.floor((activeTime-actor.blockAt)*8/(.28/(state.hero.attackSpeed||1))))):-1;
     const bashing=attacking&&actor.animation?.variant==='shieldBash';
     const bashFrame=bashing?Math.min(7,Math.max(0,Math.floor(age/actor.animation.duration*8))):-1;
-    const arrowGuard=blocking&&(preBastion||actor.blockStyle==='bastionArrow');
+    const arrowGuard=blocking&&(preBastion||actor.blockStyle==='bastionArrow'||actor.blockStyle==='bastionMagic');
     const guard=bashing?bashFrames[bashFrame]:arrowGuard?{kind:blockFrame>=7&&!preBastion?'idle':'block',dx:0,dy:0,...(blockFrame>=7&&!preBastion?{}:{shield:[34,29]})}:blockFrame>=0?(actor.blockStyle==='strongShield'?strongGuardFrames:guardFrames)[blockFrame]:null;
     const descriptor = guard?actor.images[guard.kind]:skillClip || attacking && actor.images.attacks?.[actor.animation.variant] || actor.images[kind];
     // LPC directions: 0=back, 1=left, 2=front, 3=right.
@@ -1493,6 +1533,11 @@
         if(!alive){effect.element.remove();effects.splice(i,1);continue;}
       }
       if (activeTime+1e-6 >= (effect.missUntil??(effect.at+effect.duration)) || reducedMotion.matches) { effect.element.remove(); effects.splice(i,1); continue; }
+      if(effect.type==='bastion-magic-break'){
+        const frame=Math.min(11,Math.max(0,Math.floor(age/effect.duration*12)));
+        if(effect.lastKey!==frame){paintBastionFire(effect.element.getContext('2d'),frame,effect.magic);effect.lastKey=frame;}
+        continue;
+      }
       if(effect.type==='bastion-arrow-break'){
         const frame=Math.min(11,Math.max(0,Math.floor(age/effect.duration*12)));
         if(effect.lastKey!==frame){paintBastionArrow(effect.element.getContext('2d'),frame);effect.lastKey=frame;}
@@ -1572,7 +1617,7 @@
           if(!effect.lockedOrigin)effect.lockedOrigin={x:sx,y:sy};
           sx=effect.lockedOrigin.x;sy=effect.lockedOrigin.y;
         }
-        const barrier=aimAtBarrier(effect,state,target,field,sx,sy);
+        const barrier=effect.bastionBlock&&effect.targetId==='hero'?bastionShieldPoint(target,field):aimAtBarrier(effect,state,target,field,sx,sy);
         const hitX=aim?.x??barrier?.x??tx,hitY=aim?.y??barrier?.y??impactPoint(effect.targetId,target,field,.55).y;
         effect.element.dataset.impactX=String(hitX);effect.element.dataset.impactY=String(hitY);
         const progress=phase==='appear'?0:phase==='impact'?1:Math.min(1,phaseAge/effect.flightDuration);
@@ -1754,6 +1799,8 @@
       });
     }
     cueArrowShots(state);
+    const magicBlocks=new Set((state.bastionMagic||[]).filter(p=>p.block).map(p=>p.castId));
+    for(const effect of effects)if(effect.type==='spell'&&effect.targetId==='hero')effect.bastionBlock=magicBlocks.has(effect.castId);
     for (const id of Object.keys(actors)){drawActor(id,state);renderBleeding(actors[id],id==='hero'?state.hero:state.enemies.find(unit=>unit.id===id),state);}
     renderMageSphere(state);
     const carrying=paintWolfCarry();
