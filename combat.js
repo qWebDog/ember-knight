@@ -770,7 +770,7 @@
           }
           if (defender.id==='hero' && sword && enemy.projectile === 'melee' && ++meleeHits % 2 === 0) {
             const blockedDamage = damage*(.5+.05*strongShieldRank); damage -= blockedDamage; blocked = true;
-            events.push({type:'block',sourceId:enemy.id,targetId:'hero',blockedDamage,at:elapsed/TICKS});
+            events.push({type:'block',sourceId:enemy.id,targetId:'hero',blockedDamage,at:elapsed/TICKS,...(strongShieldRank?{skill:'strongShield'}:{})});
           }
           if(enemy.type==='dragon'){
             if(defender.id==='companion'){
