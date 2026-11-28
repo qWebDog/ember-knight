@@ -98,6 +98,8 @@
     let comboIndex, meleeHits, heroBusyUntil, pendingCounters, pendingImpacts, pendingBreaths;
     let shieldBashRank=sword?rank(options.warriorShieldBash):0,shieldBlocks=0;
     let strongShieldRank=sword?rank(options.warrior_strongShield):0,bastionRank=sword?rank(options.warrior_bastion):0,rangedShieldHits=0;
+    let bloodlustRank=sword?rank(options.warrior_bloodlust):0,bloodlustStacks=0;
+    const bloodlustMultiplier=()=>1+bloodlustStacks*(bloodlustRank?(.01+.01*bloodlustRank):0);
     const swordSkills=['swordThrust','swordOverhead','swordDouble','swordCleave'];
     const swordRanks=Object.fromEntries(swordSkills.map(id=>[id,sword?rank(options['warrior_'+id]):0]));
     let swordMaster=sword?rank(options.warrior_swordMaster):0;
@@ -193,6 +195,7 @@
       const target = enemies.find(enemy => enemy.hp > 0);
       const waiting = phase === 'intermission' || (phase === 'paused' && pausedFrom === 'intermission');
       return {
+        ...(sword&&bloodlustRank?{warriorRage:{stacks:bloodlustStacks,bonusPercent:bloodlustStacks*(1+bloodlustRank)}}:{}),
         ...(sword&&bastionRank?{bastionMagic:pendingImpacts.filter(p=>p.targetId==='hero'&&p.sourceId!=='hero'&&p.castId&&p.damage>0).slice().sort((a,b)=>a.at-b.at).map((p,i)=>({castId:p.castId,at:p.at/TICKS,block:(rangedShieldHits+i+1)%2===0}))}:{}),
         ...(mage?{activeTalents:[...activeTalents]}:{}),...(archer&&(archerRanks.alpha||archerRanks.guardian)?{wolfAttackSpeed:(elapsed<roarUntil?1+.1*archerRanks.alpha:1)*(wolfFury()?1+.15*archerRanks.guardian:1)}:{}),...(archer&&companionEnabled&&(archerRanks.rendingBite||archerRanks.guardian||archerRanks.wolfBond)?{wolfSkills:{bond:archerRanks.wolfBond,fury:wolfFury(),rendingNext:!!archerRanks.rendingBite&&(wolfBites+1)%3===0}}:{}),...(archer&&(archerRanks.arrowDance||archerRanks.alpha)?{archerEffects:{dance:elapsed<danceUntil,roar:companionEnabled&&companion?.hp>0&&elapsed<roarUntil}}:{}),phase, elapsed:elapsed / TICKS, hero:{...hero,...bleedingSnapshot(hero),...poisonSnapshot(hero),...(sphere?{sphere:{...sphere}}:{})},
         companion:companionEnabled?{...companion,...bleedingSnapshot(companion),...poisonSnapshot(companion),alive:companion.hp>0}:null,
@@ -208,7 +211,7 @@
       dodgeUntil=0;dodgeSince=Infinity;enemyDodgeChecks=[];
       waveIndex = index; phase = 'running'; pausedFrom = null; nextWaveAt = null;
       enemies = activeWaves[index].map(unit => ({...archetypes[unit.type],...unit,hp:archetypes[unit.type].maxHp,status:null}));
-      comboIndex = 0; meleeHits = 0; rangedShieldHits=0; heroBusyUntil = elapsed; pendingCounters = []; pendingImpacts = []; pendingBreaths = [];rainLeft=0;
+      comboIndex = 0; meleeHits = 0; rangedShieldHits=0; bloodlustStacks=0; heroBusyUntil = elapsed; pendingCounters = []; pendingImpacts = []; pendingBreaths = [];rainLeft=0;
       mageCastIndex=0;orcHasAttacked=false;activeTalents=[...queuedTalents];powerCharged=false;regenAt=sphere?.hp>0?elapsed+3*TICKS:Infinity;
       nextHero = elapsed + heroTicks(sword ? swordSteps[0].interval : HERO_INTERVAL);
       nextEnemies = enemies.map(enemy => elapsed + Math.round(enemy.interval * TICKS));
@@ -307,6 +310,7 @@
     }
     function updateHeroStats(stats = {}) {
       const oldSpeed = config.attackSpeed;
+      if(sword&&stats.warrior_bloodlust!==undefined){bloodlustRank=rank(stats.warrior_bloodlust);if(!bloodlustRank)bloodlustStacks=0;}
       if(sword&&stats.warriorShieldBash!==undefined)shieldBashRank=rank(stats.warriorShieldBash);
       if(sword&&stats.warrior_strongShield!==undefined)strongShieldRank=rank(stats.warrior_strongShield);
       if(sword&&stats.warrior_bastion!==undefined)bastionRank=rank(stats.warrior_bastion);
@@ -429,6 +433,12 @@
           events.push({type:'sphere',sourceId,targetId:'hero',absorbed,hp:sphere.hp,maxHp:sphere.maxHp,broken:sphere.hp===0,at:elapsed/TICKS,projectile,...(metadata?.castId?{castId:metadata.castId}:{}),...(metadata?.magic?{magic:metadata.magic}:{})});
         }
         target.hp = Math.max(0,target.hp-damage);
+        if(sword&&bloodlustRank&&damage>0){
+          if(target.id==='hero'){bloodlustStacks=target.hp>0?Math.max(0,bloodlustStacks-1):0;}
+          else if(sourceId==='hero'&&projectile==='melee'&&metadata?.comboStep>0&&!metadata.counter&&!metadata.splash&&(!metadata.strike||metadata.strike===1)){
+            bloodlustStacks=Math.min(5,bloodlustStacks+1);
+          }
+        }
         if(target.id==='hero'&&target.hp===0&&advanced.heroRebirthRank&&!rebirthUsed){
           rebirthUsed=true;target.hp=Math.max(1,Math.floor(target.maxHp*.1*advanced.heroRebirthRank));
           if(hasTalent('immortality'))immuneUntil=elapsed+2*TICKS;
@@ -621,7 +631,8 @@
         // Ties: hero action, counters, existing status ticks/expiry, impacts, then enemies.
         if (heroCanAttack && nextHero === next) {
           const target = enemies.find(enemy => enemy.hp > 0),step = sword ? swordSteps[comboIndex] : null;
-          const damage = config.damage * (step?.heavy ? 1.5*finisherMultiplier() : 1);
+          const rageMultiplier=sword?bloodlustMultiplier():1;
+          const damage = config.damage * (step?.heavy ? 1.5*finisherMultiplier() : 1)*rageMultiplier;
           const metadata = step ? {variant:step.variant,comboStep:comboIndex+1,heavy:step.heavy,animationDuration:heroTicks(step.animationDuration*TICKS)/TICKS,counter:false} : {animationDuration:heroTicks((config.projectile === 'arrow' ? .9 : .66)*TICKS)/TICKS};
           // One automatic spell stream, alternating fire and ice. Neither
           // an extra attack nor a manual skill toggle is introduced.
@@ -649,7 +660,7 @@
               fractions.forEach((f,index)=>{
                 const multiplier=id==='swordThrust'||id==='swordCleave'?1.5:id==='swordOverhead'?1.5+.1*r:index===0?.9:.3+.1*r;
                 const armor=target.armor*(id==='swordThrust'?1-(.1+.1*r):1);
-                pendingImpacts.push({sourceId:'hero',targetId:target.id,at:elapsed+Math.round(duration*f),swordSkill:id,rank:r,damage:Math.max(1,config.damage*multiplier*finisherMultiplier()-armor),masterMultiplier:finisherMultiplier(),strike:index+1});
+                pendingImpacts.push({sourceId:'hero',targetId:target.id,at:elapsed+Math.round(duration*f),swordSkill:id,rank:r,damage:Math.max(1,config.damage*multiplier*finisherMultiplier()*rageMultiplier-armor),masterMultiplier:finisherMultiplier(),rageMultiplier,strike:index+1});
               });
               pendingImpacts.sort((a,b)=>a.at-b.at);
             }else hit('hero',target,Math.max(1,damage-target.armor),config.projectile,metadata);
@@ -669,7 +680,7 @@
             events.push({type:'warriorSkill',skill:'shieldBash',sourceId:'hero',targetId:target.id,at:elapsed/TICKS,impactAt:impactAt/TICKS,animationDuration:duration/TICKS});
             pendingImpacts.push({sourceId:'hero',targetId:target.id,at:impactAt,shieldBash:counter.bash,damage:Math.max(1,config.damage*(.5+.1*counter.bash)-target.armor)});
             pendingImpacts.sort((a,b)=>a.at-b.at);
-          }else hit('hero',target,Math.max(1,config.damage-target.armor),'melee',{variant:'halfslash',comboStep:0,heavy:false,animationDuration:heroTicks(COUNTER_DURATION)/TICKS,counter:true});
+          }else hit('hero',target,Math.max(1,config.damage*bloodlustMultiplier()-target.armor),'melee',{variant:'halfslash',comboStep:0,heavy:false,animationDuration:heroTicks(COUNTER_DURATION)/TICKS,counter:true});
           if (enemies.every(enemy => enemy.hp === 0)) { clearWave(); break; }
         }
         if (phase !== 'running') continue;
@@ -720,7 +731,7 @@
             if(hero.hp<=0)continue;
             const neighbors=impact.swordSkill==='swordCleave'?nearby(target).filter(e=>e.hp>0):[];
             hit('hero',target,impact.damage,'melee',{variant:impact.swordSkill,comboStep:3,heavy:true,windup:true,swordSkill:impact.swordSkill,strike:impact.strike});
-            for(const e of neighbors)if(e.hp>0)hit('hero',e,Math.max(1,config.damage*(.1+.1*impact.rank)*impact.masterMultiplier-e.armor),'melee',{variant:impact.swordSkill,heavy:true,windup:true,swordSkill:impact.swordSkill,splash:true});
+            for(const e of neighbors)if(e.hp>0)hit('hero',e,Math.max(1,config.damage*(.1+.1*impact.rank)*impact.masterMultiplier*(impact.rageMultiplier??1)-e.armor),'melee',{variant:impact.swordSkill,heavy:true,windup:true,swordSkill:impact.swordSkill,splash:true});
             if(enemies.every(e=>e.hp===0)){clearWave();break;}
             continue;
           }

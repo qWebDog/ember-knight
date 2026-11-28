@@ -1873,6 +1873,8 @@
       }
     }
     $('#hero-vital').textContent = `${state.hero.hp} / ${state.hero.maxHp} HP`;
+    const rage=$('#warrior-rage-meter');
+    if(rage){const data=state.warriorRage;rage.hidden=!data; if(data){rage.textContent=`Жажда ${data.stacks}/5 · +${data.bonusPercent}%`;rage.setAttribute('aria-label',`Жажда крови: ${data.stacks} из 5 зарядов, бонус урона ${data.bonusPercent}%`);}}
     const waves = document.querySelectorAll('.wave');
     waves.forEach((wave,i) => { wave.classList.toggle('done',i<state.completedWaves); wave.classList.toggle('current',i===state.waveIndex&&i>=state.completedWaves); });
     $('#wave-number').textContent=`${state.waveNumber}/${state.waveCount}`;
