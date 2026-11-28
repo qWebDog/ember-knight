@@ -647,6 +647,45 @@
     effect.element.dataset.barrierX=String(contact.x);effect.element.dataset.barrierY=String(contact.y);
     return {x:contact.x+contact.nx*padding,y:contact.y+contact.ny*padding};
   }
+  function bastionShieldPoint(target,field){
+    return {x:target.left+target.width*48/64-field.left,y:target.top+target.height*37/64-field.top};
+  }
+  function shatterBastionArrow(event){
+    if(reducedMotion.matches)return;
+    const field=battlefield.getBoundingClientRect(),target=actors.hero.element.getBoundingClientRect();
+    const match=effects.find(e=>e.type==='arrow'&&e.sourceId===event.sourceId&&e.targetId==='hero'&&Math.abs(e.at+e.duration-event.at)<.001);
+    if(match){match.element.remove();effects.splice(effects.indexOf(match),1);}
+    const point=bastionShieldPoint(target,field),scale=target.width/64;
+    const element=document.createElement('canvas');element.width=96;element.height=96;
+    element.className='bastion-arrow-break';element.dataset.source=event.sourceId;
+    element.setAttribute('aria-hidden','true');
+    Object.assign(element.style,{position:'absolute',pointerEvents:'none',zIndex:'602',imageRendering:'pixelated',width:96*scale+'px',height:96*scale+'px',left:point.x-24*scale+'px',top:point.y-32*scale+'px'});
+    battlefield.appendChild(element);
+    effects.push({type:'bastion-arrow-break',element,sourceId:event.sourceId,targetId:'hero',at:event.at,duration:.58,lastKey:null});
+  }
+  function paintBastionArrow(ctx,frame){
+    ctx.clearRect(0,0,96,96);
+    // The shield contact is (24,32), the boot/road line is y=57.
+    if(frame<2){
+      const n=frame===0?3:6;
+      pixelLine(ctx,24-n,32,24+n,32,'#ffd36f');
+      pixelLine(ctx,24,32-n,24,32+n,'#ffd36f');
+      pixelLine(ctx,24-n,32-n,24+n,32+n,'#e4a046');
+      pixelLine(ctx,24-n,32+n,24+n,32-n,'#e4a046');
+      ctx.fillStyle='#fff5cc';ctx.fillRect(23,31,3,3);
+    }
+    // Two pieces of the arrow, with distinct shaft, tip and white fletching.
+    const pieces=[{x:27,v:3.3,dy:-3,len:8,tip:true},{x:38,v:3.7,dy:-1,len:11,tip:false},{x:26,v:1.8,dy:-5,len:4,tip:false,chip:true}];
+    for(const p of pieces){
+      const t=frame,x=Math.min(78,Math.round(p.x+p.v*t)),y=Math.min(57,Math.round(32+p.dy*t+1.4*t*t)),angle=y>=57?0:(p.tip?-.4:.4)*t;
+      const ex=Math.round(x+Math.cos(angle)*p.len),ey=Math.min(57,Math.round(y+Math.sin(angle)*p.len));
+      if(frame>=9)ctx.globalAlpha=(12-frame)/3;
+      pixelLine(ctx,x,y,ex,ey,'#4a2e20',2);pixelLine(ctx,x,y-1,ex,Math.max(0,ey-1),'#b78a55');
+      if(p.tip){ctx.fillStyle='#d5dbe0';ctx.fillRect(x-2,y-1,3,2);}
+      else if(!p.chip){ctx.fillStyle='#ddd9ce';ctx.fillRect(ex-2,Math.max(0,ey-2),3,2);}
+      ctx.globalAlpha=1;
+    }
+  }
   function shatterBlockedProjectile(event){
     if(reducedMotion.matches||!mageEffects.impact||!['arrow','magic'].includes(event.projectile))return;
     const field=battlefield.getBoundingClientRect(),target=actors.hero.element.getBoundingClientRect();
@@ -844,7 +883,8 @@
       } else if(event.type==='status'){
         syncFrozenActors(battle.getState());
       } else if (event.type === 'block') {
-        actors.hero.blockAt = activeTime;actors.hero.blockStyle=event.skill||'normal';actors.hero.lastKey=null;
+        actors.hero.blockAt = activeTime;actors.hero.blockStyle=event.skill==='bastion'&&event.projectile==='arrow'?'bastionArrow':event.skill||'normal';actors.hero.lastKey=null;
+        if(actors.hero.blockStyle==='bastionArrow')shatterBastionArrow(event);
         // The real LPC guard pose interrupts the swing; the following counter
         // starts its own animation instead of resuming a stale attack frame.
         actors.hero.animation = null;
@@ -1107,7 +1147,8 @@
     const walkingOut=id==='hero'&&(sceneTransition?.phase==='wave-out'||sceneTransition?.phase==='victory');
     const distance = id === 'hero' ? walkDistance : actor.distance;
     const walking = (id==='hero'?heroMoving:actor.moving) && distance > 0 && unit.hp > 0 && (!ended||walkingOut) && !reducedMotion.matches && actor.images.walk?.frames > 1;
-    const blocking = !walking && !ended && unit.hp > 0 && !reducedMotion.matches && actor.images.block && activeTime - actor.blockAt < .28/(state.hero.attackSpeed||1);
+    const preBastion=id==='hero'&&!ended&&unit.hp>0&&effects.some(e=>e.type==='arrow'&&e.bastionBlock&&e.targetId==='hero'&&e.at+e.duration-activeTime>0&&e.at+e.duration-activeTime<=.11);
+    const blocking = (!walking||preBastion) && !ended && unit.hp > 0 && !reducedMotion.matches && actor.images.block && (preBastion||activeTime - actor.blockAt < .28/(state.hero.attackSpeed||1));
     const evading=id==='hero'&&starterWeapon?.id==='bow'&&!!actor.images.dodge&&!ended&&!walkingOut&&unit.hp>0&&!reducedMotion.matches&&activeTime>=archerEvadeAt&&activeTime-archerEvadeAt<dodgeTiming.duration;
     const attacking = !evading&&!walking && !blocking && !ended && age >= 0 && age < (actor.animation?.duration || 0) && unit.hp > 0 && !reducedMotion.matches;
     const kind = evading ? 'dodge' : walking ? 'walk' : blocking ? 'block' : attacking ? 'attack' : 'idle';
@@ -1117,7 +1158,8 @@
     const blockFrame=blocking?Math.min(7,Math.max(0,Math.floor((activeTime-actor.blockAt)*8/(.28/(state.hero.attackSpeed||1))))):-1;
     const bashing=attacking&&actor.animation?.variant==='shieldBash';
     const bashFrame=bashing?Math.min(7,Math.max(0,Math.floor(age/actor.animation.duration*8))):-1;
-    const guard=bashing?bashFrames[bashFrame]:blockFrame>=0?(actor.blockStyle==='strongShield'?strongGuardFrames:guardFrames)[blockFrame]:null;
+    const arrowGuard=blocking&&(preBastion||actor.blockStyle==='bastionArrow');
+    const guard=bashing?bashFrames[bashFrame]:arrowGuard?{kind:blockFrame>=7&&!preBastion?'idle':'block',dx:0,dy:0,...(blockFrame>=7&&!preBastion?{}:{shield:[34,29]})}:blockFrame>=0?(actor.blockStyle==='strongShield'?strongGuardFrames:guardFrames)[blockFrame]:null;
     const descriptor = guard?actor.images[guard.kind]:skillClip || attacking && actor.images.attacks?.[actor.animation.variant] || actor.images[kind];
     // LPC directions: 0=back, 1=left, 2=front, 3=right.
     // When moving toward a hero/wolf on the left, Orc must use the LEFT
@@ -1125,10 +1167,10 @@
     const defender=state.enemyTargetId==='companion'?companion?.getPose():null;
     const facingTargetX=defender?.x??heroX;
     const enemyFacing=['archer','swordsman'].includes(actor.type)?(facingTargetX>actor.x?3:1):descriptor.row;
-    const row = evading||skillClip?0:walking ? (id==='hero'?walkDirection:actor.direction) : enemyFacing;
+    const row = evading||skillClip?0:walking&&!arrowGuard ? (id==='hero'?walkDirection:actor.direction) : enemyFacing;
     const tile = swordClip?128:descriptor.tile || 64, origin = swordClip?32:descriptor.origin || 0;
     const cell = swordClip?swordFrame:guard ? 0 : evading ? dodgeArt.frameAt(activeTime-archerEvadeAt,dodgeTiming) : walking ? 1 + Math.floor((distance / .75 % 1) * 8) : attacking ? Math.min(descriptor.frames-1,Math.floor((age+(actor.animation?.arrowCue?1e-6:0)) / actor.animation.duration * descriptor.frames)) : Number.isInteger(descriptor.still) ? descriptor.still : id === 'hero' && auto && unit.hp > 0 && !ended && !reducedMotion.matches ? Math.floor(activeTime / .65) % 2 : 0;
-    const key = `${kind}-${descriptor.image.src}-${cell}-${row}-${tile}-${origin}-${blockFrame}-${blocking?actor.blockStyle||'normal':''}-${bashFrame}-${swordClip?actor.animation.variant:''}`;
+    const key = `${kind}-${descriptor.image.src}-${cell}-${row}-${tile}-${origin}-${blockFrame}-${arrowGuard?'bastionArrow':blocking?actor.blockStyle||'normal':''}-${bashFrame}-${swordClip?actor.animation.variant:''}`;
     if (!frozen&&actor.lastKey !== key) {
       actor.canvas.width = tile; actor.canvas.height = tile;
       const ctx = actor.canvas.getContext('2d'); ctx.clearRect(0,0,tile,tile); ctx.imageSmoothingEnabled = false;
@@ -1407,7 +1449,8 @@
     const valid=new Map(shots.map(shot=>[keyFor(shot),shot]));
     for(const [key,effect] of cuedArrows){
       if(activeTime+1e-6>=effect.at+effect.duration){cuedArrows.delete(key);continue;}
-      const planned=valid.get(key);if(planned&&Boolean(planned.double)===Boolean(effect.paired)&&planned.arrowType===effect.element.dataset.arrowType&&dodgeArt.skillName(planned)===effect.skillClip)continue;
+      const planned=valid.get(key);if(planned)effect.bastionBlock=Boolean(planned.bastionBlock);
+      if(planned&&Boolean(planned.double)===Boolean(effect.paired)&&planned.arrowType===effect.element.dataset.arrowType&&dodgeArt.skillName(planned)===effect.skillClip)continue;
       for(const e of [effect,effect.paired].filter(Boolean)){e.element.remove();const i=effects.indexOf(e);if(i>=0)effects.splice(i,1);}
       const shooter=actors[effect.sourceId];
       if(shooter.animation?.arrowCue===key){shooter.animation=null;shooter.lastKey=null;}
@@ -1429,7 +1472,7 @@
       source.lastKey=null;
       const opts={at:releaseAt,duration:arrowFlightDuration,arrowType:shot.arrowType,rainIndex:shot.rainIndex,rainCount:shot.rainCount};
       const effect=addEffect('arrow',shot.sourceId,shot.targetId,null,releaseAt,{...opts,...(shot.double?{double:1}:{})});
-      if(effect){effect.skillClip=skillClip;if(shot.double)effect.paired=addEffect('arrow',shot.sourceId,shot.targetId,null,releaseAt,{...opts,double:2});for(const e of [effect,effect.paired].filter(Boolean)){e.skillClip=skillClip;if(skillClip)e.element.dataset.skillAnimation=skillClip;}cuedArrows.set(key,effect);}
+      if(effect){effect.bastionBlock=Boolean(shot.bastionBlock);effect.skillClip=skillClip;if(shot.double)effect.paired=addEffect('arrow',shot.sourceId,shot.targetId,null,releaseAt,{...opts,double:2});for(const e of [effect,effect.paired].filter(Boolean)){e.skillClip=skillClip;if(skillClip)e.element.dataset.skillAnimation=skillClip;}cuedArrows.set(key,effect);}
     }
   }
   // Orc's native 64px tile has the head near y=21..30 and torso at y=34..48.
@@ -1450,6 +1493,11 @@
         if(!alive){effect.element.remove();effects.splice(i,1);continue;}
       }
       if (activeTime+1e-6 >= (effect.missUntil??(effect.at+effect.duration)) || reducedMotion.matches) { effect.element.remove(); effects.splice(i,1); continue; }
+      if(effect.type==='bastion-arrow-break'){
+        const frame=Math.min(11,Math.max(0,Math.floor(age/effect.duration*12)));
+        if(effect.lastKey!==frame){paintBastionArrow(effect.element.getContext('2d'),frame);effect.lastKey=frame;}
+        continue;
+      }
       if(effect.type==='archer-arrow-impact'){
         const actor=actors[effect.targetId]?.element;if(!actor){effect.element.remove();effects.splice(i,1);continue;}
         const bounds=actor.getBoundingClientRect();
@@ -1561,7 +1609,12 @@
           if(!effect.lockedOrigin)effect.lockedOrigin={x:sx,y:sy};
           sx=effect.lockedOrigin.x;sy=effect.lockedOrigin.y;
         }
-        const barrier=effect.type==='arrow'?aimAtBarrier(effect,state,target,field,sx,sy):null;
+        let barrier=effect.type==='arrow'?aimAtBarrier(effect,state,target,field,sx,sy):null;
+        if(effect.type==='arrow'&&effect.bastionBlock&&effect.targetId==='hero'){
+          const point=bastionShieldPoint(target,field),dx=sx-point.x,dy=sy-point.y,len=Math.hypot(dx,dy)||1;
+          const pad=(effect.element.offsetWidth||source.width*.62)*.46;
+          barrier={x:point.x+dx/len*pad,y:point.y+dy/len*pad};
+        }
         const hitX=aim?.x??barrier?.x??tx,hitY=aim?.y??barrier?.y??ty;
         if(effect.type==='arrow'){effect.element.dataset.impactX=String(hitX);effect.element.dataset.impactY=String(hitY);}
         const arc=rain?Math.max(0,Math.min(source.width*.8,Math.max(0,sy-8)*.85,Math.abs(hitX-sx)*.35)):0;

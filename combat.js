@@ -162,6 +162,12 @@
         shots.push({sourceId:enemy.id,targetId:currentEnemyTarget().id,
           at:nextEnemies[i]/TICKS,animationDuration:.6});
       }
+      // Incoming arrows in the current encounters are the only ranged hits
+      // in their waves. Stable sort preserves enemy-index ordering on ties.
+      if(sword&&bastionRank){
+        const incoming=shots.filter(s=>s.sourceId!=='hero'&&s.targetId==='hero').sort((a,b)=>a.at-b.at);
+        incoming.forEach((shot,i)=>{shot.bastionBlock=(rangedShieldHits+i+1)%2===0;});
+      }
       return shots;
     }
     // guardian is the stable saved skill ID; its gameplay is now Beast Fury.
