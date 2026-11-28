@@ -345,6 +345,7 @@
     ready = false; assetError = false; updateControls();
     try {
       let idle;
+      if(starterWeapon?.id==='sword'&&!bloodlustAtlas)bloodlustAtlas=await loadImage(bloodlustAtlasData).catch(()=>null);
       if (loadout) {
         const swordSprites=swordEquipment?await swordEquipment.load(equipment.getState()):null;
         const classSprites=classEquipment?await classEquipment.load(equipment.getState(),equipment.getColors()):null;
@@ -1184,6 +1185,44 @@
     swordDouble:[null,[-1,0,0,38,33,-75],[2,2,1,45,43,35,[-70,35]],[0,0,1,40,46,100],[-1,0,0,37,47,135],[3,2,0,46,35,-35,[110,-35]],[1,0,0,42,37,-20],null],
     swordCleave:[null,[-2,-1,1,33,43,150],[-1,0,1,35,42,130],[1,2,1,42,42,70,[155,70]],[3,2,0,46,38,-15,[85,-15]],[2,1,0,43,34,-45,[-5,-45]],null]
   };
+  // Approved raster artwork, reduced to a transparent 5 x 48px atlas.
+  const bloodlustAtlasData='data:image/png;base64,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';
+  let bloodlustAtlas=null;
+  function bloodlustTrailPose(variant,cell,frames,specialPose){
+    if(variant==='shieldBash')return null;
+    if(specialPose){
+      if(variant==='swordThrust'){
+        if(cell===3||cell===4)return {x:50,y:39,size:42,angle:-.85,alpha:cell===3?.85:.45};
+        return null;
+      }
+      if(!specialPose[6])return null;
+      const [dx,lean,crouch,hx,hy,angle]=specialPose;
+      return {x:dx+hx+lean+10,y:crouch+hy-6,size:54,angle:variant==='swordDouble'&&cell===5?-.6:variant==='swordOverhead'?.3:variant==='swordCleave'?-.35:0,alpha:cell===5&&variant!=='swordDouble'?.5:1};
+    }
+    if(['swordThrust','swordOverhead','swordDouble','swordCleave'].includes(variant))return null;
+    const p=cell/Math.max(1,frames-1);
+    if(p<.3||p>.85)return null;
+    return {x:55,y:35,size:54,angle:variant==='backslash'?-.45:variant==='halfslash'?.2:0,alpha:p>.65?.55:1};
+  }
+  function paintBloodlustTrail(ctx,atlas,stacks,origin,pose){
+    if(!atlas||!pose||stacks<1||stacks>5)return;
+    ctx.save();ctx.imageSmoothingEnabled=false;ctx.globalAlpha=pose.alpha;
+    ctx.translate(origin+pose.x,origin+pose.y);ctx.rotate(pose.angle);
+    ctx.drawImage(atlas,(stacks-1)*48,0,48,48,-pose.size/2,-pose.size/2,pose.size,pose.size);ctx.restore();
+  }
+  function tintBloodlustBlade(ctx,stacks,ox=0,oy=0){
+    if(!stacks)return;
+    // The LPC sword mask is shared with the special-attack blade extraction.
+    // Preserve transparency and hue detail; tint metallic pixels only.
+    const im=ctx.getImageData(ox+39,oy+43,17,13),d=im.data,weight=.12+.10*stacks;
+    for(const [y,l,r] of swordPixelRuns)for(let x=l;x<=r;x++){
+      const i=((y-43)*17+x-39)*4;if(!d[i+3])continue;
+      const max=Math.max(d[i],d[i+1],d[i+2]),min=Math.min(d[i],d[i+1],d[i+2]);
+      if(max<60||max-min>max*.38)continue;
+      d[i]=Math.round(d[i]+(255-d[i])*weight);d[i+1]=Math.round(d[i+1]*(1-weight*.75));d[i+2]=Math.round(d[i+2]*(1-weight*.63));
+    }
+    ctx.putImageData(im,ox+39,oy+43);
+  }
   const swordPixelRuns=[[43,40,42],[44,39,42],[45,39,41],[46,39,41],[47,39,43],[48,39,45],[49,41,47],[50,43,49],[51,45,51],[52,47,53],[53,49,55],[54,51,55],[55,53,55]];
   function scratch(actor,key){
     const c=actor[key]||(actor[key]=document.createElement('canvas'));c.width=c.height=64;
@@ -1193,17 +1232,18 @@
     ctx.fillStyle=color;const steps=Math.max(Math.abs(x1-x0),Math.abs(y1-y0),1),off=Math.floor((width-1)/2);
     for(let i=0;i<=steps;i++)ctx.fillRect(Math.round(x0+(x1-x0)*i/steps)-off,Math.round(y0+(y1-y0)*i/steps)-off,width,width);
   }
-  function drawSwordSkill(ctx,actor,pose,origin){
+  function drawSwordSkill(ctx,actor,pose,origin,rageStacks=0){
     const source=actor.images.idle.image,body=scratch(actor,'swordSkillBody'),blade=scratch(actor,'swordSkillBlade');
     const gearPose=equipmentArt?{equipped:equipment.getState(),colors:equipment.getColors(),row:3,frame:0,kind:'idle',variant:null,tile:64,origin:0}:null;
     if(gearPose)equipmentArt.drawBack(body.ctx,gearPose);
     body.ctx.drawImage(source,0,192,64,64,0,0,64,64);
     if(gearPose)equipmentArt.draw(body.ctx,gearPose);
-    if(!pose){ctx.drawImage(body.c,0,0,64,64,origin,origin,64,64);return;}
+    if(!pose){tintBloodlustBlade(body.ctx,rageStacks);ctx.drawImage(body.c,0,0,64,64,origin,origin,64,64);return;}
     // Sample the actual sleeve and skin palette before moving the sword.
     const sample=(x,y,fallback)=>{const a=body.ctx.getImageData(x,y,1,1).data;return a[3]?'rgb('+a[0]+','+a[1]+','+a[2]+')':fallback;};
     const cloth=sample(37,39,'#b7996a'),shade=sample(36,42,'#b78c41'),outline=sample(39,40,'#3e2613'),skin=sample(34,28,'#e4a47c'),light=sample(34,24,'#f9d5ba');
     for(const [y,l,r] of swordPixelRuns){const w=r-l+1;blade.ctx.drawImage(source,l,192+y,w,1,l,y,w,1);body.ctx.clearRect(l,y,w,1);}
+    tintBloodlustBlade(blade.ctx,rageStacks);
     const [dx,lean,crouch,hx,hy,angle,trail]=pose,bx=origin+dx,by=origin+crouch;
     for(let y=0;y<64;y++){
       const shift=Math.round(lean*Math.max(0,Math.min(1,(52-y)/15))),oy=by+y-Math.round(crouch*Math.max(0,Math.min(1,(y-46)/16)));
@@ -1250,11 +1290,14 @@
     const row = evading||skillClip?0:walking&&!arrowGuard ? (id==='hero'?walkDirection:actor.direction) : enemyFacing;
     const tile = swordClip?128:descriptor.tile || 64, origin = swordClip?32:descriptor.origin || 0;
     const cell = swordClip?swordFrame:guard ? 0 : evading ? dodgeArt.frameAt(activeTime-archerEvadeAt,dodgeTiming) : walking ? 1 + Math.floor((distance / .75 % 1) * 8) : attacking ? Math.min(descriptor.frames-1,Math.floor((age+(actor.animation?.arrowCue?1e-6:0)) / actor.animation.duration * descriptor.frames)) : Number.isInteger(descriptor.still) ? descriptor.still : id === 'hero' && auto && unit.hp > 0 && !ended && !reducedMotion.matches ? Math.floor(activeTime / .65) % 2 : 0;
-    const key = `${kind}-${descriptor.image.src}-${cell}-${row}-${tile}-${origin}-${blockFrame}-${arrowGuard?'bastionArrow':blocking?actor.blockStyle||'normal':''}-${bashFrame}-${swordClip?actor.animation.variant:''}`;
+    const rageStacks=id==='hero'&&starterWeapon?.id==='sword'&&!ended&&unit.hp>0?Math.max(0,Math.min(5,state.warriorRage?.stacks||0)):0;
+    const rageTrail=attacking&&!bashing&&!reducedMotion.matches&&rageStacks?bloodlustTrailPose(actor.animation?.variant,cell,swordClip?.length||descriptor.frames,swordClip?.[swordFrame]):null;
+    if(id==='hero'){actor.element.dataset.bloodlustStacks=String(rageStacks);actor.element.dataset.bloodlustTrail=String(Boolean(rageTrail&&bloodlustAtlas));}
+    const key = `${rageStacks}-${kind}-${descriptor.image.src}-${cell}-${row}-${tile}-${origin}-${blockFrame}-${arrowGuard?'bastionArrow':blocking?actor.blockStyle||'normal':''}-${bashFrame}-${swordClip?actor.animation.variant:''}`;
     if (!frozen&&actor.lastKey !== key) {
       actor.canvas.width = tile; actor.canvas.height = tile;
       const ctx = actor.canvas.getContext('2d'); ctx.clearRect(0,0,tile,tile); ctx.imageSmoothingEnabled = false;
-      if(swordClip)drawSwordSkill(ctx,actor,swordClip[swordFrame],origin);
+      if(swordClip)drawSwordSkill(ctx,actor,swordClip[swordFrame],origin,rageStacks);
       else {
       if(guard){ctx.save();ctx.translate(guard.dx,guard.dy);}
       const gearPose=id==='hero'&&equipmentArt?{equipped:equipment.getState(),colors:equipment.getColors(),row,frame:cell,kind:guard?guard.kind:kind,
@@ -1263,6 +1306,10 @@
       ctx.drawImage(descriptor.image,cell*tile,row*tile,tile,tile,0,0,tile,tile);
       if(gearPose)equipmentArt.draw(ctx,gearPose);
       if(guard){paintRaisedShield(ctx,actor.images.walk.image,guard);ctx.restore();if(guard.strongPhase!==undefined)paintStrongGuard(ctx,guard.strongPhase);}
+      }
+      if(rageStacks){
+        if(!swordClip&&!attacking&&!walking&&!guard&&row===3&&tile===64)tintBloodlustBlade(ctx,rageStacks);
+        if(rageTrail)paintBloodlustTrail(ctx,bloodlustAtlas,rageStacks,origin,rageTrail);
       }
       actor.lastKey = key;
       actor.canvas.style.width = `${tile / 64 * 100}%`; actor.canvas.style.height = `${tile / 64 * 100}%`;
