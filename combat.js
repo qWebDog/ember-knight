@@ -526,16 +526,17 @@
         const hitAt=elapsed+DRAGON_BREATH_FLIGHT;
         const castAt=elapsed/TICKS;
         const castId=`${sourceId}:breath:${elapsed}:${burstIndex}`;
+        const element=options.bastionIcePreview===true&&sword?'ice':'fire';
         events.push({
           type:'cast',sourceId,targetId:defender.id,projectile:'breath',
-          breath:true,burstIndex,burstCount:dragonBreath.bursts,magic:'fire',
+          breath:true,burstIndex,burstCount:dragonBreath.bursts,magic:element,
           at:castAt,impactAt:hitAt/TICKS,castId,
           appearDuration:0,flightDuration:dragonBreath.flight,
           impactDuration:dragonBreath.afterglow,animationDuration:.43,
           castInterval:archetypes.dragon.interval
         });
         pendingImpacts.push({sourceId,targetId:defender.id,damage:dragonBreath.damage,
-          magic:'fire',at:hitAt,castAt,castId,breath:true,burstIndex});
+          magic:element,at:hitAt,castAt,castId,breath:true,burstIndex});
         pendingImpacts.sort((a,b)=>a.at-b.at);
       }
       function cast(sourceId,target,damage,magic) {

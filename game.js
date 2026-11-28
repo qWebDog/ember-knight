@@ -16,6 +16,7 @@
   } catch {}
   const demoParam=new URLSearchParams(window.location.search).get('archerDemo');
   const archerDemo=['all','solo','carry','revive'].includes(demoParam)?demoParam:null;
+  const bastionIcePreview=!archerDemo&&new URLSearchParams(window.location.search).get('bastionIceTest')==='1';
   // Demo characters and their equipment/progression never write to the real save.
   const demoRecords=new Map();
   const demoStorage={getItem:key=>demoRecords.get(key)??null,setItem:(key,value)=>demoRecords.set(key,String(value))};
@@ -33,6 +34,12 @@
     equipmentSave.byClass??={};equipmentSave.byClass.bow={...equipmentSave.byClass.bow,companion:archerDemo==='solo'?'none':'wolf'};
     demoStorage.setItem('ember.equipment.v1',JSON.stringify(equipmentSave));
   }
+  if(bastionIcePreview){
+    const savedWarrior=character?.weapon==='sword';
+    character={version:1,skin:character?.skin||'light',name:'Воин · тест льда',level:25,weapon:'sword',outfit:'militia',outfitColor:savedWarrior?character.outfitColor||'sand':'sand'};
+    progressionStorage=demoStorage;auto=true;
+    demoStorage.setItem(window.EmberProgression.storageKey,JSON.stringify({version:1,gold:0,levels:{power:5,vitality:5,tempo:0,shieldBash:3,strongShield:3,bastion:5}}));
+  }
   const loadouts = window.EmberLoadouts;
   const arrowSprite = 'assets/projectiles/arrow.png';
   const archerArrowSprite='assets/projectiles/archer-arrow-sprites-v1.png';
@@ -47,10 +54,11 @@
   // Opt-in visual QA: no saved ranks or rewards are modified.
   const wolfPreviewMode=archerDemo==='carry'?'1':archerDemo==='revive'?'revive':new URLSearchParams(window.location.search).get('wolfTest');
   const wolfRevivePreview=starterWeapon?.id==='bow'&&(wolfPreviewMode==='revive'||window.location.pathname?.endsWith('/wolf-revive.html'));
-  const reducedMotion=(wolfRevivePreview||archerDemo)?{matches:false}:motionPreference;
+  const reducedMotion=(wolfRevivePreview||archerDemo||bastionIcePreview)?{matches:false}:motionPreference;
   const wolfDeathPreview=starterWeapon?.id==='bow'&&(wolfPreviewMode==='1'||wolfRevivePreview);
   const combatStats=()=>{
     const stats=progression.getStats();
+    if(bastionIcePreview)return {...stats,heroDamage:500,heroMaxHp:100000,warrior_bastion:5};
     if(archerDemo&&!wolfDeathPreview)return {...stats,heroDamage:2,heroMaxHp:10000,companionMaxHp:24,dodgeSeed:42};
     if(!wolfDeathPreview)return stats;
     return {...Object.fromEntries(Object.keys(stats).map(key=>[key,key.startsWith('archer_')?0:stats[key]])),
@@ -82,7 +90,7 @@
   // atomic progression record; only the selected class's ranks affect combat.
   const progression = window.EmberProgression.createStore({storage:progressionStorage,classId:starterWeapon?.id||'sword',heroLevel:character?.level});
   wallet = progression.getState().gold;
-  const equipment = window.EmberEquipment?.createStore({classId:starterWeapon?.id||'sword',...(archerDemo?{storage:demoStorage}:{})});
+  const equipment = window.EmberEquipment?.createStore({classId:starterWeapon?.id||'sword',...((archerDemo||bastionIcePreview)?{storage:demoStorage}:{})});
   const dyeEngine=window.EmberEquipmentDye?.create({canvasFactory:()=>document.createElement('canvas')});
   const equipmentArt = starterWeapon?.id==='sword' && equipment?.enabled
     ? window.EmberEquipmentArt?.create({loadImage,dye:dyeEngine,outfitColor:loadout?.outfitColor||'sand'}) : null;
@@ -125,7 +133,7 @@
   $('#level-badge').textContent = starterWeapon?.id==='wand'?progression.getTalents().level:level;
   const dragonBoss=Boolean(window.EmberDragon);
   const battle = window.EmberCombat.createBattle({heroName:name,heroProjectile:starterWeapon?.projectile,heroWeapon:starterWeapon?.id,heroMagic,
-    dragonBossEnabled:dragonBoss,skeletonSwordsEnabled:true,
+    dragonBossEnabled:dragonBoss,skeletonSwordsEnabled:true,bastionIcePreview,
     companionEnabled:equipment?.classId==='bow'&&equipment.getState().companion==='wolf',
     ...combatStats(),heroTalents:starterWeapon?.id==='wand'?progression.getTalents().equipped:[]});
   battle.pause();
@@ -563,7 +571,7 @@
   autoButton.addEventListener('click', () => {
     if (!ready) return;
     auto = !auto; syncPause();
-    try { if(!archerDemo)localStorage.setItem('ember.combat.auto.v1',auto ? 'on' : 'off'); telegram?.HapticFeedback?.selectionChanged(); } catch {}
+    try { if(!archerDemo&&!bastionIcePreview)localStorage.setItem('ember.combat.auto.v1',auto ? 'on' : 'off'); telegram?.HapticFeedback?.selectionChanged(); } catch {}
     $('#status').textContent = auto ? 'Бой продолжается' : 'Бой приостановлен';
   });
   document.addEventListener('visibilitychange', syncPause);
@@ -604,8 +612,7 @@
   }
   function addSpell(event) {
     if (reducedMotion.matches) return;
-    const magic=event.sourceId==='hero'?(event.magic==='ice'?'ice':'fire')
-      :event.sourceId==='dragon'?'fire':'shadow';
+    const magic=['ice','fire','shadow'].includes(event.magic)?event.magic:(event.sourceId==='hero'||event.sourceId==='dragon'?'fire':'shadow');
     const element=document.createElement('canvas');
     element.width=64; element.height=64; element.className='spell-projectile';
     element.dataset.magic=magic; if(event.shards)element.dataset.shards='true';if(event.echo){element.dataset.echo='true';element.hidden=true;element.style.visibility='hidden';} element.dataset.source=event.sourceId; element.dataset.target=event.targetId;
@@ -676,6 +683,39 @@
     Object.assign(element.style,{position:'absolute',pointerEvents:'none',zIndex:'602',imageRendering:'pixelated',width:96*scale+'px',height:96*scale+'px',left:point.x-24*scale+'px',top:point.y-32*scale+'px'});
     battlefield.appendChild(element);
     effects.push({type:'bastion-magic-break',element,sourceId:event.sourceId,targetId:'hero',at:event.at,duration:.48,magic,lastKey:null});
+  }
+  // Separate faceted ice chips rather than a blue recolor of the fire effect.
+  function paintBastionIce(ctx,frame){
+    ctx.clearRect(0,0,96,96);
+    if(frame>=11)return;
+    if(frame<3){
+      const n=[5,10,6][frame];
+      pixelLine(ctx,24,32-n,24,32+n,'#358dbb',3);
+      for(const [dx,dy] of [[1,-1],[1,0],[1,1],[.5,-1.4],[.5,1.4]]){
+        const x=Math.round(24+dx*n),y=Math.round(32+dy*n);
+        pixelLine(ctx,24,32,x,y,'#51c5ef',3);
+        pixelLine(ctx,24,32,x,y,'#d6fbff');
+      }
+      ctx.fillStyle='#f1ffff';ctx.fillRect(23,30,3,5);
+    }
+    const chips=[[3.8,-2.9,9,4],[4.6,-.7,10,4],[3.5,2.2,8,4],[1.9,-3.5,6,3],[2.1,3.1,6,3],[5.3,.7,4,2],[2.8,-1.8,4,2]];
+    for(let i=0;i<chips.length;i++){
+      const [vx,vy,L,W]=chips[i],t=frame+.5;
+      const x=Math.round(29+vx*t),y=Math.round(Math.max(8,Math.min(57,32+vy*t+.17*t*t)));
+      const l=Math.max(1,Math.round(L*(1-frame/12))),w=Math.max(1,Math.round(W*(1-frame/12)));
+      const angle=Math.atan2(vy+.3*t,vx)+(.15*(i%2?1:-1))*frame;
+      const ux=Math.cos(angle),uy=Math.sin(angle),nx=-uy,ny=ux;
+      // Rasterize a pointed diamond with unequal facets on its two sides.
+      for(let yy=Math.max(0,y-l-w);yy<=Math.min(95,y+l+w);yy++)for(let xx=Math.max(24,x-l-w);xx<=Math.min(95,x+l+w);xx++){
+        const dx=xx-x,dy=yy-y,a=dx*ux+dy*uy,b=dx*nx+dy*ny;
+        const d=Math.abs(a)/l+Math.abs(b)/w;if(d>1)continue;
+        ctx.globalAlpha=frame>=8?(11-frame)/3:1;
+        ctx.fillStyle=d>.76?'#17638f':b<-.15?'#a5efff':b>.65?'#258bca':'#52c9ed';
+        ctx.fillRect(xx,yy,1,1);
+      }
+      ctx.globalAlpha=1;
+    }
+    if(frame<8){ctx.fillStyle='#c6f6ff';for(const [vx,vy] of [[3,-4],[5,1],[2,4]])ctx.fillRect(Math.min(94,28+Math.round(vx*frame)),Math.max(1,Math.min(57,32+Math.round(vy*frame))),1,1);}
   }
   function paintBastionFire(ctx,frame,magic){
     ctx.clearRect(0,0,96,96);
@@ -949,7 +989,7 @@
         let rewardSaved = true, receivedReward = event.reward;
         if(event.id!=='hero'&&event.reward>0&&!paidDeaths.has(event.id)){
           paidDeaths.add(event.id);
-          const award = (wolfDeathPreview||archerDemo)?{ok:true,awarded:0}:progression.awardGold(event.reward,starterWeapon?.id==='wand'?10:0);
+          const award = (wolfDeathPreview||archerDemo||bastionIcePreview)?{ok:true,awarded:0}:progression.awardGold(event.reward,starterWeapon?.id==='wand'?10:0);
           rewardSaved = award.ok;
           if(award.ok){receivedReward=award.awarded;creditedRunGold+=receivedReward;if(receivedReward>0)addEffect('coin','hero',event.id,`+${receivedReward}`,event.at);}
         }
@@ -1535,7 +1575,7 @@
       if (activeTime+1e-6 >= (effect.missUntil??(effect.at+effect.duration)) || reducedMotion.matches) { effect.element.remove(); effects.splice(i,1); continue; }
       if(effect.type==='bastion-magic-break'){
         const frame=Math.min(11,Math.max(0,Math.floor(age/effect.duration*12)));
-        if(effect.lastKey!==frame){paintBastionFire(effect.element.getContext('2d'),frame,effect.magic);effect.lastKey=frame;}
+        if(effect.lastKey!==frame){const ctx=effect.element.getContext('2d');if(effect.magic==='ice')paintBastionIce(ctx,frame);else paintBastionFire(ctx,frame,effect.magic);effect.lastKey=frame;}
         continue;
       }
       if(effect.type==='bastion-arrow-break'){
@@ -1995,7 +2035,7 @@
     clearSceneTransition();
     prepareWave(battle.getState());
     resultPanel.hidden=true;lastFrameTime=null;
-    if(startAuto&&!archerDemo)try{localStorage.setItem('ember.combat.auto.v1','on');}catch{}
+    if(startAuto&&!archerDemo&&!bastionIcePreview)try{localStorage.setItem('ember.combat.auto.v1','on');}catch{}
     render(battle.getState());syncPause();$('#status').textContent='Битва 1–1. Волна 1: один лучник.';
   }
   $('#replay-button').addEventListener('click',()=>{
