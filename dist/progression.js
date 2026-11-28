@@ -13,7 +13,7 @@
     Object.freeze({id:'power', branch:'attack', name:'Сила удара', description:'Каждый уровень добавляет 2 к урону героя.', maxLevel:5, icon:'swords'}),
     Object.freeze({id:'vitality', branch:'defense', name:'Стойкость', description:'Каждый уровень добавляет 20 к максимальному здоровью.', maxLevel:5, icon:'shield'}),
     Object.freeze({id:'tempo', branch:'control', name:'Натиск', description:'Каждый уровень ускоряет атаки на 5%.', maxLevel:5, icon:'bolt'}),
-    Object.freeze({id:'bloodlust',branch:'control',name:'Жажда крови',description:'Основная атака мечом даёт заряд: +2–6% урона мечом за заряд. До 5 зарядов; получение урона снимает один. Новая волна сбрасывает заряды.',maxLevel:5,icon:'warrior-bloodlust',requires:'tempo'}),
+    Object.freeze({id:'bloodlust',branch:'control',name:'Жажда крови',description:'Атака мечом, контратака или удар щитом дают заряд: +2–6% урона мечом за заряд (до 5). Только урон без блока снимает заряд. Заряды сохраняются между волнами и сбрасываются при начале нового боя.',maxLevel:5,icon:'warrior-bloodlust',requires:'tempo'}),
     Object.freeze({id:'shieldBash',branch:'defense',name:'Удар щитом',description:'Каждый третий блок: контратака щитом, 60–100% базового урона и оглушение 0,6–1,4 с.',maxLevel:5,icon:'shield',requires:'vitality'}),
     Object.freeze({id:'strongShield',branch:'defense',name:'Крепкий щит',description:'Блок ближнего удара поглощает 55–75% урона вместо 50%.',maxLevel:5,icon:'skill-shield',requires:'vitality'}),
     Object.freeze({id:'bastion',branch:'defense',name:'Оплот',description:'Каждое второе попадание стрелой или магией блокируется на 20–60%. Не вызывает контратаку на расстоянии.',maxLevel:5,icon:'skill-shield',requires:['shieldBash','strongShield']}),

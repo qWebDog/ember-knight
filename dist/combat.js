@@ -211,7 +211,7 @@
       dodgeUntil=0;dodgeSince=Infinity;enemyDodgeChecks=[];
       waveIndex = index; phase = 'running'; pausedFrom = null; nextWaveAt = null;
       enemies = activeWaves[index].map(unit => ({...archetypes[unit.type],...unit,hp:archetypes[unit.type].maxHp,status:null}));
-      comboIndex = 0; meleeHits = 0; rangedShieldHits=0; bloodlustStacks=0; heroBusyUntil = elapsed; pendingCounters = []; pendingImpacts = []; pendingBreaths = [];rainLeft=0;
+      comboIndex = 0; meleeHits = 0; rangedShieldHits=0; heroBusyUntil = elapsed; pendingCounters = []; pendingImpacts = []; pendingBreaths = [];rainLeft=0;
       mageCastIndex=0;orcHasAttacked=false;activeTalents=[...queuedTalents];powerCharged=false;regenAt=sphere?.hp>0?elapsed+3*TICKS:Infinity;
       nextHero = elapsed + heroTicks(sword ? swordSteps[0].interval : HERO_INTERVAL);
       nextEnemies = enemies.map(enemy => elapsed + Math.round(enemy.interval * TICKS));
@@ -222,7 +222,7 @@
       // its remaining resurrection cooldown; explicit replay still resets.
       const preserve=carryFallenWolf&&phase==='victory'&&companionEnabled&&companion?.hp===0;
       const reviveRemaining=preserve?Math.max(0,wolfReviveAt-elapsed):Infinity;
-      elapsed = 0; remainder = 0; reward = 0; completedWaves = 0; defeatedCount = 0; shieldBlocks=0; heavyCount=0;swordSkillCursor=0;
+      elapsed = 0; remainder = 0; reward = 0; completedWaves = 0; defeatedCount = 0; shieldBlocks=0; bloodlustStacks=0; heavyCount=0;swordSkillCursor=0;
       hero = {id:'hero',name:config.name,hp:config.maxHp,maxHp:config.maxHp,damage:config.damage,attackSpeed:config.attackSpeed};
       echoMeter=overloadMeter=archCount=archRemaining=reactionCount=echoCount=chaosCount=0;rebirthUsed=false;immuneUntil=0;powerCharged=false;
       sphere=sphereRank?{hp:sphereCapacity(),maxHp:sphereCapacity(),brokenAt:null}:null;
@@ -400,7 +400,7 @@
         evasionReady=elapsed+DODGE_COOLDOWN;
         return true;
       }
-      function hit(sourceId,target,damage,projectile,metadata) {
+      function hit(sourceId,target,damage,projectile,metadata,shieldBlocked=false) {
         if(revivePreview&&target.id==='companion'&&!metadata?.previewDeath)return;
         let reflected=0,evaded=false;
         if(archer&&sourceId!=='hero'&&sourceId!=='companion'&&damage>0){
@@ -419,7 +419,7 @@
           }
         }
         if(sword&&bastionRank&&target.id==='hero'&&sourceId!=='hero'&&damage>0&&!metadata?.dot&&['arrow','magic'].includes(projectile)&&++rangedShieldHits%2===0){
-          const blockedDamage=damage*(.1+.1*bastionRank);damage-=blockedDamage;
+          const blockedDamage=damage*(.1+.1*bastionRank);damage-=blockedDamage;shieldBlocked=true;
           events.push({type:'block',sourceId,targetId:'hero',blockedDamage,projectile,skill:'bastion',at:elapsed/TICKS,...(metadata?.castId?{castId:metadata.castId,magic:metadata.magic}:{})});
         }
         if(target.id==='hero'&&elapsed<immuneUntil)damage=0;
@@ -434,8 +434,8 @@
         }
         target.hp = Math.max(0,target.hp-damage);
         if(sword&&bloodlustRank&&damage>0){
-          if(target.id==='hero'){bloodlustStacks=target.hp>0?Math.max(0,bloodlustStacks-1):0;}
-          else if(sourceId==='hero'&&projectile==='melee'&&metadata?.comboStep>0&&!metadata.counter&&!metadata.splash&&(!metadata.strike||metadata.strike===1)){
+          if(target.id==='hero'){if(target.hp<=0)bloodlustStacks=0;else if(!shieldBlocked)bloodlustStacks=Math.max(0,bloodlustStacks-1);}
+          else if(sourceId==='hero'&&projectile==='melee'&&(metadata?.comboStep>0||metadata?.counter||metadata?.shieldBash)&&!metadata.splash&&(!metadata.strike||metadata.strike===1)){
             bloodlustStacks=Math.min(5,bloodlustStacks+1);
           }
         }
@@ -805,7 +805,7 @@
               pendingBreaths.sort((a,b)=>a.at-b.at||a.index-b.index);
             }
           }else if (enemy.projectile === 'magic') cast(enemy.id,defender,damage,'shadow');
-          else hit(enemy.id,defender,damage,enemy.projectile,enemy.type === 'archer' ? {animationDuration:.6,...(arrowEvaded?{evaded:true}:{})} : undefined);
+          else hit(enemy.id,defender,damage,enemy.projectile,enemy.type === 'archer' ? {animationDuration:.6,...(arrowEvaded?{evaded:true}:{})} : undefined,blocked);
           nextEnemies[index] += Math.round(enemy.interval*TICKS);
           if (hero.hp === 0) { end('defeat'); break; }
           if (blocked) reserveCounter(enemy.id);

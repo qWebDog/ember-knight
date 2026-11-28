@@ -13,7 +13,7 @@
     shieldBash:{name:'Удар щитом',branch:'defense',category:'Защита',icon:'skill-shield',benefit:'Каждый третий блок: удар щитом и оглушение',total:level=>`${50+10*level}% базового урона, оглушение ${(0.4+.2*level).toFixed(1).replace('.',',')} с`}
   };
   Object.assign(details,{
-    bloodlust:{name:'Жажда крови',branch:'control',category:'Ярость',icon:'warrior-bloodlust',total:l=>`+${1+l}% урона мечом за заряд (до +${5*(1+l)}%). Урон снимает заряд.`},
+    bloodlust:{name:'Жажда крови',branch:'control',category:'Ярость',icon:'warrior-bloodlust',total:l=>`+${1+l}% урона мечом за заряд (до +${5*(1+l)}%). Урон без блока: −1. Контратака и удар щитом: +1. Между волнами заряды сохраняются.`},
     strongShield:{name:'Крепкий щит',branch:'defense',category:'Защита',icon:'warrior-strong-shield',total:l=>`Блок поглощает ${50+5*l}% урона ближнего боя`},
     bastion:{name:'Оплот',branch:'defense',category:'Защита',icon:'warrior-bastion',total:l=>`Каждое второе попадание стрелой или магией: блок ${10+10*l}% урона`},
     swordThrust:{name:'Колющий удар',branch:'attack',category:'Атака',icon:'swords',total:l=>`150% урона, пробитие ${10+10*l}% брони`},
