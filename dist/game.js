@@ -844,11 +844,11 @@
       } else if(event.type==='status'){
         syncFrozenActors(battle.getState());
       } else if (event.type === 'block') {
-        actors.hero.blockAt = activeTime;
+        actors.hero.blockAt = activeTime;actors.hero.blockStyle=event.skill||'normal';actors.hero.lastKey=null;
         // The real LPC guard pose interrupts the swing; the following counter
         // starts its own animation instead of resuming a stale attack frame.
         actors.hero.animation = null;
-        addEffect('block',event.sourceId,'hero',event.skill==='bastion'?'Оплот':'Блок',event.at);
+        addEffect('block',event.sourceId,'hero',event.skill==='bastion'?'Оплот':event.skill==='strongShield'?'Крепкий щит':'Блок',event.at);
       } else if (event.type === 'death') {
         if(event.id==='companion'){
           companionDeathAt=companionTime;
@@ -984,6 +984,27 @@
     {kind:'block',dx:-1,dy:0,shield:[34,32]},
     {kind:'idle',dx:0,dy:0}
   ];
+  // Strong shield: grounded stance; native LPC body and gear remain intact.
+  const strongGuardFrames=guardFrames.map((pose,i)=>({...pose,dx:0,dy:0,strongPhase:i}));
+  function paintStrongGuard(ctx,phase){
+    if(phase<3||phase>5)return;
+    // Short segmented golden crescent, facing the incoming melee strike.
+    const wave=phase===3?[[49,21],[54,24],[57,28],[58,34],[57,40],[54,45],[49,48]]:
+      phase===4?[[54,18],[58,22],[61,28],[62,34],[61,40],[58,47],[54,51]]:[];
+    for(let i=1;i<wave.length;i++){
+      const [x,y]=wave[i-1],[xx,yy]=wave[i];
+      pixelLine(ctx,x,y,xx,yy,phase===3?'#a66d2f':'#936235',3);
+      pixelLine(ctx,x,y,xx,yy,phase===3?'#ffe29a':'#cb984b',1);
+    }
+    if(phase===3)pixelLine(ctx,50,34,56,34,'#fff1b8',1);
+    // Dust stays at the boot line; coarse opaque pixel clusters, not a halo.
+    const dust=phase===3?[[19,59,4,2],[16,57,3,2],[38,59,5,2],[42,57,3,2],[13,60,3,1]]:
+      phase===4?[[12,58,5,2],[10,55,3,2],[18,59,3,1],[43,58,6,2],[48,55,3,2],[50,60,3,1]]:
+      [[8,59,3,1],[13,56,2,1],[49,57,2,1],[54,59,3,1]];
+    ctx.fillStyle=phase===5?'#71614b':'#8f7958';
+    for(const [x,y,w,h] of dust)ctx.fillRect(x,y,w,h);
+    if(phase!==5){ctx.fillStyle='#c0a37a';for(const [x,y] of phase===3?[[17,57],[42,57],[22,59]]:[[11,55],[48,55],[45,58]])ctx.fillRect(x,y,2,1);}
+  }
   const bashFrames=[
     {kind:'block',dx:0,dy:0,shield:[34,30]},
     {kind:'block',dx:-1,dy:1,shield:[33,30]},
@@ -1096,7 +1117,7 @@
     const blockFrame=blocking?Math.min(7,Math.max(0,Math.floor((activeTime-actor.blockAt)*8/(.28/(state.hero.attackSpeed||1))))):-1;
     const bashing=attacking&&actor.animation?.variant==='shieldBash';
     const bashFrame=bashing?Math.min(7,Math.max(0,Math.floor(age/actor.animation.duration*8))):-1;
-    const guard=bashing?bashFrames[bashFrame]:blockFrame>=0?guardFrames[blockFrame]:null;
+    const guard=bashing?bashFrames[bashFrame]:blockFrame>=0?(actor.blockStyle==='strongShield'?strongGuardFrames:guardFrames)[blockFrame]:null;
     const descriptor = guard?actor.images[guard.kind]:skillClip || attacking && actor.images.attacks?.[actor.animation.variant] || actor.images[kind];
     // LPC directions: 0=back, 1=left, 2=front, 3=right.
     // When moving toward a hero/wolf on the left, Orc must use the LEFT
@@ -1107,7 +1128,7 @@
     const row = evading||skillClip?0:walking ? (id==='hero'?walkDirection:actor.direction) : enemyFacing;
     const tile = swordClip?128:descriptor.tile || 64, origin = swordClip?32:descriptor.origin || 0;
     const cell = swordClip?swordFrame:guard ? 0 : evading ? dodgeArt.frameAt(activeTime-archerEvadeAt,dodgeTiming) : walking ? 1 + Math.floor((distance / .75 % 1) * 8) : attacking ? Math.min(descriptor.frames-1,Math.floor((age+(actor.animation?.arrowCue?1e-6:0)) / actor.animation.duration * descriptor.frames)) : Number.isInteger(descriptor.still) ? descriptor.still : id === 'hero' && auto && unit.hp > 0 && !ended && !reducedMotion.matches ? Math.floor(activeTime / .65) % 2 : 0;
-    const key = `${kind}-${descriptor.image.src}-${cell}-${row}-${tile}-${origin}-${blockFrame}-${bashFrame}-${swordClip?actor.animation.variant:''}`;
+    const key = `${kind}-${descriptor.image.src}-${cell}-${row}-${tile}-${origin}-${blockFrame}-${blocking?actor.blockStyle||'normal':''}-${bashFrame}-${swordClip?actor.animation.variant:''}`;
     if (!frozen&&actor.lastKey !== key) {
       actor.canvas.width = tile; actor.canvas.height = tile;
       const ctx = actor.canvas.getContext('2d'); ctx.clearRect(0,0,tile,tile); ctx.imageSmoothingEnabled = false;
@@ -1119,7 +1140,7 @@
       if(gearPose)equipmentArt.drawBack(ctx,gearPose);
       ctx.drawImage(descriptor.image,cell*tile,row*tile,tile,tile,0,0,tile,tile);
       if(gearPose)equipmentArt.draw(ctx,gearPose);
-      if(guard){paintRaisedShield(ctx,actor.images.walk.image,guard);ctx.restore();}
+      if(guard){paintRaisedShield(ctx,actor.images.walk.image,guard);ctx.restore();if(guard.strongPhase!==undefined)paintStrongGuard(ctx,guard.strongPhase);}
       }
       actor.lastKey = key;
       actor.canvas.style.width = `${tile / 64 * 100}%`; actor.canvas.style.height = `${tile / 64 * 100}%`;
@@ -1164,7 +1185,7 @@
       clearStatus(actor);actor.poseAnimation=null;actor.poseAge=100;
       actor.x=null;actor.distance=0;actor.moving=false;actor.direction=1;
       actor.depth=actor.defaultLane;
-      actor.animation=null;actor.dodgeWindupUntil=-1;actor.hitAt=-10;actor.blockAt=-10;actor.lastKey=null;
+      actor.animation=null;actor.dodgeWindupUntil=-1;actor.hitAt=-10;actor.blockAt=-10;actor.blockStyle='normal';actor.lastKey=null;
       if(actor.type==='dragon'){
         actor.dive=0;actor.diveClock=null;
         actor.breathStartedAt=null;actor.breathUntil=-1;
