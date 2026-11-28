@@ -232,7 +232,7 @@
 .skills-panel[data-hero-class="sword"] [data-defense-slot] svg{width:17px;height:17px}
 
 /* Warrior rage: keep the first actual upgrade centered under the root. */
-.skills-panel[data-hero-class="sword"] [data-branch="control"] .skill-children{grid-template-columns:1fr;grid-template-rows:36px;gap:3px;padding:0}
+.skills-panel[data-hero-class="sword"] [data-branch="control"] .skill-children{position:relative;grid-template-columns:1fr;grid-template-rows:repeat(2,36px);gap:3px;padding:0;background:linear-gradient(var(--branch),var(--branch)) center top/1px 42px no-repeat}
 .skills-panel[data-hero-class="sword"] [data-branch="control"] .skill-future[hidden]{display:none!important}
 .skills-panel[data-hero-class="sword"] [data-rage-slot]{width:min(36px,100%);height:30px;min-height:30px;align-self:start}
 .skills-panel[data-hero-class="sword"] [data-rage-slot] svg{width:17px;height:17px}

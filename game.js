@@ -247,7 +247,7 @@
     if(change?.type!=='purchase')return;
     const current = battle.getState().hero, stats = combatStats();
     const oldSpeed = current.attackSpeed || 1;
-    if (current.damage !== stats.heroDamage || current.maxHp !== stats.heroMaxHp || oldSpeed !== stats.heroAttackSpeed || stats.heroBurnRank || stats.heroSphereRank || stats.heroShardRank || starterWeapon?.id==='wand'|| starterWeapon?.id==='bow'||stats.warriorShieldBash||Object.keys(stats).some(k=>k.startsWith('warrior_sword'))) {
+    if (current.damage !== stats.heroDamage || current.maxHp !== stats.heroMaxHp || oldSpeed !== stats.heroAttackSpeed || stats.heroBurnRank || stats.heroSphereRank || stats.heroShardRank || starterWeapon?.id==='wand'|| starterWeapon?.id==='bow'||stats.warriorShieldBash||Object.keys(stats).some(k=>k.startsWith('warrior_'))) {
       const ratio = oldSpeed / stats.heroAttackSpeed;
       const animation = actors.hero.animation;
       if (animation && ratio !== 1) {
@@ -1920,6 +1920,8 @@
       }
     }
     $('#hero-vital').textContent = `${state.hero.hp} / ${state.hero.maxHp} HP`;
+    const frenzy=$('#warrior-frenzy-meter');
+    if(frenzy){const effect=state.warriorFrenzy;frenzy.hidden=!effect?.active||['victory','defeat'].includes(state.phase);if(effect?.active)frenzy.textContent=`Неистовство · +${effect.speedPercent}% СА · +${effect.damagePercent}% ур.`;}
     const rage=$('#warrior-rage-meter');
     if(rage){const data=state.warriorRage;rage.hidden=!data; if(data){rage.textContent=`Жажда ${data.stacks}/5 · +${data.bonusPercent}%`;rage.setAttribute('aria-label',`Жажда крови: ${data.stacks} из 5 зарядов, бонус урона ${data.bonusPercent}%`);}}
     const waves = document.querySelectorAll('.wave');

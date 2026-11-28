@@ -99,6 +99,11 @@
     let shieldBashRank=sword?rank(options.warriorShieldBash):0,shieldBlocks=0;
     let strongShieldRank=sword?rank(options.warrior_strongShield):0,bastionRank=sword?rank(options.warrior_bastion):0,rangedShieldHits=0;
     let bloodlustRank=sword?rank(options.warrior_bloodlust):0,bloodlustStacks=0;
+    let frenzyRank=sword?rank(options.warrior_frenzy):0;
+    const frenzyActive=()=>Boolean(frenzyRank&&hero?.hp>0&&hero.hp<hero.maxHp*.5);
+    const frenzySpeed=()=>frenzyActive()?.05*(1+frenzyRank):0;
+    const frenzyDamage=()=>frenzyActive()?.05*frenzyRank:0;
+    const effectiveSpeed=()=>config.attackSpeed+frenzySpeed();
     const bloodlustMultiplier=()=>1+bloodlustStacks*(bloodlustRank?(.01+.01*bloodlustRank):0);
     const swordSkills=['swordThrust','swordOverhead','swordDouble','swordCleave'];
     const swordRanks=Object.fromEntries(swordSkills.map(id=>[id,sword?rank(options['warrior_'+id]):0]));
@@ -122,7 +127,7 @@
     // Companion ownership is gated by the permanent Archer class and can be
     // changed live by equipment without rescheduling the Archer's next arrow.
     let companionEnabled=options.heroWeapon==='bow'&&config.projectile==='arrow'&&options.companionEnabled===true;
-    function heroTicks(base) { return Math.max(1,Math.round(base/config.attackSpeed)); }
+    function heroTicks(base) { return Math.max(1,Math.round(base/effectiveSpeed())); }
     // Pure read-only shot schedule for sprite anticipation. Existing engine
     // attack ticks, damage, rewards and cooldowns stay exactly unchanged.
     function chooseArrow(commit=true){
@@ -195,6 +200,7 @@
       const target = enemies.find(enemy => enemy.hp > 0);
       const waiting = phase === 'intermission' || (phase === 'paused' && pausedFrom === 'intermission');
       return {
+        ...(sword&&frenzyRank?{warriorFrenzy:{active:frenzyActive(),speedPercent:Math.round(frenzySpeed()*100),damagePercent:Math.round(frenzyDamage()*100),attackSpeed:effectiveSpeed()}}:{}),
         ...(sword&&bloodlustRank?{warriorRage:{stacks:bloodlustStacks,bonusPercent:bloodlustStacks*(1+bloodlustRank)}}:{}),
         ...(sword&&bastionRank?{bastionMagic:pendingImpacts.filter(p=>p.targetId==='hero'&&p.sourceId!=='hero'&&p.castId&&p.damage>0).slice().sort((a,b)=>a.at-b.at).map((p,i)=>({castId:p.castId,at:p.at/TICKS,block:(rangedShieldHits+i+1)%2===0}))}:{}),
         ...(mage?{activeTalents:[...activeTalents]}:{}),...(archer&&(archerRanks.alpha||archerRanks.guardian)?{wolfAttackSpeed:(elapsed<roarUntil?1+.1*archerRanks.alpha:1)*(wolfFury()?1+.15*archerRanks.guardian:1)}:{}),...(archer&&companionEnabled&&(archerRanks.rendingBite||archerRanks.guardian||archerRanks.wolfBond)?{wolfSkills:{bond:archerRanks.wolfBond,fury:wolfFury(),rendingNext:!!archerRanks.rendingBite&&(wolfBites+1)%3===0}}:{}),...(archer&&(archerRanks.arrowDance||archerRanks.alpha)?{archerEffects:{dance:elapsed<danceUntil,roar:companionEnabled&&companion?.hp>0&&elapsed<roarUntil}}:{}),phase, elapsed:elapsed / TICKS, hero:{...hero,...bleedingSnapshot(hero),...poisonSnapshot(hero),...(sphere?{sphere:{...sphere}}:{})},
@@ -309,7 +315,8 @@
       return events;
     }
     function updateHeroStats(stats = {}) {
-      const oldSpeed = config.attackSpeed;
+      const oldSpeed = effectiveSpeed();
+      if(sword&&stats.warrior_frenzy!==undefined)frenzyRank=rank(stats.warrior_frenzy);
       if(sword&&stats.warrior_bloodlust!==undefined){bloodlustRank=rank(stats.warrior_bloodlust);if(!bloodlustRank)bloodlustStacks=0;}
       if(sword&&stats.warriorShieldBash!==undefined)shieldBashRank=rank(stats.warriorShieldBash);
       if(sword&&stats.warrior_strongShield!==undefined)strongShieldRank=rank(stats.warrior_strongShield);
@@ -333,8 +340,8 @@
       hero.damage = config.damage; hero.maxHp = config.maxHp; hero.attackSpeed = config.attackSpeed;
       // A purchase changes the next battle's maximum but never heals this one.
       hero.hp = Math.min(hero.hp,config.maxHp);
-      if (oldSpeed !== config.attackSpeed) {
-        const ratio = oldSpeed/config.attackSpeed;
+      if (oldSpeed !== effectiveSpeed()) {
+        const ratio = oldSpeed/effectiveSpeed();
         const rescale = at => elapsed + Math.max(0,Math.round((at-elapsed)*ratio));
         nextHero = rescale(nextHero); heroBusyUntil = rescale(heroBusyUntil);
         const reserved = pendingCounters.map(counter => ({...counter,at:rescale(counter.at)}));
@@ -432,6 +439,7 @@
           }
           events.push({type:'sphere',sourceId,targetId:'hero',absorbed,hp:sphere.hp,maxHp:sphere.maxHp,broken:sphere.hp===0,at:elapsed/TICKS,projectile,...(metadata?.castId?{castId:metadata.castId}:{}),...(metadata?.magic?{magic:metadata.magic}:{})});
         }
+        const beforeSpeed=target.id==='hero'&&frenzyRank?effectiveSpeed():null;
         target.hp = Math.max(0,target.hp-damage);
         if(sword&&bloodlustRank&&damage>0){
           if(target.id==='hero'){if(target.hp<=0)bloodlustStacks=0;else if(!shieldBlocked)bloodlustStacks=Math.max(0,bloodlustStacks-1);}
@@ -443,6 +451,16 @@
           rebirthUsed=true;target.hp=Math.max(1,Math.floor(target.maxHp*.1*advanced.heroRebirthRank));
           if(hasTalent('immortality'))immuneUntil=elapsed+2*TICKS;
           events.push({type:'mageSkill',skill:'rebirth',sourceId:'hero',targetId:'hero',at:elapsed/TICKS,hp:target.hp});
+        }
+        if(beforeSpeed!==null&&target.hp>0&&beforeSpeed!==effectiveSpeed()){
+          const ratio=beforeSpeed/effectiveSpeed();
+          const rescale=at=>elapsed+Math.max(0,Math.round((at-elapsed)*ratio));
+          // Preserve the current swing and delayed impacts. Only future cooldowns change.
+          nextHero=Math.max(heroBusyUntil,rescale(nextHero));
+          const reserved=pendingCounters.map(counter=>({...counter,at:rescale(counter.at)}));
+          pendingCounters=[];
+          for(const counter of reserved)pendingCounters.push({...counter,at:counterSlot(counter.at)});
+          events.push({type:'warriorFrenzy',active:frenzyActive(),at:elapsed/TICKS});
         }
         events.push({type:'attack',sourceId,targetId:target.id,damage,hp:target.hp,at:elapsed/TICKS,projectile,...metadata,...(evaded?{evaded:true}:{})});
         if (target.hp === 0) {
@@ -631,7 +649,7 @@
         // Ties: hero action, counters, existing status ticks/expiry, impacts, then enemies.
         if (heroCanAttack && nextHero === next) {
           const target = enemies.find(enemy => enemy.hp > 0),step = sword ? swordSteps[comboIndex] : null;
-          const rageMultiplier=sword?bloodlustMultiplier():1;
+          const rageMultiplier=sword?bloodlustMultiplier()+frenzyDamage():1;
           const damage = config.damage * (step?.heavy ? 1.5*finisherMultiplier() : 1)*rageMultiplier;
           const metadata = step ? {variant:step.variant,comboStep:comboIndex+1,heavy:step.heavy,animationDuration:heroTicks(step.animationDuration*TICKS)/TICKS,counter:false} : {animationDuration:heroTicks((config.projectile === 'arrow' ? .9 : .66)*TICKS)/TICKS};
           // One automatic spell stream, alternating fire and ice. Neither
@@ -678,9 +696,9 @@
           if(counter.bash){
             const duration=heroTicks(COUNTER_DURATION),impactAt=elapsed+Math.round(duration/2);
             events.push({type:'warriorSkill',skill:'shieldBash',sourceId:'hero',targetId:target.id,at:elapsed/TICKS,impactAt:impactAt/TICKS,animationDuration:duration/TICKS});
-            pendingImpacts.push({sourceId:'hero',targetId:target.id,at:impactAt,shieldBash:counter.bash,damage:Math.max(1,config.damage*(.5+.1*counter.bash)-target.armor)});
+            pendingImpacts.push({sourceId:'hero',targetId:target.id,at:impactAt,shieldBash:counter.bash,damage:Math.max(1,config.damage*(.5+.1*counter.bash)*(1+frenzyDamage())-target.armor)});
             pendingImpacts.sort((a,b)=>a.at-b.at);
-          }else hit('hero',target,Math.max(1,config.damage*bloodlustMultiplier()-target.armor),'melee',{variant:'halfslash',comboStep:0,heavy:false,animationDuration:heroTicks(COUNTER_DURATION)/TICKS,counter:true});
+          }else hit('hero',target,Math.max(1,config.damage*(bloodlustMultiplier()+frenzyDamage())-target.armor),'melee',{variant:'halfslash',comboStep:0,heavy:false,animationDuration:heroTicks(COUNTER_DURATION)/TICKS,counter:true});
           if (enemies.every(enemy => enemy.hp === 0)) { clearWave(); break; }
         }
         if (phase !== 'running') continue;

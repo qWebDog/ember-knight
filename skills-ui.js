@@ -13,6 +13,7 @@
     shieldBash:{name:'Удар щитом',branch:'defense',category:'Защита',icon:'skill-shield',benefit:'Каждый третий блок: удар щитом и оглушение',total:level=>`${50+10*level}% базового урона, оглушение ${(0.4+.2*level).toFixed(1).replace('.',',')} с`}
   };
   Object.assign(details,{
+    frenzy:{name:'Неистовство',branch:'control',category:'Ярость',icon:'warrior-frenzy',total:l=>`При HP ниже 50%: +${5+5*l}% скорости атаки и +${5*l}% урона.`},
     bloodlust:{name:'Жажда крови',branch:'control',category:'Ярость',icon:'warrior-bloodlust',total:l=>`+${1+l}% урона мечом за заряд (до +${5*(1+l)}%). Урон без блока: −1. Контратака и удар щитом: +1. Между волнами заряды сохраняются.`},
     strongShield:{name:'Крепкий щит',branch:'defense',category:'Защита',icon:'warrior-strong-shield',total:l=>`Блок поглощает ${50+5*l}% урона ближнего боя`},
     bastion:{name:'Оплот',branch:'defense',category:'Защита',icon:'warrior-bastion',total:l=>`Каждое второе попадание стрелой или магией: блок ${10+10*l}% урона`},
@@ -118,9 +119,10 @@ arrowDance:{name:"Танец стрел",branch:'control',category:"Тактик
       const rage=root.querySelector('[data-branch="control"]');
       if(rage){
         rage.querySelector('h3').textContent='Ярость';
-        const slot=rage.querySelector('[data-skill-future]');
-        if(slot){slot.hidden=false;slot.disabled=false;slot.dataset.skillId='bloodlust';slot.dataset.mageAdvanced='true';slot.dataset.skillDepth='1';slot.dataset.skillRequires='tempo';slot.dataset.rageSlot='1';slot.querySelector('use').setAttribute('href','#warrior-bloodlust');slot.querySelector('span').setAttribute('data-skill-node-rank','');slot.setAttribute('title',details.bloodlust.name);nodes.push(slot);}
-        const future=rage.querySelector('[data-skill-future="control-2"]');if(future)future.hidden=true;
+        ['bloodlust','frenzy'].forEach((id,i)=>{
+          const slot=rage.querySelector('[data-skill-future="control-'+(i+1)+'"]');if(!slot)return;
+          slot.hidden=false;slot.disabled=false;slot.dataset.skillId=id;slot.dataset.mageAdvanced='true';slot.dataset.skillDepth=String(depth(id));slot.dataset.skillRequires=requirements(id).join(' ');slot.dataset.rageSlot=String(i+1);slot.querySelector('use').setAttribute('href','#'+details[id].icon);slot.querySelector('span').setAttribute('data-skill-node-rank','');slot.setAttribute('title',details[id].name);nodes.push(slot);
+        });
       }
     }
     const upgrade=$('#skill-upgrade');
@@ -151,7 +153,7 @@ arrowDance:{name:"Танец стрел",branch:'control',category:"Тактик
       $('[data-skill-category]').textContent=entry.category;
       $('[data-skill-name]').textContent=entry.name;
       $('[data-skill-rank]').textContent=`Уровень ${quote.level}/${quote.maxLevel}`;
-      $('[data-skill-benefit]').textContent=quote.reason==='locked'?`Требуется: ${requirementLabel(selected)}`:quote.reason==='max'?`${entry.total(quote.level)} · Максимум`:`Следующий уровень: ${archer||['shieldBash','strongShield','bastion','bloodlust'].includes(selected)||selected.startsWith('sword')?entry.total(quote.level+1):entry.benefit}`;
+      $('[data-skill-benefit]').textContent=quote.reason==='locked'?`Требуется: ${requirementLabel(selected)}`:quote.reason==='max'?`${entry.total(quote.level)} · Максимум`:`Следующий уровень: ${archer||['shieldBash','strongShield','bastion','bloodlust','frenzy'].includes(selected)||selected.startsWith('sword')?entry.total(quote.level+1):entry.benefit}`;
       $('[data-skill-benefit]').dataset.feedback='';
       $('[data-skill-icon-use]').setAttribute('href',`#${entry.icon}`);
       upgrade.dataset.upgrade=selected;upgrade.disabled=!quote.canBuy;
